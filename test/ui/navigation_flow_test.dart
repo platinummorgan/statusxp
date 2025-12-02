@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:statusxp/main.dart';
-import 'package:statusxp/state/statusxp_providers.dart';
-import 'package:statusxp/data/sample_data.dart';
+import '../helpers/test_helpers.dart';
 
 void main() {
   group('Navigation Flow Tests', () {
@@ -13,16 +10,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      // Pump the app with provider overrides for test data
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            gamesProvider.overrideWith((ref) async => sampleGames),
-            userStatsProvider.overrideWith((ref) async => sampleStats),
-          ],
-          child: const StatusXPApp(),
-        ),
-      );
+      // Pump the app with test helpers
+      await tester.pumpWidget(getTestApp());
       await tester.pumpAndSettle();
 
       // Verify dashboard shows key elements
@@ -51,16 +40,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      // Pump the app with provider overrides for test data
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            gamesProvider.overrideWith((ref) async => sampleGames),
-            userStatsProvider.overrideWith((ref) async => sampleStats),
-          ],
-          child: const StatusXPApp(),
-        ),
-      );
+      // Pump the app with test helpers
+      await tester.pumpWidget(getTestApp());
       await tester.pumpAndSettle();
 
       // Verify dashboard shows key elements
@@ -90,16 +71,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      // Pump the app with provider overrides for test data
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            gamesProvider.overrideWith((ref) async => sampleGames),
-            userStatsProvider.overrideWith((ref) async => sampleStats),
-          ],
-          child: const StatusXPApp(),
-        ),
-      );
+      // Pump the app with test helpers
+      await tester.pumpWidget(getTestApp());
       await tester.pumpAndSettle();
 
       // Start on dashboard
@@ -133,16 +106,8 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      // Pump the app with provider overrides for test data
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            gamesProvider.overrideWith((ref) async => sampleGames),
-            userStatsProvider.overrideWith((ref) async => sampleStats),
-          ],
-          child: const StatusXPApp(),
-        ),
-      );
+      // Pump the app with test helpers
+      await tester.pumpWidget(getTestApp());
       await tester.pumpAndSettle();
 
       // Find and tap the overflow menu button

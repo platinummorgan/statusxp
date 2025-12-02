@@ -6,23 +6,26 @@ import '../data/sample_data.dart';
 /// Service to handle first-run data migration from sample data to Supabase.
 /// 
 /// This runs once per user to seed their account with demo games and stats.
+/// Migration is tracked per-user using SharedPreferences.
 class DataMigrationService {
-  static const _migrationKey = 'supabase_data_migrated';
+  static const _migrationKeyPrefix = 'supabase_data_migrated_';
   
   final SupabaseClient _client;
   
   DataMigrationService(this._client);
   
-  /// Check if migration has already been performed.
-  Future<bool> isMigrationComplete() async {
+  /// Check if migration has already been performed for a specific user.
+  Future<bool> isMigrationComplete(String userId) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_migrationKey) ?? false;
+    final key = '$_migrationKeyPrefix$userId';
+    return prefs.getBool(key) ?? false;
   }
   
-  /// Mark migration as complete.
-  Future<void> _markMigrationComplete() async {
+  /// Mark migration as complete for a specific user.
+  Future<void> _markMigrationComplete(String userId) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_migrationKey, true);
+    final key = '$_migrationKeyPrefix$userId';
+    await prefs.setBool(key, true);
   }
   
   /// Perform first-run data migration.
@@ -34,8 +37,8 @@ class DataMigrationService {
   /// 4. User games
   /// 5. User stats
   Future<void> migrateInitialData(String userId) async {
-    // Check if already migrated
-    if (await isMigrationComplete()) {
+    // Check if already migrated for this user
+    if (await isMigrationComplete(userId)) {
       return;
     }
     
@@ -52,8 +55,8 @@ class DataMigrationService {
       // 4. Seed user stats
       await _seedUserStats(userId);
       
-      // Mark migration complete
-      await _markMigrationComplete();
+      // Mark migration complete for this user
+      await _markMigrationComplete(userId);
     } catch (e) {
       // Log error but don't rethrow - app should still work
       // In production, send to error tracking service

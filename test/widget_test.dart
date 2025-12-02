@@ -6,24 +6,12 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'package:statusxp/main.dart';
-import 'package:statusxp/state/statusxp_providers.dart';
-import 'package:statusxp/data/sample_data.dart';
+import 'helpers/test_helpers.dart';
 
 void main() {
   testWidgets('App loads with navigation', (WidgetTester tester) async {
-    // Build our app with provider overrides for test data.
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          gamesProvider.overrideWith((ref) async => sampleGames),
-          userStatsProvider.overrideWith((ref) async => sampleStats),
-        ],
-        child: const StatusXPApp(),
-      ),
-    );
+    // Build our app with test helpers
+    await tester.pumpWidget(getTestApp());
     await tester.pumpAndSettle();
 
     // Verify that the dashboard screen loads.
