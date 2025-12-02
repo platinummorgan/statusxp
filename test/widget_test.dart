@@ -10,11 +10,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:statusxp/main.dart';
 
 void main() {
-  testWidgets('App loads with theme', (WidgetTester tester) async {
+  testWidgets('App loads with navigation', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const StatusXPApp());
+    await tester.pumpAndSettle();
 
-    // Verify that the app title is present.
-    expect(find.text('StatusXP Theme Demo'), findsOneWidget);
+    // Verify that the dashboard screen loads.
+    expect(find.text('StatusXP'), findsOneWidget);
+    expect(find.text('Welcome back,'), findsOneWidget);
   });
 }

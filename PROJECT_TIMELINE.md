@@ -24,7 +24,7 @@ StatusXP is a cross-platform gaming achievement tracker and identity app that ag
 
 **Goal:** Build offline, single-user prototype to validate core identity and UI feel  
 **Duration Estimate:** 2-3 weeks  
-**Status:** 🟢 In Progress - 44% Complete
+**Status:** 🟢 In Progress - 56% Complete
 
 ### Milestone Block 1: Foundation & Data Layer ✅ COMPLETE
 
@@ -81,14 +81,17 @@ StatusXP is a cross-platform gaming achievement tracker and identity app that ag
 - [x] Created theme demo screen
 - [x] All theme files pass analyzer with zero errors
 
-#### Milestone 2.2: Navigation Structure ⬜
-- [ ] Set up app navigation framework
-- [ ] Define route structure
-  - Dashboard (home/root)
-  - Games List
-  - Status Poster
-- [ ] Implement navigation transitions
-- [ ] Add navigation tests
+#### Milestone 2.2: Navigation Structure ✅
+- [x] Set up app navigation framework (GoRouter)
+- [x] Define route structure
+  - Dashboard (/) - home/root
+  - Games List (/games)
+  - Status Poster (/poster)
+- [x] Implement navigation with context.go()
+- [x] Add error/404 handling
+- [x] Created all three core screens
+- [x] Web-compatible declarative routing
+- [x] Updated tests for navigation
 
 #### Milestone 2.3: Dashboard Screen ⬜
 - [ ] Design dashboard layout

@@ -37,6 +37,9 @@ dependencies:
   
   # Value equality for immutable data classes
   equatable: ^2.0.5
+  
+  # Declarative routing for web-compatible navigation
+  go_router: ^14.6.2
 
 dev_dependencies:
   flutter_test:

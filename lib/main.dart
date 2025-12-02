@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:statusxp/theme/theme.dart';
-import 'package:statusxp/ui/screens/theme_demo_screen.dart';
+import 'package:statusxp/ui/navigation/app_router.dart';
 
 void main() {
   runApp(const StatusXPApp());
@@ -11,11 +11,11 @@ class StatusXPApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'StatusXP',
       debugShowCheckedModeBanner: false,
       theme: statusXPTheme,
-      home: const ThemeDemoScreen(),
+      routerConfig: appRouter,
     );
   }
 }
