@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:statusxp/config/supabase_config.dart';
 import 'package:statusxp/theme/theme.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
-  runApp(const StatusXPApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: SupabaseConfig.supabaseUrl,
+    anonKey: SupabaseConfig.supabaseAnonKey,
+  );
+
+  runApp(const ProviderScope(child: StatusXPApp()));
 }
 
 class StatusXPApp extends StatelessWidget {

@@ -1,33 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:statusxp/domain/game.dart';
 import 'package:statusxp/theme/colors.dart';
 
 /// GameListTile - Reusable widget for displaying a game in a list
 /// 
 /// Shows game name, platform, trophy progress, and platinum indicator.
+/// Tappable to open the game detail screen for editing.
 class GameListTile extends StatelessWidget {
   final Game game;
+  final VoidCallback? onTap;
 
   const GameListTile({
     super.key,
     required this.game,
+    this.onTap,
   });
+
+  /// Formats completion percentage with proper clamping
+  String _formatCompletionPercent(double value) {
+    final clamped = value.clamp(0, 100);
+    return '${clamped.toStringAsFixed(1)}% Complete';
+  }
+
+  /// Formats rarity percentage with proper label
+  String _formatRarity(double value) {
+    return 'Rarest: ${value.toStringAsFixed(1)}% of players';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final progress = game.completionPercent;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: game.hasPlatinum
-            ? Border.all(
-                color: accentPrimary.withValues(alpha: 0.3),
-                width: 2,
-              )
+    return InkWell(
+      onTap: () {
+        if (onTap != null) {
+          HapticFeedback.lightImpact();
+          onTap!();
+        }
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          color: surfaceLight,
+          borderRadius: BorderRadius.circular(16),
+          border: game.hasPlatinum
+              ? Border.all(
+                  color: accentPrimary.withValues(alpha: 0.3),
+                  width: 2,
+                )
+              : null,
+          boxShadow: game.hasPlatinum
+              ? [
+                  BoxShadow(
+                    color: accentPrimary.withValues(alpha: 0.15),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 2),
+                ),
+              ]
             : null,
       ),
       child: Padding(
@@ -150,12 +183,12 @@ class GameListTile extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${progress.toStringAsFixed(1)}% Complete',
+                      _formatCompletionPercent(progress),
                       style: theme.textTheme.labelSmall,
                     ),
                     if (game.rarityPercent > 0)
                       Text(
-                        'Rarest: ${game.rarityPercent}%',
+                        _formatRarity(game.rarityPercent),
                         style: theme.textTheme.labelSmall,
                       ),
                   ],
@@ -165,6 +198,7 @@ class GameListTile extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }
