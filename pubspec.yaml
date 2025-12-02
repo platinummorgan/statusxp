@@ -52,6 +52,11 @@ dependencies:
   
   # Path provider for temporary file storage
   path_provider: ^2.1.4
+  
+  # Shared preferences for local storage
+  shared_preferences: ^2.5.3
+  
+  # Supabase backend integration
   supabase_flutter: ^2.10.3
 
 dev_dependencies:
