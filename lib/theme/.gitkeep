@@ -1,0 +1,9 @@
+# Theme
+
+This directory contains theme configuration, color schemes, and text styles.
+
+Files will include:
+- App theme (dark mode with neon accents)
+- Color palette
+- Text styles
+- Custom theme data

@@ -1,0 +1,8 @@
+# State Management
+
+This directory contains state management providers (Provider/Riverpod) for MVVM architecture.
+
+Files will include:
+- Game state providers
+- User stats providers
+- UI state management
