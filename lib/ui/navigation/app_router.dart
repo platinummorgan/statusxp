@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/ui/screens/dashboard_screen.dart';
 import 'package:statusxp/ui/screens/games_list_screen.dart';
+import 'package:statusxp/ui/screens/psn/psn_sync_screen.dart';
 import 'package:statusxp/ui/screens/status_poster_screen.dart';
+import 'package:statusxp/ui/screens/trophy_room_screen.dart';
+import 'package:statusxp/features/display_case/screens/display_case_screen.dart';
 
 /// StatusXP App Router Configuration
 /// 
@@ -31,6 +34,27 @@ final GoRouter appRouter = GoRouter(
       path: '/poster',
       name: 'poster',
       builder: (context, state) => const StatusPosterScreen(),
+    ),
+
+    // PSN Sync - PlayStation Network integration
+    GoRoute(
+      path: '/psn-sync',
+      name: 'psn-sync',
+      builder: (context, state) => const PSNSyncScreen(),
+    ),
+
+    // Trophy Room - Achievement showcase
+    GoRoute(
+      path: '/trophy-room',
+      name: 'trophy-room',
+      builder: (context, state) => const TrophyRoomScreen(),
+    ),
+
+    // Display Case - Customizable trophy cabinet
+    GoRoute(
+      path: '/display-case',
+      name: 'display-case',
+      builder: (context, state) => const DisplayCaseScreen(),
     ),
 
     // TODO: Future nested routes
