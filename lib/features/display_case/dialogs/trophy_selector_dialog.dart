@@ -6,12 +6,13 @@ import 'package:statusxp/features/display_case/providers/display_case_providers.
 import 'package:statusxp/state/statusxp_providers.dart';
 
 /// Shows a dialog to select a trophy to add to the display case
-Future<void> showTrophySelectorDialog(
+/// Returns true if a trophy was added successfully
+Future<bool?> showTrophySelectorDialog(
   BuildContext context,
   int shelfNumber,
   int position,
 ) async {
-  await showDialog(
+  return await showDialog<bool>(
     context: context,
     builder: (context) => _TrophySelectorDialog(
       shelfNumber: shelfNumber,
@@ -389,7 +390,7 @@ class _TrophySelectorDialogState extends ConsumerState<_TrophySelectorDialog> {
 
           if (!mounted) return;
 
-          Navigator.pop(context);
+          Navigator.pop(context, success != null); // Return success status
 
           if (success != null) {
             ScaffoldMessenger.of(context).showSnackBar(

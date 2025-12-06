@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/features/display_case/models/display_case_item.dart';
 import 'package:statusxp/features/display_case/themes/playstation_theme.dart';
-import 'package:statusxp/features/display_case/widgets/display_item.dart';
+import 'package:statusxp/features/display_case/widgets/trophy_frame.dart';
+import 'package:statusxp/features/display_case/widgets/ps_symbol_frame.dart';
 import 'package:statusxp/features/display_case/widgets/trophy_details_popup.dart';
 import 'package:statusxp/features/display_case/dialogs/trophy_selector_dialog.dart';
 import 'package:statusxp/features/display_case/providers/display_case_providers.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/ui/widgets/psn_avatar.dart';
 
 /// Main Display Case screen with drag-and-drop grid layout
 class DisplayCaseScreen extends ConsumerStatefulWidget {
@@ -20,7 +22,6 @@ class _DisplayCaseScreenState extends ConsumerState<DisplayCaseScreen> {
   final theme = PlayStationTheme(); // TODO: Get from provider when settings added
   final config = const DisplayCaseConfig();
   List<DisplayCaseItem>? _cachedItems;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -36,7 +37,6 @@ class _DisplayCaseScreenState extends ConsumerState<DisplayCaseScreen> {
       final items = await repository.getDisplayItems(userId);
       setState(() {
         _cachedItems = items;
-        _isLoading = false;
       });
     }
   }
@@ -103,21 +103,24 @@ class _DisplayCaseScreenState extends ConsumerState<DisplayCaseScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
-          'DISPLAY CASE',
-          style: TextStyle(
-            color: theme.textColor,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 2,
-            shadows: theme.textGlow(color: theme.primaryAccent),
-          ),
-        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: theme.textColor),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Container(
-        decoration: theme.getBackgroundDecoration(),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFF1a2332), // Dark blue-grey at top
+              Color(0xFF0d1520), // Darker at bottom
+            ],
+          ),
+        ),
         child: SafeArea(
           child: _cachedItems == null
               ? Center(
@@ -125,204 +128,467 @@ class _DisplayCaseScreenState extends ConsumerState<DisplayCaseScreen> {
                     color: theme.primaryAccent,
                   ),
                 )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                  child: Column(
-                    children: [
-                      // Build shelves
-                      for (int shelfIndex = 0; shelfIndex < config.numberOfShelves; shelfIndex++)
-                        _buildShelf(shelfIndex, _cachedItems!, repository, userId!),
-                    ],
-                  ),
+              : Stack(
+                  children: [
+                    // Main scrollable content
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.only(top: 120, bottom: 20),
+                      child: Column(
+                        children: [
+                          // Rarity Showcase with PS Symbol Frames
+                          _buildRarityShowcase(userId!),
+                          
+                          const SizedBox(height: 30),
+                          
+                          // User Profile Banner
+                          _buildProfileBanner(userId),
+                          
+                          const SizedBox(height: 30),
+                          
+                          // Achievement Categories (3 sections with 4 trophies each)
+                          _buildAchievementCategories(_cachedItems!, repository, userId),
+                          
+                          const SizedBox(height: 30),
+                        ],
+                      ),
+                    ),
+                    
+                    // PlayStation header - stays on top
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 100,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFF1a2332),
+                              Colors.black.withOpacity(0.8),
+                            ],
+                          ),
+                        ),
+                        child: const Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.sports_esports,
+                                color: Colors.white,
+                                size: 40,
+                              ),
+                              SizedBox(width: 12),
+                              Text(
+                                'PlayStation',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
         ),
       ),
     );
   }
 
-  Widget _buildShelf(
-    int shelfIndex,
-    List<DisplayCaseItem> allItems,
-    dynamic repository,
-    String userId,
-  ) {
-    // Get items for this shelf
-    final shelfItems = allItems
-        .where((item) => item.shelfNumber == shelfIndex)
-        .toList();
+  Widget _buildRarityShowcase(String userId) {
+    final repository = ref.watch(displayCaseRepositoryProvider);
+    
+    return FutureBuilder<Map<String, DisplayCaseItem?>>(
+      future: Future.wait([
+        repository.getRarestTrophyOfTier(userId, 'platinum'),
+        repository.getRarestTrophyOfTier(userId, 'silver'),
+        repository.getRarestTrophyOfTier(userId, 'gold'),
+        repository.getRarestTrophyOfTier(userId, 'bronze'),
+      ]).then((results) => {
+        'platinum': results[0],
+        'silver': results[1],
+        'gold': results[2],
+        'bronze': results[3],
+      }),
+      builder: (context, snapshot) {
+        final rarestPlatinum = snapshot.data?['platinum'];
+        final rarestSilver = snapshot.data?['silver'];
+        final rarestGold = snapshot.data?['gold'];
+        final rarestBronze = snapshot.data?['bronze'];
 
-    return Container(
-      margin: EdgeInsets.only(bottom: config.shelfSpacing),
-      height: config.shelfHeight,
-      decoration: theme.getShelfDecoration(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            for (int position = 0; position < config.itemsPerShelf; position++)
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: _buildGridSlot(
-                    shelfIndex,
-                    position,
-                    shelfItems,
-                    repository,
-                    userId,
-                  ),
-                ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          if (rarestPlatinum != null)
+            PSSymbolFrame(
+              item: rarestPlatinum,
+              theme: theme,
+              symbol: PSSymbol.triangle,
+              label: 'Rarest',
+              onTap: () => showTrophyDetailsPopup(
+                context,
+                rarestPlatinum,
+                theme,
+                onDelete: null, // Rarity showcase is auto-populated, no manual delete
               ),
+            )
+          else
+            _buildEmptySymbolSlot(PSSymbol.triangle, 'Rarest'),
+            
+          if (rarestSilver != null)
+            PSSymbolFrame(
+              item: rarestSilver,
+              theme: theme,
+              symbol: PSSymbol.square,
+              label: 'Rarest Silver',
+              onTap: () => showTrophyDetailsPopup(
+                context,
+                rarestSilver,
+                theme,
+                onDelete: null,
+              ),
+            )
+          else
+            _buildEmptySymbolSlot(PSSymbol.square, 'Rarest Silver'),
+            
+          if (rarestGold != null)
+            PSSymbolFrame(
+              item: rarestGold,
+              theme: theme,
+              symbol: PSSymbol.circle,
+              label: 'Rarest Gold',
+              onTap: () => showTrophyDetailsPopup(
+                context,
+                rarestGold,
+                theme,
+                onDelete: null,
+              ),
+            )
+          else
+            _buildEmptySymbolSlot(PSSymbol.circle, 'Rarest Gold'),
+            
+          if (rarestBronze != null)
+            PSSymbolFrame(
+              item: rarestBronze,
+              theme: theme,
+              symbol: PSSymbol.cross,
+              label: 'Rarest Bronze',
+              onTap: () => showTrophyDetailsPopup(
+                context,
+                rarestBronze,
+                theme,
+                onDelete: null,
+              ),
+            )
+          else
+            _buildEmptySymbolSlot(PSSymbol.cross, 'Rarest Bronze'),
+        ],
+      ),
+    );
+      },
+    );
+  }
+
+  Widget _buildEmptySymbolSlot(PSSymbol symbol, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 80,
+          height: 80,
+          child: CustomPaint(
+            painter: EmptySymbolPainter(symbol: symbol),
+            child: const Center(
+              child: Icon(Icons.add, size: 30, color: Colors.white54),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white54,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileBanner(String userId) {
+    final userStatsAsync = ref.watch(userStatsProvider);
+
+    return userStatsAsync.when(
+      loading: () => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.all(16),
+        height: 96,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.primaryAccent.withOpacity(0.3),
+              theme.primaryAccent.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.primaryAccent, width: 2),
+        ),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: theme.primaryAccent,
+            strokeWidth: 2,
+          ),
+        ),
+      ),
+      error: (error, stack) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.primaryAccent.withOpacity(0.3),
+              theme.primaryAccent.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.primaryAccent, width: 2),
+        ),
+        child: Row(
+          children: [
+            PsnAvatar(
+              avatarUrl: null,
+              isPsPlus: false,
+              size: 60,
+              borderColor: theme.primaryAccent,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Player',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Wall of Fame!',
+                    style: TextStyle(
+                      color: theme.primaryAccent,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      data: (stats) => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.primaryAccent.withOpacity(0.3),
+              theme.primaryAccent.withOpacity(0.1),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.primaryAccent, width: 2),
+        ),
+        child: Row(
+          children: [
+            PsnAvatar(
+              avatarUrl: stats.avatarUrl,
+              isPsPlus: stats.isPsPlus,
+              size: 60,
+              borderColor: theme.primaryAccent,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    stats.username,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Wall of Fame!',
+                    style: TextStyle(
+                      color: theme.primaryAccent,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildGridSlot(
-    int shelfNumber,
-    int position,
-    List<DisplayCaseItem> shelfItems,
-    dynamic repository,
-    String userId,
-  ) {
-    // Find item at this position
-    final item = shelfItems.firstWhere(
-      (item) => item.positionInShelf == position,
-      orElse: () => DisplayCaseItem(
-        id: '',
-        userId: userId,
-        trophyId: -1,
-        displayType: DisplayItemType.trophyIcon,
-        shelfNumber: shelfNumber,
-        positionInShelf: position,
-        trophyName: '',
-        gameName: '',
-        tier: '',
+  Widget _buildAchievementCategories(List<DisplayCaseItem> items, dynamic repository, String userId) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          // Row 1: Positions 0-3
+          _buildCategoryRow(
+            ['Hardest', 'Easiest', 'Most Aggravating', 'Rage-Inducing'], 
+            items, 
+            repository, 
+            userId,
+            startPosition: 0,
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Row 2: Positions 4-7
+          _buildCategoryRow(
+            ['Biggest Grind', 'Most Time-Consuming', 'RNG Nightmare', 'Never Again'], 
+            items, 
+            repository, 
+            userId,
+            startPosition: 4,
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Row 3: Positions 8-11
+          _buildCategoryRow(
+            ['Most Proud Of', 'Most Fun', 'Hidden Gem', 'Signature Trophy'], 
+            items, 
+            repository, 
+            userId,
+            startPosition: 8,
+          ),
+        ],
       ),
     );
+  }
 
-    final hasItem = item.trophyId != -1;
-
-    return DragTarget<DisplayCaseItem>(
-      onWillAcceptWithDetails: (details) {
-        // Accept if not dragging to the exact same position
-        final isSamePosition = details.data.shelfNumber == shelfNumber && 
-                                details.data.positionInShelf == position;
-        print('DEBUG onWillAccept: shelf ${details.data.shelfNumber}:${details.data.positionInShelf} -> $shelfNumber:$position, same=$isSamePosition');
-        return !isSamePosition;
-      },
-      onAcceptWithDetails: (details) async {
-        final droppedItem = details.data;
-        
-        print('DEBUG: Dragging item from shelf ${droppedItem.shelfNumber}, pos ${droppedItem.positionInShelf}');
-        print('DEBUG: Dropping to shelf $shelfNumber, pos $position');
-        
-        // Check if target position has an item
-        final targetItem = shelfItems.firstWhere(
-          (item) => item.positionInShelf == position,
-          orElse: () => DisplayCaseItem(
-            id: '',
-            userId: userId,
-            trophyId: -1,
-            displayType: DisplayItemType.trophyIcon,
-            shelfNumber: shelfNumber,
-            positionInShelf: position,
-            trophyName: '',
-            gameName: '',
-            tier: '',
-          ),
-        );
-
-        bool success;
-        if (targetItem.trophyId != -1) {
-          // Target has an item, swap them
-          print('DEBUG: Target occupied, swapping items');
-          success = await repository.swapItems(droppedItem, targetItem);
-        } else {
-          // Target is empty, just move
-          print('DEBUG: Target empty, moving item');
-          success = await repository.updateItemPosition(
-            itemId: droppedItem.id,
-            newShelfNumber: shelfNumber,
-            newPositionInShelf: position,
-          );
-        }
-
-        print('DEBUG: Move success: $success');
-        if (success) {
-          // Update UI immediately without refresh
-          if (targetItem.trophyId != -1) {
-            _swapItemsLocally(droppedItem, targetItem);
-          } else {
-            _updateItemLocally(droppedItem, shelfNumber, position);
-          }
-        }
-      },
-      builder: (context, candidateData, rejectedData) {
-        if (hasItem) {
-          return Draggable<DisplayCaseItem>(
-            data: item,
-            dragAnchorStrategy: childDragAnchorStrategy,
-            feedback: Material(
-              color: Colors.transparent,
-              child: Transform.scale(
-                scale: 1.2,
-                child: Container(
-                  width: 100,
-                  height: 120,
-                  child: DisplayItem(
-                    item: item,
-                    theme: theme,
-                    isDragging: false,
+  Widget _buildCategoryRow(
+    List<String> categories, 
+    List<DisplayCaseItem> items, 
+    dynamic repository, 
+    String userId, {
+    required int startPosition,
+  }) {
+    return Row(
+      children: [
+        for (int i = 0; i < categories.length; i++)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Column(
+                children: [
+                  Container(
+                    height: 32, // Fixed height for label area
+                    alignment: Alignment.center,
+                    child: Text(
+                      categories[i],
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        height: 1.1,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  // Trophy slot with tap handling
+                  SizedBox(
+                    width: 70,
+                    height: 90,
+                    child: _buildCategoryTrophySlot(items, userId, startPosition + i),
+                  ),
+                ],
               ),
             ),
-            childWhenDragging: Container(
-              width: 100,
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: theme.primaryAccent.withOpacity(0.3),
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.north_east,
-                  color: theme.primaryAccent.withOpacity(0.5),
-                  size: 32,
-                ),
-              ),
-            ),
-            child: GestureDetector(
-              onTap: () => showTrophyDetailsPopup(
-                context,
-                item,
-                theme,
-                // Only allow delete if this is the current user's display case
-                onDelete: item.userId == userId ? () => _handleDeleteItem(item.id) : null,
-              ),
-              child: DisplayItem(
-                item: item,
-                theme: theme,
-              ),
-            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryTrophySlot(List<DisplayCaseItem> items, String userId, int position) {
+    // Find trophy for this specific position in shelf 0 (category shelf)
+    final categoryItem = items.where((item) => 
+      item.shelfNumber == 0 && item.positionInShelf == position
+    ).firstOrNull;
+
+    if (categoryItem != null) {
+      // Get current logged-in user ID to check ownership
+      final currentUserId = ref.read(currentUserIdProvider);
+      final isOwnWall = currentUserId == categoryItem.userId;
+      
+      return GestureDetector(
+        onTap: () {
+          showTrophyDetailsPopup(
+            context, 
+            categoryItem, 
+            theme,
+            // Only allow delete if viewing your own wall
+            onDelete: isOwnWall ? () async {
+              await _handleDeleteItem(categoryItem.id);
+            } : null,
           );
-        } else {
-          return EmptyDisplaySlot(
-            isHighlighted: false,
-            theme: theme,
-            onTap: () async {
-              await showTrophySelectorDialog(context, shelfNumber, position);
-              await _loadItems(); // Reload after adding trophy
-            },
-          );
+        },
+        child: TrophyFrame(
+          item: categoryItem,
+          theme: theme,
+        ),
+      );
+    }
+
+    // Empty slot - tap to select trophy
+    return GestureDetector(
+      onTap: () async {
+        // Open trophy selector
+        final success = await showTrophySelectorDialog(context, 0, position);
+        
+        // Reload items after selection (if successful)
+        if (success == true) {
+          await _loadItems();
         }
       },
+      child: TrophyFrame(
+        item: DisplayCaseItem(
+          id: '',
+          userId: userId,
+          trophyId: -1,
+          displayType: DisplayItemType.trophyIcon,
+          shelfNumber: 0,
+          positionInShelf: position,
+          trophyName: '',
+          gameName: '',
+          tier: 'bronze',
+        ),
+        theme: theme,
+      ),
     );
   }
 }

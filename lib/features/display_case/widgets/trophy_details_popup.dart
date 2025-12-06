@@ -181,13 +181,13 @@ void showTrophyDetailsPopup(
                       backgroundColor: Colors.red.withOpacity(0.2),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Colors.red, width: 1.5),
+                        side: const BorderSide(color: Colors.red, width: 1.5),
                       ),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
                         Icon(Icons.delete, color: Colors.red, size: 18),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Text(
                           'REMOVE',
                           style: TextStyle(

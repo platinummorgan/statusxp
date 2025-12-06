@@ -240,8 +240,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           },
                     child: Text(
                       _isLoginMode
-                          ? "Need an account? Create one"
-                          : "Already have an account? Sign in",
+                          ? 'Need an account? Create one'
+                          : 'Already have an account? Sign in',
                       style: const TextStyle(
                         color: accentSecondary,
                         decoration: TextDecoration.underline,

@@ -15,8 +15,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify dashboard shows key elements
-      expect(find.text('StatusXP'), findsWidgets);
-      expect(find.text('Your Stats'), findsWidgets);
+      expect(find.text('Overview'), findsWidgets);
 
       // Tap View All Games button
       await tester.tap(find.text('View All Games'));
@@ -30,7 +29,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify we're back on dashboard
-      expect(find.text('Your Stats'), findsWidgets);
+      expect(find.text('Overview'), findsWidgets);
       expect(find.text('View All Games'), findsOneWidget);
     });
 
@@ -45,8 +44,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify dashboard shows key elements
-      expect(find.text('StatusXP'), findsWidgets);
-      expect(find.text('Your Stats'), findsWidgets);
+      expect(find.text('Overview'), findsWidgets);
 
       // Tap View Status Poster button
       await tester.tap(find.text('View Status Poster'));
@@ -61,7 +59,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify we're back on dashboard
-      expect(find.text('Your Stats'), findsWidgets);
+      expect(find.text('Overview'), findsWidgets);
       expect(find.text('View Status Poster'), findsOneWidget);
     });
 
@@ -76,7 +74,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Start on dashboard
-      expect(find.text('Your Stats'), findsWidgets);
+      expect(find.text('Overview'), findsWidgets);
 
       // Go to Games
       await tester.tap(find.text('View All Games'));
@@ -86,7 +84,7 @@ void main() {
       // Back to dashboard
       await tester.pageBack();
       await tester.pumpAndSettle();
-      expect(find.text('Your Stats'), findsWidgets);
+      expect(find.text('Overview'), findsWidgets);
 
       // Go to Status Poster
       await tester.tap(find.text('View Status Poster'));
@@ -97,7 +95,7 @@ void main() {
       final backButton = find.byType(BackButton);
       await tester.tap(backButton.first);
       await tester.pumpAndSettle();
-      expect(find.text('Your Stats'), findsWidgets);
+      expect(find.text('Overview'), findsWidgets);
     });
 
     testWidgets('About dialog appears from overflow menu', (tester) async {

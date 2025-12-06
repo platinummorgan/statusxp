@@ -85,6 +85,15 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
       );
 
       final service = ref.read(gameEditServiceProvider);
+      
+      if (service == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: No authenticated user')),
+        );
+        return;
+      }
+      
       await service.updateGame(updatedGame);
 
       // Refresh all data
@@ -155,7 +164,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
 
             // Platform dropdown
             DropdownButtonFormField<String>(
-              value: _selectedPlatform,
+              initialValue: _selectedPlatform,
               decoration: InputDecoration(
                 labelText: 'Platform',
                 filled: true,
@@ -185,7 +194,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
             SwitchListTile(
               title: const Text('Has Platinum Trophy'),
               value: _hasPlatinum,
-              activeColor: accentPrimary,
+              activeThumbColor: accentPrimary,
               tileColor: surfaceLight,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

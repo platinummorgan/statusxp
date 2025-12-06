@@ -8,45 +8,22 @@ import 'package:statusxp/ui/screens/auth/sign_in_screen.dart';
 /// 
 /// Shows the sign-in screen when no user is authenticated,
 /// and the main app when a user is logged in.
-/// 
-/// Also handles first-time data migration for new users.
-class AuthGate extends ConsumerStatefulWidget {
+class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
   @override
-  ConsumerState<AuthGate> createState() => _AuthGateState();
-}
-
-class _AuthGateState extends ConsumerState<AuthGate> {
-  bool _migrationChecked = false;
-
-  /// Run data migration for newly authenticated users.
-  Future<void> _checkAndRunMigration(String userId) async {
-    if (_migrationChecked) return;
-    _migrationChecked = true;
-
-    final migrationService = ref.read(dataMigrationServiceProvider);
-    await migrationService.migrateInitialData(userId);
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final authStateAsync = ref.watch(authStateProvider);
 
     return authStateAsync.when(
       data: (state) {
         final user = state.session?.user;
         
-        if (user == null) {
-          // No authenticated user - show sign in screen
-          _migrationChecked = false; // Reset for next login
+        if (user != null) {
+          return const StatusXPMainApp();
+        } else {
           return const SignInScreen();
         }
-        
-        // User is authenticated - run migration if needed, then show main app
-        _checkAndRunMigration(user.id);
-        
-        return const StatusXPMainApp();
       },
       loading: () => const Scaffold(
         body: Center(

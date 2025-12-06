@@ -10,6 +10,12 @@ class UserStats extends Equatable {
   /// User's display name or gamertag
   final String username;
   
+  /// PSN avatar URL (if available)
+  final String? avatarUrl;
+  
+  /// PlayStation Plus subscription status
+  final bool isPsPlus;
+  
   /// Total number of platinum trophies earned
   final int totalPlatinums;
   
@@ -18,6 +24,18 @@ class UserStats extends Equatable {
   
   /// Total number of trophies/achievements earned across all games
   final int totalTrophies;
+  
+  /// Number of bronze trophies earned
+  final int bronzeTrophies;
+  
+  /// Number of silver trophies earned
+  final int silverTrophies;
+  
+  /// Number of gold trophies earned
+  final int goldTrophies;
+  
+  /// Number of platinum trophies earned (same as totalPlatinums)
+  final int platinumTrophies;
   
   /// Name of the most difficult platinum earned
   final String hardestPlatGame;
@@ -30,9 +48,15 @@ class UserStats extends Equatable {
 
   const UserStats({
     required this.username,
+    this.avatarUrl,
+    this.isPsPlus = false,
     required this.totalPlatinums,
     required this.totalGamesTracked,
     required this.totalTrophies,
+    required this.bronzeTrophies,
+    required this.silverTrophies,
+    required this.goldTrophies,
+    required this.platinumTrophies,
     required this.hardestPlatGame,
     required this.rarestTrophyName,
     required this.rarestTrophyRarity,
@@ -41,18 +65,30 @@ class UserStats extends Equatable {
   /// Creates a copy of this UserStats with the given fields replaced with new values.
   UserStats copyWith({
     String? username,
+    String? avatarUrl,
+    bool? isPsPlus,
     int? totalPlatinums,
     int? totalGamesTracked,
     int? totalTrophies,
+    int? bronzeTrophies,
+    int? silverTrophies,
+    int? goldTrophies,
+    int? platinumTrophies,
     String? hardestPlatGame,
     String? rarestTrophyName,
     double? rarestTrophyRarity,
   }) {
     return UserStats(
       username: username ?? this.username,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      isPsPlus: isPsPlus ?? this.isPsPlus,
       totalPlatinums: totalPlatinums ?? this.totalPlatinums,
       totalGamesTracked: totalGamesTracked ?? this.totalGamesTracked,
       totalTrophies: totalTrophies ?? this.totalTrophies,
+      bronzeTrophies: bronzeTrophies ?? this.bronzeTrophies,
+      silverTrophies: silverTrophies ?? this.silverTrophies,
+      goldTrophies: goldTrophies ?? this.goldTrophies,
+      platinumTrophies: platinumTrophies ?? this.platinumTrophies,
       hardestPlatGame: hardestPlatGame ?? this.hardestPlatGame,
       rarestTrophyName: rarestTrophyName ?? this.rarestTrophyName,
       rarestTrophyRarity: rarestTrophyRarity ?? this.rarestTrophyRarity,
@@ -63,9 +99,15 @@ class UserStats extends Equatable {
   factory UserStats.fromJson(Map<String, dynamic> json) {
     return UserStats(
       username: json['username'] as String,
+      avatarUrl: json['avatarUrl'] as String?,
+      isPsPlus: json['isPsPlus'] as bool? ?? false,
       totalPlatinums: json['totalPlatinums'] as int,
       totalGamesTracked: json['totalGamesTracked'] as int,
       totalTrophies: json['totalTrophies'] as int,
+      bronzeTrophies: json['bronzeTrophies'] as int,
+      silverTrophies: json['silverTrophies'] as int,
+      goldTrophies: json['goldTrophies'] as int,
+      platinumTrophies: json['platinumTrophies'] as int,
       hardestPlatGame: json['hardestPlatGame'] as String,
       rarestTrophyName: json['rarestTrophyName'] as String,
       rarestTrophyRarity: (json['rarestTrophyRarity'] as num).toDouble(),
@@ -76,9 +118,15 @@ class UserStats extends Equatable {
   Map<String, dynamic> toJson() {
     return {
       'username': username,
+      'avatarUrl': avatarUrl,
+      'isPsPlus': isPsPlus,
       'totalPlatinums': totalPlatinums,
       'totalGamesTracked': totalGamesTracked,
       'totalTrophies': totalTrophies,
+      'bronzeTrophies': bronzeTrophies,
+      'silverTrophies': silverTrophies,
+      'goldTrophies': goldTrophies,
+      'platinumTrophies': platinumTrophies,
       'hardestPlatGame': hardestPlatGame,
       'rarestTrophyName': rarestTrophyName,
       'rarestTrophyRarity': rarestTrophyRarity,
@@ -88,9 +136,15 @@ class UserStats extends Equatable {
   @override
   List<Object?> get props => [
         username,
+        avatarUrl,
+        isPsPlus,
         totalPlatinums,
         totalGamesTracked,
         totalTrophies,
+        bronzeTrophies,
+        silverTrophies,
+        goldTrophies,
+        platinumTrophies,
         hardestPlatGame,
         rarestTrophyName,
         rarestTrophyRarity,

@@ -22,8 +22,8 @@ class TrophyFrame extends StatelessWidget {
         ..rotateY(-0.05),
       alignment: Alignment.center,
       child: Container(
-        width: 100,
-        height: 120,
+        width: 55,
+        height: 70,
         decoration: BoxDecoration(
           // Outer frame shadow (depth)
           boxShadow: [

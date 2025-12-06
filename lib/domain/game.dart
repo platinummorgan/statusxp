@@ -28,8 +28,23 @@ class Game extends Equatable {
   /// Rarity percentage of the rarest earned trophy (0.0 to 100.0)
   final double rarityPercent;
   
+  /// Platinum trophy rarity percentage (0.0 to 100.0)
+  final double? platinumRarity;
+  
   /// Cover image filename or asset path
   final String cover;
+  
+  /// Number of bronze trophies earned
+  final int bronzeTrophies;
+  
+  /// Number of silver trophies earned
+  final int silverTrophies;
+  
+  /// Number of gold trophies earned
+  final int goldTrophies;
+  
+  /// Number of platinum trophies earned (0 or 1)
+  final int platinumTrophies;
 
   const Game({
     required this.id,
@@ -39,7 +54,12 @@ class Game extends Equatable {
     required this.earnedTrophies,
     required this.hasPlatinum,
     required this.rarityPercent,
+    this.platinumRarity,
     required this.cover,
+    this.bronzeTrophies = 0,
+    this.silverTrophies = 0,
+    this.goldTrophies = 0,
+    this.platinumTrophies = 0,
   });
 
   /// Creates a copy of this Game with the given fields replaced with new values.
@@ -51,7 +71,12 @@ class Game extends Equatable {
     int? earnedTrophies,
     bool? hasPlatinum,
     double? rarityPercent,
+    double? platinumRarity,
     String? cover,
+    int? bronzeTrophies,
+    int? silverTrophies,
+    int? goldTrophies,
+    int? platinumTrophies,
   }) {
     return Game(
       id: id ?? this.id,
@@ -61,7 +86,12 @@ class Game extends Equatable {
       earnedTrophies: earnedTrophies ?? this.earnedTrophies,
       hasPlatinum: hasPlatinum ?? this.hasPlatinum,
       rarityPercent: rarityPercent ?? this.rarityPercent,
+      platinumRarity: platinumRarity ?? this.platinumRarity,
       cover: cover ?? this.cover,
+      bronzeTrophies: bronzeTrophies ?? this.bronzeTrophies,
+      silverTrophies: silverTrophies ?? this.silverTrophies,
+      goldTrophies: goldTrophies ?? this.goldTrophies,
+      platinumTrophies: platinumTrophies ?? this.platinumTrophies,
     );
   }
 
@@ -76,6 +106,10 @@ class Game extends Equatable {
       hasPlatinum: json['hasPlatinum'] as bool,
       rarityPercent: (json['rarityPercent'] as num).toDouble(),
       cover: json['cover'] as String,
+      bronzeTrophies: json['bronzeTrophies'] as int? ?? 0,
+      silverTrophies: json['silverTrophies'] as int? ?? 0,
+      goldTrophies: json['goldTrophies'] as int? ?? 0,
+      platinumTrophies: json['platinumTrophies'] as int? ?? 0,
     );
   }
 
@@ -90,6 +124,10 @@ class Game extends Equatable {
       'hasPlatinum': hasPlatinum,
       'rarityPercent': rarityPercent,
       'cover': cover,
+      'bronzeTrophies': bronzeTrophies,
+      'silverTrophies': silverTrophies,
+      'goldTrophies': goldTrophies,
+      'platinumTrophies': platinumTrophies,
     };
   }
 
@@ -108,7 +146,12 @@ class Game extends Equatable {
         earnedTrophies,
         hasPlatinum,
         rarityPercent,
+        platinumRarity,
         cover,
+        bronzeTrophies,
+        silverTrophies,
+        goldTrophies,
+        platinumTrophies,
       ];
 
   @override

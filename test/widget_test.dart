@@ -15,7 +15,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verify that the dashboard screen loads.
-    expect(find.text('StatusXP'), findsOneWidget);
     expect(find.text('Welcome back,'), findsOneWidget);
+    expect(find.text('Overview'), findsWidgets);
   });
 }

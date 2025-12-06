@@ -1,7 +1,7 @@
-import '../domain/game.dart';
-import '../domain/user_stats_calculator.dart';
-import 'repositories/supabase_game_repository.dart';
-import 'repositories/supabase_user_stats_repository.dart';
+import 'package:statusxp/domain/game.dart';
+import 'package:statusxp/domain/user_stats_calculator.dart';
+import 'package:statusxp/data/repositories/supabase_game_repository.dart';
+import 'package:statusxp/data/repositories/supabase_user_stats_repository.dart';
 
 /// Service that handles game editing with automatic stats recalculation (Supabase version).
 /// 

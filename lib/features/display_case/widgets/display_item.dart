@@ -187,28 +187,25 @@ class EmptyDisplaySlot extends StatelessWidget {
         width: 100,
         height: 120,
         decoration: BoxDecoration(
-          color: isHighlighted 
-              ? theme.slotHighlightColor 
-              : Colors.transparent,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isHighlighted 
-                ? theme.primaryAccent.withOpacity(0.5)
-                : theme.shelfAccentColor.withOpacity(0.2),
-            width: 2,
-            style: BorderStyle.solid,
-          ),
+          border: isHighlighted 
+              ? Border.all(
+                  color: theme.primaryAccent.withOpacity(0.6),
+                  width: 2,
+                )
+              : null,
         ),
         child: isHighlighted
             ? Icon(
                 Icons.add_circle_outline,
                 size: 36,
-                color: theme.primaryAccent.withOpacity(0.7),
+                color: theme.primaryAccent.withOpacity(0.8),
               )
             : Icon(
                 Icons.add,
                 size: 24,
-                color: theme.shelfAccentColor.withOpacity(0.3),
+                color: Colors.white.withOpacity(0.2),
               ),
       ),
     );

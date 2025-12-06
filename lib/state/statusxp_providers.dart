@@ -1,15 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../data/auth/auth_service.dart';
-import '../data/data_migration_service.dart';
-import '../data/repositories/supabase_game_repository.dart';
-import '../data/repositories/supabase_trophies_repository.dart';
-import '../data/repositories/supabase_user_stats_repository.dart';
-import '../data/supabase_game_edit_service.dart';
-import '../domain/game.dart';
-import '../domain/user_stats.dart';
-import '../domain/user_stats_calculator.dart';
+import 'package:statusxp/data/auth/auth_service.dart';
+import 'package:statusxp/data/psn_service.dart';
+import 'package:statusxp/data/xbox_service.dart';
+import 'package:statusxp/data/repositories/supabase_game_repository.dart';
+import 'package:statusxp/data/repositories/supabase_trophies_repository.dart';
+import 'package:statusxp/data/repositories/supabase_user_stats_repository.dart';
+import 'package:statusxp/data/repositories/trophy_room_repository.dart';
+import 'package:statusxp/data/supabase_game_edit_service.dart';
+import 'package:statusxp/domain/game.dart';
+import 'package:statusxp/domain/trophy_room_data.dart';
+import 'package:statusxp/domain/user_stats.dart';
+import 'package:statusxp/domain/user_stats_calculator.dart';
 
 /// Provider for the Supabase client instance.
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -30,19 +33,40 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
   return authService.authStateChanges;
 });
 
-/// Provider for the current authenticated user ID.
+/// Provider for the current user ID.
 /// 
-/// Returns null if no user is authenticated.
-/// No fallback - authentication is now required.
+/// Returns the authenticated user's ID, or null if not authenticated.
 final currentUserIdProvider = Provider<String?>((ref) {
   final authService = ref.watch(authServiceProvider);
   return authService.currentUser?.id;
 });
 
-/// Provider for the DataMigrationService instance.
-final dataMigrationServiceProvider = Provider<DataMigrationService>((ref) {
+/// Provider for the PSNService instance.
+final psnServiceProvider = Provider<PSNService>((ref) {
   final client = ref.watch(supabaseClientProvider);
-  return DataMigrationService(client);
+  return PSNService(client);
+});
+
+/// Provider for the XboxService instance.
+final xboxServiceProvider = Provider<XboxService>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return XboxService(client);
+});
+
+/// StreamProvider for PSN sync status.
+/// 
+/// Watches sync status and updates UI automatically during syncs.
+final psnSyncStatusProvider = StreamProvider<PSNSyncStatus>((ref) {
+  final psnService = ref.watch(psnServiceProvider);
+  return psnService.watchSyncStatus();
+});
+
+/// StreamProvider for Xbox sync status.
+/// 
+/// Watches sync status and updates UI automatically during syncs.
+final xboxSyncStatusProvider = StreamProvider<XboxSyncStatus>((ref) {
+  final xboxService = ref.watch(xboxServiceProvider);
+  return xboxService.watchSyncStatus();
 });
 
 /// Provider for the SupabaseGameRepository instance.
@@ -63,9 +87,16 @@ final trophiesRepositoryProvider = Provider<SupabaseTrophiesRepository>((ref) {
   return SupabaseTrophiesRepository(client);
 });
 
-/// FutureProvider for loading all games for the current user.
+/// Provider for the TrophyRoomRepository instance.
+final trophyRoomRepositoryProvider = Provider<TrophyRoomRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return TrophyRoomRepository(client);
+});
+
+/// FutureProvider for loading games for the current user.
 /// 
 /// This provider loads games asynchronously from Supabase.
+/// Returns empty list if no user is authenticated.
 final gamesProvider = FutureProvider<List<Game>>((ref) async {
   final repository = ref.watch(gameRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
@@ -80,23 +111,41 @@ final gamesProvider = FutureProvider<List<Game>>((ref) async {
 /// FutureProvider for loading user statistics for the current user.
 /// 
 /// This provider loads user stats asynchronously from Supabase.
+/// Throws if no user is authenticated (should not happen in normal flow).
 final userStatsProvider = FutureProvider<UserStats>((ref) async {
   final repository = ref.watch(userStatsRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
   
   if (userId == null) {
-    return const UserStats(
-      username: 'Guest',
-      totalPlatinums: 0,
-      totalGamesTracked: 0,
-      totalTrophies: 0,
-      hardestPlatGame: 'None',
-      rarestTrophyName: 'None',
-      rarestTrophyRarity: 0.0,
-    );
+    throw Exception('Cannot load stats: No authenticated user');
   }
   
   return repository.getUserStats(userId);
+});
+
+/// FutureProvider for loading Trophy Room data for the current user.
+/// 
+/// Fetches platinum trophies, ultra-rare trophies, and recent unlocks.
+final trophyRoomDataProvider = FutureProvider<TrophyRoomData>((ref) async {
+  final repository = ref.watch(trophyRoomRepositoryProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  
+  if (userId == null) {
+    throw Exception('Cannot load trophy room: No authenticated user');
+  }
+  
+  // Fetch all data in parallel for performance
+  final results = await Future.wait([
+    repository.getPlatinumTrophies(userId),
+    repository.getUltraRareTrophies(userId, limit: 5),
+    repository.getRecentTrophies(userId, limit: 10),
+  ]);
+  
+  return TrophyRoomData(
+    platinums: results[0].map((m) => PlatinumTrophy.fromMap(m)).toList(),
+    ultraRareTrophies: results[1].map((m) => UltraRareTrophy.fromMap(m)).toList(),
+    recentTrophies: results[2].map((m) => RecentTrophy.fromMap(m)).toList(),
+  );
 });
 
 /// Provider for the UserStatsCalculator.
@@ -110,14 +159,14 @@ final userStatsCalculatorProvider = Provider<UserStatsCalculator>((ref) {
 /// 
 /// This service handles game updates with automatic stats recalculation.
 /// Requires authenticated user.
-final gameEditServiceProvider = Provider<SupabaseGameEditService>((ref) {
+final gameEditServiceProvider = Provider<SupabaseGameEditService?>((ref) {
   final gameRepo = ref.watch(gameRepositoryProvider);
   final statsRepo = ref.watch(userStatsRepositoryProvider);
   final calculator = ref.watch(userStatsCalculatorProvider);
   final userId = ref.watch(currentUserIdProvider);
   
   if (userId == null) {
-    throw StateError('User must be authenticated to edit games');
+    return null;
   }
   
   return SupabaseGameEditService(

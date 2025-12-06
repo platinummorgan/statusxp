@@ -147,70 +147,132 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // Main stats grid
+                        // Main stats - centered
+                        Center(
+                          child: Column(
+                            children: [
+                              Text(
+                                '${stats.totalPlatinums}',
+                                style: theme.textTheme.displayLarge?.copyWith(
+                                  color: accentPrimary,
+                                  fontSize: 56,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.0,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'PLATINUMS',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  color: textMuted,
+                                  letterSpacing: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Secondary stats row
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Expanded(
-                              child: _PosterStatItem(
-                                label: 'PLATINUMS',
-                                value: '${stats.totalPlatinums}',
-                                color: accentPrimary,
-                              ),
+                            Column(
+                              children: [
+                                Text(
+                                  '${stats.totalGamesTracked}',
+                                  style: theme.textTheme.displayMedium?.copyWith(
+                                    color: accentSecondary,
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.0,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'GAMES',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: textMuted,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _PosterStatItem(
-                                label: 'GAMES',
-                                value: '${stats.totalGamesTracked}',
-                                color: accentSecondary,
-                              ),
+                            Column(
+                              children: [
+                                Text(
+                                  '${stats.totalTrophies}',
+                                  style: theme.textTheme.displayMedium?.copyWith(
+                                    color: accentSuccess,
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.0,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'TROPHIES',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: textMuted,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
 
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 32),
 
-                    _PosterStatItem(
-                      label: 'TOTAL TROPHIES',
-                      value: '${stats.totalTrophies}',
-                      color: accentSuccess,
-                    ),
+                        // Divider
+                        Container(
+                          height: 1,
+                          color: surfaceDark.withValues(alpha: 0.5),
+                        ),
 
-                    const SizedBox(height: 32),
+                        const SizedBox(height: 24),
 
-                    // Divider
-                    Container(
-                      height: 1,
-                      color: surfaceDark,
-                    ),
+                        // Achievement highlights
+                        _PosterHighlight(
+                          icon: Icons.emoji_events,
+                          label: 'Hardest Platinum',
+                          value: stats.hardestPlatGame,
+                        ),
 
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
-                    // Achievement highlights
-                    _PosterHighlight(
-                      icon: Icons.emoji_events,
-                      label: 'Hardest Platinum',
-                      value: stats.hardestPlatGame,
-                    ),
+                        _PosterHighlight(
+                          icon: Icons.stars,
+                          label: 'Rarest Trophy',
+                          value: stats.rarestTrophyName,
+                          subtitle: '${stats.rarestTrophyRarity}% rarity',
+                        ),
 
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 32),
 
-                    _PosterHighlight(
-                      icon: Icons.stars,
-                      label: 'Rarest Trophy',
-                      value: stats.rarestTrophyName,
-                      subtitle: '${stats.rarestTrophyRarity}% rarity',
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Footer
-                    Text(
-                      'Level up your gaming identity',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: textMuted,
-                      ),
-                    ),
+                        // Footer branding
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: surfaceDark.withValues(alpha: 0.5),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'StatusXP',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: accentPrimary,
+                                letterSpacing: 2.5,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                   ],
                 ),
               ),
@@ -220,53 +282,6 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
       ),
         ),
       ),
-      ),
-    );
-  }
-}
-
-/// Poster stat item widget
-class _PosterStatItem extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _PosterStatItem({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surfaceDark,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: textMuted,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: theme.textTheme.displayMedium?.copyWith(
-              color: color,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }

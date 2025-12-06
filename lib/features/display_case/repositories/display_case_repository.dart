@@ -62,6 +62,7 @@ class DisplayCaseRepository {
       return [];
     }
   }  /// Add a new trophy to the display case
+  /// If the position is already occupied, it will be replaced
   Future<DisplayCaseItem?> addItem({
     required String userId,
     required int trophyId,
@@ -70,6 +71,15 @@ class DisplayCaseRepository {
     required int positionInShelf,
   }) async {
     try {
+      // First, delete whatever is at this position (if anything)
+      await _client
+          .from('display_case_items')
+          .delete()
+          .eq('user_id', userId)
+          .eq('shelf_number', shelfNumber)
+          .eq('position_in_shelf', positionInShelf);
+      
+      // Now insert the new trophy
       final response = await _client
           .from('display_case_items')
           .insert({
@@ -267,6 +277,67 @@ class DisplayCaseRepository {
     } catch (e) {
       print('ERROR fetching available trophies: $e');
       return [];
+    }
+  }
+
+  /// Get the rarest trophy of a specific tier for a user
+  Future<DisplayCaseItem?> getRarestTrophyOfTier(String userId, String tier) async {
+    try {
+      // First get all user's trophy IDs for this tier
+      final userTrophyIds = await _client
+          .from('user_trophies')
+          .select('trophy_id')
+          .eq('user_id', userId);
+      
+      if (userTrophyIds.isEmpty) return null;
+      
+      final trophyIds = (userTrophyIds as List).map((row) => row['trophy_id'] as int).toList();
+      
+      // Now get the rarest trophy from those IDs
+      // TODO: Future enhancement - calculate hybrid rarity combining PSN global + app-specific rarity
+      final response = await _client
+          .from('trophies')
+          .select('''
+            id,
+            name,
+            tier,
+            rarity_global,
+            icon_url,
+            game_title_id,
+            game_titles!inner(
+              name,
+              cover_url
+            )
+          ''')
+          .eq('tier', tier)
+          .inFilter('id', trophyIds)
+          .not('rarity_global', 'is', null)
+          .order('rarity_global', ascending: true)
+          .order('id', ascending: true) // Secondary sort for consistency when rarities match
+          .limit(1)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      final gameTitle = response['game_titles'] as Map<String, dynamic>;
+      
+      return DisplayCaseItem.fromMap({
+        'id': '',
+        'user_id': userId,
+        'trophy_id': response['id'],
+        'display_type': 'trophy_icon',
+        'shelf_number': -1,
+        'position_in_shelf': -1,
+        'trophy_name': response['name'],
+        'game_name': gameTitle['name'],
+        'tier': response['tier'],
+        'rarity': response['rarity_global'],
+        'icon_url': response['icon_url'],
+        'game_image_url': gameTitle['cover_url'],
+      });
+    } catch (e) {
+      print('ERROR fetching rarest $tier trophy: $e');
+      return null;
     }
   }
 }

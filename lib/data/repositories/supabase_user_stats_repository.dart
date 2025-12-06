@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../domain/user_stats.dart';
+import 'package:statusxp/domain/user_stats.dart';
 
 /// Supabase-based implementation of user statistics persistence.
 /// 
@@ -12,61 +12,71 @@ class SupabaseUserStatsRepository {
 
   /// Load user statistics for a specific user.
   /// 
-  /// Fetches from user_stats table and converts to UserStats model.
-  /// Returns a default UserStats if no record exists yet.
+  /// Calculates stats from user_games table using PSN's earnedTrophies summary data.
   Future<UserStats> getUserStats(String userId) async {
     try {
-      final response = await _client
-          .from('user_stats')
-          .select('''
-            user_id,
-            total_platinums,
-            total_games,
-            total_trophies,
-            completion_percentage,
-            hardest_platinum_game,
-            rarest_trophy_name,
-            rarest_trophy_rarity,
-            profiles!inner(username)
-          ''')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (response == null) {
-        // No stats yet, return default
-        return const UserStats(
-          username: 'Player',
-          totalPlatinums: 0,
-          totalGamesTracked: 0,
-          totalTrophies: 0,
-          hardestPlatGame: 'None',
-          rarestTrophyName: 'None',
-          rarestTrophyRarity: 0.0,
-        );
+      print('DEBUG: Fetching stats for user: $userId');
+      
+      // Get all games to calculate stats
+      final gamesResponse = await _client
+          .from('user_games')
+          .select('has_platinum, bronze_trophies, silver_trophies, gold_trophies, platinum_trophies')
+          .eq('user_id', userId);
+      
+      final games = gamesResponse as List;
+      final totalGames = games.length;
+      final totalPlatinums = games.where((g) => g['has_platinum'] == true).length;
+      
+      // Sum trophy counts from each game's PSN summary data
+      int bronzeCount = 0;
+      int silverCount = 0;
+      int goldCount = 0;
+      int platinumCount = 0;
+      
+      for (final game in games) {
+        bronzeCount += (game['bronze_trophies'] as int? ?? 0);
+        silverCount += (game['silver_trophies'] as int? ?? 0);
+        goldCount += (game['gold_trophies'] as int? ?? 0);
+        platinumCount += (game['platinum_trophies'] as int? ?? 0);
       }
-
-      final profile = response['profiles'] as Map<String, dynamic>;
+      
+      final totalTrophies = bronzeCount + silverCount + goldCount + platinumCount;
+      
+      print('DEBUG: Calculated stats - Games: $totalGames, Platinums: $totalPlatinums, Trophies: $totalTrophies');
+      print('DEBUG: Trophy breakdown - Bronze: $bronzeCount, Silver: $silverCount, Gold: $goldCount, Platinum: $platinumCount');
+      
+      // Get username from profiles
+      final profileResponse = await _client
+          .from('profiles')
+          .select('username, psn_online_id, psn_avatar_url, psn_is_plus')
+          .eq('id', userId)
+          .maybeSingle();
+      
+      final username = profileResponse?['psn_online_id'] as String? ?? 
+                      profileResponse?['username'] as String? ?? 
+                      'Player';
+      final avatarUrl = profileResponse?['psn_avatar_url'] as String?;
+      final isPsPlus = profileResponse?['psn_is_plus'] as bool? ?? false;
       
       return UserStats(
-        username: profile['username'] as String? ?? 'Player',
-        totalPlatinums: response['total_platinums'] as int? ?? 0,
-        totalGamesTracked: response['total_games'] as int? ?? 0,
-        totalTrophies: response['total_trophies'] as int? ?? 0,
-        hardestPlatGame: response['hardest_platinum_game'] as String? ?? 'None',
-        rarestTrophyName: response['rarest_trophy_name'] as String? ?? 'None',
-        rarestTrophyRarity: (response['rarest_trophy_rarity'] as num?)?.toDouble() ?? 0.0,
-      );
-    } catch (e) {
-      // Return default stats on error
-      return const UserStats(
-        username: 'Player',
-        totalPlatinums: 0,
-        totalGamesTracked: 0,
-        totalTrophies: 0,
+        username: username,
+        avatarUrl: avatarUrl,
+        isPsPlus: isPsPlus,
+        totalPlatinums: totalPlatinums,
+        totalGamesTracked: totalGames,
+        totalTrophies: totalTrophies,
+        bronzeTrophies: bronzeCount,
+        silverTrophies: silverCount,
+        goldTrophies: goldCount,
+        platinumTrophies: platinumCount,
         hardestPlatGame: 'None',
         rarestTrophyName: 'None',
         rarestTrophyRarity: 0.0,
       );
+    } catch (e, stackTrace) {
+      print('ERROR fetching stats: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 
@@ -80,6 +90,10 @@ class SupabaseUserStatsRepository {
         'total_platinums': stats.totalPlatinums,
         'total_games': stats.totalGamesTracked,
         'total_trophies': stats.totalTrophies,
+        'bronze_trophies': stats.bronzeTrophies,
+        'silver_trophies': stats.silverTrophies,
+        'gold_trophies': stats.goldTrophies,
+        'platinum_trophies': stats.platinumTrophies,
         'hardest_platinum_game': stats.hardestPlatGame,
         'rarest_trophy_name': stats.rarestTrophyName,
         'rarest_trophy_rarity': stats.rarestTrophyRarity,

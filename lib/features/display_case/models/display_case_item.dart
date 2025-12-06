@@ -157,10 +157,10 @@ class DisplayCaseConfig extends Equatable {
   final double shelfSpacing;
 
   const DisplayCaseConfig({
-    this.itemsPerShelf = 3,
-    this.numberOfShelves = 10,
-    this.shelfHeight = 140,
-    this.shelfSpacing = 24,
+    this.itemsPerShelf = 5,
+    this.numberOfShelves = 6,
+    this.shelfHeight = 85,
+    this.shelfSpacing = 40,
   });
 
   @override

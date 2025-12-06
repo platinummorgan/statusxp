@@ -49,8 +49,8 @@ class ThemeDemoScreen extends StatelessWidget {
               ),
             ),
             const SectionHeader(title: 'Stat Cards'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
                   StatCard(
@@ -58,15 +58,15 @@ class ThemeDemoScreen extends StatelessWidget {
                     value: '7',
                     accentColor: accentPrimary,
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   StatCard(
                     title: 'TOTAL TROPHIES',
                     value: '509',
                     subtitle: 'Across 12 games',
                     accentColor: accentSecondary,
                   ),
-                  const SizedBox(height: 12),
-                  const StatCard(
+                  SizedBox(height: 12),
+                  StatCard(
                     title: 'RAREST TROPHY',
                     value: '2.1%',
                     subtitle: 'Return to the Dream',
@@ -104,8 +104,8 @@ class ThemeDemoScreen extends StatelessWidget {
               ),
             ),
             const SectionHeader(title: 'Colors'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,

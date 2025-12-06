@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../domain/game.dart';
+import 'package:statusxp/domain/game.dart';
 
 /// Supabase-based implementation of game data persistence.
 /// 
@@ -17,6 +17,8 @@ class SupabaseGameRepository {
   /// Returns empty list if user has no games.
   Future<List<Game>> getGamesForUser(String userId) async {
     try {
+      print('DEBUG: Fetching games for user: $userId');
+      
       final response = await _client
           .from('user_games')
           .select('''
@@ -27,32 +29,86 @@ class SupabaseGameRepository {
             total_trophies,
             earned_trophies,
             has_platinum,
-            rarest_trophy_rarity,
-            game_titles!inner(id, name, cover_image),
-            platforms!inner(id, code)
+            completion_percent,
+            bronze_trophies,
+            silver_trophies,
+            gold_trophies,
+            platinum_trophies,
+            game_titles!inner(
+              name, 
+              cover_url
+            ),
+            platforms(code)
           ''')
           .eq('user_id', userId);
 
+      print('DEBUG: Got ${(response as List).length} games from database');
+
+      // Fetch platinum rarity for ALL games (don't filter by has_platinum flag)
+      // because the flag may be outdated
+      final gameTitleIds = (response as List)
+          .map((row) => row['game_title_id'] as int)
+          .toList();
+      
+      print('DEBUG: Fetching platinum rarity for ${gameTitleIds.length} games');
+      
+      final Map<int, double> platinumRarityMap = {};
+      
+      if (gameTitleIds.isNotEmpty) {
+        final rarityResponse = await _client
+            .from('trophies')
+            .select('game_title_id, rarity_global')
+            .eq('tier', 'platinum')
+            .inFilter('game_title_id', gameTitleIds);
+        
+        print('DEBUG: Got ${(rarityResponse as List).length} platinum trophy rarity records');
+        
+        for (final row in (rarityResponse as List)) {
+          final gameTitleId = row['game_title_id'] as int;
+          final rarity = row['rarity_global'] as num?;
+          if (rarity != null) {
+            platinumRarityMap[gameTitleId] = rarity.toDouble();
+            print('DEBUG: Game title $gameTitleId has platinum rarity: $rarity');
+          }
+        }
+        
+        print('DEBUG: Platinum rarity map has ${platinumRarityMap.length} entries');
+      }
+
       final games = (response as List).map((row) {
         final gameTitle = row['game_titles'] as Map<String, dynamic>;
-        final platform = row['platforms'] as Map<String, dynamic>;
+        final platform = row['platforms'] as Map<String, dynamic>?;
+        final gameTitleId = row['game_title_id'] as int;
+        
+        // Get platinum rarity from our map
+        final platinumRarity = platinumRarityMap[gameTitleId];
+        
+        if (platinumRarity != null) {
+          print('DEBUG: ${gameTitle['name']} has platinum rarity: $platinumRarity');
+        }
         
         return Game(
-          id: row['id'].toString(),
+          id: gameTitleId.toString(), // Use game_title_id, not user_games.id
           name: gameTitle['name'] as String? ?? 'Unknown Game',
-          platform: platform['code'] as String? ?? 'Unknown',
+          platform: platform?['code'] as String? ?? 'Unknown',
           totalTrophies: row['total_trophies'] as int? ?? 0,
           earnedTrophies: row['earned_trophies'] as int? ?? 0,
           hasPlatinum: row['has_platinum'] as bool? ?? false,
-          rarityPercent: (row['rarest_trophy_rarity'] as num?)?.toDouble() ?? 0.0,
-          cover: gameTitle['cover_image'] as String? ?? 'placeholder.png',
+          rarityPercent: (row['completion_percent'] as num?)?.toDouble() ?? 0.0,
+          platinumRarity: platinumRarity,
+          cover: gameTitle['cover_url'] as String? ?? '',
+          bronzeTrophies: row['bronze_trophies'] as int? ?? 0,
+          silverTrophies: row['silver_trophies'] as int? ?? 0,
+          goldTrophies: row['gold_trophies'] as int? ?? 0,
+          platinumTrophies: row['platinum_trophies'] as int? ?? 0,
         );
       }).toList();
 
       return games;
-    } catch (e) {
-      // Log error in production, return empty list for now
-      return [];
+    } catch (e, stackTrace) {
+      print('ERROR fetching games: $e');
+      print('Stack trace: $stackTrace');
+      rethrow; // Don't swallow the error
     }
   }
 
@@ -70,6 +126,10 @@ class SupabaseGameRepository {
             earned_trophies,
             has_platinum,
             rarest_trophy_rarity,
+            bronze_trophies,
+            silver_trophies,
+            gold_trophies,
+            platinum_trophies,
             game_titles!inner(id, name, cover_image),
             platforms!inner(id, code)
           ''')
@@ -88,6 +148,10 @@ class SupabaseGameRepository {
         hasPlatinum: response['has_platinum'] as bool? ?? false,
         rarityPercent: (response['rarest_trophy_rarity'] as num?)?.toDouble() ?? 0.0,
         cover: gameTitle['cover_image'] as String? ?? 'placeholder.png',
+        bronzeTrophies: response['bronze_trophies'] as int? ?? 0,
+        silverTrophies: response['silver_trophies'] as int? ?? 0,
+        goldTrophies: response['gold_trophies'] as int? ?? 0,
+        platinumTrophies: response['platinum_trophies'] as int? ?? 0,
       );
     } catch (e) {
       return null;

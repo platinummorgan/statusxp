@@ -1,5 +1,5 @@
-import 'game.dart';
-import 'user_stats.dart';
+import 'package:statusxp/domain/game.dart';
+import 'package:statusxp/domain/user_stats.dart';
 
 /// Pure-domain helper that recomputes UserStats from a list of Games.
 /// 
@@ -12,6 +12,11 @@ class UserStatsCalculator {
   /// 
   /// Preserves the provided [username] while calculating all trophy stats
   /// from the games list.
+  /// 
+  /// Note: Trophy tier breakdown (bronze, silver, gold, platinum) is estimated
+  /// based on typical trophy distributions since Game model doesn't track
+  /// individual trophy tiers. For accurate breakdown, use Supabase repository
+  /// which queries the trophies table directly.
   UserStats fromGames({
     required String username,
     required List<Game> games,
@@ -27,6 +32,14 @@ class UserStatsCalculator {
       0,
       (sum, game) => sum + game.earnedTrophies,
     );
+    
+    // Estimate trophy breakdown based on typical distributions
+    // In a real app, this would come from individual trophy records
+    // Typical distribution: ~60% bronze, ~30% silver, ~8% gold, ~2% platinum
+    final platinumCount = totalPlatinums;
+    final goldCount = (totalTrophies * 0.08).round();
+    final silverCount = (totalTrophies * 0.30).round();
+    final bronzeCount = totalTrophies - platinumCount - goldCount - silverCount;
     
     // Find the hardest platinum (lowest rarity %)
     String hardestPlatGame = 'N/A';
@@ -46,9 +59,15 @@ class UserStatsCalculator {
     
     return UserStats(
       username: username,
+      avatarUrl: null, // Avatar is fetched separately from profiles table
+      isPsPlus: false, // PS Plus status is fetched separately from profiles table
       totalPlatinums: totalPlatinums,
       totalGamesTracked: totalGamesTracked,
       totalTrophies: totalTrophies,
+      bronzeTrophies: bronzeCount,
+      silverTrophies: silverCount,
+      goldTrophies: goldCount,
+      platinumTrophies: platinumCount,
       hardestPlatGame: hardestPlatGame,
       rarestTrophyName: rarestTrophyName,
       rarestTrophyRarity: rarestTrophyRarity,

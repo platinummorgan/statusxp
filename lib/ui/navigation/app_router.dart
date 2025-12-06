@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:statusxp/ui/screens/dashboard_screen.dart';
 import 'package:statusxp/ui/screens/games_list_screen.dart';
 import 'package:statusxp/ui/screens/psn/psn_sync_screen.dart';
+import 'package:statusxp/ui/screens/xbox/xbox_sync_screen.dart';
 import 'package:statusxp/ui/screens/status_poster_screen.dart';
 import 'package:statusxp/ui/screens/trophy_room_screen.dart';
+import 'package:statusxp/ui/screens/settings_screen.dart';
 import 'package:statusxp/features/display_case/screens/display_case_screen.dart';
 
 /// StatusXP App Router Configuration
@@ -43,6 +45,13 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PSNSyncScreen(),
     ),
 
+    // Xbox Sync - Xbox Live integration
+    GoRoute(
+      path: '/xbox-sync',
+      name: 'xbox-sync',
+      builder: (context, state) => const XboxSyncScreen(),
+    ),
+
     // Trophy Room - Achievement showcase
     GoRoute(
       path: '/trophy-room',
@@ -55,6 +64,13 @@ final GoRouter appRouter = GoRouter(
       path: '/display-case',
       name: 'display-case',
       builder: (context, state) => const DisplayCaseScreen(),
+    ),
+
+    // Settings - Platform connections and app configuration
+    GoRoute(
+      path: '/settings',
+      name: 'settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
 
     // TODO: Future nested routes
