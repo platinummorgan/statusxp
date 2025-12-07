@@ -10,6 +10,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Startup diagnostics
+console.log('Starting Sync Service');
+console.log('Node version:', process.version);
+console.log('SUPABASE_URL present:', !!process.env.SUPABASE_URL);
+console.log('SUPABASE_SERVICE_ROLE_KEY present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+console.log('XBOX_CLIENT_ID present:', !!process.env.XBOX_CLIENT_ID);
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'StatusXP Sync Service' });
