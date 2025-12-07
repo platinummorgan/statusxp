@@ -1,3 +1,4 @@
+// Force redeploy after optimization fix - Dec 7, 2025
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
