@@ -223,36 +223,57 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
         for (const title of batch) {
           try {
             console.log(`Processing game: ${title.name} (${title.titleId})`);
-            // Upsert game
-            const { data: game } = await supabase
-              .from('games')
+            
+            // Get or create Xbox One platform
+            const { data: platform } = await supabase
+              .from('platforms')
+              .select('id')
+              .eq('code', 'XBOXONE')
+              .single();
+            
+            if (!platform) {
+              console.error('XBOXONE platform not found in database!');
+              continue;
+            }
+            
+            // Upsert game_title
+            const { data: gameTitle } = await supabase
+              .from('game_titles')
               .upsert({
-                xbox_title_id: title.titleId,
-                title: title.name,
-                platform: 'xbox',
-                image_url: title.displayImage,
+                platform_id: platform.id,
+                name: title.name,
+                external_id: title.titleId.toString(),
+                cover_url: title.displayImage,
+                metadata: {
+                  xbox_title_id: title.titleId,
+                  max_gamerscore: title.achievement.totalGamerscore,
+                  total_achievements: title.achievement.totalAchievements,
+                },
               }, {
-                onConflict: 'xbox_title_id',
+                onConflict: 'platform_id,external_id',
               })
               .select()
               .single();
 
-            if (!game) { console.log('Upserted game - no result'); continue; }
+            if (!gameTitle) { console.log('Upserted game_title - no result'); continue; }
 
             // Upsert user_games
             await supabase
               .from('user_games')
               .upsert({
                 user_id: userId,
-                game_id: game.id,
-                platform: 'xbox',
-                gamerscore: title.achievement.currentGamerscore,
-                total_gamerscore: title.achievement.totalGamerscore,
-                achievements_unlocked: title.achievement.currentAchievements,
-                total_achievements: title.achievement.totalAchievements,
-                progress: title.achievement.progressPercentage,
+                game_title_id: gameTitle.id,
+                platform_id: platform.id,
+                total_trophies: title.achievement.totalAchievements,
+                earned_trophies: title.achievement.currentAchievements,
+                completion_percent: title.achievement.progressPercentage,
+                xbox_current_gamerscore: title.achievement.currentGamerscore,
+                xbox_max_gamerscore: title.achievement.totalGamerscore,
+                xbox_achievements_earned: title.achievement.currentAchievements,
+                xbox_total_achievements: title.achievement.totalAchievements,
+                xbox_last_updated_at: new Date().toISOString(),
               }, {
-                onConflict: 'user_id,game_id',
+                onConflict: 'user_id,game_title_id,platform_id',
               });
 
             // Fetch achievements
@@ -278,17 +299,18 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const { data: achievementRecord } = await supabase
                 .from('achievements')
                 .upsert({
-                  game_id: game.id,
-                  xbox_achievement_id: achievement.id,
+                  game_title_id: gameTitle.id,
+                  platform: 'xbox',
+                  platform_achievement_id: achievement.id,
                   name: achievement.name,
                   description: achievement.description,
-                  gamerscore: achievement.rewards?.[0]?.value || 0,
-                  icon_locked_url: achievement.mediaAssets?.[0]?.url,
-                  icon_unlocked_url: achievement.mediaAssets?.[0]?.url,
+                  icon_url: achievement.mediaAssets?.[0]?.url,
+                  xbox_gamerscore: achievement.rewards?.[0]?.value || 0,
+                  xbox_is_secret: achievement.isSecret || false,
                   is_dlc: isDLC,
                   dlc_name: null,
                 }, {
-                  onConflict: 'game_id,xbox_achievement_id',
+                  onConflict: 'game_title_id,platform,platform_achievement_id',
                 })
                 .select()
                 .single();
@@ -302,7 +324,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                   .upsert({
                     user_id: userId,
                     achievement_id: achievementRecord.id,
-                    unlocked_at: achievement.progression?.timeUnlocked,
+                    earned_at: achievement.progression?.timeUnlocked,
                   }, {
                     onConflict: 'user_id,achievement_id',
                   });
@@ -411,7 +433,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                     .upsert({
                       user_id: userId,
                       achievement_id: achievementRecord.id,
-                      unlocked_at: achievement.progression?.timeUnlocked,
+                      earned_at: achievement.progression?.timeUnlocked,
                     }, {
                       onConflict: 'user_id,achievement_id',
                     });

@@ -148,21 +148,39 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         const playerAchievementsData = await playerAchievementsResponse.json();
         const playerAchievements = playerAchievementsData.playerstats?.achievements || [];
 
-        // Upsert game
-        const { data: gameRecord } = await supabase
-          .from('games')
+        // Get or create Steam platform
+        const { data: platform } = await supabase
+          .from('platforms')
+          .select('id')
+          .eq('code', 'Steam')
+          .single();
+        
+        if (!platform) {
+          console.error('Steam platform not found in database!');
+          continue;
+        }
+        
+        // Upsert game_title
+        const { data: gameTitle } = await supabase
+          .from('game_titles')
           .upsert({
-            steam_app_id: game.appid.toString(),
-            title: game.name,
-            platform: 'steam',
-            image_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`,
+            platform_id: platform.id,
+            name: game.name,
+            external_id: game.appid.toString(),
+            cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`,
+            metadata: {
+              steam_app_id: game.appid,
+              is_dlc: isDLC,
+              dlc_name: dlcName,
+              base_game_app_id: baseGameAppId,
+            },
           }, {
-            onConflict: 'steam_app_id',
+            onConflict: 'platform_id,external_id',
           })
           .select()
           .single();
 
-        if (!gameRecord) continue;
+        if (!gameTitle) continue;
 
         // Calculate progress
         const unlockedCount = playerAchievements.filter(a => a.achieved === 1).length;
@@ -173,14 +191,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           .from('user_games')
           .upsert({
             user_id: userId,
-            game_id: gameRecord.id,
-            platform: 'steam',
-            playtime_minutes: game.playtime_forever || 0,
-            achievements_unlocked: unlockedCount,
-            total_achievements: achievements.length,
-            progress,
+            game_title_id: gameTitle.id,
+            platform_id: platform.id,
+            total_trophies: achievements.length,
+            earned_trophies: unlockedCount,
+            completion_percent: progress,
           }, {
-            onConflict: 'user_id,game_id',
+            onConflict: 'user_id,game_title_id,platform_id',
           });
 
         // Process achievements
@@ -192,16 +209,17 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           const { data: achievementRecord } = await supabase
             .from('achievements')
             .upsert({
-              game_id: gameRecord.id,
-              steam_api_name: achievement.name,
+              game_title_id: gameTitle.id,
+              platform: 'steam',
+              platform_achievement_id: achievement.name,
               name: achievement.displayName || achievement.name,
               description: achievement.description || '',
-              icon_locked_url: achievement.icon || '',
-              icon_unlocked_url: achievement.icongray || achievement.icon || '',
+              icon_url: achievement.icon || '',
+              steam_hidden: achievement.hidden === 1,
               is_dlc: isDLC,
               dlc_name: dlcName,
             }, {
-              onConflict: 'game_id,steam_api_name',
+              onConflict: 'game_title_id,platform,platform_achievement_id',
             })
             .select()
             .single();
@@ -215,7 +233,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               .upsert({
                 user_id: userId,
                 achievement_id: achievementRecord.id,
-                unlocked_at: new Date(playerAchievement.unlocktime * 1000).toISOString(),
+                earned_at: new Date(playerAchievement.unlocktime * 1000).toISOString(),
               }, {
                 onConflict: 'user_id,achievement_id',
               });
