@@ -52,7 +52,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     XboxSyncStatus? lastStatus;
     
     while (_isSyncing && mounted) {
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 3));
       
       // Read status without invalidating (stream will update automatically)
       final statusAsync = ref.read(xboxSyncStatusProvider);

@@ -97,7 +97,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
 
   Future<void> _pollSyncStatus() async {
     while (_isSyncing && mounted) {
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 3));
       
       // Fetch data without rebuilding UI
       try {
@@ -140,6 +140,8 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
         }
       } catch (e) {
         print('Error polling sync status: $e');
+        // Don't stop polling on connection errors, just retry
+        continue;
       }
     }
   }
