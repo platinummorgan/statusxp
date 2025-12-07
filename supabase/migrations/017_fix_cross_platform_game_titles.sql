@@ -17,11 +17,11 @@ ALTER TABLE game_titles ADD COLUMN IF NOT EXISTS canonical_game_title_id bigint;
 -- Step 3: For each game name, pick ONE canonical game_title (prefer PS5, then PS4, then others)
 WITH ranked_games AS (
   SELECT 
-    id,
-    name,
-    platform_id,
+    gt.id,
+    gt.name,
+    gt.platform_id,
     ROW_NUMBER() OVER (
-      PARTITION BY LOWER(TRIM(name)) 
+      PARTITION BY LOWER(TRIM(gt.name)) 
       ORDER BY 
         CASE 
           WHEN p.code = 'PS5' THEN 1
@@ -31,7 +31,7 @@ WITH ranked_games AS (
           WHEN p.code = 'XBOXONE' THEN 5
           ELSE 6
         END,
-        id ASC
+        gt.id ASC
     ) as rank
   FROM game_titles gt
   LEFT JOIN platforms p ON gt.platform_id = p.id
