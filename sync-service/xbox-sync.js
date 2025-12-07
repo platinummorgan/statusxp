@@ -1,0 +1,263 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+async function refreshXboxToken(refreshToken, userId) {
+  const tokenResponse = await fetch('https://login.live.com/oauth20_token.srf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: process.env.XBOX_CLIENT_ID,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+      scope: 'Xboxlive.signin Xboxlive.offline_access',
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error('Failed to refresh Xbox token');
+  }
+
+  const tokenData = await tokenResponse.json();
+
+  // Exchange for Xbox Live token
+  const xblResponse = await fetch('https://user.auth.xboxlive.com/user/authenticate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      RelyingParty: 'http://auth.xboxlive.com',
+      TokenType: 'JWT',
+      Properties: {
+        AuthMethod: 'RPS',
+        SiteName: 'user.auth.xboxlive.com',
+        RpsTicket: `d=${tokenData.access_token}`,
+      },
+    }),
+  });
+
+  const xblData = await xblResponse.json();
+  const userHash = xblData.DisplayClaims.xui[0].uhs;
+
+  // Exchange for XSTS token
+  const xstsResponse = await fetch('https://xsts.auth.xboxlive.com/xsts/authorize', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      RelyingParty: 'http://xboxlive.com',
+      TokenType: 'JWT',
+      Properties: {
+        UserTokens: [xblData.Token],
+        SandboxId: 'RETAIL',
+      },
+    }),
+  });
+
+  const xstsData = await xstsResponse.json();
+  const xuid = xstsData.DisplayClaims.xui[0].xid;
+
+  // Save to database
+  await supabase
+    .from('profiles')
+    .update({
+      xbox_access_token: xstsData.Token,
+      xbox_refresh_token: tokenData.refresh_token,
+      xbox_xuid: xuid,
+      xbox_user_hash: userHash,
+    })
+    .eq('id', userId);
+
+  return {
+    accessToken: xstsData.Token,
+    xuid,
+    userHash,
+  };
+}
+
+export async function syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId) {
+  console.log(`Starting Xbox sync for user ${userId}`);
+  
+  try {
+    // Refresh token first
+    const refreshed = await refreshXboxToken(refreshToken, userId);
+    accessToken = refreshed.accessToken;
+    xuid = refreshed.xuid;
+    userHash = refreshed.userHash;
+
+    // Set initial status
+    await supabase
+      .from('profiles')
+      .update({ xbox_sync_status: 'syncing', xbox_sync_progress: 0 })
+      .eq('id', userId);
+
+    await supabase
+      .from('xbox_sync_logs')
+      .update({ status: 'syncing' })
+      .eq('id', syncLogId);
+
+    // Fetch all games
+    const titleHistoryResponse = await fetch(
+      `https://titlehub.xboxlive.com/users/xuid(${xuid})/titles/titlehistory/decoration/achievement`,
+      {
+        headers: {
+          'x-xbl-contract-version': '2',
+          'Accept-Language': 'en-US',
+          Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+        },
+      }
+    );
+
+    const titleHistory = await titleHistoryResponse.json();
+    const gamesWithProgress = titleHistory.titles.filter(t => t.achievement?.currentGamerscore > 0);
+
+    console.log(`Found ${gamesWithProgress.length} games with achievements`);
+
+    let processedGames = 0;
+    let totalAchievements = 0;
+
+    // Process all games - NO TIMEOUT!
+    for (const title of gamesWithProgress) {
+      try {
+        // Upsert game
+        const { data: game } = await supabase
+          .from('games')
+          .upsert({
+            xbox_title_id: title.titleId,
+            title: title.name,
+            platform: 'xbox',
+            image_url: title.displayImage,
+          }, {
+            onConflict: 'xbox_title_id',
+          })
+          .select()
+          .single();
+
+        if (!game) continue;
+
+        // Upsert user_games
+        await supabase
+          .from('user_games')
+          .upsert({
+            user_id: userId,
+            game_id: game.id,
+            platform: 'xbox',
+            gamerscore: title.achievement.currentGamerscore,
+            total_gamerscore: title.achievement.totalGamerscore,
+            achievements_unlocked: title.achievement.currentAchievements,
+            total_achievements: title.achievement.totalAchievements,
+            progress: title.achievement.progressPercentage,
+          }, {
+            onConflict: 'user_id,game_id',
+          });
+
+        // Fetch achievements
+        const achievementsResponse = await fetch(
+          `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}`,
+          {
+            headers: {
+              'x-xbl-contract-version': '2',
+              Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+            },
+          }
+        );
+
+        const achievementsData = await achievementsResponse.json();
+
+        for (const achievement of achievementsData.achievements) {
+          // Upsert achievement
+          const { data: achievementRecord } = await supabase
+            .from('achievements')
+            .upsert({
+              game_id: game.id,
+              xbox_achievement_id: achievement.id,
+              name: achievement.name,
+              description: achievement.description,
+              gamerscore: achievement.rewards?.[0]?.value || 0,
+              icon_locked_url: achievement.mediaAssets?.[0]?.url,
+              icon_unlocked_url: achievement.mediaAssets?.[0]?.url,
+            }, {
+              onConflict: 'game_id,xbox_achievement_id',
+            })
+            .select()
+            .single();
+
+          if (!achievementRecord) continue;
+
+          // Upsert user_achievement if unlocked
+          if (achievement.progressState === 'Achieved') {
+            await supabase
+              .from('user_achievements')
+              .upsert({
+                user_id: userId,
+                achievement_id: achievementRecord.id,
+                unlocked_at: achievement.progression?.timeUnlocked,
+              }, {
+                onConflict: 'user_id,achievement_id',
+              });
+            
+            totalAchievements++;
+          }
+        }
+
+        processedGames++;
+        const progress = Math.floor((processedGames / gamesWithProgress.length) * 100);
+        
+        // Update progress
+        await supabase
+          .from('profiles')
+          .update({ xbox_sync_progress: progress })
+          .eq('id', userId);
+
+        console.log(`Processed ${processedGames}/${gamesWithProgress.length} games (${progress}%)`);
+
+      } catch (error) {
+        console.error(`Error processing title ${title.name}:`, error);
+        // Continue with next game
+      }
+    }
+
+    // Mark as completed
+    await supabase
+      .from('profiles')
+      .update({
+        xbox_sync_status: 'success',
+        xbox_sync_progress: 100,
+        last_xbox_sync_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    await supabase
+      .from('xbox_sync_logs')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        games_processed: processedGames,
+        achievements_synced: totalAchievements,
+      })
+      .eq('id', syncLogId);
+
+    console.log(`Xbox sync completed: ${processedGames} games, ${totalAchievements} achievements`);
+
+  } catch (error) {
+    console.error('Xbox sync failed:', error);
+    
+    await supabase
+      .from('profiles')
+      .update({
+        xbox_sync_status: 'error',
+        xbox_sync_error: error.message,
+      })
+      .eq('id', userId);
+
+    await supabase
+      .from('xbox_sync_logs')
+      .update({
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        error_message: error.message,
+      })
+      .eq('id', syncLogId);
+  }
+}
