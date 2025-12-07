@@ -214,10 +214,9 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
         if (!gameTitle) continue;
 
-        // Calculate progress
+        // Get unlocked count from API data (already fetched earlier)
         const unlockedCount = playerAchievements.filter(a => a.achieved === 1).length;
-        const progress = achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0;
-
+        
         // Simple lookup - is this game new or changed?
         const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
         const isNewGame = !existingUserGame;
@@ -246,6 +245,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         } else {
           console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${game.name} (unlocked: ${unlockedCount})`);
         }
+
+        const progress = achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0;
 
         // Fetch global achievement percentages for rarity data
         const globalStats = {};
@@ -288,7 +289,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           const rarityPercent = globalStats[achievement.name] || 0;
 
           // Upsert achievement with rarity data
-          const { data: achievementRecord } = await supabase
+          const { data: achievementRecord, error: achError } = await supabase
             .from('achievements')
             .upsert({
               game_title_id: gameTitle.id,
@@ -306,6 +307,11 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             })
             .select()
             .single();
+
+          if (achError) {
+            console.error(`❌ Failed to upsert achievement ${achievement.name}:`, achError.message);
+            continue;
+          }
 
           if (!achievementRecord) continue;
 
