@@ -328,16 +328,19 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                 gameTitle = newGame;
               }
 
+              // TEMPORARY: Always fetch trophies to populate rarity data
+              // TODO: Re-enable optimization after rarity data is populated
+              const needsTrophyFetch = true;
+              
               // Check if we need to fetch trophy details (only if new or progress changed)
-              const { data: existingUserGame } = await supabase
-                .from('user_games')
-                .select('completion_percent')
-                .eq('user_id', userId)
-                .eq('game_title_id', gameTitle.id)
-                .eq('platform_id', platform.id)
-                .maybeSingle();
-
-              const needsTrophyFetch = !existingUserGame || existingUserGame.completion_percent !== title.progress;
+              // const { data: existingUserGame } = await supabase
+              //   .from('user_games')
+              //   .select('completion_percent')
+              //   .eq('user_id', userId)
+              //   .eq('game_title_id', gameTitle.id)
+              //   .eq('platform_id', platform.id)
+              //   .maybeSingle();
+              // const needsTrophyFetch = !existingUserGame || existingUserGame.completion_percent !== title.progress;
 
               // Upsert user_games with platform_id
               await supabase
