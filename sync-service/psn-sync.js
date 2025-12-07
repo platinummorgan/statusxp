@@ -156,15 +156,12 @@ export async function syncPSNAchievements(
       return;
     }
 
+    // Sync ALL games with any trophy progress (including platinum-only games)
     const gamesWithTrophies = titles.trophyTitles.filter(
-      (title) =>
-        title.earnedTrophies.bronze > 0 ||
-        title.earnedTrophies.silver > 0 ||
-        title.earnedTrophies.gold > 0 ||
-        title.earnedTrophies.platinum > 0
+      (title) => title.progress > 0
     );
 
-    console.log(`Found ${gamesWithTrophies.length} games with trophies`);
+    console.log(`Found ${gamesWithTrophies.length} games with progress`);
     logMemory('After filtering gamesWithTrophies');
 
     let processedGames = 0;
