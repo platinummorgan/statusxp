@@ -129,7 +129,7 @@ export async function syncPSNAchievements(
     console.log('Loading all user_games for comparison...');
     const { data: allUserGames } = await supabase
       .from('user_games')
-      .select('game_title_id, platform_id, earned_trophies, total_trophies, completion_percent')
+      .select('game_title_id, platform_id, earned_trophies, total_trophies, completion_percent, last_rarity_sync')
       .eq('user_id', userId);
     
     const userGamesMap = new Map();
@@ -236,17 +236,12 @@ export async function syncPSNAchievements(
           const isNewGame = !existingUserGame;
           const earnedChanged = existingUserGame && existingUserGame.earned_trophies !== apiEarnedTrophies;
           
-          // Check if we need to refresh rarity (game exists but might have outdated rarity)
+          // Check if rarity is stale (>30 days old)
           let needRarityRefresh = false;
-          if (!isNewGame && !earnedChanged) {
-            const { count } = await supabase
-              .from('achievements')
-              .select('*', { count: 'exact', head: true })
-              .eq('game_title_id', gameTitle.id)
-              .eq('platform', 'psn');
-            
-            // If trophy count doesn't match API, rarity data may be stale
-            needRarityRefresh = count !== apiTotalTrophies;
+          if (!isNewGame && !earnedChanged && existingUserGame) {
+            const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
           }
           
           const needTrophies = isNewGame || earnedChanged || needRarityRefresh;
@@ -260,7 +255,7 @@ export async function syncPSNAchievements(
           }
           
           if (needRarityRefresh) {
-            console.log(`🔄 RARITY REFRESH: ${title.trophyTitleName} (trophy count mismatch)`);
+            console.log(`🔄 RARITY REFRESH: ${title.trophyTitleName} (>30 days since last rarity sync)`);
           }
 
           console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${title.trophyTitleName} (earned: ${apiEarnedTrophies})`);
@@ -276,6 +271,7 @@ export async function syncPSNAchievements(
                 completion_percent: apiProgress,
                 total_trophies: apiTotalTrophies,
                 earned_trophies: apiEarnedTrophies,
+                last_rarity_sync: new Date().toISOString(),
                 bronze_trophies: earned.bronze || 0,
                 silver_trophies: earned.silver || 0,
                 gold_trophies: earned.gold || 0,
