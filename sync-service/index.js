@@ -22,6 +22,26 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'StatusXP Sync Service' });
 });
 
+// Lightweight health endpoint for quick checks
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'StatusXP Sync Service',
+    node_version: process.version,
+    supabase_url_present: !!process.env.SUPABASE_URL,
+    supabase_key_present: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    xbox_client_id_present: !!process.env.XBOX_CLIENT_ID,
+  });
+});
+
+// Global error handlers to surface runtime errors in logs
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception in sync-service:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection in sync-service:', reason);
+});
+
 // Xbox sync endpoint - NO TIMEOUT LIMITS!
 app.post('/sync/xbox', async (req, res) => {
   const { userId, xuid, userHash, accessToken, refreshToken, syncLogId } = req.body;
