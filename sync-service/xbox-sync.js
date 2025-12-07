@@ -225,6 +225,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             console.log('Fetched achievements count for titleId', title.titleId, ':', achievementsData?.achievements?.length ?? 0);
 
             for (const achievement of achievementsData.achievements) {
+              // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
+              // For now, we'll default to false as Xbox API doesn't clearly separate DLC
+              const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
+              
               // Upsert achievement
               const { data: achievementRecord } = await supabase
                 .from('achievements')
@@ -236,6 +240,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                   gamerscore: achievement.rewards?.[0]?.value || 0,
                   icon_locked_url: achievement.mediaAssets?.[0]?.url,
                   icon_unlocked_url: achievement.mediaAssets?.[0]?.url,
+                  is_dlc: isDLC,
+                  dlc_name: null,
                 }, {
                   onConflict: 'game_id,xbox_achievement_id',
                 })
@@ -329,6 +335,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const achievementsData = await achievementsResponse.json();
 
               for (const achievement of achievementsData.achievements) {
+                // TODO: Xbox API doesn't clearly separate DLC achievements from base game
+                // For now, marking all as base game (is_dlc = false)
+                const isDLC = false;
+                const dlcName = null;
+
                 const { data: achievementRecord } = await supabase
                   .from('achievements')
                   .upsert({
@@ -339,6 +350,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                     gamerscore: achievement.rewards?.[0]?.value || 0,
                     icon_locked_url: achievement.mediaAssets?.[0]?.url,
                     icon_unlocked_url: achievement.mediaAssets?.[0]?.url,
+                    is_dlc: isDLC,
+                    dlc_name: dlcName,
                   }, {
                     onConflict: 'game_id,xbox_achievement_id',
                   })

@@ -128,35 +128,42 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
         console.log('Fetched trophies count:', trophyData?.trophies?.length ?? 0);
 
         for (const trophy of trophyData.trophies) {
-          // Upsert trophy
-          const { data: trophyRecord } = await supabase
-            .from('trophies')
+          // PSN DLC detection: trophy groups other than 'default' are DLC
+          const isDLC = trophy.trophyGroupId && trophy.trophyGroupId !== 'default';
+          const dlcName = isDLC ? `DLC Group ${trophy.trophyGroupId}` : null;
+          
+          // Upsert achievement (PSN trophy)
+          const { data: achievementRecord } = await supabase
+            .from('achievements')
             .upsert({
-              game_id: game.id,
-              psn_trophy_id: trophy.trophyId,
+              game_title_id: game.id,
+              platform: 'psn',
+              platform_achievement_id: trophy.trophyId,
               name: trophy.trophyName,
               description: trophy.trophyDetail,
-              type: trophy.trophyType,
               icon_url: trophy.trophyIconUrl,
-              trophy_group_id: trophy.trophyGroupId,
+              psn_trophy_type: trophy.trophyType,
+              psn_trophy_group_id: trophy.trophyGroupId,
+              is_dlc: isDLC,
+              dlc_name: dlcName,
             }, {
-              onConflict: 'game_id,psn_trophy_id',
+              onConflict: 'game_title_id,platform,platform_achievement_id',
             })
             .select()
             .single();
 
-          if (!trophyRecord) continue;
+          if (!achievementRecord) continue;
 
-          // Upsert user_trophy if earned
+          // Upsert user_achievement if earned
           if (trophy.earned) {
             await supabase
-              .from('user_trophies')
+              .from('user_achievements')
               .upsert({
                 user_id: userId,
-                trophy_id: trophyRecord.id,
-                earned_at: trophy.earnedDateTime,
+                achievement_id: achievementRecord.id,
+                unlocked_at: trophy.earnedDateTime,
               }, {
-                onConflict: 'user_id,trophy_id',
+                onConflict: 'user_id,achievement_id',
               });
             
             totalTrophies++;
@@ -223,35 +230,42 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
               console.log('Fetched trophies count:', trophyData?.trophies?.length ?? 0);
 
               for (const trophy of trophyData.trophies) {
-                // Upsert trophy
-                const { data: trophyRecord } = await supabase
-                  .from('trophies')
+                // Detect DLC based on trophy group
+                const isDLC = trophy.trophyGroupId && trophy.trophyGroupId !== 'default';
+                const dlcName = isDLC ? `DLC ${trophy.trophyGroupId}` : null;
+
+                // Upsert achievement (PSN trophy)
+                const { data: achievementRecord } = await supabase
+                  .from('achievements')
                   .upsert({
-                    game_id: game.id,
-                    psn_trophy_id: trophy.trophyId,
+                    game_title_id: game.id,
+                    platform: 'psn',
+                    platform_achievement_id: trophy.trophyId,
                     name: trophy.trophyName,
                     description: trophy.trophyDetail,
-                    type: trophy.trophyType,
                     icon_url: trophy.trophyIconUrl,
-                    trophy_group_id: trophy.trophyGroupId,
+                    psn_trophy_type: trophy.trophyType,
+                    psn_trophy_group_id: trophy.trophyGroupId,
+                    is_dlc: isDLC,
+                    dlc_name: dlcName,
                   }, {
-                    onConflict: 'game_id,psn_trophy_id',
+                    onConflict: 'game_title_id,platform,platform_achievement_id',
                   })
                   .select()
                   .single();
 
-                if (!trophyRecord) return;
+                if (!achievementRecord) return;
 
-                // Upsert user_trophy if earned
+                // Upsert user_achievement if earned
                 if (trophy.earned) {
                   await supabase
-                    .from('user_trophies')
+                    .from('user_achievements')
                     .upsert({
                       user_id: userId,
-                      trophy_id: trophyRecord.id,
-                      earned_at: trophy.earnedDateTime,
+                      achievement_id: achievementRecord.id,
+                      unlocked_at: trophy.earnedDateTime,
                     }, {
-                      onConflict: 'user_id,trophy_id',
+                      onConflict: 'user_id,achievement_id',
                     });
                   
                   totalTrophies++;
