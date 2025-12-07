@@ -389,6 +389,8 @@ export async function syncPSNAchievements(
                   icon_url: trophyMeta.trophyIconUrl,
                   psn_trophy_type: trophyMeta.trophyType,
                   rarity_global: rarityPercent,
+                  is_platinum: trophyMeta.trophyType === 'platinum',
+                  include_in_score: trophyMeta.trophyType !== 'platinum',
                   is_dlc: isDLC,
                   dlc_name: dlcName,
                 },
