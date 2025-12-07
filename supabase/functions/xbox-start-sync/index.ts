@@ -89,18 +89,30 @@ serve(async (req) => {
       .eq('id', user.id);
 
     // Call Railway service - it will handle everything
-    const railwayResponse = await fetch(`${RAILWAY_URL}/sync/xbox`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: user.id,
-        xuid: profile.xbox_xuid,
-        userHash: profile.xbox_user_hash,
-        accessToken: profile.xbox_access_token,
-        refreshToken: profile.xbox_refresh_token,
-        syncLogId: syncLog.id,
-      }),
-    });
+    const railwayPayload = {
+      userId: user.id,
+      xuid: profile.xbox_xuid,
+      userHash: profile.xbox_user_hash,
+      accessToken: profile.xbox_access_token,
+      refreshToken: profile.xbox_refresh_token,
+      syncLogId: syncLog.id,
+      // Allow a test batchSize - defaults to small to reduce memory usage in Railway
+      batchSize: 5,
+      maxConcurrent: 1,
+    };
+
+    console.log('Calling Railway /sync/xbox with payload size:', JSON.stringify(railwayPayload).length);
+    let railwayResponse;
+    try {
+      railwayResponse = await fetch(`${RAILWAY_URL}/sync/xbox`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(railwayPayload),
+      });
+    } catch (fetchError) {
+      console.error('Network error when calling Railway /sync/xbox:', fetchError);
+      throw new Error('Failed to start sync on Railway (network error)');
+    }
 
     const railwayBody = await railwayResponse.text().catch(() => null);
     console.log('Railway start response:', railwayResponse.status, railwayBody?.slice?.(0, 200));

@@ -26,6 +26,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _loadProfile();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload profile when returning from other screens
+    _loadProfile();
+  }
+
   Future<void> _loadProfile() async {
     setState(() => _isLoadingProfile = true);
     
@@ -36,7 +43,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (userId != null) {
         final data = await supabase
             .from('profiles')
-            .select('psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, steam_id, steam_api_key')
+            .select('psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, steam_id, steam_api_key, steam_display_name, preferred_display_platform')
             .eq('id', userId)
             .single();
         
@@ -268,7 +275,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   iconColor: const Color(0xFF66C0F4), // Steam blue
                   title: 'Steam',
                   subtitle: _profile?['steam_id'] != null
-                      ? 'Connected (ID: ${_profile!['steam_id']})'
+                      ? 'Connected as ${_profile!['steam_display_name'] ?? 'Unknown'}'
                       : 'Not connected',
                   isConnected: _profile?['steam_id'] != null,
                   onTap: () async {
@@ -302,6 +309,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 // App Settings Section
                 _buildSectionHeader('App Settings'),
+                
+                // Preferred Display Platform
+                _buildPreferredPlatformTile(),
+
+                const Divider(height: 1),
                 
                 // About
                 ListTile(
@@ -434,6 +446,114 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             )
           : const Icon(Icons.chevron_right),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildPreferredPlatformTile() {
+    final currentPlatform = _profile?['preferred_display_platform'] as String? ?? 'psn';
+    
+    String platformName(String platform) {
+      switch (platform) {
+        case 'psn': return 'PlayStation';
+        case 'xbox': return 'Xbox';
+        case 'steam': return 'Steam';
+        default: return platform;
+      }
+    }
+
+    return ListTile(
+      leading: const Icon(Icons.badge_outlined),
+      title: const Text('Display Name'),
+      subtitle: Text('Show ${platformName(currentPlatform)} username on dashboard'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final selected = await showDialog<String>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Choose Display Platform'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: const Text('PlayStation Network'),
+                  subtitle: _profile?['psn_online_id'] != null
+                      ? Text(_profile!['psn_online_id'])
+                      : const Text('Not connected'),
+                  value: 'psn',
+                  groupValue: currentPlatform,
+                  onChanged: _profile?['psn_online_id'] != null
+                      ? (value) => Navigator.pop(context, value)
+                      : null,
+                ),
+                RadioListTile<String>(
+                  title: const Text('Xbox Live'),
+                  subtitle: _profile?['xbox_gamertag'] != null
+                      ? Text(_profile!['xbox_gamertag'])
+                      : const Text('Not connected'),
+                  value: 'xbox',
+                  groupValue: currentPlatform,
+                  onChanged: _profile?['xbox_gamertag'] != null
+                      ? (value) => Navigator.pop(context, value)
+                      : null,
+                ),
+                RadioListTile<String>(
+                  title: const Text('Steam'),
+                  subtitle: _profile?['steam_display_name'] != null
+                      ? Text(_profile!['steam_display_name'])
+                      : const Text('Not connected'),
+                  value: 'steam',
+                  groupValue: currentPlatform,
+                  onChanged: _profile?['steam_display_name'] != null
+                      ? (value) => Navigator.pop(context, value)
+                      : null,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
+        );
+
+        if (selected != null && selected != currentPlatform) {
+          // Update preferred platform in database
+          try {
+            final supabase = Supabase.instance.client;
+            final userId = supabase.auth.currentUser?.id;
+            
+            if (userId != null) {
+              await supabase
+                  .from('profiles')
+                  .update({'preferred_display_platform': selected})
+                  .eq('id', userId);
+              
+              // Refresh profile and dashboard
+              await _loadProfile();
+              ref.invalidate(dashboardStatsProvider);
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Display platform changed to ${platformName(selected)}'),
+                  ),
+                );
+              }
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Failed to update: $e'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        }
+      },
     );
   }
 

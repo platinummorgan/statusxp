@@ -89,30 +89,18 @@ serve(async (req) => {
       .eq('id', user.id);
 
     // Call Railway service
-    const railwayPayload = {
-      userId: user.id,
-      steamId: profile.steam_id,
-      apiKey: profile.steam_api_key,
-      syncLogId: syncLog.id,
-      batchSize: 5,
-      maxConcurrent: 1,
-    };
-    console.log('Calling Railway /sync/steam with payload size:', JSON.stringify(railwayPayload).length);
-    let railwayResponse;
-    try {
-      railwayResponse = await fetch(`${RAILWAY_URL}/sync/steam`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(railwayPayload),
-      });
-    } catch (fetchError) {
-      console.error('Network error when calling Railway /sync/steam:', fetchError);
-      throw new Error('Failed to start sync on Railway (network error)');
-    }
-    const railwayText = await railwayResponse.text().catch(() => null);
-    console.log('Railway STEAM start response:', railwayResponse.status, railwayText?.slice?.(0,200));
+    const railwayResponse = await fetch(`${RAILWAY_URL}/sync/steam`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        steamId: profile.steam_id,
+        apiKey: profile.steam_api_key,
+        syncLogId: syncLog.id,
+      }),
+    });
+
     if (!railwayResponse.ok) {
-      console.error('Failed to start STEAM sync on Railway:', railwayResponse.status, railwayText);
       throw new Error('Failed to start sync on Railway');
     }
 

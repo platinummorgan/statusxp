@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/ui/screens/dashboard_screen.dart';
+import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
 import 'package:statusxp/ui/screens/games_list_screen.dart';
+import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
 import 'package:statusxp/ui/screens/psn/psn_sync_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_sync_screen.dart';
 import 'package:statusxp/ui/screens/status_poster_screen.dart';
@@ -17,10 +19,17 @@ import 'package:statusxp/features/display_case/screens/display_case_screen.dart'
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    // Dashboard - Home screen
+    // Dashboard - Home screen (NEW cross-platform version)
     GoRoute(
       path: '/',
       name: 'dashboard',
+      builder: (context, state) => const NewDashboardScreen(),
+    ),
+
+    // Old Dashboard - Legacy single-platform view
+    GoRoute(
+      path: '/dashboard-legacy',
+      name: 'dashboard-legacy',
       builder: (context, state) => const DashboardScreen(),
     ),
 
@@ -29,6 +38,13 @@ final GoRouter appRouter = GoRouter(
       path: '/games',
       name: 'games',
       builder: (context, state) => const GamesListScreen(),
+    ),
+
+    // Unified Games List - Cross-platform game view with filters
+    GoRoute(
+      path: '/unified-games',
+      name: 'unified-games',
+      builder: (context, state) => const UnifiedGamesListScreen(),
     ),
 
     // Status Poster - Shareable achievement card

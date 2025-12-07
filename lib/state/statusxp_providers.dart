@@ -7,10 +7,14 @@ import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/data/repositories/supabase_game_repository.dart';
 import 'package:statusxp/data/repositories/supabase_trophies_repository.dart';
 import 'package:statusxp/data/repositories/supabase_user_stats_repository.dart';
+import 'package:statusxp/data/repositories/supabase_dashboard_repository.dart';
 import 'package:statusxp/data/repositories/trophy_room_repository.dart';
+import 'package:statusxp/data/repositories/unified_games_repository.dart';
 import 'package:statusxp/data/supabase_game_edit_service.dart';
 import 'package:statusxp/domain/game.dart';
+import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/trophy_room_data.dart';
+import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/domain/user_stats.dart';
 import 'package:statusxp/domain/user_stats_calculator.dart';
 
@@ -93,6 +97,18 @@ final trophyRoomRepositoryProvider = Provider<TrophyRoomRepository>((ref) {
   return TrophyRoomRepository(client);
 });
 
+/// Provider for the SupabaseDashboardRepository instance.
+final dashboardRepositoryProvider = Provider<SupabaseDashboardRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return SupabaseDashboardRepository(client);
+});
+
+/// Provider for the UnifiedGamesRepository instance.
+final unifiedGamesRepositoryProvider = Provider<UnifiedGamesRepository>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return UnifiedGamesRepository(client);
+});
+
 /// FutureProvider for loading games for the current user.
 /// 
 /// This provider loads games asynchronously from Supabase.
@@ -108,6 +124,20 @@ final gamesProvider = FutureProvider<List<Game>>((ref) async {
   return repository.getGamesForUser(userId);
 });
 
+/// FutureProvider for loading unified cross-platform games.
+/// 
+/// Groups games by title across all platforms (PSN/Xbox/Steam).
+final unifiedGamesProvider = FutureProvider<List<UnifiedGame>>((ref) async {
+  final repository = ref.watch(unifiedGamesRepositoryProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  
+  if (userId == null) {
+    return [];
+  }
+  
+  return repository.getUnifiedGames(userId);
+});
+
 /// FutureProvider for loading user statistics for the current user.
 /// 
 /// This provider loads user stats asynchronously from Supabase.
@@ -121,6 +151,21 @@ final userStatsProvider = FutureProvider<UserStats>((ref) async {
   }
   
   return repository.getUserStats(userId);
+});
+
+/// FutureProvider for loading dashboard statistics for the current user.
+/// 
+/// This provider loads cross-platform dashboard stats including StatusXP score.
+/// Returns empty stats if no user is authenticated.
+final dashboardStatsProvider = FutureProvider<DashboardStats?>((ref) async {
+  final repository = ref.watch(dashboardRepositoryProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  
+  if (userId == null) {
+    return null;
+  }
+  
+  return repository.getDashboardStats(userId);
 });
 
 /// FutureProvider for loading Trophy Room data for the current user.
@@ -181,6 +226,8 @@ final gameEditServiceProvider = Provider<SupabaseGameEditService?>((ref) {
 extension StatusXPRefresh on WidgetRef {
   void refreshCoreData() {
     invalidate(gamesProvider);
+    invalidate(unifiedGamesProvider);
     invalidate(userStatsProvider);
+    invalidate(dashboardStatsProvider);
   }
 }

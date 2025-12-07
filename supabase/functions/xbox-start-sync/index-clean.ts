@@ -33,18 +33,18 @@ serve(async (req) => {
     // Get profile
     const { data: profile } = await supabase
       .from('profiles')
-      .select('steam_id, steam_api_key, steam_sync_status')
+      .select('xbox_refresh_token, xbox_xuid, xbox_user_hash, xbox_access_token, xbox_sync_status')
       .eq('id', user.id)
       .single();
 
-    if (!profile?.steam_id || !profile?.steam_api_key) {
-      return new Response(JSON.stringify({ error: 'Steam account not linked' }), {
+    if (!profile?.xbox_refresh_token) {
+      return new Response(JSON.stringify({ error: 'Xbox account not linked' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    if (profile.steam_sync_status === 'syncing') {
+    if (profile.xbox_sync_status === 'syncing') {
       return new Response(JSON.stringify({ error: 'Sync already in progress' }), {
         status: 409,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -53,7 +53,7 @@ serve(async (req) => {
 
     // Mark all old pending syncs as failed
     await supabase
-      .from('steam_sync_logs')
+      .from('xbox_sync_logs')
       .update({
         status: 'failed',
         completed_at: new Date().toISOString(),
@@ -64,7 +64,7 @@ serve(async (req) => {
 
     // Create new sync log
     const { data: syncLog } = await supabase
-      .from('steam_sync_logs')
+      .from('xbox_sync_logs')
       .insert({
         user_id: user.id,
         sync_type: 'full',
@@ -82,51 +82,41 @@ serve(async (req) => {
     await supabase
       .from('profiles')
       .update({
-        steam_sync_status: 'syncing',
-        steam_sync_progress: 0,
-        steam_sync_error: null,
+        xbox_sync_status: 'syncing',
+        xbox_sync_progress: 0,
+        xbox_sync_error: null,
       })
       .eq('id', user.id);
 
-    // Call Railway service
-    const railwayPayload = {
-      userId: user.id,
-      steamId: profile.steam_id,
-      apiKey: profile.steam_api_key,
-      syncLogId: syncLog.id,
-      batchSize: 5,
-      maxConcurrent: 1,
-    };
-    console.log('Calling Railway /sync/steam with payload size:', JSON.stringify(railwayPayload).length);
-    let railwayResponse;
-    try {
-      railwayResponse = await fetch(`${RAILWAY_URL}/sync/steam`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(railwayPayload),
-      });
-    } catch (fetchError) {
-      console.error('Network error when calling Railway /sync/steam:', fetchError);
-      throw new Error('Failed to start sync on Railway (network error)');
-    }
-    const railwayText = await railwayResponse.text().catch(() => null);
-    console.log('Railway STEAM start response:', railwayResponse.status, railwayText?.slice?.(0,200));
+    // Call Railway service - it will handle everything
+    const railwayResponse = await fetch(`${RAILWAY_URL}/sync/xbox`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        xuid: profile.xbox_xuid,
+        userHash: profile.xbox_user_hash,
+        accessToken: profile.xbox_access_token,
+        refreshToken: profile.xbox_refresh_token,
+        syncLogId: syncLog.id,
+      }),
+    });
+
     if (!railwayResponse.ok) {
-      console.error('Failed to start STEAM sync on Railway:', railwayResponse.status, railwayText);
       throw new Error('Failed to start sync on Railway');
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Steam sync started',
+        message: 'Xbox sync started',
         syncLogId: syncLog.id,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Steam sync start error:', error);
+    console.error('Xbox sync start error:', error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error' 

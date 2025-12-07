@@ -1,0 +1,109 @@
+import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
+
+/// Represents a game that may exist across multiple platforms
+/// 
+/// Groups platform-specific game data under one title for unified display
+@immutable
+class UnifiedGame extends Equatable {
+  /// Game title (normalized across platforms)
+  final String title;
+  
+  /// Cover/icon URL (from any platform, preferring highest quality)
+  final String? coverUrl;
+  
+  /// List of platforms this game is owned on
+  final List<PlatformGameData> platforms;
+  
+  /// Total completion across all platforms (average %)
+  final double overallCompletion;
+  
+  const UnifiedGame({
+    required this.title,
+    this.coverUrl,
+    required this.platforms,
+    required this.overallCompletion,
+  });
+  
+  /// Check if game is owned on a specific platform
+  bool isOnPlatform(String platform) {
+    return platforms.any((p) => p.platform == platform);
+  }
+  
+  /// Get data for a specific platform
+  PlatformGameData? getPlatformData(String platform) {
+    try {
+      return platforms.firstWhere((p) => p.platform == platform);
+    } catch (e) {
+      return null;
+    }
+  }
+  
+  @override
+  List<Object?> get props => [title, coverUrl, platforms, overallCompletion];
+}
+
+/// Platform-specific game data
+@immutable
+class PlatformGameData extends Equatable {
+  /// Platform identifier ('psn', 'xbox', 'steam')
+  final String platform;
+  
+  /// Game ID for this platform
+  final String gameId;
+  
+  /// Achievements/trophies earned
+  final int achievementsEarned;
+  
+  /// Total achievements/trophies
+  final int achievementsTotal;
+  
+  /// Completion percentage
+  final double completion;
+  
+  /// Rarity of rarest earned achievement
+  final double? rarestAchievementRarity;
+  
+  /// For PSN: platinum trophy rarity
+  final double? platinumRarity;
+  
+  /// Has platinum trophy (PSN only)
+  final bool hasPlatinum;
+  
+  /// Trophy/achievement breakdown
+  final int bronzeCount;
+  final int silverCount;
+  final int goldCount;
+  final int platinumCount;
+  
+  const PlatformGameData({
+    required this.platform,
+    required this.gameId,
+    required this.achievementsEarned,
+    required this.achievementsTotal,
+    required this.completion,
+    this.rarestAchievementRarity,
+    this.platinumRarity,
+    this.hasPlatinum = false,
+    this.bronzeCount = 0,
+    this.silverCount = 0,
+    this.goldCount = 0,
+    this.platinumCount = 0,
+  });
+  
+  @override
+  List<Object?> get props => [
+    platform,
+    gameId,
+    achievementsEarned,
+    achievementsTotal,
+    completion,
+    rarestAchievementRarity,
+    platinumRarity,
+    hasPlatinum,
+    bronzeCount,
+    silverCount,
+    goldCount,
+    platinumCount,
+  ];
+}

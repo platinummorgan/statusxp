@@ -58,19 +58,25 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
       
       await statusAsync.when(
         data: (status) async {
+          print('Poll: status=${status.status}, progress=${status.progress}%');
+          
           // If status is pending, automatically continue sync
           if (status.status == 'pending') {
+            print('Status is PENDING - calling startSync()');
             try {
               final xboxService = ref.read(xboxServiceProvider);
               await xboxService.startSync();
+              print('startSync() completed successfully');
             } catch (e) {
-              print('Error continuing sync: $e');
+              print('ERROR continuing sync: $e');
+              // Don't stop polling - keep trying
             }
             return;
           }
 
           // Check if sync completed or failed
-          if (status.status == 'success') {
+          if (status.status == 'completed' || status.status == 'success') {
+            print('Sync completed!');
             if (mounted) {
               setState(() {
                 _isSyncing = false;
@@ -80,6 +86,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
           }
 
           if (status.status == 'error') {
+            print('Sync error: ${status.error}');
             if (mounted) {
               setState(() {
                 _isSyncing = false;
@@ -89,8 +96,11 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
             return;
           }
         },
-        loading: () async {},
+        loading: () async {
+          print('Poll: loading...');
+        },
         error: (error, stack) async {
+          print('Poll ERROR: $error');
           if (mounted) {
             setState(() {
               _isSyncing = false;

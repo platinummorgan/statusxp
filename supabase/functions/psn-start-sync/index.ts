@@ -89,18 +89,27 @@ serve(async (req) => {
       .eq('id', user.id);
 
     // Call Railway service
-    const railwayResponse = await fetch(`${RAILWAY_URL}/sync/psn`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: user.id,
-        accountId: profile.psn_account_id,
-        accessToken: profile.psn_access_token,
-        refreshToken: profile.psn_refresh_token,
-        syncLogId: syncLog.id,
-      }),
-    });
-
+    const railwayPayload = {
+      userId: user.id,
+      accountId: profile.psn_account_id,
+      accessToken: profile.psn_access_token,
+      refreshToken: profile.psn_refresh_token,
+      syncLogId: syncLog.id,
+      batchSize: 5,
+      maxConcurrent: 1,
+    };
+    console.log('Calling Railway /sync/psn with payload size:', JSON.stringify(railwayPayload).length);
+    let railwayResponse;
+    try {
+      railwayResponse = await fetch(`${RAILWAY_URL}/sync/psn`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(railwayPayload),
+      });
+    } catch (fetchError) {
+      console.error('Network error when calling Railway /sync/psn:', fetchError);
+      throw new Error('Failed to start sync on Railway (network error)');
+    }
     const railwayText = await railwayResponse.text().catch(() => null);
     console.log('Railway PSN start response:', railwayResponse.status, railwayText?.slice?.(0, 200));
     if (!railwayResponse.ok) {
