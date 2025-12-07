@@ -1,9 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
-import {
-  exchangeCodeForToken,
-  getUserTitles,
-  getTitleTrophies,
-} from 'psn-api';
+import psnApi from 'psn-api';
+
+const { getUserTitles, getTitleTrophies } = psnApi;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
