@@ -81,6 +81,19 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         for (const game of batch) {
         try {
         console.log(`Processing Steam app ${game.appid} - ${game.name}`);
+        
+        // Get app details to check if it's DLC
+        const appDetailsResponse = await fetch(
+          `https://store.steampowered.com/api/appdetails?appids=${game.appid}`
+        );
+        const appDetailsData = await appDetailsResponse.json();
+        const appDetails = appDetailsData?.[game.appid]?.data;
+        const isDLC = appDetails?.type === 'dlc';
+        const dlcName = isDLC ? appDetails?.name : null;
+        const baseGameAppId = isDLC ? appDetails?.fullgame?.appid : null;
+        
+        console.log(`App ${game.appid} is ${isDLC ? 'DLC' : 'base game'}${isDLC ? ` (base: ${baseGameAppId})` : ''}`);
+        
         // Get game schema (achievements list)
         const schemaResponse = await fetch(
           `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${apiKey}&appid=${game.appid}`
@@ -149,6 +162,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               description: achievement.description || '',
               icon_locked_url: achievement.icon || '',
               icon_unlocked_url: achievement.icongray || achievement.icon || '',
+              is_dlc: isDLC,
+              dlc_name: dlcName,
             }, {
               onConflict: 'game_id,steam_api_name',
             })
