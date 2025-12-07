@@ -38,10 +38,10 @@ WITH ranked_games AS (
 )
 UPDATE game_titles gt
 SET canonical_game_title_id = (
-  SELECT id 
-  FROM ranked_games 
-  WHERE LOWER(TRIM(ranked_games.name)) = LOWER(TRIM(gt.name)) 
-    AND rank = 1
+  SELECT rg.id 
+  FROM ranked_games rg
+  WHERE LOWER(TRIM(rg.name)) = LOWER(TRIM(gt.name)) 
+    AND rg.rank = 1
   LIMIT 1
 );
 
