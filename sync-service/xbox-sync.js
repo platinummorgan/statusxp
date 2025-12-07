@@ -74,11 +74,12 @@ async function refreshXboxToken(refreshToken, userId) {
   console.log('XSTS response status:', xstsResponse.status);
   const xuid = xstsData.DisplayClaims.xui[0].xid;
 
-  // Fetch gamertag from Xbox Live profile
+  // Fetch gamertag and avatar from Xbox Live profile
   console.log('[GAMERTAG FETCH] Starting gamertag fetch for xuid:', xuid);
   let gamertag = 'Unknown';
+  let avatarUrl = null;
   try {
-    const profileUrl = `https://profile.xboxlive.com/users/xuid(${xuid})/profile/settings?settings=Gamertag`;
+    const profileUrl = `https://profile.xboxlive.com/users/xuid(${xuid})/profile/settings?settings=Gamertag,GameDisplayPicRaw`;
     console.log('[GAMERTAG FETCH] URL:', profileUrl);
     const profileResponse = await fetch(profileUrl, {
       headers: {
@@ -91,12 +92,18 @@ async function refreshXboxToken(refreshToken, userId) {
     if (profileResponse.ok) {
       const profileData = await profileResponse.json();
       console.log('[GAMERTAG FETCH] Response data:', JSON.stringify(profileData));
-      const gamertagSetting = profileData.profileUsers?.[0]?.settings?.find(s => s.id === 'Gamertag');
+      const settings = profileData.profileUsers?.[0]?.settings || [];
+      const gamertagSetting = settings.find(s => s.id === 'Gamertag');
+      const avatarSetting = settings.find(s => s.id === 'GameDisplayPicRaw');
       if (gamertagSetting) {
         gamertag = gamertagSetting.value;
         console.log('[GAMERTAG FETCH] ✅ SUCCESS - Fetched Xbox gamertag:', gamertag);
       } else {
         console.log('[GAMERTAG FETCH] ❌ FAILED - Gamertag not found in response');
+      }
+      if (avatarSetting) {
+        avatarUrl = avatarSetting.value;
+        console.log('[GAMERTAG FETCH] ✅ SUCCESS - Fetched Xbox avatar URL:', avatarUrl);
       }
     } else {
       console.log('[GAMERTAG FETCH] ❌ FAILED - Bad response status');

@@ -35,13 +35,19 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       const player = playerData.response?.players?.[0];
       if (player) {
         displayName = player.personaname;
+        const avatarUrl = player.avatarfull || player.avatarmedium || player.avatar;
         console.log('[STEAM NAME FETCH] ✅ SUCCESS - Fetched Steam display name:', displayName);
+        console.log('[STEAM NAME FETCH] ✅ SUCCESS - Fetched Steam avatar URL:', avatarUrl);
         
-        // Save display name to profile
+        // Save display name and avatar to profile
         console.log('[STEAM NAME SAVE] Saving to database for user:', userId);
+        const updateData = { steam_display_name: displayName };
+        if (avatarUrl) {
+          updateData.steam_avatar_url = avatarUrl;
+        }
         const saveResult = await supabase
           .from('profiles')
-          .update({ steam_display_name: displayName })
+          .update(updateData)
           .eq('id', userId);
         console.log('[STEAM NAME SAVE] Save result:', saveResult.error || 'OK');
       } else {
