@@ -124,16 +124,39 @@ export async function syncPSNAchievements(
       .eq('id', syncLogId);
 
     console.log('Fetching PSN titles for accountId:', accountId);
-    const titles = await getUserTitles(
-      { accessToken: currentAccessToken },
-      accountId
-    );
-    console.log(
-      'PSN titles fetched, trophyTitles length:',
-      titles?.trophyTitles?.length ?? 0
-    );
+    // Paginate through ALL titles (max 800 per request)
+    let allTitles = [];
+    let offset = 0;
+    const limit = 800;
+    let hasMore = true;
 
-    if (!titles?.trophyTitles || titles.trophyTitles.length === 0) {
+    console.log('Starting to fetch ALL PSN titles with pagination...');
+    
+    while (hasMore) {
+      console.log(`Fetching titles with offset ${offset}, limit ${limit}`);
+      const titles = await getUserTitles(
+        { accessToken: currentAccessToken },
+        accountId,
+        { limit, offset }
+      );
+      
+      const fetchedCount = titles?.trophyTitles?.length ?? 0;
+      console.log(`Fetched ${fetchedCount} titles in this batch`);
+      
+      if (fetchedCount > 0) {
+        allTitles = allTitles.concat(titles.trophyTitles);
+        offset += fetchedCount;
+        
+        // If we got fewer titles than the limit, we've reached the end
+        hasMore = fetchedCount === limit;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    console.log(`Total PSN titles fetched: ${allTitles.length}`);
+
+    if (!allTitles || allTitles.length === 0) {
       console.log('No PSN titles found - marking sync as success with 0 games');
       await supabase
         .from('profiles')
@@ -157,7 +180,7 @@ export async function syncPSNAchievements(
     }
 
     // Sync ALL games with any trophy progress (including platinum-only games)
-    const gamesWithTrophies = titles.trophyTitles.filter(
+    const gamesWithTrophies = allTitles.filter(
       (title) => title.progress > 0
     );
 
