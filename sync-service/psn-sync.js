@@ -99,7 +99,7 @@ export async function syncPSNAchievements(
 
   const psnModule = await import('psn-api');
   const psnApi = psnModule.default ?? psnModule;
-  const { getUserTitles, getTitleTrophies, exchangeRefreshTokenForAuthTokens } =
+  const { getUserTitles, getTitleTrophies, getUserTrophiesEarnedForTitle, exchangeRefreshTokenForAuthTokens } =
     psnApi;
 
   try {
@@ -304,19 +304,33 @@ export async function syncPSNAchievements(
             return;
           }
 
-          console.log(`🔄 Fetching trophy details for ${title.trophyTitleName}`);
-          const trophyData = await getTitleTrophies(
+          console.log(`🔄 Fetching trophy details (with rarity) for ${title.trophyTitleName}`);
+          
+          // Fetch trophy metadata (names, descriptions, icons)
+          const trophyMetadata = await getTitleTrophies(
             { accessToken: currentAccessToken },
             title.npCommunicationId,
             'all',
             { npServiceName: title.npServiceName }
           );
+          
+          // Fetch user trophy data (earned status + RARITY)
+          const userTrophyData = await getUserTrophiesEarnedForTitle(
+            { accessToken: currentAccessToken },
+            accountId,
+            title.npCommunicationId,
+            'all',
+            { npServiceName: title.npServiceName }
+          );
+          
           console.log(
             'Fetched trophies count:',
-            trophyData?.trophies?.length ?? 0
+            trophyMetadata?.trophies?.length ?? 0,
+            'with rarity data:',
+            userTrophyData?.trophies?.length ?? 0
           );
 
-          if (!trophyData?.trophies || trophyData.trophies.length === 0) {
+          if (!trophyMetadata?.trophies || trophyMetadata.trophies.length === 0) {
             processedGames++;
             const progress = Math.floor(
               (processedGames / gamesWithTrophies.length) * 100
@@ -328,28 +342,37 @@ export async function syncPSNAchievements(
             return;
           }
 
-          for (const trophy of trophyData.trophies) {
+          // Create a map of user trophy data by trophyId for easy lookup
+          const userTrophyMap = new Map();
+          for (const userTrophy of (userTrophyData?.trophies || [])) {
+            userTrophyMap.set(userTrophy.trophyId, userTrophy);
+          }
+
+          for (const trophyMeta of trophyMetadata.trophies) {
+            const userTrophy = userTrophyMap.get(trophyMeta.trophyId);
+            
             // Debug: Log full trophy object structure for first game
-            if (processedGames === 0 && trophyData.trophies.indexOf(trophy) === 0) {
-              console.log(`[DEBUG] Full trophy object structure:`, JSON.stringify(trophy, null, 2));
+            if (processedGames === 0 && trophyMetadata.trophies.indexOf(trophyMeta) === 0) {
+              console.log(`[DEBUG] Trophy metadata:`, JSON.stringify(trophyMeta, null, 2));
+              console.log(`[DEBUG] User trophy data:`, JSON.stringify(userTrophy, null, 2));
             }
 
             const isDLC =
-              trophy.trophyGroupId && trophy.trophyGroupId !== 'default';
-            const dlcName = isDLC ? `DLC Group ${trophy.trophyGroupId}` : null;
-            const rarityPercent = trophy.trophyEarnedRate
-              ? parseFloat(trophy.trophyEarnedRate)
-              : null; // PSN API no longer provides rarity data - will default to COMMON
+              trophyMeta.trophyGroupId && trophyMeta.trophyGroupId !== 'default';
+            const dlcName = isDLC ? `DLC Group ${trophyMeta.trophyGroupId}` : null;
+            const rarityPercent = userTrophy?.trophyEarnedRate
+              ? parseFloat(userTrophy.trophyEarnedRate)
+              : null;
 
             if (rarityPercent !== null && rarityPercent > 0) {
               console.log(
-                `[PSN RARITY] ${trophy.trophyName}: ${rarityPercent}%`
+                `[PSN RARITY] ${trophyMeta.trophyName}: ${rarityPercent}%`
               );
             } else {
               // Only log debug for first few trophies to avoid spam
-              if (processedGames < 2 && trophyData.trophies.indexOf(trophy) < 5) {
+              if (processedGames < 2 && trophyMetadata.trophies.indexOf(trophyMeta) < 5) {
                 console.log(
-                  `[PSN RARITY DEBUG] ${trophy.trophyName}: trophyEarnedRate=${trophy.trophyEarnedRate}, parsed=${rarityPercent} (PSN API no longer provides rarity - will use COMMON)`
+                  `[PSN RARITY DEBUG] ${trophyMeta.trophyName}: trophyEarnedRate=${userTrophy?.trophyEarnedRate}, parsed=${rarityPercent}`
                 );
               }
             }
@@ -360,11 +383,11 @@ export async function syncPSNAchievements(
                 {
                   game_title_id: gameTitle.id,
                   platform: 'psn',
-                  platform_achievement_id: trophy.trophyId.toString(),
-                  name: trophy.trophyName,
-                  description: trophy.trophyDetail,
-                  icon_url: trophy.trophyIconUrl,
-                  psn_trophy_type: trophy.trophyType,
+                  platform_achievement_id: trophyMeta.trophyId.toString(),
+                  name: trophyMeta.trophyName,
+                  description: trophyMeta.trophyDetail,
+                  icon_url: trophyMeta.trophyIconUrl,
+                  psn_trophy_type: trophyMeta.trophyType,
                   rarity_global: rarityPercent,
                   is_dlc: isDLC,
                   dlc_name: dlcName,
@@ -378,14 +401,14 @@ export async function syncPSNAchievements(
 
             if (!achievementRecord) continue;
 
-            if (trophy.earned) {
+            if (userTrophy?.earned) {
               await supabase
                 .from('user_achievements')
                 .upsert(
                   {
                     user_id: userId,
                     achievement_id: achievementRecord.id,
-                    earned_at: trophy.earnedDateTime,
+                    earned_at: userTrophy.earnedDateTime,
                   },
                   {
                     onConflict: 'user_id,achievement_id',
