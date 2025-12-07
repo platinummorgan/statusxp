@@ -41,6 +41,26 @@ process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection in sync-service:', reason);
 });
 
+// Handle termination signals to log and allow graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM - shutting down gracefully');
+  // Optionally do cleanups here
+  process.exit(0);
+});
+process.on('SIGINT', () => {
+  console.log('Received SIGINT - shutting down gracefully');
+  process.exit(0);
+});
+process.on('SIGHUP', () => {
+  console.log('Received SIGHUP - shutting down gracefully');
+  process.exit(0);
+});
+
+// Heartbeat to ensure the container is alive and provide periodic logs for debugging
+setInterval(() => {
+  console.log('Heartbeat: sync-service alive at', new Date().toISOString());
+}, 60000);
+
 // Xbox sync endpoint - NO TIMEOUT LIMITS!
 app.post('/sync/xbox', async (req, res) => {
   const { userId, xuid, userHash, accessToken, refreshToken, syncLogId } = req.body;
