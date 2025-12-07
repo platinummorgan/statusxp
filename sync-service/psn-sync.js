@@ -100,15 +100,25 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
       if (MAX_CONCURRENT <= 1) {
       for (const title of batch) {
         try {
-        // Get platform ID for PSN (search by code)
+        // Map PSN platform codes to our platform codes
+        let platformCode = 'PS5'; // Default
+        if (title.trophyTitlePlatform) {
+          const psnPlatform = title.trophyTitlePlatform.toUpperCase();
+          if (psnPlatform.includes('PS5')) platformCode = 'PS5';
+          else if (psnPlatform.includes('PS4')) platformCode = 'PS4';
+          else if (psnPlatform.includes('PS3')) platformCode = 'PS3';
+          else if (psnPlatform.includes('VITA')) platformCode = 'PSVITA';
+        }
+
+        // Get platform ID
         const { data: platform } = await supabase
           .from('platforms')
           .select('id')
-          .eq('code', title.trophyTitlePlatform || 'PS5')
+          .eq('code', platformCode)
           .single();
 
         if (!platform) {
-          console.error(`❌ Platform not found for ${title.trophyTitlePlatform}, skipping game: ${title.trophyTitleName}`);
+          console.error(`❌ Platform not found for code ${platformCode} (PSN: ${title.trophyTitlePlatform}), skipping game: ${title.trophyTitleName}`);
           continue;
         }
 
@@ -242,15 +252,25 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
         const worker = async (titlesChunk) => {
           await Promise.all(titlesChunk.map(async (title) => {
             try {
-              // Get platform ID for PSN
+              // Map PSN platform codes to our platform codes
+              let platformCode = 'PS5'; // Default
+              if (title.trophyTitlePlatform) {
+                const psnPlatform = title.trophyTitlePlatform.toUpperCase();
+                if (psnPlatform.includes('PS5')) platformCode = 'PS5';
+                else if (psnPlatform.includes('PS4')) platformCode = 'PS4';
+                else if (psnPlatform.includes('PS3')) platformCode = 'PS3';
+                else if (psnPlatform.includes('VITA')) platformCode = 'PSVITA';
+              }
+
+              // Get platform ID
               const { data: platform } = await supabase
                 .from('platforms')
                 .select('id')
-                .eq('code', title.trophyTitlePlatform || 'PS5')
+                .eq('code', platformCode)
                 .single();
 
               if (!platform) {
-                console.error(`❌ Platform not found for ${title.trophyTitlePlatform}, skipping game: ${title.trophyTitleName}`);
+                console.error(`❌ Platform not found for code ${platformCode} (PSN: ${title.trophyTitlePlatform}), skipping game: ${title.trophyTitleName}`);
                 return;
               }
 
