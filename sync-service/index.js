@@ -1,8 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { syncXboxAchievements } from './xbox-sync.js';
-import { syncPSNAchievements } from './psn-sync.js';
-import { syncSteamAchievements } from './steam-sync.js';
+// Lazy-load sync handlers on-demand to avoid boot-time module errors
+// (psn-api & other ESM/CJS modules can crash startup when required at top-level)
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,10 +48,16 @@ app.post('/sync/xbox', async (req, res) => {
   // Respond immediately so the client doesn't wait
   res.json({ success: true, message: 'Xbox sync started in background' });
 
-  // Run sync in background - will complete no matter how long it takes
-  syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId).catch(err => {
-    console.error('Xbox sync error:', err);
-  });
+  // Run sync in background - lazy import handler to avoid startup crashes
+  (async () => {
+    try {
+      const mod = await import('./xbox-sync.js');
+      const { syncXboxAchievements } = mod;
+      await syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId);
+    } catch (err) {
+      console.error('Xbox sync error (lazy import):', err);
+    }
+  })();
 });
 
 // PSN sync endpoint - NO TIMEOUT LIMITS!
@@ -62,10 +67,16 @@ app.post('/sync/psn', async (req, res) => {
   // Respond immediately
   res.json({ success: true, message: 'PSN sync started in background' });
 
-  // Run sync in background
-  syncPSNAchievements(userId, accountId, accessToken, refreshToken, syncLogId).catch(err => {
-    console.error('PSN sync error:', err);
-  });
+  // Run sync in background - lazy import handler to avoid startup crashes
+  (async () => {
+    try {
+      const mod = await import('./psn-sync.js');
+      const { syncPSNAchievements } = mod;
+      await syncPSNAchievements(userId, accountId, accessToken, refreshToken, syncLogId);
+    } catch (err) {
+      console.error('PSN sync error (lazy import):', err);
+    }
+  })();
 });
 
 // Steam sync endpoint - NO TIMEOUT LIMITS!
@@ -75,10 +86,16 @@ app.post('/sync/steam', async (req, res) => {
   // Respond immediately
   res.json({ success: true, message: 'Steam sync started in background' });
 
-  // Run sync in background
-  syncSteamAchievements(userId, steamId, apiKey, syncLogId).catch(err => {
-    console.error('Steam sync error:', err);
-  });
+  // Run sync in background - lazy import handler to avoid startup crashes
+  (async () => {
+    try {
+      const mod = await import('./steam-sync.js');
+      const { syncSteamAchievements } = mod;
+      await syncSteamAchievements(userId, steamId, apiKey, syncLogId);
+    } catch (err) {
+      console.error('Steam sync error (lazy import):', err);
+    }
+  })();
 });
 
 app.listen(PORT, () => {
