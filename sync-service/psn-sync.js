@@ -379,8 +379,9 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                 // Detect DLC based on trophy group
                 const isDLC = trophy.trophyGroupId && trophy.trophyGroupId !== 'default';
                 const dlcName = isDLC ? `DLC ${trophy.trophyGroupId}` : null;
+                const rarityPercent = trophy.trophyEarnedRate || 0;
 
-                // Upsert achievement (PSN trophy)
+                // Upsert achievement (PSN trophy) with rarity data
                 const { data: achievementRecord } = await supabase
                   .from('achievements')
                   .upsert({
@@ -391,6 +392,7 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                     description: trophy.trophyDetail,
                     icon_url: trophy.trophyIconUrl,
                     psn_trophy_type: trophy.trophyType,
+                    rarity_global: rarityPercent,
                     is_dlc: isDLC,
                     dlc_name: dlcName,
                   }, {

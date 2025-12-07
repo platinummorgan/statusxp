@@ -205,6 +205,25 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         const unlockedCount = playerAchievements.filter(a => a.achieved === 1).length;
         const progress = achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0;
 
+        // Fetch global achievement percentages for rarity data
+        const globalStats = {};
+        try {
+          const globalResponse = await fetch(
+            `https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid=${game.appid}&format=json`
+          );
+
+          if (globalResponse.ok) {
+            const globalData = await globalResponse.json();
+            if (globalData.achievementpercentages?.achievements) {
+              for (const ach of globalData.achievementpercentages.achievements) {
+                globalStats[ach.name] = ach.percent;
+              }
+            }
+          }
+        } catch (error) {
+          console.log(`Could not fetch global stats for ${game.name}:`, error.message);
+        }
+
         // Upsert user_games
         await supabase
           .from('user_games')
@@ -223,8 +242,9 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         for (let j = 0; j < achievements.length; j++) {
           const achievement = achievements[j];
           const playerAchievement = playerAchievements.find(a => a.apiname === achievement.name);
+          const rarityPercent = globalStats[achievement.name] || 0;
 
-          // Upsert achievement
+          // Upsert achievement with rarity data
           const { data: achievementRecord } = await supabase
             .from('achievements')
             .upsert({
@@ -235,6 +255,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               description: achievement.description || '',
               icon_url: achievement.icon || '',
               steam_hidden: achievement.hidden === 1,
+              rarity_global: rarityPercent,
               is_dlc: isDLC,
               dlc_name: dlcName,
             }, {

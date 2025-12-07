@@ -310,12 +310,43 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const achievementsData = await achievementsResponse.json();
             console.log('Fetched achievements count for titleId', title.titleId, ':', achievementsData?.achievements?.length ?? 0);
 
+            // Fetch global achievement stats for rarity data
+            const globalStatsMap = new Map();
+            try {
+              const statsResponse = await fetch(
+                `https://titlehub.xboxlive.com/titles/${title.titleId}/achievements/stats`,
+                {
+                  headers: {
+                    'x-xbl-contract-version': '2',
+                    'Accept-Language': 'en-US',
+                    Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+                  },
+                }
+              );
+
+              if (statsResponse.ok) {
+                const statsData = await statsResponse.json();
+                if (statsData.achievements) {
+                  for (const stat of statsData.achievements) {
+                    if (stat.earnedPercentage !== undefined) {
+                      globalStatsMap.set(stat.id, stat.earnedPercentage);
+                    }
+                  }
+                }
+              } else {
+                console.log(`Stats endpoint returned ${statsResponse.status} for ${title.name}`);
+              }
+            } catch (statsError) {
+              console.log(`Could not fetch global stats for ${title.name}:`, statsError.message);
+            }
+
             for (const achievement of achievementsData.achievements) {
               // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
+              const rarityPercent = globalStatsMap.get(achievement.id) || 0;
               
-              // Upsert achievement
+              // Upsert achievement with rarity data
               const { data: achievementRecord } = await supabase
                 .from('achievements')
                 .upsert({
@@ -327,6 +358,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                   icon_url: achievement.mediaAssets?.[0]?.url,
                   xbox_gamerscore: achievement.rewards?.[0]?.value || 0,
                   xbox_is_secret: achievement.isSecret || false,
+                  rarity_global: rarityPercent,
                   is_dlc: isDLC,
                   dlc_name: null,
                 }, {
