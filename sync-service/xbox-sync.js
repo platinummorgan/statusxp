@@ -74,28 +74,6 @@ async function refreshXboxToken(refreshToken, userId) {
   console.log('XSTS response status:', xstsResponse.status);
   const xuid = xstsData.DisplayClaims.xui[0].xid;
 
-  // Fetch gamertag from Xbox Live profile
-  let gamertag = 'Unknown';
-  try {
-    const profileResponse = await fetch(`https://profile.xboxlive.com/users/xuid(${xuid})/profile/settings?settings=Gamertag`, {
-      headers: {
-        'Authorization': `XBL3.0 x=${userHash};${xstsData.Token}`,
-        'x-xbl-contract-version': '2',
-      },
-    });
-    
-    if (profileResponse.ok) {
-      const profileData = await profileResponse.json();
-      const gamertagSetting = profileData.profileUsers?.[0]?.settings?.find(s => s.id === 'Gamertag');
-      if (gamertagSetting) {
-        gamertag = gamertagSetting.value;
-        console.log('Fetched Xbox gamertag:', gamertag);
-      }
-    }
-  } catch (e) {
-    console.error('Failed to fetch Xbox gamertag:', e.message);
-  }
-
   // Save to database
   const updateProfile = await supabase
     .from('profiles')
@@ -104,7 +82,6 @@ async function refreshXboxToken(refreshToken, userId) {
       xbox_refresh_token: tokenData.refresh_token,
       xbox_xuid: xuid,
       xbox_user_hash: userHash,
-      xbox_gamertag: gamertag,
     })
     .eq('id', userId);
   console.log('Saved refreshed tokens to profiles result:', updateProfile.error || 'OK');
