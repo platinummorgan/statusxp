@@ -102,6 +102,19 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
     logMemory('After fetching ownedGames');
 
+    // Load ALL user_games ONCE for fast lookup
+    console.log('Loading all user_games for comparison...');
+    const { data: allUserGames } = await supabase
+      .from('user_games')
+      .select('game_title_id, platform_id, earned_trophies, total_trophies, completion_percent, last_rarity_sync')
+      .eq('user_id', userId);
+    
+    const userGamesMap = new Map();
+    (allUserGames || []).forEach(ug => {
+      userGamesMap.set(`${ug.game_title_id}_${ug.platform_id}`, ug);
+    });
+    console.log(`Loaded ${userGamesMap.size} existing user_games into memory`);
+
     let processedGames = 0;
     let totalAchievements = 0;
 
@@ -205,6 +218,35 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         const unlockedCount = playerAchievements.filter(a => a.achieved === 1).length;
         const progress = achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0;
 
+        // Simple lookup - is this game new or changed?
+        const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
+        const isNewGame = !existingUserGame;
+        const earnedChanged = existingUserGame && existingUserGame.earned_trophies !== unlockedCount;
+        
+        // Check if rarity is stale (>30 days old)
+        let needRarityRefresh = false;
+        if (!isNewGame && !earnedChanged && existingUserGame) {
+          const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
+        }
+        
+        const needAchievements = isNewGame || earnedChanged || needRarityRefresh;
+
+        if (!needAchievements) {
+          console.log(`⏭️  Skip ${game.name} - no changes`);
+          processedGames++;
+          const progressPercent = Math.floor((processedGames / ownedGames.length) * 100);
+          await supabase.from('profiles').update({ steam_sync_progress: progressPercent }).eq('id', userId);
+          continue;
+        }
+        
+        if (needRarityRefresh) {
+          console.log(`🔄 RARITY REFRESH: ${game.name} (>30 days since last rarity sync)`);
+        } else {
+          console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${game.name} (unlocked: ${unlockedCount})`);
+        }
+
         // Fetch global achievement percentages for rarity data
         const globalStats = {};
         try {
@@ -234,6 +276,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             total_trophies: achievements.length,
             earned_trophies: unlockedCount,
             completion_percent: progress,
+            last_rarity_sync: new Date().toISOString(),
           }, {
             onConflict: 'user_id,game_title_id,platform_id',
           });
