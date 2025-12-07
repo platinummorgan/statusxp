@@ -158,6 +158,17 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
           gameTitle = newGame;
         }
 
+        // Check if we need to fetch trophy details (only if new or progress changed)
+        const { data: existingUserGame } = await supabase
+          .from('user_games')
+          .select('completion_percent')
+          .eq('user_id', userId)
+          .eq('game_title_id', gameTitle.id)
+          .eq('platform_id', platform.id)
+          .maybeSingle();
+
+        const needsTrophyFetch = !existingUserGame || existingUserGame.completion_percent !== title.progress;
+
         // Upsert user_games with platform_id
         await supabase
           .from('user_games')
@@ -177,6 +188,13 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
           }, {
             onConflict: 'user_id,game_title_id,platform_id',
           });
+
+        // Only fetch trophy details if game is new or progress changed
+        if (!needsTrophyFetch) {
+          console.log(`⏭️  Skipping trophy fetch for ${title.trophyTitleName} (no changes)`);
+          processedGames++;
+          continue;
+        }
 
         // Fetch and sync trophies
         console.log('Fetching PSN trophies for', title.npCommunicationId);
@@ -310,6 +328,17 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                 gameTitle = newGame;
               }
 
+              // Check if we need to fetch trophy details (only if new or progress changed)
+              const { data: existingUserGame } = await supabase
+                .from('user_games')
+                .select('completion_percent')
+                .eq('user_id', userId)
+                .eq('game_title_id', gameTitle.id)
+                .eq('platform_id', platform.id)
+                .maybeSingle();
+
+              const needsTrophyFetch = !existingUserGame || existingUserGame.completion_percent !== title.progress;
+
               // Upsert user_games with platform_id
               await supabase
                 .from('user_games')
@@ -329,6 +358,12 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                 }, {
                   onConflict: 'user_id,game_title_id,platform_id',
                 });
+
+              // Only fetch trophy details if game is new or progress changed
+              if (!needsTrophyFetch) {
+                console.log(`⏭️  Skipping trophy fetch for ${title.trophyTitleName} (no changes)`);
+                return;
+              }
 
               // Fetch and sync trophies
               console.log('Fetching PSN trophies for', title.npCommunicationId);
