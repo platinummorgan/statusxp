@@ -235,7 +235,21 @@ export async function syncPSNAchievements(
           const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
           const isNewGame = !existingUserGame;
           const earnedChanged = existingUserGame && existingUserGame.earned_trophies !== apiEarnedTrophies;
-          const needTrophies = isNewGame || earnedChanged;
+          
+          // Check if we need to refresh rarity (game exists but might have outdated rarity)
+          let needRarityRefresh = false;
+          if (!isNewGame && !earnedChanged) {
+            const { count } = await supabase
+              .from('achievements')
+              .select('*', { count: 'exact', head: true })
+              .eq('game_title_id', gameTitle.id)
+              .eq('platform', 'psn');
+            
+            // If trophy count doesn't match API, rarity data may be stale
+            needRarityRefresh = count !== apiTotalTrophies;
+          }
+          
+          const needTrophies = isNewGame || earnedChanged || needRarityRefresh;
 
           if (!needTrophies) {
             console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
@@ -243,6 +257,10 @@ export async function syncPSNAchievements(
             const progress = Math.floor((processedGames / gamesWithTrophies.length) * 100);
             await supabase.from('profiles').update({ psn_sync_progress: progress }).eq('id', userId);
             return;
+          }
+          
+          if (needRarityRefresh) {
+            console.log(`🔄 RARITY REFRESH: ${title.trophyTitleName} (trophy count mismatch)`);
           }
 
           console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${title.trophyTitleName} (earned: ${apiEarnedTrophies})`);
