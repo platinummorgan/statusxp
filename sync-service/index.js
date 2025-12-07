@@ -21,6 +21,11 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'StatusXP Sync Service' });
 });
 
+// Ultra-simple OK route for quick connectivity tests (no imports or heavy logic)
+app.get('/ok', (req, res) => {
+  res.status(200).json({ ok: true, time: new Date().toISOString() });
+});
+
 // Lightweight health endpoint for quick checks
 app.get('/health', (req, res) => {
   res.json({
