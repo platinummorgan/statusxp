@@ -49,16 +49,21 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
   }
 
   Future<void> _pollSyncStatus() async {
+    XboxSyncStatus? lastStatus;
+    
     while (_isSyncing && mounted) {
       await Future.delayed(const Duration(seconds: 2));
       
-      // Refresh status
-      ref.invalidate(xboxSyncStatusProvider);
+      // Read status without invalidating (stream will update automatically)
       final statusAsync = ref.read(xboxSyncStatusProvider);
       
       await statusAsync.when(
         data: (status) async {
-          print('Poll: status=${status.status}, progress=${status.progress}%');
+          // Only log if status actually changed
+          if (lastStatus?.status != status.status || lastStatus?.progress != status.progress) {
+            print('Poll: status=${status.status}, progress=${status.progress}%');
+            lastStatus = status;
+          }
           
           // If status is pending, automatically continue sync
           if (status.status == 'pending') {

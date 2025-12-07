@@ -98,22 +98,48 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
   Future<void> _pollSyncStatus() async {
     while (_isSyncing && mounted) {
       await Future.delayed(const Duration(seconds: 2));
-      await _loadProfile();
+      
+      // Fetch data without rebuilding UI
+      try {
+        final supabase = Supabase.instance.client;
+        final userId = supabase.auth.currentUser?.id;
 
-      // If status is pending, automatically continue sync
-      if (_syncStatus == 'pending') {
-        try {
-          await Supabase.instance.client.functions.invoke('steam-start-sync');
-        } catch (e) {
-          print('Error continuing sync: $e');
+        if (userId != null) {
+          final data = await supabase
+              .from('profiles')
+              .select('steam_sync_status, steam_sync_progress')
+              .eq('id', userId)
+              .single();
+
+          final newStatus = data['steam_sync_status'] as String?;
+          final newProgress = data['steam_sync_progress'] as int? ?? 0;
+
+          // Only update UI if status or progress actually changed
+          if (newStatus != _syncStatus || newProgress != _syncProgress) {
+            setState(() {
+              _syncStatus = newStatus;
+              _syncProgress = newProgress;
+            });
+          }
+
+          // If status is pending, automatically continue sync
+          if (newStatus == 'pending') {
+            try {
+              await Supabase.instance.client.functions.invoke('steam-start-sync');
+            } catch (e) {
+              print('Error continuing sync: $e');
+            }
+            continue;
+          }
+
+          if (newStatus == 'success' || newStatus == 'error') {
+            setState(() => _isSyncing = false);
+            await _loadProfile(); // Full reload on completion
+            break;
+          }
         }
-        // Continue polling
-        continue;
-      }
-
-      if (_syncStatus == 'success' || _syncStatus == 'error') {
-        setState(() => _isSyncing = false);
-        break;
+      } catch (e) {
+        print('Error polling sync status: $e');
       }
     }
   }
