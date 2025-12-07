@@ -329,26 +329,29 @@ export async function syncPSNAchievements(
           }
 
           for (const trophy of trophyData.trophies) {
+            // Debug: Log full trophy object structure for first game
+            if (processedGames === 0 && trophyData.trophies.indexOf(trophy) === 0) {
+              console.log(`[DEBUG] Full trophy object structure:`, JSON.stringify(trophy, null, 2));
+            }
+
             const isDLC =
               trophy.trophyGroupId && trophy.trophyGroupId !== 'default';
             const dlcName = isDLC ? `DLC Group ${trophy.trophyGroupId}` : null;
             const rarityPercent = trophy.trophyEarnedRate
               ? parseFloat(trophy.trophyEarnedRate)
-              : null;
-
-            // Debug: Log trophy object structure for first few trophies
-            if (processedGames < 3 && trophyData.trophies.indexOf(trophy) < 3) {
-              console.log(`[DEBUG] Trophy object:`, JSON.stringify(trophy, null, 2));
-            }
+              : null; // PSN API no longer provides rarity data - will default to COMMON
 
             if (rarityPercent !== null && rarityPercent > 0) {
               console.log(
                 `[PSN RARITY] ${trophy.trophyName}: ${rarityPercent}%`
               );
             } else {
-              console.log(
-                `[PSN RARITY DEBUG] ${trophy.trophyName}: trophyEarnedRate=${trophy.trophyEarnedRate}, parsed=${rarityPercent}`
-              );
+              // Only log debug for first few trophies to avoid spam
+              if (processedGames < 2 && trophyData.trophies.indexOf(trophy) < 5) {
+                console.log(
+                  `[PSN RARITY DEBUG] ${trophy.trophyName}: trophyEarnedRate=${trophy.trophyEarnedRate}, parsed=${rarityPercent} (PSN API no longer provides rarity - will use COMMON)`
+                );
+              }
             }
 
             const { data: achievementRecord } = await supabase
