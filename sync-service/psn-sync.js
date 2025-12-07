@@ -336,9 +336,18 @@ export async function syncPSNAchievements(
               ? parseFloat(trophy.trophyEarnedRate)
               : null;
 
+            // Debug: Log trophy object structure for first few trophies
+            if (processedGames < 3 && trophyData.trophies.indexOf(trophy) < 3) {
+              console.log(`[DEBUG] Trophy object:`, JSON.stringify(trophy, null, 2));
+            }
+
             if (rarityPercent !== null && rarityPercent > 0) {
               console.log(
                 `[PSN RARITY] ${trophy.trophyName}: ${rarityPercent}%`
+              );
+            } else {
+              console.log(
+                `[PSN RARITY DEBUG] ${trophy.trophyName}: trophyEarnedRate=${trophy.trophyEarnedRate}, parsed=${rarityPercent}`
               );
             }
 
