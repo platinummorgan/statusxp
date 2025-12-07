@@ -384,12 +384,10 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                 // Detect DLC based on trophy group
                 const isDLC = trophy.trophyGroupId && trophy.trophyGroupId !== 'default';
                 const dlcName = isDLC ? `DLC ${trophy.trophyGroupId}` : null;
-                const rarityPercent = trophy.trophyEarnedRate || 0;
+                const rarityPercent = trophy.trophyEarnedRate ? parseFloat(trophy.trophyEarnedRate) : null;
                 
-                if (rarityPercent > 0) {
-                  console.log(`[PSN RARITY] ${trophy.trophyName}: ${rarityPercent}% (field: ${trophy.trophyEarnedRate})`);
-                } else {
-                  console.log(`[PSN RARITY] ${trophy.trophyName}: NO RARITY DATA - trophy object keys:`, Object.keys(trophy));
+                if (rarityPercent !== null && rarityPercent > 0) {
+                  console.log(`[PSN RARITY] ${trophy.trophyName}: ${rarityPercent}%`);
                 }
 
                 // Upsert achievement (PSN trophy) with rarity data
