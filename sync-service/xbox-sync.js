@@ -256,7 +256,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               gameTitle = existingGame;
             } else {
               // Create new game_title
-              const { data: newGame } = await supabase
+              const { data: newGame, error: insertError } = await supabase
                 .from('game_titles')
                 .insert({
                   name: title.name,
@@ -267,6 +267,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 })
                 .select()
                 .single();
+              
+              if (insertError) {
+                console.error('❌ Failed to insert game_title:', title.name, 'Error:', insertError);
+                continue;
+              }
               gameTitle = newGame;
             }
 
