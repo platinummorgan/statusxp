@@ -35,10 +35,12 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId) 
     // Process all games - NO TIMEOUT!
     for (const game of ownedGames) {
       try {
+        console.log(`Processing Steam app ${game.appid} - ${game.name}`);
         // Get game schema (achievements list)
         const schemaResponse = await fetch(
           `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${apiKey}&appid=${game.appid}`
         );
+        console.log('Schema fetch status:', schemaResponse.status);
         const schemaData = await schemaResponse.json();
         const achievements = schemaData.game?.availableGameStats?.achievements || [];
 
@@ -48,6 +50,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId) 
         const playerAchievementsResponse = await fetch(
           `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${apiKey}&steamid=${steamId}&appid=${game.appid}`
         );
+        console.log('Player achievements fetch status:', playerAchievementsResponse.status);
         const playerAchievementsData = await playerAchievementsResponse.json();
         const playerAchievements = playerAchievementsData.playerstats?.achievements || [];
 

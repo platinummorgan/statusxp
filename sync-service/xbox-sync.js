@@ -18,6 +18,8 @@ async function refreshXboxToken(refreshToken, userId) {
   });
 
   if (!tokenResponse.ok) {
+    const body = await tokenResponse.text();
+    console.error('Failed to refresh Xbox token. Status:', tokenResponse.status, 'Body:', body);
     throw new Error('Failed to refresh Xbox token');
   }
 
@@ -39,6 +41,7 @@ async function refreshXboxToken(refreshToken, userId) {
   });
 
   const xblData = await xblResponse.json();
+  console.log('XBL auth response (xblData) keys:', Object.keys(xblData));
   const userHash = xblData.DisplayClaims.xui[0].uhs;
 
   // Exchange for XSTS token
@@ -56,10 +59,11 @@ async function refreshXboxToken(refreshToken, userId) {
   });
 
   const xstsData = await xstsResponse.json();
+  console.log('XSTS response status:', xstsResponse.status);
   const xuid = xstsData.DisplayClaims.xui[0].xid;
 
   // Save to database
-  await supabase
+  const updateProfile = await supabase
     .from('profiles')
     .update({
       xbox_access_token: xstsData.Token,
@@ -68,6 +72,7 @@ async function refreshXboxToken(refreshToken, userId) {
       xbox_user_hash: userHash,
     })
     .eq('id', userId);
+  console.log('Saved refreshed tokens to profiles result:', updateProfile.error || 'OK');
 
   return {
     accessToken: xstsData.Token,
@@ -77,7 +82,7 @@ async function refreshXboxToken(refreshToken, userId) {
 }
 
 export async function syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId) {
-  console.log(`Starting Xbox sync for user ${userId}`);
+  console.log(`Starting Xbox sync for user ${userId}, syncLogId=${syncLogId}`);
   
   try {
     // Refresh token first
@@ -87,10 +92,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     userHash = refreshed.userHash;
 
     // Set initial status
-    await supabase
+    const profileUpdateRes = await supabase
       .from('profiles')
       .update({ xbox_sync_status: 'syncing', xbox_sync_progress: 0 })
       .eq('id', userId);
+    console.log('Set profile to syncing:', profileUpdateRes.error || 'OK');
 
     await supabase
       .from('xbox_sync_logs')
@@ -110,6 +116,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     );
 
     const titleHistory = await titleHistoryResponse.json();
+    console.log('Fetched title history - titles length:', (titleHistory?.titles || []).length);
     const gamesWithProgress = titleHistory.titles.filter(t => t.achievement?.currentGamerscore > 0);
 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
@@ -120,6 +127,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     // Process all games - NO TIMEOUT!
     for (const title of gamesWithProgress) {
       try {
+        console.log(`Processing game: ${title.name} (${title.titleId})`);
         // Upsert game
         const { data: game } = await supabase
           .from('games')
@@ -134,7 +142,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
           .select()
           .single();
 
-        if (!game) continue;
+        if (!game) { console.log('Upserted game - no result'); continue; }
 
         // Upsert user_games
         await supabase
@@ -164,6 +172,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
         );
 
         const achievementsData = await achievementsResponse.json();
+        console.log('Fetched achievements count for titleId', title.titleId, ':', achievementsData?.achievements?.length ?? 0);
 
         for (const achievement of achievementsData.achievements) {
           // Upsert achievement

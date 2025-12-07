@@ -25,7 +25,9 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
       .eq('id', syncLogId);
 
     // Fetch all games
+    console.log('Fetching PSN titles for accountId:', accountId);
     const titles = await getUserTitles({ accessToken }, accountId);
+    console.log('PSN titles fetched, trophyTitles length:', titles?.trophyTitles?.length ?? 0);
     const gamesWithTrophies = titles.trophyTitles.filter(
       title => title.earnedTrophies.bronze > 0 || 
                title.earnedTrophies.silver > 0 || 
@@ -70,12 +72,14 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
           });
 
         // Fetch and sync trophies
+        console.log('Fetching PSN trophies for', title.npCommunicationId);
         const trophyData = await getTitleTrophies(
           { accessToken },
           title.npCommunicationId,
           'all',
           { npServiceName: title.npServiceName }
         );
+        console.log('Fetched trophies count:', trophyData?.trophies?.length ?? 0);
 
         for (const trophy of trophyData.trophies) {
           // Upsert trophy
