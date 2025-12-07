@@ -374,12 +374,23 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                 { npServiceName: title.npServiceName }
               );
               console.log('Fetched trophies count:', trophyData?.trophies?.length ?? 0);
+              
+              // Log first trophy to see structure
+              if (trophyData?.trophies?.length > 0) {
+                console.log('[PSN RARITY] First trophy sample:', JSON.stringify(trophyData.trophies[0]));
+              }
 
               for (const trophy of trophyData.trophies) {
                 // Detect DLC based on trophy group
                 const isDLC = trophy.trophyGroupId && trophy.trophyGroupId !== 'default';
                 const dlcName = isDLC ? `DLC ${trophy.trophyGroupId}` : null;
                 const rarityPercent = trophy.trophyEarnedRate || 0;
+                
+                if (rarityPercent > 0) {
+                  console.log(`[PSN RARITY] ${trophy.trophyName}: ${rarityPercent}% (field: ${trophy.trophyEarnedRate})`);
+                } else {
+                  console.log(`[PSN RARITY] ${trophy.trophyName}: NO RARITY DATA - trophy object keys:`, Object.keys(trophy));
+                }
 
                 // Upsert achievement (PSN trophy) with rarity data
                 const { data: achievementRecord } = await supabase
