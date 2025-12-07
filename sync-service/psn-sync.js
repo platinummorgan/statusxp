@@ -42,18 +42,22 @@ async function shouldFetchTrophies({
       .maybeSingle(),
     supabase
       .from('achievements')
-      .select('total=count(*),with_rarity=count(rarity_global)')
+      .select('total=count(*),with_rarity=count(rarity_global),with_band=count(rarity_band),with_multiplier=count(rarity_multiplier),with_base_xp=count(base_status_xp),with_platinum=count(is_platinum),with_include_score=count(include_in_score)')
       .eq('game_title_id', gameTitleId)
       .eq('platform', 'psn')
       .single(),
   ]);
 
   const existingUserGame = userGameRes.data || null;
-  const achStats = achStatsRes.data || { total: 0, with_rarity: 0 };
+  const achStats = achStatsRes.data || { total: 0, with_rarity: 0, with_band: 0, with_multiplier: 0, with_base_xp: 0, with_platinum: 0, with_include_score: 0 };
 
   const localTotal = Number(achStats.total ?? 0);
   const withRarity = Number(achStats.with_rarity ?? 0);
-  const missingRarity = localTotal - withRarity;
+  const withBand = Number(achStats.with_band ?? 0);
+  const withMultiplier = Number(achStats.with_multiplier ?? 0);
+  const withBaseXp = Number(achStats.with_base_xp ?? 0);
+  const withPlatinum = Number(achStats.with_platinum ?? 0);
+  const withIncludeScore = Number(achStats.with_include_score ?? 0);
 
   const gameLevelChanged =
     !existingUserGame ||
@@ -63,14 +67,19 @@ async function shouldFetchTrophies({
 
   const achievementsIncomplete =
     localTotal < apiTotalTrophies || // not enough rows
-    missingRarity > 0;               // some trophies missing rarity
+    withRarity < localTotal || // some trophies missing rarity
+    withBand < localTotal || // some trophies missing rarity band
+    withMultiplier < localTotal || // some trophies missing multiplier
+    withBaseXp < localTotal || // some trophies missing base XP
+    withPlatinum < localTotal || // some trophies missing platinum flag
+    withIncludeScore < localTotal; // some trophies missing include_in_score
 
   // Fetch if game state changed OR achievements look incomplete
   const shouldFetch = gameLevelChanged || achievementsIncomplete;
 
   if (!shouldFetch) {
     console.log(
-      `⏭️  Skipping trophy fetch for game_title_id=${gameTitleId} (no game-level changes, ${localTotal} trophies, ${missingRarity} missing rarity)`
+      `⏭️  Skipping trophy fetch for game_title_id=${gameTitleId} (no game-level changes, ${localTotal} trophies, ${localTotal - withRarity} missing rarity, ${localTotal - withBand} missing bands)`
     );
   }
 
