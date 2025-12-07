@@ -114,15 +114,20 @@ async function refreshXboxToken(refreshToken, userId) {
 
   // Save to database
   console.log('[GAMERTAG SAVE] Saving gamertag to database:', gamertag, 'for user:', userId);
+  const updateData = {
+    xbox_access_token: xstsData.Token,
+    xbox_refresh_token: tokenData.refresh_token,
+    xbox_xuid: xuid,
+    xbox_user_hash: userHash,
+    xbox_gamertag: gamertag,
+  };
+  if (avatarUrl) {
+    updateData.xbox_avatar_url = avatarUrl;
+    console.log('[GAMERTAG SAVE] Including Xbox avatar URL in save');
+  }
   const updateProfile = await supabase
     .from('profiles')
-    .update({
-      xbox_access_token: xstsData.Token,
-      xbox_refresh_token: tokenData.refresh_token,
-      xbox_xuid: xuid,
-      xbox_user_hash: userHash,
-      xbox_gamertag: gamertag,
-    })
+    .update(updateData)
     .eq('id', userId);
   console.log('[GAMERTAG SAVE] Save result:', updateProfile.error || 'OK');
 
