@@ -158,9 +158,17 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
           gameTitle = newGame;
         }
 
-        // TEMPORARY: Force trophy fetch to populate rarity data
-        // Skip optimization check entirely
-        
+        // Check if we need to fetch trophy details (only if new or progress changed)
+        const { data: existingUserGame } = await supabase
+          .from('user_games')
+          .select('completion_percent')
+          .eq('user_id', userId)
+          .eq('game_title_id', gameTitle.id)
+          .eq('platform_id', platform.id)
+          .maybeSingle();
+
+        const needsTrophyFetch = !existingUserGame || existingUserGame.completion_percent !== title.progress;
+
         // Upsert user_games with platform_id
         await supabase
           .from('user_games')
@@ -178,12 +186,17 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
             has_platinum: (title.earnedTrophies?.platinum || 0) > 0,
             last_played_at: title.lastUpdatedDateTime,
           }, {
-            onConflict: 'user_id,game_title_id,platform_id',
-          });
+          onConflict: 'user_id,game_title_id,platform_id',
+        });
 
-        console.log(`🔄 Forcing trophy fetch for ${title.trophyTitleName} to populate rarity data`);
+        // Only fetch trophy details if game is new or progress changed
+        if (!needsTrophyFetch) {
+          console.log(`⏭️  Skipping trophy fetch for ${title.trophyTitleName} (no changes)`);
+          processedGames++;
+          continue;
+        }
 
-        // Fetch and sync trophies
+        console.log(`🔄 Fetching trophy details for ${title.trophyTitleName}`);        // Fetch and sync trophies
         console.log('Fetching PSN trophies for', title.npCommunicationId);
         const trophyData = await getTitleTrophies(
           { accessToken: currentAccessToken },
@@ -197,8 +210,13 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
           // PSN DLC detection: trophy groups other than 'default' are DLC
           const isDLC = trophy.trophyGroupId && trophy.trophyGroupId !== 'default';
           const dlcName = isDLC ? `DLC Group ${trophy.trophyGroupId}` : null;
+          const rarityPercent = trophy.trophyEarnedRate ? parseFloat(trophy.trophyEarnedRate) : null;
           
-          // Upsert achievement (PSN trophy)
+          if (rarityPercent !== null && rarityPercent > 0) {
+            console.log(`[PSN RARITY] ${trophy.trophyName}: ${rarityPercent}%`);
+          }
+          
+          // Upsert achievement (PSN trophy) with rarity data
           const { data: achievementRecord } = await supabase
             .from('achievements')
             .upsert({
@@ -209,6 +227,7 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
               description: trophy.trophyDetail,
               icon_url: trophy.trophyIconUrl,
               psn_trophy_type: trophy.trophyType,
+              rarity_global: rarityPercent,
               is_dlc: isDLC,
               dlc_name: dlcName,
             }, {
@@ -315,6 +334,17 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                 gameTitle = newGame;
               }
 
+              // Check if we need to fetch trophy details (only if new or progress changed)
+              const { data: existingUserGame } = await supabase
+                .from('user_games')
+                .select('completion_percent')
+                .eq('user_id', userId)
+                .eq('game_title_id', gameTitle.id)
+                .eq('platform_id', platform.id)
+                .maybeSingle();
+
+              const needsTrophyFetch = !existingUserGame || existingUserGame.completion_percent !== title.progress;
+
               // Upsert user_games with platform_id
               await supabase
                 .from('user_games')
@@ -332,14 +362,16 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                   has_platinum: (title.earnedTrophies?.platinum || 0) > 0,
                   last_played_at: title.lastUpdatedDateTime,
                 }, {
-                  onConflict: 'user_id,game_title_id,platform_id',
-                });
+                onConflict: 'user_id,game_title_id,platform_id',
+              });
 
-              // TEMPORARY: Force trophy fetch to populate rarity data
-              // Skip the optimization check entirely
-              console.log(`🔄 Forcing trophy fetch for ${title.trophyTitleName} to populate rarity data`);
+              // Only fetch trophy details if game is new or progress changed
+              if (!needsTrophyFetch) {
+                console.log(`⏭️  Skipping trophy fetch for ${title.trophyTitleName} (no changes)`);
+                return;
+              }
 
-              // Fetch and sync trophies
+              console.log(`🔄 Fetching trophy details for ${title.trophyTitleName}`);              // Fetch and sync trophies
               console.log('Fetching PSN trophies for', title.npCommunicationId);
               const trophyData = await getTitleTrophies(
                 { accessToken: currentAccessToken },
