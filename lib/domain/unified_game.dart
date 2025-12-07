@@ -27,7 +27,19 @@ class UnifiedGame extends Equatable {
   
   /// Check if game is owned on a specific platform
   bool isOnPlatform(String platform) {
-    return platforms.any((p) => p.platform == platform);
+    final searchPlatform = platform.toLowerCase();
+    return platforms.any((p) {
+      final platformCode = p.platform.toLowerCase();
+      // Flexible matching for platform families
+      if (searchPlatform == 'playstation') {
+        return platformCode.contains('ps') || platformCode == 'playstation';
+      } else if (searchPlatform == 'xbox') {
+        return platformCode.contains('xbox');
+      } else if (searchPlatform == 'steam') {
+        return platformCode == 'steam' || platformCode.contains('steam');
+      }
+      return platformCode == searchPlatform;
+    });
   }
   
   /// Get data for a specific platform

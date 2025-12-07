@@ -160,25 +160,44 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           continue;
         }
         
-        // Upsert game_title
-        const { data: gameTitle } = await supabase
+        // Search for existing game_title by name (case-insensitive)
+        let gameTitle = null;
+        const { data: existingGame } = await supabase
           .from('game_titles')
-          .upsert({
-            platform_id: platform.id,
-            name: game.name,
-            external_id: game.appid.toString(),
-            cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`,
-            metadata: {
-              steam_app_id: game.appid,
-              is_dlc: isDLC,
-              dlc_name: dlcName,
-              base_game_app_id: baseGameAppId,
-            },
-          }, {
-            onConflict: 'platform_id,external_id',
-          })
-          .select()
-          .single();
+          .select('id, name, cover_url')
+          .ilike('name', game.name)
+          .limit(1)
+          .maybeSingle();
+        
+        if (existingGame) {
+          // Update cover if we don't have one
+          if (!existingGame.cover_url) {
+            await supabase
+              .from('game_titles')
+              .update({ 
+                cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
+              })
+              .eq('id', existingGame.id);
+          }
+          gameTitle = existingGame;
+        } else {
+          // Create new game_title
+          const { data: newGame } = await supabase
+            .from('game_titles')
+            .insert({
+              name: game.name,
+              cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`,
+              metadata: {
+                steam_app_id: game.appid,
+                is_dlc: isDLC,
+                dlc_name: dlcName,
+                base_game_app_id: baseGameAppId,
+              },
+            })
+            .select()
+            .single();
+          gameTitle = newGame;
+        }
 
         if (!gameTitle) continue;
 

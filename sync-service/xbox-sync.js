@@ -236,24 +236,39 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               continue;
             }
             
-            // Upsert game_title
-            const { data: gameTitle } = await supabase
+            // Search for existing game_title by name (case-insensitive)
+            let gameTitle = null;
+            const { data: existingGame } = await supabase
               .from('game_titles')
-              .upsert({
-                platform_id: platform.id,
-                name: title.name,
-                external_id: title.titleId.toString(),
-                cover_url: title.displayImage,
-                metadata: {
-                  xbox_title_id: title.titleId,
-                  max_gamerscore: title.achievement.totalGamerscore,
-                  total_achievements: title.achievement.totalAchievements,
-                },
-              }, {
-                onConflict: 'platform_id,external_id',
-              })
-              .select()
-              .single();
+              .select('id, name, cover_url')
+              .ilike('name', title.name)
+              .limit(1)
+              .maybeSingle();
+            
+            if (existingGame) {
+              // Update cover if we don't have one
+              if (!existingGame.cover_url && title.displayImage) {
+                await supabase
+                  .from('game_titles')
+                  .update({ cover_url: title.displayImage })
+                  .eq('id', existingGame.id);
+              }
+              gameTitle = existingGame;
+            } else {
+              // Create new game_title
+              const { data: newGame } = await supabase
+                .from('game_titles')
+                .insert({
+                  name: title.name,
+                  cover_url: title.displayImage,
+                  metadata: {
+                    xbox_title_id: title.titleId,
+                  },
+                })
+                .select()
+                .single();
+              gameTitle = newGame;
+            }
 
             if (!gameTitle) { console.log('Upserted game_title - no result'); continue; }
 
