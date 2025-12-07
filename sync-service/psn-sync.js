@@ -1,7 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import psnApi from 'psn-api';
-
-const { getUserTitles, getTitleTrophies } = psnApi;
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -11,6 +8,10 @@ const supabase = createClient(
 export async function syncPSNAchievements(userId, accountId, accessToken, refreshToken, syncLogId) {
   console.log(`Starting PSN sync for user ${userId}`);
   
+  // Dynamically import PSN API at runtime to avoid startup import issues
+  const psnModule = await import('psn-api');
+  const psnApi = psnModule.default ?? psnModule;
+  const { getUserTitles, getTitleTrophies } = psnApi;
   try {
     // Set initial status
     await supabase
