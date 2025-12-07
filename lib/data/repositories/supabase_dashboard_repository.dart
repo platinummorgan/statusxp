@@ -65,15 +65,23 @@ class SupabaseDashboardRepository {
 
     final achievementsCount = achievementsResponse.count;
 
-    // Map platform name for user_games table (psn -> playstation)
-    final gamePlatform = platform == 'psn' ? 'playstation' : platform;
+    // Get game count for platform by joining with platforms table
+    // Map platform codes: psn -> PS3,PS4,PS5,PSVITA
+    List<String> platformCodes;
+    if (platform == 'psn') {
+      platformCodes = ['PS3', 'PS4', 'PS5', 'PSVITA'];
+    } else if (platform == 'xbox') {
+      platformCodes = ['XBOX360', 'XBOXONE', 'XBOXSERIESX'];
+    } else {
+      platformCodes = ['Steam'];
+    }
     
-    // Get game count for platform
+    // Get game count for platform by joining with platforms table
     final gamesResponse = await _client
         .from('user_games')
-        .select('id')
+        .select('id, platforms!inner(code)')
         .eq('user_id', userId)
-        .eq('platform', gamePlatform)
+        .inFilter('platforms.code', platformCodes)
         .count();
 
     final gamesCount = gamesResponse.count;
