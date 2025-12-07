@@ -100,28 +100,72 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
       if (MAX_CONCURRENT <= 1) {
       for (const title of batch) {
         try {
-        // Upsert game title
-        const { data: game } = await supabase
-          .from('game_titles')
-          .upsert({
-            psn_np_communication_id: title.npCommunicationId,
-            name: title.trophyTitleName,
-            cover_url: title.trophyTitleIconUrl,
-          }, {
-            onConflict: 'psn_np_communication_id',
-          })
-          .select()
+        // Get platform ID for PSN (search by code)
+        const { data: platform } = await supabase
+          .from('platforms')
+          .select('id')
+          .eq('code', title.trophyTitlePlatform || 'PS5')
           .single();
-        // Upsert user_games
+
+        if (!platform) {
+          console.error(`❌ Platform not found for ${title.trophyTitlePlatform}, skipping game: ${title.trophyTitleName}`);
+          continue;
+        }
+
+        // Search for existing game by name (case-insensitive)
+        const { data: existingGame } = await supabase
+          .from('game_titles')
+          .select('id, cover_url')
+          .ilike('name', title.trophyTitleName)
+          .maybeSingle();
+
+        let gameTitle;
+        if (existingGame) {
+          // Update cover if missing
+          if (!existingGame.cover_url && title.trophyTitleIconUrl) {
+            await supabase
+              .from('game_titles')
+              .update({ cover_url: title.trophyTitleIconUrl })
+              .eq('id', existingGame.id);
+          }
+          gameTitle = existingGame;
+        } else {
+          // Create new game_title (NO platform_id)
+          const { data: newGame, error: insertError } = await supabase
+            .from('game_titles')
+            .insert({
+              name: title.trophyTitleName,
+              cover_url: title.trophyTitleIconUrl,
+              metadata: { psn_np_communication_id: title.npCommunicationId },
+            })
+            .select()
+            .single();
+
+          if (insertError) {
+            console.error('❌ Failed to insert game_title:', title.trophyTitleName, 'Error:', insertError);
+            continue;
+          }
+          gameTitle = newGame;
+        }
+
+        // Upsert user_games with platform_id
         await supabase
           .from('user_games')
           .upsert({
             user_id: userId,
-            game_title_id: game.id,
-            platform: 'psn',
-            progress: title.progress,
+            game_title_id: gameTitle.id,
+            platform_id: platform.id,
+            completion_percent: title.progress,
+            total_trophies: title.definedTrophies?.bronze + title.definedTrophies?.silver + title.definedTrophies?.gold + title.definedTrophies?.platinum,
+            earned_trophies: title.earnedTrophies?.bronze + title.earnedTrophies?.silver + title.earnedTrophies?.gold + title.earnedTrophies?.platinum,
+            bronze_trophies: title.earnedTrophies?.bronze || 0,
+            silver_trophies: title.earnedTrophies?.silver || 0,
+            gold_trophies: title.earnedTrophies?.gold || 0,
+            platinum_trophies: title.earnedTrophies?.platinum || 0,
+            has_platinum: (title.earnedTrophies?.platinum || 0) > 0,
+            last_played_at: title.lastUpdatedDateTime,
           }, {
-            onConflict: 'user_id,game_title_id',
+            onConflict: 'user_id,game_title_id,platform_id',
           });
 
         // Fetch and sync trophies
@@ -143,14 +187,13 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
           const { data: achievementRecord } = await supabase
             .from('achievements')
             .upsert({
-              game_title_id: game.id,
+              game_title_id: gameTitle.id,
               platform: 'psn',
-              platform_achievement_id: trophy.trophyId,
+              platform_achievement_id: trophy.trophyId.toString(),
               name: trophy.trophyName,
               description: trophy.trophyDetail,
               icon_url: trophy.trophyIconUrl,
               psn_trophy_type: trophy.trophyType,
-              psn_trophy_group_id: trophy.trophyGroupId,
               is_dlc: isDLC,
               dlc_name: dlcName,
             }, {
@@ -168,7 +211,7 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
               .upsert({
                 user_id: userId,
                 achievement_id: achievementRecord.id,
-                unlocked_at: trophy.earnedDateTime,
+                earned_at: trophy.earnedDateTime,
               }, {
                 onConflict: 'user_id,achievement_id',
               });
@@ -199,31 +242,72 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
         const worker = async (titlesChunk) => {
           await Promise.all(titlesChunk.map(async (title) => {
             try {
-              const { data: game } = await supabase
-                .from('games')
-                .upsert({
-                  psn_np_communication_id: title.npCommunicationId,
-                  title: title.trophyTitleName,
-                  platform: title.trophyTitlePlatform,
-                  image_url: title.trophyTitleIconUrl,
-                }, {
-                  onConflict: 'psn_np_communication_id',
-                })
-                .select()
+              // Get platform ID for PSN
+              const { data: platform } = await supabase
+                .from('platforms')
+                .select('id')
+                .eq('code', title.trophyTitlePlatform || 'PS5')
                 .single();
 
-              if (!game) return;
+              if (!platform) {
+                console.error(`❌ Platform not found for ${title.trophyTitlePlatform}, skipping game: ${title.trophyTitleName}`);
+                return;
+              }
 
-              // Upsert user_game
+              // Search for existing game by name
+              const { data: existingGame } = await supabase
+                .from('game_titles')
+                .select('id, cover_url')
+                .ilike('name', title.trophyTitleName)
+                .maybeSingle();
+
+              let gameTitle;
+              if (existingGame) {
+                // Update cover if missing
+                if (!existingGame.cover_url && title.trophyTitleIconUrl) {
+                  await supabase
+                    .from('game_titles')
+                    .update({ cover_url: title.trophyTitleIconUrl })
+                    .eq('id', existingGame.id);
+                }
+                gameTitle = existingGame;
+              } else {
+                // Create new game_title
+                const { data: newGame, error: insertError } = await supabase
+                  .from('game_titles')
+                  .insert({
+                    name: title.trophyTitleName,
+                    cover_url: title.trophyTitleIconUrl,
+                    metadata: { psn_np_communication_id: title.npCommunicationId },
+                  })
+                  .select()
+                  .single();
+
+                if (insertError) {
+                  console.error('❌ Failed to insert game_title:', title.trophyTitleName, 'Error:', insertError);
+                  return;
+                }
+                gameTitle = newGame;
+              }
+
+              // Upsert user_games with platform_id
               await supabase
                 .from('user_games')
                 .upsert({
                   user_id: userId,
-                  game_title_id: game.id,
-                  platform: 'psn',
-                  progress: title.progress,
+                  game_title_id: gameTitle.id,
+                  platform_id: platform.id,
+                  completion_percent: title.progress,
+                  total_trophies: title.definedTrophies?.bronze + title.definedTrophies?.silver + title.definedTrophies?.gold + title.definedTrophies?.platinum,
+                  earned_trophies: title.earnedTrophies?.bronze + title.earnedTrophies?.silver + title.earnedTrophies?.gold + title.earnedTrophies?.platinum,
+                  bronze_trophies: title.earnedTrophies?.bronze || 0,
+                  silver_trophies: title.earnedTrophies?.silver || 0,
+                  gold_trophies: title.earnedTrophies?.gold || 0,
+                  platinum_trophies: title.earnedTrophies?.platinum || 0,
+                  has_platinum: (title.earnedTrophies?.platinum || 0) > 0,
+                  last_played_at: title.lastUpdatedDateTime,
                 }, {
-                  onConflict: 'user_id,game_title_id',
+                  onConflict: 'user_id,game_title_id,platform_id',
                 });
 
               // Fetch and sync trophies
@@ -245,14 +329,13 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                 const { data: achievementRecord } = await supabase
                   .from('achievements')
                   .upsert({
-                    game_title_id: game.id,
+                    game_title_id: gameTitle.id,
                     platform: 'psn',
-                    platform_achievement_id: trophy.trophyId,
+                    platform_achievement_id: trophy.trophyId.toString(),
                     name: trophy.trophyName,
                     description: trophy.trophyDetail,
                     icon_url: trophy.trophyIconUrl,
                     psn_trophy_type: trophy.trophyType,
-                    psn_trophy_group_id: trophy.trophyGroupId,
                     is_dlc: isDLC,
                     dlc_name: dlcName,
                   }, {
@@ -270,7 +353,7 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
                     .upsert({
                       user_id: userId,
                       achievement_id: achievementRecord.id,
-                      unlocked_at: trophy.earnedDateTime,
+                      earned_at: trophy.earnedDateTime,
                     }, {
                       onConflict: 'user_id,achievement_id',
                     });
