@@ -63,12 +63,20 @@ process.on('SIGHUP', () => {
 
 // Heartbeat to ensure the container is alive and provide periodic logs for debugging
 setInterval(() => {
-  console.log('Heartbeat: sync-service alive at', new Date().toISOString());
+  const m = process.memoryUsage();
+  const rssMB = Math.round(m.rss / 1024 / 1024);
+  const heapUsedMB = Math.round(m.heapUsed / 1024 / 1024);
+  const heapTotalMB = Math.round(m.heapTotal / 1024 / 1024);
+  const usedPercent = Math.round((m.heapUsed / m.heapTotal) * 100);
+  console.log('Heartbeat: sync-service alive at', new Date().toISOString(), `rss=${rssMB}MB`, `heap=${heapUsedMB}/${heapTotalMB}MB (${usedPercent}%)`);
+  if (usedPercent > 85) {
+    console.warn(`Memory high: heapUsed is ${usedPercent}% of heapTotal`);
+  }
 }, 60000);
 
 // Xbox sync endpoint - NO TIMEOUT LIMITS!
 app.post('/sync/xbox', async (req, res) => {
-  const { userId, xuid, userHash, accessToken, refreshToken, syncLogId } = req.body;
+  const { userId, xuid, userHash, accessToken, refreshToken, syncLogId, batchSize, maxConcurrent } = req.body;
 
   // Respond immediately so the client doesn't wait
   res.json({ success: true, message: 'Xbox sync started in background' });
@@ -78,7 +86,7 @@ app.post('/sync/xbox', async (req, res) => {
     try {
       const mod = await import('./xbox-sync.js');
       const { syncXboxAchievements } = mod;
-      await syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId);
+      await syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId, { batchSize, maxConcurrent });
     } catch (err) {
       console.error('Xbox sync error (lazy import):', err);
     }
@@ -87,7 +95,7 @@ app.post('/sync/xbox', async (req, res) => {
 
 // PSN sync endpoint - NO TIMEOUT LIMITS!
 app.post('/sync/psn', async (req, res) => {
-  const { userId, accountId, accessToken, refreshToken, syncLogId } = req.body;
+  const { userId, accountId, accessToken, refreshToken, syncLogId, batchSize, maxConcurrent } = req.body;
 
   // Respond immediately
   res.json({ success: true, message: 'PSN sync started in background' });
@@ -97,7 +105,7 @@ app.post('/sync/psn', async (req, res) => {
     try {
       const mod = await import('./psn-sync.js');
       const { syncPSNAchievements } = mod;
-      await syncPSNAchievements(userId, accountId, accessToken, refreshToken, syncLogId);
+      await syncPSNAchievements(userId, accountId, accessToken, refreshToken, syncLogId, { batchSize, maxConcurrent });
     } catch (err) {
       console.error('PSN sync error (lazy import):', err);
     }
@@ -106,7 +114,7 @@ app.post('/sync/psn', async (req, res) => {
 
 // Steam sync endpoint - NO TIMEOUT LIMITS!
 app.post('/sync/steam', async (req, res) => {
-  const { userId, steamId, apiKey, syncLogId } = req.body;
+  const { userId, steamId, apiKey, syncLogId, batchSize, maxConcurrent } = req.body;
 
   // Respond immediately
   res.json({ success: true, message: 'Steam sync started in background' });
@@ -116,13 +124,13 @@ app.post('/sync/steam', async (req, res) => {
     try {
       const mod = await import('./steam-sync.js');
       const { syncSteamAchievements } = mod;
-      await syncSteamAchievements(userId, steamId, apiKey, syncLogId);
+      await syncSteamAchievements(userId, steamId, apiKey, syncLogId, { batchSize, maxConcurrent });
     } catch (err) {
       console.error('Steam sync error (lazy import):', err);
     }
   })();
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Sync service running on port ${PORT}`);
 });
