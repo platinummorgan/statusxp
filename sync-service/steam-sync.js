@@ -22,25 +22,33 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
   
   try {
     // Fetch Steam persona name
+    console.log('[STEAM NAME FETCH] Starting fetch for steamId:', steamId);
     let displayName = null;
     try {
-      const playerResponse = await fetch(
-        `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`
-      );
+      const playerUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`;
+      console.log('[STEAM NAME FETCH] URL:', playerUrl.replace(apiKey, 'API_KEY_HIDDEN'));
+      const playerResponse = await fetch(playerUrl);
+      
+      console.log('[STEAM NAME FETCH] Response status:', playerResponse.status);
       const playerData = await playerResponse.json();
+      console.log('[STEAM NAME FETCH] Response data:', JSON.stringify(playerData));
       const player = playerData.response?.players?.[0];
       if (player) {
         displayName = player.personaname;
-        console.log('Fetched Steam display name:', displayName);
+        console.log('[STEAM NAME FETCH] ✅ SUCCESS - Fetched Steam display name:', displayName);
         
         // Save display name to profile
-        await supabase
+        console.log('[STEAM NAME SAVE] Saving to database for user:', userId);
+        const saveResult = await supabase
           .from('profiles')
           .update({ steam_display_name: displayName })
           .eq('id', userId);
+        console.log('[STEAM NAME SAVE] Save result:', saveResult.error || 'OK');
+      } else {
+        console.log('[STEAM NAME FETCH] ❌ FAILED - Player not found in response');
       }
     } catch (e) {
-      console.error('Failed to fetch Steam display name:', e.message);
+      console.error('[STEAM NAME FETCH] ❌ EXCEPTION:', e.message, e.stack);
     }
 
     // Set initial status

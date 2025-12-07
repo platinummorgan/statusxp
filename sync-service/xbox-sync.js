@@ -75,28 +75,38 @@ async function refreshXboxToken(refreshToken, userId) {
   const xuid = xstsData.DisplayClaims.xui[0].xid;
 
   // Fetch gamertag from Xbox Live profile
+  console.log('[GAMERTAG FETCH] Starting gamertag fetch for xuid:', xuid);
   let gamertag = 'Unknown';
   try {
-    const profileResponse = await fetch(`https://profile.xboxlive.com/users/xuid(${xuid})/profile/settings?settings=Gamertag`, {
+    const profileUrl = `https://profile.xboxlive.com/users/xuid(${xuid})/profile/settings?settings=Gamertag`;
+    console.log('[GAMERTAG FETCH] URL:', profileUrl);
+    const profileResponse = await fetch(profileUrl, {
       headers: {
         'Authorization': `XBL3.0 x=${userHash};${xstsData.Token}`,
         'x-xbl-contract-version': '2',
       },
     });
     
+    console.log('[GAMERTAG FETCH] Response status:', profileResponse.status);
     if (profileResponse.ok) {
       const profileData = await profileResponse.json();
+      console.log('[GAMERTAG FETCH] Response data:', JSON.stringify(profileData));
       const gamertagSetting = profileData.profileUsers?.[0]?.settings?.find(s => s.id === 'Gamertag');
       if (gamertagSetting) {
         gamertag = gamertagSetting.value;
-        console.log('Fetched Xbox gamertag:', gamertag);
+        console.log('[GAMERTAG FETCH] ✅ SUCCESS - Fetched Xbox gamertag:', gamertag);
+      } else {
+        console.log('[GAMERTAG FETCH] ❌ FAILED - Gamertag not found in response');
       }
+    } else {
+      console.log('[GAMERTAG FETCH] ❌ FAILED - Bad response status');
     }
   } catch (e) {
-    console.error('Failed to fetch Xbox gamertag:', e.message);
+    console.error('[GAMERTAG FETCH] ❌ EXCEPTION:', e.message, e.stack);
   }
 
   // Save to database
+  console.log('[GAMERTAG SAVE] Saving gamertag to database:', gamertag, 'for user:', userId);
   const updateProfile = await supabase
     .from('profiles')
     .update({
@@ -107,7 +117,7 @@ async function refreshXboxToken(refreshToken, userId) {
       xbox_gamertag: gamertag,
     })
     .eq('id', userId);
-  console.log('Saved refreshed tokens to profiles result:', updateProfile.error || 'OK');
+  console.log('[GAMERTAG SAVE] Save result:', updateProfile.error || 'OK');
 
   return {
     accessToken: xstsData.Token,
