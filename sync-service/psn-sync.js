@@ -23,12 +23,23 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
   // Dynamically import PSN API at runtime to avoid startup import issues
   const psnModule = await import('psn-api');
   const psnApi = psnModule.default ?? psnModule;
-  const { getUserTitles, getTitleTrophies } = psnApi;
+  const { getUserTitles, getTitleTrophies, exchangeRefreshTokenForAuthTokens } = psnApi;
   try {
-    // Set initial status
+    // Refresh access token before making API calls
+    console.log('Refreshing PSN access token...');
+    const authTokens = await exchangeRefreshTokenForAuthTokens(refreshToken);
+    const currentAccessToken = authTokens.accessToken;
+    console.log('PSN access token refreshed successfully');
+
+    // Update profile with new tokens
     await supabase
       .from('profiles')
-      .update({ psn_sync_status: 'syncing', psn_sync_progress: 0 })
+      .update({
+        psn_access_token: authTokens.accessToken,
+        psn_refresh_token: authTokens.refreshToken,
+        psn_sync_status: 'syncing',
+        psn_sync_progress: 0
+      })
       .eq('id', userId);
 
     await supabase
@@ -38,7 +49,7 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
 
     // Fetch all games
     console.log('Fetching PSN titles for accountId:', accountId);
-    const titles = await getUserTitles({ accessToken }, accountId);
+    const titles = await getUserTitles({ accessToken: currentAccessToken }, accountId);
     console.log('PSN titles fetched, trophyTitles length:', titles?.trophyTitles?.length ?? 0);
     
     if (!titles?.trophyTitles || titles.trophyTitles.length === 0) {
@@ -116,7 +127,7 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
         // Fetch and sync trophies
         console.log('Fetching PSN trophies for', title.npCommunicationId);
         const trophyData = await getTitleTrophies(
-          { accessToken },
+          { accessToken: currentAccessToken },
           title.npCommunicationId,
           'all',
           { npServiceName: title.npServiceName }
@@ -218,7 +229,7 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
               // Fetch and sync trophies
               console.log('Fetching PSN trophies for', title.npCommunicationId);
               const trophyData = await getTitleTrophies(
-                { accessToken },
+                { accessToken: currentAccessToken },
                 title.npCommunicationId,
                 'all',
                 { npServiceName: title.npServiceName }
