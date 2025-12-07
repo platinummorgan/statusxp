@@ -21,6 +21,28 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
   console.log(`Starting Steam sync for user ${userId}`);
   
   try {
+    // Fetch Steam persona name
+    let displayName = null;
+    try {
+      const playerResponse = await fetch(
+        `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`
+      );
+      const playerData = await playerResponse.json();
+      const player = playerData.response?.players?.[0];
+      if (player) {
+        displayName = player.personaname;
+        console.log('Fetched Steam display name:', displayName);
+        
+        // Save display name to profile
+        await supabase
+          .from('profiles')
+          .update({ steam_display_name: displayName })
+          .eq('id', userId);
+      }
+    } catch (e) {
+      console.error('Failed to fetch Steam display name:', e.message);
+    }
+
     // Set initial status
     await supabase
       .from('profiles')
