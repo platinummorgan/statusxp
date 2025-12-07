@@ -89,32 +89,28 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
       if (MAX_CONCURRENT <= 1) {
       for (const title of batch) {
         try {
-        // Upsert game
+        // Upsert game title
         const { data: game } = await supabase
-          .from('games')
+          .from('game_titles')
           .upsert({
             psn_np_communication_id: title.npCommunicationId,
-            title: title.trophyTitleName,
-            platform: title.trophyTitlePlatform,
-            image_url: title.trophyTitleIconUrl,
+            name: title.trophyTitleName,
+            cover_url: title.trophyTitleIconUrl,
           }, {
             onConflict: 'psn_np_communication_id',
           })
           .select()
           .single();
-
-        if (!game) continue;
-
         // Upsert user_games
         await supabase
           .from('user_games')
           .upsert({
             user_id: userId,
-            game_id: game.id,
+            game_title_id: game.id,
             platform: 'psn',
             progress: title.progress,
           }, {
-            onConflict: 'user_id,game_id',
+            onConflict: 'user_id,game_title_id',
           });
 
         // Fetch and sync trophies
@@ -207,16 +203,16 @@ export async function syncPSNAchievements(userId, accountId, accessToken, refres
 
               if (!game) return;
 
-              // Upsert user_games
+              // Upsert user_game
               await supabase
                 .from('user_games')
                 .upsert({
                   user_id: userId,
-                  game_id: game.id,
+                  game_title_id: game.id,
                   platform: 'psn',
                   progress: title.progress,
                 }, {
-                  onConflict: 'user_id,game_id',
+                  onConflict: 'user_id,game_title_id',
                 });
 
               // Fetch and sync trophies

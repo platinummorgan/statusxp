@@ -72,7 +72,19 @@ serve(async (req) => {
     const profile = await getUserTrophyProfileSummary(authorization, 'me');
     
     console.log('Fetching PSN user profile (onlineId, avatar, Plus status)...');
-    const userProfile = await getUserProfile(authorization, 'me');
+    // Try to get extended profile, but don't fail if it's unavailable
+    let userProfile;
+    try {
+      userProfile = await getUserProfile(authorization, 'me');
+    } catch (profileError) {
+      console.warn('Failed to fetch extended profile, using defaults:', (profileError as Error).message);
+      // Use defaults if extended profile fails
+      userProfile = {
+        onlineId: profile.accountId,
+        avatarUrls: [],
+        isPlus: false,
+      };
+    }
 
     console.log('Storing PSN credentials...');
     
@@ -86,7 +98,7 @@ serve(async (req) => {
       .update({
         psn_account_id: profile.accountId,
         psn_online_id: userProfile.onlineId,
-        psn_avatar_url: userProfile.avatarUrls.find(a => a.size === 'm')?.avatarUrl || userProfile.avatarUrls[0]?.avatarUrl,
+        psn_avatar_url: userProfile.avatarUrls?.find(a => a.size === 'm')?.avatarUrl || userProfile.avatarUrls?.[0]?.avatarUrl || null,
         psn_is_plus: userProfile.isPlus,
         psn_npsso_token: npssoToken, // In production, this should be encrypted
         psn_access_token: authorization.accessToken,
@@ -136,7 +148,7 @@ serve(async (req) => {
     console.error('Error linking PSN account:', error);
     return new Response(
       JSON.stringify({
-        error: error.message || 'Failed to link PSN account',
+        error: (error as Error).message || 'Failed to link PSN account',
       }),
       {
         status: 500,
