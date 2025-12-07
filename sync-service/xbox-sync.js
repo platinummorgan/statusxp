@@ -326,12 +326,15 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
               if (statsResponse.ok) {
                 const statsData = await statsResponse.json();
+                console.log(`[XBOX RARITY] Stats response for ${title.name}:`, JSON.stringify(statsData).substring(0, 500));
                 if (statsData.achievements) {
                   for (const stat of statsData.achievements) {
                     if (stat.earnedPercentage !== undefined) {
+                      console.log(`[XBOX RARITY] Achievement ${stat.id}: ${stat.earnedPercentage}%`);
                       globalStatsMap.set(stat.id, stat.earnedPercentage);
                     }
                   }
+                  console.log(`[XBOX RARITY] Mapped ${globalStatsMap.size} rarity values for ${title.name}`);
                 }
               } else {
                 console.log(`Stats endpoint returned ${statsResponse.status} for ${title.name}`);
@@ -345,6 +348,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
               const rarityPercent = globalStatsMap.get(achievement.id) || 0;
+              
+              if (rarityPercent > 0) {
+                console.log(`[XBOX RARITY] Storing achievement ${achievement.name} with rarity ${rarityPercent}%`);
+              }
               
               // Upsert achievement with rarity data
               const { data: achievementRecord } = await supabase
