@@ -313,8 +313,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Fetch global achievement stats for rarity data
             const globalStatsMap = new Map();
             try {
+              const statsUrl = `https://titlehub.xboxlive.com/titles/${title.titleId}/achievements/stats`;
+              console.log(`[XBOX RARITY] Fetching stats from: ${statsUrl}`);
               const statsResponse = await fetch(
-                `https://titlehub.xboxlive.com/titles/${title.titleId}/achievements/stats`,
+                statsUrl,
                 {
                   headers: {
                     'x-xbl-contract-version': '2',
@@ -324,6 +326,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 }
               );
 
+              console.log(`[XBOX RARITY] Stats response status: ${statsResponse.status} for ${title.name}`);
               if (statsResponse.ok) {
                 const statsData = await statsResponse.json();
                 console.log(`[XBOX RARITY] Stats response for ${title.name}:`, JSON.stringify(statsData).substring(0, 500));
@@ -337,7 +340,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                   console.log(`[XBOX RARITY] Mapped ${globalStatsMap.size} rarity values for ${title.name}`);
                 }
               } else {
-                console.log(`Stats endpoint returned ${statsResponse.status} for ${title.name}`);
+                console.log(`⚠️  Stats endpoint returned ${statsResponse.status} for ${title.name} - Xbox rarity API may be deprecated`);
               }
             } catch (statsError) {
               console.log(`Could not fetch global stats for ${title.name}:`, statsError.message);
@@ -347,7 +350,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
-              const rarityPercent = globalStatsMap.get(achievement.id) || 0;
+              // Use null instead of 0 when stats unavailable - trigger will default to COMMON rarity
+              const rarityPercent = globalStatsMap.get(achievement.id) || null;
               
               if (rarityPercent > 0) {
                 console.log(`[XBOX RARITY] Storing achievement ${achievement.name} with rarity ${rarityPercent}%`);
