@@ -25,68 +25,6 @@ function logMemory(label) {
 }
 
 // Cheap diff check: DB snapshot vs API snapshot
-async function shouldFetchTrophies({
-  userId,
-  gameTitleId,
-  platformId,
-  apiProgress,
-  apiTotalTrophies,
-  apiEarnedTrophies,
-}) {
-  const [userGameRes, achStatsRes] = await Promise.all([
-    supabase
-      .from('user_games')
-      .select('completion_percent,total_trophies,earned_trophies')
-      .eq('user_id', userId)
-      .eq('game_title_id', gameTitleId)
-      .eq('platform_id', platformId)
-      .maybeSingle(),
-    supabase
-      .from('achievements')
-      .select('total=count(*),with_rarity=count(rarity_global),with_band=count(rarity_band),with_multiplier=count(rarity_multiplier),with_base_xp=count(base_status_xp),with_platinum=count(is_platinum),with_include_score=count(include_in_score)')
-      .eq('game_title_id', gameTitleId)
-      .eq('platform', 'psn')
-      .single(),
-  ]);
-
-  const existingUserGame = userGameRes.data || null;
-  const achStats = achStatsRes.data || { total: 0, with_rarity: 0, with_band: 0, with_multiplier: 0, with_base_xp: 0, with_platinum: 0, with_include_score: 0 };
-
-  const localTotal = Number(achStats.total ?? 0);
-  const withRarity = Number(achStats.with_rarity ?? 0);
-  const withBand = Number(achStats.with_band ?? 0);
-  const withMultiplier = Number(achStats.with_multiplier ?? 0);
-  const withBaseXp = Number(achStats.with_base_xp ?? 0);
-  const withPlatinum = Number(achStats.with_platinum ?? 0);
-  const withIncludeScore = Number(achStats.with_include_score ?? 0);
-
-  const gameLevelChanged =
-    !existingUserGame ||
-    Number(existingUserGame.completion_percent ?? 0) !== Number(apiProgress ?? 0) ||
-    Number(existingUserGame.total_trophies ?? 0) !== Number(apiTotalTrophies ?? 0) ||
-    Number(existingUserGame.earned_trophies ?? 0) !== Number(apiEarnedTrophies ?? 0);
-
-  const achievementsIncomplete =
-    localTotal < apiTotalTrophies || // not enough rows
-    withRarity < localTotal || // some trophies missing rarity
-    withBand < localTotal || // some trophies missing rarity band
-    withMultiplier < localTotal || // some trophies missing multiplier
-    withBaseXp < localTotal || // some trophies missing base XP
-    withPlatinum < localTotal || // some trophies missing platinum flag
-    withIncludeScore < localTotal; // some trophies missing include_in_score
-
-  // Fetch if game state changed OR achievements look incomplete
-  const shouldFetch = gameLevelChanged || achievementsIncomplete;
-
-  if (!shouldFetch) {
-    console.log(
-      `⏭️  Skipping trophy fetch for game_title_id=${gameTitleId} (no game-level changes, ${localTotal} trophies, ${localTotal - withRarity} missing rarity, ${localTotal - withBand} missing bands)`
-    );
-  }
-
-  return shouldFetch;
-}
-
 export async function syncPSNAchievements(
   userId,
   accountId,
@@ -187,6 +125,19 @@ export async function syncPSNAchievements(
     console.log(`Found ${gamesWithTrophies.length} games with progress`);
     logMemory('After filtering gamesWithTrophies');
 
+    // Load ALL user_games ONCE for fast lookup
+    console.log('Loading all user_games for comparison...');
+    const { data: allUserGames } = await supabase
+      .from('user_games')
+      .select('game_title_id, platform_id, earned_trophies, total_trophies, completion_percent')
+      .eq('user_id', userId);
+    
+    const userGamesMap = new Map();
+    (allUserGames || []).forEach(ug => {
+      userGamesMap.set(`${ug.game_title_id}_${ug.platform_id}`, ug);
+    });
+    console.log(`Loaded ${userGamesMap.size} existing user_games into memory`);
+
     let processedGames = 0;
     let totalTrophies = 0;
 
@@ -280,15 +231,21 @@ export async function syncPSNAchievements(
             (earned.platinum || 0);
           const apiProgress = Number(title.progress || 0);
 
-          // Decide if we actually need the heavy trophy call
-          const needTrophies = await shouldFetchTrophies({
-            userId,
-            gameTitleId: gameTitle.id,
-            platformId: platform.id,
-            apiProgress,
-            apiTotalTrophies,
-            apiEarnedTrophies,
-          });
+          // Simple lookup - is this game new or changed?
+          const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
+          const isNewGame = !existingUserGame;
+          const earnedChanged = existingUserGame && existingUserGame.earned_trophies !== apiEarnedTrophies;
+          const needTrophies = isNewGame || earnedChanged;
+
+          if (!needTrophies) {
+            console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
+            processedGames++;
+            const progress = Math.floor((processedGames / gamesWithTrophies.length) * 100);
+            await supabase.from('profiles').update({ psn_sync_progress: progress }).eq('id', userId);
+            return;
+          }
+
+          console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${title.trophyTitleName} (earned: ${apiEarnedTrophies})`);
 
           // Always upsert user_games snapshot
           await supabase
