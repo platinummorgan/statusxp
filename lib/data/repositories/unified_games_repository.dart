@@ -23,6 +23,8 @@ class UnifiedGamesRepository {
             silver_trophies,
             gold_trophies,
             platinum_trophies,
+            xbox_total_achievements,
+            xbox_achievements_earned,
             game_titles!inner(
               name,
               cover_url
@@ -46,6 +48,10 @@ class UnifiedGamesRepository {
         
         final title = gameTitle['name'] as String?;
         if (title == null) continue;
+        
+        // Debug: Check what platform data we're getting
+        final platformData = row['platforms'] as Map<String, dynamic>?;
+        print('DEBUG Repository: Game="${title}", platform_data=$platformData');
         
         if (!gamesByTitle.containsKey(title)) {
           gamesByTitle[title] = [];
@@ -72,8 +78,17 @@ class UnifiedGamesRepository {
       for (final game in platformGames) {
         final platformData = game['platforms'] as Map<String, dynamic>?;
         final platform = platformData?['code'] as String? ?? 'unknown';
-        final totalTrophies = game['total_trophies'] as int? ?? 0;
-        final earnedTrophies = game['earned_trophies'] as int? ?? 0;
+        
+        // Get trophy counts - use platform-specific fields as fallback for Xbox/Steam
+        int totalTrophies = game['total_trophies'] as int? ?? 0;
+        int earnedTrophies = game['earned_trophies'] as int? ?? 0;
+        
+        // Xbox fallback: use xbox_total_achievements if total_trophies is 0
+        if (totalTrophies == 0 && platform.toUpperCase().contains('XBOX')) {
+          totalTrophies = game['xbox_total_achievements'] as int? ?? 0;
+          earnedTrophies = game['xbox_achievements_earned'] as int? ?? earnedTrophies;
+        }
+        
         final completion = totalTrophies > 0 
             ? (earnedTrophies / totalTrophies) * 100 
             : 0.0;
