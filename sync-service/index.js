@@ -70,7 +70,11 @@ setInterval(() => {
   const usedPercent = Math.round((m.heapUsed / m.heapTotal) * 100);
   console.log('Heartbeat: sync-service alive at', new Date().toISOString(), `rss=${rssMB}MB`, `heap=${heapUsedMB}/${heapTotalMB}MB (${usedPercent}%)`);
   if (usedPercent > 85) {
-    console.warn(`Memory high: heapUsed is ${usedPercent}% of heapTotal`);
+    console.warn(`Memory high: heapUsed is ${usedPercent}% of heapTotal - forcing GC`);
+    if (global.gc) {
+      global.gc();
+      console.log('GC completed');
+    }
   }
 }, 60000);
 
@@ -87,6 +91,8 @@ app.post('/sync/xbox', async (req, res) => {
       const mod = await import('./xbox-sync.js');
       const { syncXboxAchievements } = mod;
       await syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId, { batchSize, maxConcurrent });
+      console.log('Xbox sync completed - forcing GC');
+      if (global.gc) global.gc();
     } catch (err) {
       console.error('Xbox sync error (lazy import):', err);
     }
@@ -106,6 +112,8 @@ app.post('/sync/psn', async (req, res) => {
       const mod = await import('./psn-sync.js');
       const { syncPSNAchievements } = mod;
       await syncPSNAchievements(userId, accountId, accessToken, refreshToken, syncLogId, { batchSize, maxConcurrent });
+      console.log('PSN sync completed - forcing GC');
+      if (global.gc) global.gc();
     } catch (err) {
       console.error('PSN sync error (lazy import):', err);
     }
@@ -125,6 +133,8 @@ app.post('/sync/steam', async (req, res) => {
       const mod = await import('./steam-sync.js');
       const { syncSteamAchievements } = mod;
       await syncSteamAchievements(userId, steamId, apiKey, syncLogId, { batchSize, maxConcurrent });
+      console.log('Steam sync completed - forcing GC');
+      if (global.gc) global.gc();
     } catch (err) {
       console.error('Steam sync error (lazy import):', err);
     }
