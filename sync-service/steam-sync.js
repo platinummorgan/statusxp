@@ -5,7 +5,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId) {
+const ENV_BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '5', 10);
+const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '1', 10);
+
+function logMemory(label) {
+  try {
+    const m = process.memoryUsage();
+    console.log(label, `rss=${Math.round(m.rss/1024/1024)}MB`, `heapUsed=${Math.round(m.heapUsed/1024/1024)}MB`, `heapTotal=${Math.round(m.heapTotal/1024/1024)}MB`, `external=${Math.round(m.external/1024/1024)}MB`);
+  } catch (e) {
+    console.log('logMemory error', e.message);
+  }
+}
+
+export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, options = {}) {
   console.log(`Starting Steam sync for user ${userId}`);
   
   try {
@@ -28,13 +40,46 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId) 
     const ownedGames = gamesData.response?.games || [];
 
     console.log(`Found ${ownedGames.length} owned games`);
+    
+    if (ownedGames.length === 0) {
+      console.log('No Steam games found - marking sync as success with 0 games');
+      await supabase
+        .from('profiles')
+        .update({
+          steam_sync_status: 'success',
+          steam_sync_progress: 100,
+          last_steam_sync_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      await supabase
+        .from('steam_sync_logs')
+        .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
+          games_processed: 0,
+          achievements_synced: 0,
+        })
+        .eq('id', syncLogId);
+      return;
+    }
+
+    logMemory('After fetching ownedGames');
 
     let processedGames = 0;
     let totalAchievements = 0;
 
-    // Process all games - NO TIMEOUT!
-    for (const game of ownedGames) {
-      try {
+    const BATCH_SIZE = parseInt(options.batchSize, 10) || ENV_BATCH_SIZE;
+    const MAX_CONCURRENT = parseInt(options.maxConcurrent, 10) || ENV_MAX_CONCURRENT;
+    console.log(`Using BATCH_SIZE=${BATCH_SIZE}, MAX_CONCURRENT=${MAX_CONCURRENT}`);
+
+    // Process in batches to limit memory use
+    for (let i = 0; i < ownedGames.length; i += BATCH_SIZE) {
+      const batch = ownedGames.slice(i, i + BATCH_SIZE);
+      logMemory(`Before processing Steam batch ${i / BATCH_SIZE + 1}`);
+      if (MAX_CONCURRENT <= 1) {
+        for (const game of batch) {
+        try {
         console.log(`Processing Steam app ${game.appid} - ${game.name}`);
         // Get game schema (achievements list)
         const schemaResponse = await fetch(
@@ -90,8 +135,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId) 
           });
 
         // Process achievements
-        for (let i = 0; i < achievements.length; i++) {
-          const achievement = achievements[i];
+        for (let j = 0; j < achievements.length; j++) {
+          const achievement = achievements[j];
           const playerAchievement = playerAchievements.find(a => a.apiname === achievement.name);
 
           // Upsert achievement
@@ -138,11 +183,15 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId) 
           .eq('id', userId);
 
         console.log(`Processed ${processedGames}/${ownedGames.length} games (${progressPercent}%)`);
-
-      } catch (error) {
-        console.error(`Error processing game ${game.name}:`, error);
-        // Continue with next game
+        // brief pause to yield to the event loop and let memory settle
+        await new Promise((r) => setTimeout(r, 25));
+        } catch (error) {
+          console.error(`Error processing game ${game.name}:`, error);
+          // Continue with next game
+        }
       }
+      }
+      logMemory(`After processing Steam batch ${i / BATCH_SIZE + 1}`);
     }
 
     // Mark as completed
