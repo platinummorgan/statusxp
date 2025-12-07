@@ -15,13 +15,13 @@ END $$;
 ALTER TABLE game_titles ADD COLUMN IF NOT EXISTS canonical_game_title_id bigint;
 
 -- Step 3: For each game name, pick ONE canonical game_title (prefer PS5, then PS4, then others)
-WITH ranked_games AS (
+UPDATE game_titles gt
+SET canonical_game_title_id = subq.canonical_id
+FROM (
   SELECT 
-    gt.id,
-    gt.name,
-    gt.platform_id,
-    ROW_NUMBER() OVER (
-      PARTITION BY LOWER(TRIM(gt.name)) 
+    gt2.id,
+    FIRST_VALUE(gt2.id) OVER (
+      PARTITION BY LOWER(TRIM(gt2.name)) 
       ORDER BY 
         CASE 
           WHEN p.code = 'PS5' THEN 1
@@ -31,19 +31,12 @@ WITH ranked_games AS (
           WHEN p.code = 'XBOXONE' THEN 5
           ELSE 6
         END,
-        gt.id ASC
-    ) as rank
-  FROM game_titles gt
-  LEFT JOIN platforms p ON gt.platform_id = p.id
-)
-UPDATE game_titles gt
-SET canonical_game_title_id = (
-  SELECT rg.id 
-  FROM ranked_games rg
-  WHERE LOWER(TRIM(rg.name)) = LOWER(TRIM(gt.name)) 
-    AND rg.rank = 1
-  LIMIT 1
-);
+        gt2.id ASC
+    ) as canonical_id
+  FROM game_titles gt2
+  LEFT JOIN platforms p ON gt2.platform_id = p.id
+) subq
+WHERE gt.id = subq.id;
 
 -- Step 4: Update all user_games to point to canonical game_title
 UPDATE user_games ug
