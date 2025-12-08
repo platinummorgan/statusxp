@@ -331,41 +331,67 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               console.log(`[XBOX TOTAL] Updated ${title.name} with total achievements: ${totalAchievementsFromAPI}`);
             }
 
-            // Fetch global achievement stats for rarity data
+            // Try multiple Xbox rarity endpoints - Microsoft has changed these over time
             const globalStatsMap = new Map();
+            
+            // Attempt 1: titlehub with titleId
             try {
-              const statsUrl = `https://titlehub.xboxlive.com/titles/${title.titleId}/achievements/stats`;
-              console.log(`[XBOX RARITY] Fetching stats from: ${statsUrl}`);
-              const statsResponse = await fetch(
-                statsUrl,
-                {
-                  headers: {
-                    'x-xbl-contract-version': '2',
-                    'Accept-Language': 'en-US',
-                    Authorization: `XBL3.0 x=${userHash};${accessToken}`,
-                  },
-                }
-              );
-
-              console.log(`[XBOX RARITY] Stats response status: ${statsResponse.status} for ${title.name}`);
-              if (statsResponse.ok) {
-                const statsData = await statsResponse.json();
-                console.log(`[XBOX RARITY] Stats response for ${title.name}:`, JSON.stringify(statsData).substring(0, 500));
+              const statsUrl1 = `https://titlehub.xboxlive.com/titles/${title.titleId}/achievements/stats`;
+              console.log(`[XBOX RARITY] Attempt 1 - Trying: ${statsUrl1}`);
+              const statsResponse1 = await fetch(statsUrl1, {
+                headers: {
+                  'x-xbl-contract-version': '2',
+                  'Accept-Language': 'en-US',
+                  Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+                },
+              });
+              
+              console.log(`[XBOX RARITY] Attempt 1 status: ${statsResponse1.status}`);
+              if (statsResponse1.ok) {
+                const statsData = await statsResponse1.json();
+                console.log(`[XBOX RARITY] Attempt 1 SUCCESS:`, JSON.stringify(statsData).substring(0, 300));
                 if (statsData.achievements) {
                   for (const stat of statsData.achievements) {
                     if (stat.earnedPercentage !== undefined) {
-                      console.log(`[XBOX RARITY] Achievement ${stat.id}: ${stat.earnedPercentage}%`);
                       globalStatsMap.set(stat.id, stat.earnedPercentage);
                     }
                   }
-                  console.log(`[XBOX RARITY] Mapped ${globalStatsMap.size} rarity values for ${title.name}`);
                 }
-              } else {
-                console.log(`⚠️  Stats endpoint returned ${statsResponse.status} for ${title.name} - Xbox rarity API may be deprecated`);
               }
-            } catch (statsError) {
-              console.log(`Could not fetch global stats for ${title.name}:`, statsError.message);
+            } catch (err1) {
+              console.log(`[XBOX RARITY] Attempt 1 failed:`, err1.message);
             }
+            
+            // Attempt 2: achievements.xboxlive.com with titleId
+            if (globalStatsMap.size === 0) {
+              try {
+                const statsUrl2 = `https://achievements.xboxlive.com/titles/${title.titleId}/achievements/stats`;
+                console.log(`[XBOX RARITY] Attempt 2 - Trying: ${statsUrl2}`);
+                const statsResponse2 = await fetch(statsUrl2, {
+                  headers: {
+                    'x-xbl-contract-version': '2',
+                    Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+                  },
+                });
+                
+                console.log(`[XBOX RARITY] Attempt 2 status: ${statsResponse2.status}`);
+                if (statsResponse2.ok) {
+                  const statsData = await statsResponse2.json();
+                  console.log(`[XBOX RARITY] Attempt 2 SUCCESS:`, JSON.stringify(statsData).substring(0, 300));
+                  if (statsData.achievements) {
+                    for (const stat of statsData.achievements) {
+                      if (stat.earnedPercentage !== undefined || stat.rarity !== undefined) {
+                        globalStatsMap.set(stat.id, stat.earnedPercentage || stat.rarity);
+                      }
+                    }
+                  }
+                }
+              } catch (err2) {
+                console.log(`[XBOX RARITY] Attempt 2 failed:`, err2.message);
+              }
+            }
+            
+            console.log(`[XBOX RARITY] Mapped ${globalStatsMap.size} rarity values for ${title.name}`);
 
             for (const achievement of achievementsData.achievements) {
               // Check if achievement object has rarity directly
