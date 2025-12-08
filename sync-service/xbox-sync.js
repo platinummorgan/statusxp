@@ -209,45 +209,6 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
     logMemory('After filtering gamesWithProgress');
 
-    // Fetch ALL achievements with rarity data using contract version 3
-    // Contract version 3 doesn't support titleId filter, so we fetch all and filter in code
-    console.log('[XBOX RARITY] Fetching all achievements with rarity data (contract version 3)...');
-    const allAchievementsResponse = await fetch(
-      `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements`,
-      {
-        headers: {
-          'x-xbl-contract-version': '3',
-          Authorization: `XBL3.0 x=${userHash};${accessToken}`,
-        },
-      }
-    );
-
-    const allAchievementsData = await allAchievementsResponse.json();
-    console.log(`[XBOX RARITY] Fetched ${allAchievementsData?.achievements?.length || 0} total achievements with rarity data`);
-    
-    // Log first achievement to see structure
-    if (allAchievementsData?.achievements?.[0]) {
-      console.log('[XBOX RARITY] Sample achievement structure:', JSON.stringify(allAchievementsData.achievements[0], null, 2));
-    }
-    
-    // Group achievements by titleId for quick lookup
-    const achievementsByTitle = new Map();
-    if (allAchievementsData?.achievements) {
-      for (const achievement of allAchievementsData.achievements) {
-        const titleId = achievement.titleAssociations?.[0]?.id;
-        if (titleId) {
-          if (!achievementsByTitle.has(titleId)) {
-            achievementsByTitle.set(titleId, []);
-          }
-          achievementsByTitle.get(titleId).push(achievement);
-        } else {
-          console.log('[XBOX RARITY] Achievement without titleId:', achievement.name);
-        }
-      }
-    }
-    console.log(`[XBOX RARITY] Grouped achievements into ${achievementsByTitle.size} titles`);
-    console.log('[XBOX RARITY] Title IDs with achievements:', Array.from(achievementsByTitle.keys()).slice(0, 10));
-
     let processedGames = 0;
     let totalAchievements = 0;
 
@@ -319,15 +280,57 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Log the achievement data from Xbox API
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);
 
-            // Get achievements for this title from the cached map
-            const titleIdNum = parseInt(title.titleId);
-            const achievementsForTitle = achievementsByTitle.get(titleIdNum) || [];
+            // Fetch achievements for this specific title
+            const achievementsResponse = await fetch(
+              `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}`,
+              {
+                headers: {
+                  'x-xbl-contract-version': '2',
+                  Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+                },
+              }
+            );
+
+            if (!achievementsResponse.ok) {
+              console.error(`[XBOX ACHIEVEMENTS] Failed to fetch achievements for ${title.name}: ${achievementsResponse.status}`);
+              processedGames++;
+              continue;
+            }
+
+            const achievementsData = await achievementsResponse.json();
+            const achievementsForTitle = achievementsData?.achievements || [];
             const totalAchievementsFromAPI = achievementsForTitle.length;
-            console.log(`[XBOX ACHIEVEMENTS] ${title.name} (titleId: ${titleIdNum}): Found ${totalAchievementsFromAPI} achievements with rarity data`);
-            
-            if (totalAchievementsFromAPI === 0) {
-              console.log(`[XBOX ACHIEVEMENTS] No achievements found for titleId ${titleIdNum}. Checking if it exists in map...`);
-              console.log(`[XBOX ACHIEVEMENTS] Map has titleId ${titleIdNum}?`, achievementsByTitle.has(titleIdNum));
+            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched ${totalAchievementsFromAPI} achievements from API`);
+
+            // Fetch rarity data from stats endpoint
+            const globalStatsMap = new Map();
+            try {
+              const statsResponse = await fetch(
+                `https://titlehub.xboxlive.com/titles/${title.titleId}/achievements/stats`,
+                {
+                  headers: {
+                    'x-xbl-contract-version': '2',
+                    'Accept-Language': 'en-US',
+                    Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+                  },
+                }
+              );
+
+              if (statsResponse.ok) {
+                const statsData = await statsResponse.json();
+                if (statsData.achievements) {
+                  for (const stat of statsData.achievements) {
+                    if (stat.earnedPercentage !== undefined) {
+                      globalStatsMap.set(stat.id, stat.earnedPercentage);
+                    }
+                  }
+                }
+                console.log(`[XBOX RARITY] Fetched rarity for ${globalStatsMap.size} achievements in ${title.name}`);
+              } else {
+                console.log(`[XBOX RARITY] Stats endpoint returned ${statsResponse.status} for ${title.name}`);
+              }
+            } catch (statsError) {
+              console.log(`[XBOX RARITY] Could not fetch stats for ${title.name}:`, statsError.message);
             }
 
             // Upsert user_games
@@ -355,11 +358,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
               
-              // Extract rarity from the rarity object (contract version 3)
-              // rarity: { currentCategory: "Rare", currentPercentage: 1.5 }
-              const rarityPercent = achievement.rarity?.currentPercentage || null;
+              // Get rarity from stats endpoint map
+              const rarityPercent = globalStatsMap.get(achievement.id) || null;
               
-              if (rarityPercent > 0) {
+              if (rarityPercent !== null && rarityPercent > 0) {
                 console.log(`[XBOX RARITY] Storing achievement ${achievement.name} with rarity ${rarityPercent}%`);
               }
               
