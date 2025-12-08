@@ -299,12 +299,13 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 onConflict: 'user_id,game_title_id,platform_id',
               });
 
-            // Fetch achievements
+            // Fetch achievements with rarity data using contract version 3
+            // Contract version 3 includes rarity object: { currentCategory: "Rare", currentPercentage: 1.5 }
             const achievementsResponse = await fetch(
               `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}`,
               {
                 headers: {
-                  'x-xbl-contract-version': '2',
+                  'x-xbl-contract-version': '3',
                   Authorization: `XBL3.0 x=${userHash};${accessToken}`,
                 },
               }
@@ -312,8 +313,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
             const achievementsData = await achievementsResponse.json();
             const totalAchievementsFromAPI = achievementsData?.achievements?.length || 0;
-            console.log('Fetched achievements count for titleId', title.titleId, ':', totalAchievementsFromAPI);
-            console.log('[XBOX API] Sample achievement structure:', JSON.stringify(achievementsData?.achievements?.[0], null, 2));
+            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched ${totalAchievementsFromAPI} achievements from API`);
 
             // Update user_games with correct total from actual achievements API
             // The title history API often returns 0 for totalAchievements
@@ -331,77 +331,14 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               console.log(`[XBOX TOTAL] Updated ${title.name} with total achievements: ${totalAchievementsFromAPI}`);
             }
 
-            // Try multiple Xbox rarity endpoints - Microsoft has changed these over time
-            const globalStatsMap = new Map();
-            
-            // Attempt 1: titlehub with titleId
-            try {
-              const statsUrl1 = `https://titlehub.xboxlive.com/titles/${title.titleId}/achievements/stats`;
-              console.log(`[XBOX RARITY] Attempt 1 - Trying: ${statsUrl1}`);
-              const statsResponse1 = await fetch(statsUrl1, {
-                headers: {
-                  'x-xbl-contract-version': '2',
-                  'Accept-Language': 'en-US',
-                  Authorization: `XBL3.0 x=${userHash};${accessToken}`,
-                },
-              });
-              
-              console.log(`[XBOX RARITY] Attempt 1 status: ${statsResponse1.status}`);
-              if (statsResponse1.ok) {
-                const statsData = await statsResponse1.json();
-                console.log(`[XBOX RARITY] Attempt 1 SUCCESS:`, JSON.stringify(statsData).substring(0, 300));
-                if (statsData.achievements) {
-                  for (const stat of statsData.achievements) {
-                    if (stat.earnedPercentage !== undefined) {
-                      globalStatsMap.set(stat.id, stat.earnedPercentage);
-                    }
-                  }
-                }
-              }
-            } catch (err1) {
-              console.log(`[XBOX RARITY] Attempt 1 failed:`, err1.message);
-            }
-            
-            // Attempt 2: achievements.xboxlive.com with titleId
-            if (globalStatsMap.size === 0) {
-              try {
-                const statsUrl2 = `https://achievements.xboxlive.com/titles/${title.titleId}/achievements/stats`;
-                console.log(`[XBOX RARITY] Attempt 2 - Trying: ${statsUrl2}`);
-                const statsResponse2 = await fetch(statsUrl2, {
-                  headers: {
-                    'x-xbl-contract-version': '2',
-                    Authorization: `XBL3.0 x=${userHash};${accessToken}`,
-                  },
-                });
-                
-                console.log(`[XBOX RARITY] Attempt 2 status: ${statsResponse2.status}`);
-                if (statsResponse2.ok) {
-                  const statsData = await statsResponse2.json();
-                  console.log(`[XBOX RARITY] Attempt 2 SUCCESS:`, JSON.stringify(statsData).substring(0, 300));
-                  if (statsData.achievements) {
-                    for (const stat of statsData.achievements) {
-                      if (stat.earnedPercentage !== undefined || stat.rarity !== undefined) {
-                        globalStatsMap.set(stat.id, stat.earnedPercentage || stat.rarity);
-                      }
-                    }
-                  }
-                }
-              } catch (err2) {
-                console.log(`[XBOX RARITY] Attempt 2 failed:`, err2.message);
-              }
-            }
-            
-            console.log(`[XBOX RARITY] Mapped ${globalStatsMap.size} rarity values for ${title.name}`);
-
             for (const achievement of achievementsData.achievements) {
-              // Log the FULL achievement object to see ALL fields
-              console.log(`[XBOX ACHIEVEMENT FULL] ${achievement.name}:`, JSON.stringify(achievement, null, 2));
-              
               // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
-              // Use null instead of 0 when stats unavailable - trigger will default to COMMON rarity
-              const rarityPercent = globalStatsMap.get(achievement.id) || null;
+              
+              // Extract rarity from the rarity object (contract version 3)
+              // rarity: { currentCategory: "Rare", currentPercentage: 1.5 }
+              const rarityPercent = achievement.rarity?.currentPercentage || null;
               
               if (rarityPercent > 0) {
                 console.log(`[XBOX RARITY] Storing achievement ${achievement.name} with rarity ${rarityPercent}%`);
