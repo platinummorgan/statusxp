@@ -209,6 +209,37 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
     logMemory('After filtering gamesWithProgress');
 
+    // Fetch ALL achievements with rarity data using contract version 3
+    // Contract version 3 doesn't support titleId filter, so we fetch all and filter in code
+    console.log('[XBOX RARITY] Fetching all achievements with rarity data (contract version 3)...');
+    const allAchievementsResponse = await fetch(
+      `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements`,
+      {
+        headers: {
+          'x-xbl-contract-version': '3',
+          Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+        },
+      }
+    );
+
+    const allAchievementsData = await allAchievementsResponse.json();
+    console.log(`[XBOX RARITY] Fetched ${allAchievementsData?.achievements?.length || 0} total achievements with rarity data`);
+    
+    // Group achievements by titleId for quick lookup
+    const achievementsByTitle = new Map();
+    if (allAchievementsData?.achievements) {
+      for (const achievement of allAchievementsData.achievements) {
+        const titleId = achievement.titleAssociations?.[0]?.id;
+        if (titleId) {
+          if (!achievementsByTitle.has(titleId)) {
+            achievementsByTitle.set(titleId, []);
+          }
+          achievementsByTitle.get(titleId).push(achievement);
+        }
+      }
+    }
+    console.log(`[XBOX RARITY] Grouped achievements into ${achievementsByTitle.size} titles`);
+
     let processedGames = 0;
     let totalAchievements = 0;
 
@@ -280,6 +311,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Log the achievement data from Xbox API
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);
 
+            // Get achievements for this title from the cached map
+            const titleIdNum = parseInt(title.titleId);
+            const achievementsForTitle = achievementsByTitle.get(titleIdNum) || [];
+            const totalAchievementsFromAPI = achievementsForTitle.length;
+            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Found ${totalAchievementsFromAPI} achievements with rarity data`);
+
             // Upsert user_games
             await supabase
               .from('user_games')
@@ -287,51 +324,20 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 user_id: userId,
                 game_title_id: gameTitle.id,
                 platform_id: platform.id,
-                total_trophies: title.achievement.totalAchievements,
+                total_trophies: totalAchievementsFromAPI || title.achievement.totalAchievements,
                 earned_trophies: title.achievement.currentAchievements,
                 completion_percent: title.achievement.progressPercentage,
                 xbox_current_gamerscore: title.achievement.currentGamerscore,
                 xbox_max_gamerscore: title.achievement.totalGamerscore,
                 xbox_achievements_earned: title.achievement.currentAchievements,
-                xbox_total_achievements: title.achievement.totalAchievements,
+                xbox_total_achievements: totalAchievementsFromAPI || title.achievement.totalAchievements,
                 xbox_last_updated_at: new Date().toISOString(),
               }, {
                 onConflict: 'user_id,game_title_id,platform_id',
               });
 
-            // Fetch achievements with rarity data using contract version 3
-            // Contract version 3 includes rarity object: { currentCategory: "Rare", currentPercentage: 1.5 }
-            const achievementsResponse = await fetch(
-              `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}`,
-              {
-                headers: {
-                  'x-xbl-contract-version': '3',
-                  Authorization: `XBL3.0 x=${userHash};${accessToken}`,
-                },
-              }
-            );
-
-            const achievementsData = await achievementsResponse.json();
-            const totalAchievementsFromAPI = achievementsData?.achievements?.length || 0;
-            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched ${totalAchievementsFromAPI} achievements from API`);
-
-            // Update user_games with correct total from actual achievements API
-            // The title history API often returns 0 for totalAchievements
-            if (totalAchievementsFromAPI > 0) {
-              await supabase
-                .from('user_games')
-                .update({
-                  total_trophies: totalAchievementsFromAPI,
-                  xbox_total_achievements: totalAchievementsFromAPI,
-                })
-                .eq('user_id', userId)
-                .eq('game_title_id', gameTitle.id)
-                .eq('platform_id', platform.id);
-              
-              console.log(`[XBOX TOTAL] Updated ${title.name} with total achievements: ${totalAchievementsFromAPI}`);
-            }
-
-            for (const achievement of achievementsData.achievements) {
+            // Process achievements for this title
+            for (const achievement of achievementsForTitle) {
               // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
