@@ -225,6 +225,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     const allAchievementsData = await allAchievementsResponse.json();
     console.log(`[XBOX RARITY] Fetched ${allAchievementsData?.achievements?.length || 0} total achievements with rarity data`);
     
+    // Log first achievement to see structure
+    if (allAchievementsData?.achievements?.[0]) {
+      console.log('[XBOX RARITY] Sample achievement structure:', JSON.stringify(allAchievementsData.achievements[0], null, 2));
+    }
+    
     // Group achievements by titleId for quick lookup
     const achievementsByTitle = new Map();
     if (allAchievementsData?.achievements) {
@@ -235,10 +240,13 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             achievementsByTitle.set(titleId, []);
           }
           achievementsByTitle.get(titleId).push(achievement);
+        } else {
+          console.log('[XBOX RARITY] Achievement without titleId:', achievement.name);
         }
       }
     }
     console.log(`[XBOX RARITY] Grouped achievements into ${achievementsByTitle.size} titles`);
+    console.log('[XBOX RARITY] Title IDs with achievements:', Array.from(achievementsByTitle.keys()).slice(0, 10));
 
     let processedGames = 0;
     let totalAchievements = 0;
@@ -315,7 +323,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const titleIdNum = parseInt(title.titleId);
             const achievementsForTitle = achievementsByTitle.get(titleIdNum) || [];
             const totalAchievementsFromAPI = achievementsForTitle.length;
-            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Found ${totalAchievementsFromAPI} achievements with rarity data`);
+            console.log(`[XBOX ACHIEVEMENTS] ${title.name} (titleId: ${titleIdNum}): Found ${totalAchievementsFromAPI} achievements with rarity data`);
+            
+            if (totalAchievementsFromAPI === 0) {
+              console.log(`[XBOX ACHIEVEMENTS] No achievements found for titleId ${titleIdNum}. Checking if it exists in map...`);
+              console.log(`[XBOX ACHIEVEMENTS] Map has titleId ${titleIdNum}?`, achievementsByTitle.has(titleIdNum));
+            }
 
             // Upsert user_games
             await supabase
