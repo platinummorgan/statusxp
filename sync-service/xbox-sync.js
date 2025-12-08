@@ -277,6 +277,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
             if (!gameTitle) { console.log('Upserted game_title - no result'); continue; }
 
+            // Log the achievement data from Xbox API
+            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);
+
             // Upsert user_games
             await supabase
               .from('user_games')
@@ -308,7 +311,24 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             );
 
             const achievementsData = await achievementsResponse.json();
-            console.log('Fetched achievements count for titleId', title.titleId, ':', achievementsData?.achievements?.length ?? 0);
+            const totalAchievementsFromAPI = achievementsData?.achievements?.length || 0;
+            console.log('Fetched achievements count for titleId', title.titleId, ':', totalAchievementsFromAPI);
+
+            // Update user_games with correct total from actual achievements API
+            // The title history API often returns 0 for totalAchievements
+            if (totalAchievementsFromAPI > 0) {
+              await supabase
+                .from('user_games')
+                .update({
+                  total_trophies: totalAchievementsFromAPI,
+                  xbox_total_achievements: totalAchievementsFromAPI,
+                })
+                .eq('user_id', userId)
+                .eq('game_title_id', gameTitle.id)
+                .eq('platform_id', platform.id);
+              
+              console.log(`[XBOX TOTAL] Updated ${title.name} with total achievements: ${totalAchievementsFromAPI}`);
+            }
 
             // Fetch global achievement stats for rarity data
             const globalStatsMap = new Map();
