@@ -302,34 +302,52 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const totalAchievementsFromAPI = achievementsForTitle.length;
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched ${totalAchievementsFromAPI} achievements from API`);
 
-            // Fetch rarity data from OpenXBL (3rd party API with global rarity stats)
+            // Check if this game needs rarity refresh (30+ days since last update)
+            const { data: rarityCheckGame } = await supabase
+              .from('achievements')
+              .select('rarity_last_updated_at')
+              .eq('game_title_id', gameTitle.id)
+              .eq('platform', 'xbox')
+              .order('rarity_last_updated_at', { ascending: false })
+              .limit(1)
+              .single();
+
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            const needsRarityUpdate = !rarityCheckGame?.rarity_last_updated_at || 
+                                      new Date(rarityCheckGame.rarity_last_updated_at) < thirtyDaysAgo;
+
+            // Fetch rarity data from OpenXBL (only if needed to save API calls)
             let openXBLRarityMap = new Map();
-            try {
-              const openXBLKey = process.env.OPENXBL_API_KEY;
-              if (openXBLKey) {
-                const rarityResponse = await fetch(
-                  `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
-                  {
-                    headers: {
-                      'x-authorization': openXBLKey,
-                    },
-                  }
-                );
-                
-                if (rarityResponse.ok) {
-                  const rarityData = await rarityResponse.json();
-                  const achievementsWithRarity = rarityData?.achievements || [];
-                  for (const ach of achievementsWithRarity) {
-                    if (ach.rarity?.currentPercentage !== undefined) {
-                      openXBLRarityMap.set(ach.id, ach.rarity.currentPercentage);
+            if (needsRarityUpdate) {
+              try {
+                const openXBLKey = process.env.OPENXBL_API_KEY;
+                if (openXBLKey) {
+                  const rarityResponse = await fetch(
+                    `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
+                    {
+                      headers: {
+                        'x-authorization': openXBLKey,
+                      },
                     }
+                  );
+                  
+                  if (rarityResponse.ok) {
+                    const rarityData = await rarityResponse.json();
+                    const achievementsWithRarity = rarityData?.achievements || [];
+                    for (const ach of achievementsWithRarity) {
+                      if (ach.rarity?.currentPercentage !== undefined) {
+                        openXBLRarityMap.set(ach.id, ach.rarity.currentPercentage);
+                      }
+                    }
+                    console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements`);
                   }
-                  console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements`);
                 }
+              } catch (error) {
+                console.error(`[OPENXBL] Failed to fetch rarity data:`, error);
+                // Continue without rarity data
               }
-            } catch (error) {
-              console.error(`[OPENXBL] Failed to fetch rarity data:`, error);
-              // Continue without rarity data
+            } else {
+              console.log(`[OPENXBL] Skipping rarity fetch - last updated within 30 days`);
             }
 
             // Upsert user_games
@@ -360,22 +378,30 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               // Get rarity from OpenXBL (falls back to null if not available)
               const rarityPercent = openXBLRarityMap.get(achievement.id) || null;
               
+              // Build upsert object
+              const achievementUpsert = {
+                game_title_id: gameTitle.id,
+                platform: 'xbox',
+                platform_achievement_id: achievement.id,
+                name: achievement.name,
+                description: achievement.description,
+                icon_url: achievement.mediaAssets?.[0]?.url,
+                xbox_gamerscore: achievement.rewards?.[0]?.value || 0,
+                xbox_is_secret: achievement.isSecret || false,
+                is_dlc: isDLC,
+                dlc_name: null,
+              };
+
+              // Only update rarity if we fetched new data
+              if (needsRarityUpdate && rarityPercent !== null) {
+                achievementUpsert.rarity_global = rarityPercent;
+                achievementUpsert.rarity_last_updated_at = new Date().toISOString();
+              }
+              
               // Upsert achievement with rarity data
               const { data: achievementRecord } = await supabase
                 .from('achievements')
-                .upsert({
-                  game_title_id: gameTitle.id,
-                  platform: 'xbox',
-                  platform_achievement_id: achievement.id,
-                  name: achievement.name,
-                  description: achievement.description,
-                  icon_url: achievement.mediaAssets?.[0]?.url,
-                  xbox_gamerscore: achievement.rewards?.[0]?.value || 0,
-                  xbox_is_secret: achievement.isSecret || false,
-                  rarity_global: rarityPercent,
-                  is_dlc: isDLC,
-                  dlc_name: null,
-                }, {
+                .upsert(achievementUpsert, {
                   onConflict: 'game_title_id,platform,platform_achievement_id',
                 })
                 .select()
