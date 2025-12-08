@@ -302,36 +302,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const totalAchievementsFromAPI = achievementsForTitle.length;
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched ${totalAchievementsFromAPI} achievements from API`);
 
-            // Fetch rarity data from stats endpoint
-            const globalStatsMap = new Map();
-            try {
-              const statsResponse = await fetch(
-                `https://titlehub.xboxlive.com/titles/${title.titleId}/achievements/stats`,
-                {
-                  headers: {
-                    'x-xbl-contract-version': '2',
-                    'Accept-Language': 'en-US',
-                    Authorization: `XBL3.0 x=${userHash};${accessToken}`,
-                  },
-                }
-              );
-
-              if (statsResponse.ok) {
-                const statsData = await statsResponse.json();
-                if (statsData.achievements) {
-                  for (const stat of statsData.achievements) {
-                    if (stat.earnedPercentage !== undefined) {
-                      globalStatsMap.set(stat.id, stat.earnedPercentage);
-                    }
-                  }
-                }
-                console.log(`[XBOX RARITY] Fetched rarity for ${globalStatsMap.size} achievements in ${title.name}`);
-              } else {
-                console.log(`[XBOX RARITY] Stats endpoint returned ${statsResponse.status} for ${title.name}`);
-              }
-            } catch (statsError) {
-              console.log(`[XBOX RARITY] Could not fetch stats for ${title.name}:`, statsError.message);
-            }
+            // NOTE: Xbox doesn't expose global rarity via public API
+            // The stats endpoint (titlehub.../achievements/stats) doesn't exist for retail
+            // We'll compute rarity from our own user base later via database aggregation
 
             // Upsert user_games
             await supabase
@@ -358,12 +331,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
               
-              // Get rarity from stats endpoint map
-              const rarityPercent = globalStatsMap.get(achievement.id) || null;
-              
-              if (rarityPercent !== null && rarityPercent > 0) {
-                console.log(`[XBOX RARITY] Storing achievement ${achievement.name} with rarity ${rarityPercent}%`);
-              }
+              // Xbox doesn't expose rarity via public API - set to null
+              // We'll compute from our own user base via DB aggregation later
+              const rarityPercent = null;
               
               // Upsert achievement with rarity data
               const { data: achievementRecord } = await supabase
