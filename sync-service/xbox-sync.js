@@ -394,15 +394,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             console.log(`[XBOX RARITY] Mapped ${globalStatsMap.size} rarity values for ${title.name}`);
 
             for (const achievement of achievementsData.achievements) {
-              // Check if achievement object has rarity directly
-              console.log(`[XBOX RARITY CHECK] Achievement ${achievement.name}:`, {
-                hasRarity: !!achievement.rarity,
-                rarity: achievement.rarity,
-                hasEarnedPercentage: !!achievement.earnedPercentage,
-                earnedPercentage: achievement.earnedPercentage,
-                hasProgressPercentage: !!achievement.progressPercentage,
-                progressPercentage: achievement.progressPercentage
-              });
+              // Log the FULL achievement object to see ALL fields
+              console.log(`[XBOX ACHIEVEMENT FULL] ${achievement.name}:`, JSON.stringify(achievement, null, 2));
               
               // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
