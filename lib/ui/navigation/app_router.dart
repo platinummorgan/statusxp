@@ -4,6 +4,10 @@ import 'package:statusxp/ui/screens/dashboard_screen.dart';
 import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
 import 'package:statusxp/ui/screens/games_list_screen.dart';
 import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
+import 'package:statusxp/ui/screens/game_achievements_screen.dart';
+import 'package:statusxp/ui/screens/leaderboard_screen.dart';
+import 'package:statusxp/ui/screens/flex_room_screen.dart';
+import 'package:statusxp/ui/screens/achievements_screen.dart';
 import 'package:statusxp/ui/screens/psn/psn_sync_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_sync_screen.dart';
 import 'package:statusxp/ui/screens/status_poster_screen.dart';
@@ -47,6 +51,25 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const UnifiedGamesListScreen(),
     ),
 
+    // Game Achievements - View achievements/trophies for a specific game
+    GoRoute(
+      path: '/game/:gameId/achievements',
+      name: 'game-achievements',
+      builder: (context, state) {
+        final gameId = state.pathParameters['gameId']!;
+        final gameName = state.uri.queryParameters['name'] ?? 'Game';
+        final platform = state.uri.queryParameters['platform'] ?? 'unknown';
+        final coverUrl = state.uri.queryParameters['cover'];
+        
+        return GameAchievementsScreen(
+          gameId: gameId,
+          gameName: gameName,
+          platform: platform,
+          coverUrl: coverUrl,
+        );
+      },
+    ),
+
     // Status Poster - Shareable achievement card
     GoRoute(
       path: '/poster',
@@ -75,11 +98,32 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const TrophyRoomScreen(),
     ),
 
-    // Display Case - Customizable trophy cabinet
+    // Display Case - Trophy showcase and achievements display
     GoRoute(
       path: '/display-case',
       name: 'display-case',
       builder: (context, state) => const DisplayCaseScreen(),
+    ),
+
+    // Flex Room - Cross-platform achievement showcase
+    GoRoute(
+      path: '/flex-room',
+      name: 'flex-room',
+      builder: (context, state) => const FlexRoomScreen(),
+    ),
+
+    // Achievements - View all meta-achievements and progress
+    GoRoute(
+      path: '/achievements',
+      name: 'achievements',
+      builder: (context, state) => const AchievementsScreen(),
+    ),
+
+    // Leaderboards - Global rankings
+    GoRoute(
+      path: '/leaderboards',
+      name: 'leaderboards',
+      builder: (context, state) => const LeaderboardScreen(),
     ),
 
     // Settings - Platform connections and app configuration
@@ -91,9 +135,6 @@ final GoRouter appRouter = GoRouter(
 
     // TODO: Future nested routes
     // - Game detail screen: '/games/:id'
-    // - Settings screen: '/settings'
-    // - Profile screen: '/profile'
-    // - Leaderboard screen: '/leaderboard' (Phase 2.0+)
   ],
 
   // Error/404 handler

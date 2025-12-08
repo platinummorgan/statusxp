@@ -381,6 +381,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         },
                       ),
                       NeonActionChip(
+                        label: 'Achievements',
+                        icon: Icons.stars,
+                        accentColor: CyberpunkTheme.neonOrange,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          context.push('/achievements');
+                        },
+                      ),
+                      NeonActionChip(
                         label: 'View Games',
                         icon: Icons.videogame_asset,
                         onTap: () {

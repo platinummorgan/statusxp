@@ -51,7 +51,7 @@ class UnifiedGamesRepository {
         
         // Debug: Check what platform data we're getting
         final platformData = row['platforms'] as Map<String, dynamic>?;
-        print('DEBUG Repository: Game="${title}", platform_data=$platformData');
+        print('DEBUG Repository: Game="$title", platform_data=$platformData');
         
         if (!gamesByTitle.containsKey(title)) {
           gamesByTitle[title] = [];
@@ -97,7 +97,7 @@ class UnifiedGamesRepository {
         
         platforms.add(PlatformGameData(
           platform: platform,
-          gameId: game['id'].toString(),
+          gameId: (game['game_title_id'] ?? game['id']).toString(),
           achievementsEarned: earnedTrophies,
           achievementsTotal: totalTrophies,
           completion: completion,

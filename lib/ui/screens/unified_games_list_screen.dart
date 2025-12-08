@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
+import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 
 /// Sort options for games list
 enum GameSort {
@@ -13,8 +14,8 @@ enum GameSort {
   rarity,
 }
 
-/// Platform filter state provider (null = All)
-final platformFilterProvider = StateProvider<String?>((ref) => null);
+/// Platform filter state provider (empty set = All)
+final platformFilterProvider = StateProvider<Set<String>>((ref) => {});
 
 /// Sort state provider
 final gameSortProvider = StateProvider<GameSort>((ref) => GameSort.nameAsc);
@@ -45,10 +46,9 @@ class UnifiedGamesListScreen extends ConsumerWidget {
             gamesAsync.when(
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
-              data: (games) => _buildHeader(context, games, platformFilter),
+              data: (games) => _buildHeader(context, ref, games, platformFilter),
             ),
-            _buildSearchBar(context, ref),
-            _buildFiltersAndSort(context, ref, platformFilter, sortOption),
+            _buildSearchBar(context, ref, sortOption),
             Expanded(
               child: gamesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -74,7 +74,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, List<UnifiedGame> games, String? currentFilter) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref, List<UnifiedGame> games, Set<String> selectedFilters) {
     // Calculate game counts per platform
     int psCount = 0;
     int xboxCount = 0;
@@ -96,153 +96,180 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: Text(
-        'Games: PS:$psCount • XBOX:$xboxCount • Steam:$steamCount',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-        textAlign: TextAlign.center,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatCard(ref, 'PS', psCount, const Color(0xFF0070CC), Icons.videogame_asset, 'playstation', selectedFilters),
+          _buildStatCard(ref, 'XBOX', xboxCount, const Color(0xFF107C10), Icons.sports_esports, 'xbox', selectedFilters),
+          _buildStatCard(ref, 'Steam', steamCount, const Color(0xFF66C0F4), Icons.store, 'steam', selectedFilters),
+        ],
       ),
     );
   }
 
-  Widget _buildSearchBar(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: TextField(
-        onChanged: (value) {
-          ref.read(searchQueryProvider.notifier).state = value;
+  Widget _buildStatCard(WidgetRef ref, String label, int count, Color color, IconData icon, String filterValue, Set<String> selectedFilters) {
+    final isSelected = selectedFilters.contains(filterValue);
+    
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          // Toggle platform in/out of set (multi-select like Excel)
+          final newFilters = Set<String>.from(selectedFilters);
+          if (newFilters.contains(filterValue)) {
+            newFilters.remove(filterValue);
+          } else {
+            newFilters.add(filterValue);
+          }
+          ref.read(platformFilterProvider.notifier).state = newFilters;
         },
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          hintText: 'Search games...',
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-          prefixIcon: const Icon(Icons.search, color: Colors.white70),
-          filled: true,
-          fillColor: Colors.black.withOpacity(0.3),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(isSelected ? 0.15 : 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: color.withOpacity(isSelected ? 0.5 : 0.2),
+              width: isSelected ? 2 : 1,
+            ),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: CyberpunkTheme.neonCyan, width: 2),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(width: 6),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    count.toString(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildFiltersAndSort(BuildContext context, WidgetRef ref, String? currentFilter, GameSort currentSort) {
+  Widget _buildSearchBar(BuildContext context, WidgetRef ref, GameSort currentSort) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip(context, ref, null, 'All', currentFilter),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(context, ref, 'playstation', 'PlayStation', currentFilter,
-                      color: const Color(0xFF00A8E1)),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(context, ref, 'xbox', 'XBOX', currentFilter,
-                      color: const Color(0xFF107C10)),
-                  const SizedBox(width: 8),
-                  _buildFilterChip(context, ref, 'steam', 'Steam', currentFilter,
-                      color: const Color(0xFF66C0F4)),
-                ],
+            child: TextField(
+              onChanged: (value) {
+                ref.read(searchQueryProvider.notifier).state = value;
+              },
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search games...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                filled: true,
+                fillColor: Colors.black.withOpacity(0.3),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.3)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: CyberpunkTheme.neonCyan, width: 2),
+                ),
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          _buildSortDropdown(context, ref, currentSort),
+          const SizedBox(width: 12),
+          _buildCompactSortButton(context, ref, currentSort),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(
-    BuildContext context,
-    WidgetRef ref,
-    String? filter,
-    String label,
-    String? currentFilter, {
-    Color? color,
-  }) {
-    final isSelected = currentFilter == filter;
-    final chipColor = color ?? CyberpunkTheme.neonCyan;
-
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) {
-        ref.read(platformFilterProvider.notifier).state = filter;
+  Widget _buildCompactSortButton(BuildContext context, WidgetRef ref, GameSort currentSort) {
+    return PopupMenuButton<GameSort>(
+      onSelected: (GameSort newValue) {
+        ref.read(gameSortProvider.notifier).state = newValue;
       },
-      backgroundColor: Colors.black.withOpacity(0.3),
-      selectedColor: chipColor.withOpacity(0.3),
-      labelStyle: TextStyle(
-        color: isSelected ? chipColor : Colors.white70,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 12,
+      color: const Color(0xFF0A0E27),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: CyberpunkTheme.neonOrange.withOpacity(0.5), width: 1),
       ),
-      side: BorderSide(
-        color: isSelected ? chipColor : Colors.white24,
-        width: isSelected ? 2 : 1,
-      ),
-    );
-  }
-
-  Widget _buildSortDropdown(BuildContext context, WidgetRef ref, GameSort currentSort) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white24),
-      ),
-      child: DropdownButton<GameSort>(
-        value: currentSort,
-        onChanged: (GameSort? newValue) {
-          if (newValue != null) {
-            ref.read(gameSortProvider.notifier).state = newValue;
-          }
-        },
-        dropdownColor: const Color(0xFF0A0E27),
-        underline: const SizedBox(),
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-        icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
-        items: const [
-          DropdownMenuItem(value: GameSort.lastPlayed, child: Text('Last Played')),
-          DropdownMenuItem(value: GameSort.lastTrophy, child: Text('Last Trophy')),
-          DropdownMenuItem(value: GameSort.nameAsc, child: Text('ABC Ascending')),
-          DropdownMenuItem(value: GameSort.nameDesc, child: Text('ABC Descending')),
-          DropdownMenuItem(value: GameSort.rarity, child: Text('Rarity')),
-        ],
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<GameSort>>[
+        const PopupMenuItem<GameSort>(
+          value: GameSort.lastPlayed,
+          child: Text('Last Played', style: TextStyle(color: Colors.white)),
+        ),
+        const PopupMenuItem<GameSort>(
+          value: GameSort.lastTrophy,
+          child: Text('Last Trophy', style: TextStyle(color: Colors.white)),
+        ),
+        const PopupMenuItem<GameSort>(
+          value: GameSort.nameAsc,
+          child: Text('ABC Ascending', style: TextStyle(color: Colors.white)),
+        ),
+        const PopupMenuItem<GameSort>(
+          value: GameSort.nameDesc,
+          child: Text('ABC Descending', style: TextStyle(color: Colors.white)),
+        ),
+        const PopupMenuItem<GameSort>(
+          value: GameSort.rarity,
+          child: Text('Rarity', style: TextStyle(color: Colors.white)),
+        ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: CyberpunkTheme.neonOrange.withOpacity(0.5), width: 1.5),
+        ),
+        child: const Icon(
+          Icons.sort,
+          color: CyberpunkTheme.neonOrange,
+          size: 24,
+        ),
       ),
     );
   }
 
   List<UnifiedGame> _filterAndSortGames(
     List<UnifiedGame> games,
-    String? platformFilter,
+    Set<String> platformFilter,
     GameSort sortOption,
     String searchQuery,
   ) {
     var filtered = games;
 
-    // Apply platform filter
-    if (platformFilter != null) {
-      filtered = filtered.where((game) => game.isOnPlatform(platformFilter)).toList();
+    // Apply platform filter (multi-select: show games on ANY selected platform)
+    if (platformFilter.isNotEmpty) {
+      filtered = filtered.where((game) {
+        return platformFilter.any((platform) => game.isOnPlatform(platform));
+      }).toList();
     }
 
     // Apply search filter
@@ -305,7 +332,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to game detail
+          _handleGameTap(context, game);
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -385,7 +412,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       ),
       child: Text(
         'StatusXP $statusXP',
-        style: TextStyle(
+        style: const TextStyle(
           color: CyberpunkTheme.neonOrange,
           fontSize: 11,
           fontWeight: FontWeight.bold,
@@ -464,4 +491,161 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       ),
     );
   }
+
+  void _handleGameTap(BuildContext context, UnifiedGame game) {
+    if (game.platforms.length == 1) {
+      // Only one platform - go directly to achievements
+      final platform = game.platforms.first;
+      _navigateToAchievements(context, game, platform);
+    } else {
+      // Multiple platforms - show selection dialog
+      _showPlatformSelectionDialog(context, game);
+    }
+  }
+
+  void _showPlatformSelectionDialog(BuildContext context, UnifiedGame game) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: const Color(0xFF0A0E27),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: CyberpunkTheme.neonCyan, width: 2),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Select Platform',
+                  style: TextStyle(
+                    color: CyberpunkTheme.neonCyan,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  game.title,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 20),
+                ...game.platforms.map((platform) {
+                  Color platformColor;
+                  IconData platformIcon;
+                  String platformLabel;
+
+                  final platformCode = platform.platform.toLowerCase();
+                  if (platformCode.contains('ps') || platformCode == 'playstation') {
+                    platformColor = const Color(0xFF0070CC);
+                    platformIcon = Icons.sports_esports;
+                    platformLabel = 'PlayStation';
+                  } else if (platformCode.contains('xbox')) {
+                    platformColor = const Color(0xFF107C10);
+                    platformIcon = Icons.videogame_asset;
+                    platformLabel = 'Xbox';
+                  } else if (platformCode.contains('steam')) {
+                    platformColor = const Color(0xFF1B2838);
+                    platformIcon = Icons.store;
+                    platformLabel = 'Steam';
+                  } else {
+                    platformColor = Colors.grey;
+                    platformIcon = Icons.gamepad;
+                    platformLabel = platform.platform;
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _navigateToAchievements(context, game, platform);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: platformColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: platformColor, width: 2),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(platformIcon, color: platformColor, size: 32),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    platformLabel,
+                                    style: TextStyle(
+                                      color: platformColor,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${platform.achievementsEarned}/${platform.achievementsTotal} • ${platform.completion.toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios, color: platformColor, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: CyberpunkTheme.neonCyan,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _navigateToAchievements(BuildContext context, UnifiedGame game, PlatformGameData platform) {
+    print('[UnifiedGamesList] Navigating to achievements:');
+    print('  Game: ${game.title}');
+    print('  GameId from platform: ${platform.gameId}');
+    print('  Platform: ${platform.platform}');
+    
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => GameAchievementsScreen(
+          gameId: platform.gameId,
+          gameName: game.title,
+          platform: platform.platform,
+          coverUrl: game.coverUrl,
+        ),
+      ),
+    );
+  }
 }
+

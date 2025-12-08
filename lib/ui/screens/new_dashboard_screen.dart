@@ -398,14 +398,33 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
         const SizedBox(height: 12),
 
         _buildActionButton(
+          label: 'Flex Room',
+          icon: Icons.emoji_events,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            context.push('/flex-room');
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        _buildActionButton(
+          label: 'Achievements',
+          icon: Icons.stars,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            context.push('/achievements');
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        _buildActionButton(
           label: 'Leaderboards',
           icon: Icons.leaderboard,
           onTap: () {
             HapticFeedback.lightImpact();
-            // TODO: Navigate to leaderboards
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Leaderboards coming soon!')),
-            );
+            context.push('/leaderboards');
           },
         ),
       ],
