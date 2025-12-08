@@ -313,6 +313,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const achievementsData = await achievementsResponse.json();
             const totalAchievementsFromAPI = achievementsData?.achievements?.length || 0;
             console.log('Fetched achievements count for titleId', title.titleId, ':', totalAchievementsFromAPI);
+            console.log('[XBOX API] Sample achievement structure:', JSON.stringify(achievementsData?.achievements?.[0], null, 2));
 
             // Update user_games with correct total from actual achievements API
             // The title history API often returns 0 for totalAchievements
@@ -367,6 +368,16 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
 
             for (const achievement of achievementsData.achievements) {
+              // Check if achievement object has rarity directly
+              console.log(`[XBOX RARITY CHECK] Achievement ${achievement.name}:`, {
+                hasRarity: !!achievement.rarity,
+                rarity: achievement.rarity,
+                hasEarnedPercentage: !!achievement.earnedPercentage,
+                earnedPercentage: achievement.earnedPercentage,
+                hasProgressPercentage: !!achievement.progressPercentage,
+                progressPercentage: achievement.progressPercentage
+              });
+              
               // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
