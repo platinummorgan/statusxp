@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:statusxp/domain/game.dart';
@@ -77,32 +78,45 @@ class SupabaseGameRepository {
         
         // Fetch last trophy earned date for each game
         try {
-          print('DEBUG: Fetching last trophy dates...');
+          developer.log('DEBUG: Fetching last trophy dates...');
           final lastTrophyResponse = await _client
               .from('user_achievements')
               .select('achievement_id, earned_at, achievements!inner(game_title_id)')
               .not('earned_at', 'is', null)
               .order('earned_at', ascending: false);
           
-          print('DEBUG: Got ${(lastTrophyResponse as List).length} achievement records');
+          developer.log('DEBUG: Got response type: ${lastTrophyResponse.runtimeType}');
+          developer.log('DEBUG: Response: $lastTrophyResponse');
           
-          // Group by game_title_id and take the most recent
-          for (final row in (lastTrophyResponse as List)) {
-            final achievementData = row['achievements'] as Map<String, dynamic>;
-            final gameTitleId = achievementData['game_title_id'] as int;
-            final earnedAtStr = row['earned_at'] as String?;
+          if (lastTrophyResponse is List) {
+            developer.log('DEBUG: Got ${lastTrophyResponse.length} achievement records');
             
-            if (earnedAtStr != null && !lastTrophyMap.containsKey(gameTitleId)) {
-              final earnedAt = DateTime.tryParse(earnedAtStr);
-              if (earnedAt != null) {
-                lastTrophyMap[gameTitleId] = earnedAt;
+            // Group by game_title_id and take the most recent
+            for (final row in lastTrophyResponse) {
+              try {
+                final achievementData = row['achievements'];
+                developer.log('DEBUG: Achievement data: $achievementData, type: ${achievementData.runtimeType}');
+                
+                final gameTitleId = achievementData['game_title_id'] as int;
+                final earnedAtStr = row['earned_at'] as String?;
+                
+                if (earnedAtStr != null && !lastTrophyMap.containsKey(gameTitleId)) {
+                  final earnedAt = DateTime.tryParse(earnedAtStr);
+                  if (earnedAt != null) {
+                    lastTrophyMap[gameTitleId] = earnedAt;
+                    developer.log('DEBUG: Added game $gameTitleId with date $earnedAt');
+                  }
+                }
+              } catch (rowError) {
+                developer.log('ERROR parsing row: $rowError');
               }
             }
           }
           
-          print('DEBUG: Last trophy map has ${lastTrophyMap.length} entries');
-        } catch (e) {
-          print('ERROR fetching last trophy dates: $e');
+          developer.log('DEBUG: Last trophy map has ${lastTrophyMap.length} entries');
+        } catch (e, stackTrace) {
+          developer.log('ERROR fetching last trophy dates: $e');
+          developer.log('Stack trace: $stackTrace');
         }
       }
 

@@ -83,6 +83,10 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
           // Sort by updatedAt (most recent first)
           final aTime = a.updatedAt ?? DateTime(1970);
           final bTime = b.updatedAt ?? DateTime(1970);
+          if (aTime.year == 1970 && bTime.year == 1970) {
+            // Both have no timestamp, sort by name
+            return a.name.compareTo(b.name);
+          }
           return bTime.compareTo(aTime);
         case GameSortOption.platinumEarned:
           // Platinumed games first
