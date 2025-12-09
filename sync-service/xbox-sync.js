@@ -280,27 +280,46 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Log the achievement data from Xbox API
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);
 
-            // Fetch achievements for this specific title
-            const achievementsResponse = await fetch(
-              `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}`,
-              {
+            // Fetch ALL achievements for this title (handle pagination)
+            const achievementsForTitle = [];
+            let continuationToken = null;
+            let pageCount = 0;
+            
+            do {
+              const url = continuationToken
+                ? `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}&continuationToken=${continuationToken}`
+                : `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}`;
+              
+              const achievementsResponse = await fetch(url, {
                 headers: {
                   'x-xbl-contract-version': '2',
                   Authorization: `XBL3.0 x=${userHash};${accessToken}`,
                 },
+              });
+
+              if (!achievementsResponse.ok) {
+                console.error(`[XBOX ACHIEVEMENTS] Failed to fetch achievements page ${pageCount + 1} for ${title.name}: ${achievementsResponse.status}`);
+                break;
               }
-            );
 
-            if (!achievementsResponse.ok) {
-              console.error(`[XBOX ACHIEVEMENTS] Failed to fetch achievements for ${title.name}: ${achievementsResponse.status}`);
-              processedGames++;
-              continue;
-            }
+              const achievementsData = await achievementsResponse.json();
+              const pageAchievements = achievementsData?.achievements || [];
+              achievementsForTitle.push(...pageAchievements);
+              
+              continuationToken = achievementsData?.pagingInfo?.continuationToken || null;
+              pageCount++;
+              
+              console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched page ${pageCount} with ${pageAchievements.length} achievements (total so far: ${achievementsForTitle.length})`);
+              
+              // Safety: prevent infinite loops
+              if (pageCount > 20) {
+                console.warn(`[XBOX ACHIEVEMENTS] ${title.name}: Stopped after 20 pages to prevent infinite loop`);
+                break;
+              }
+            } while (continuationToken);
 
-            const achievementsData = await achievementsResponse.json();
-            const achievementsForTitle = achievementsData?.achievements || [];
             const totalAchievementsFromAPI = achievementsForTitle.length;
-            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched ${totalAchievementsFromAPI} achievements from API`);
+            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched total of ${totalAchievementsFromAPI} achievements across ${pageCount} pages`);
 
             // Check if this game needs rarity refresh (30+ days since last update)
             const { data: rarityCheckGame } = await supabase
