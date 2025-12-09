@@ -175,16 +175,6 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               }
             },
           ),
-          // Share Button
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.white),
-            onPressed: () {
-              // TODO: Implement share flex room
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Share Flex Room coming soon!')),
-              );
-            },
-          ),
         ],
       ),
       body: flexRoomAsyncValue.when(
@@ -798,6 +788,40 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   }
 
   Widget _buildFlexStatsStrip(FlexRoomData data) {
+    // Collect all flex tiles
+    final allTiles = <FlexTile>[
+      if (data.flexOfAllTime != null) data.flexOfAllTime!,
+      if (data.rarestFlex != null) data.rarestFlex!,
+      if (data.mostTimeSunk != null) data.mostTimeSunk!,
+      if (data.sweattiestPlatinum != null) data.sweattiestPlatinum!,
+      ...data.superlatives.values,
+    ];
+    
+    // Calculate stats
+    final rarestRarity = allTiles.isNotEmpty
+        ? allTiles
+            .where((t) => t.rarityPercent != null)
+            .map((t) => t.rarityPercent!)
+            .fold<double>(100.0, (min, val) => val < min ? val : min)
+        : 0.0;
+    
+    final avgRarity = allTiles.isNotEmpty
+        ? allTiles
+            .where((t) => t.rarityPercent != null)
+            .map((t) => t.rarityPercent!)
+            .fold<double>(0.0, (sum, val) => sum + val) / allTiles.where((t) => t.rarityPercent != null).length
+        : 0.0;
+    
+    final totalFlexXP = allTiles
+        .where((t) => t.statusXP != null)
+        .map((t) => t.statusXP!)
+        .fold<int>(0, (sum, val) => sum + val);
+    
+    final platforms = allTiles
+        .map((t) => t.platform)
+        .toSet()
+        .length;
+    
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -812,13 +836,20 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('Rarest', '0.8%', CyberpunkTheme.neonOrange),
-          _buildStatItem('Avg Rarity', '12.5%', CyberpunkTheme.neonPurple),
-          _buildStatItem('Flex XP', '12.5k', CyberpunkTheme.neonCyan),
-          _buildStatItem('Platforms', '2/3', Colors.white),
+          _buildStatItem('Rarest', '${rarestRarity.toStringAsFixed(1)}%', CyberpunkTheme.neonOrange),
+          _buildStatItem('Avg Rarity', '${avgRarity.toStringAsFixed(1)}%', CyberpunkTheme.neonPurple),
+          _buildStatItem('Flex XP', _formatFlexXP(totalFlexXP), CyberpunkTheme.neonPurple),
+          _buildStatItem('Platforms', '$platforms', Colors.white),
         ],
       ),
     );
+  }
+  
+  String _formatFlexXP(int xp) {
+    if (xp >= 1000) {
+      return '${(xp / 1000).toStringAsFixed(1)}k';
+    }
+    return xp.toString();
   }
 
   Widget _buildStatItem(String label, String value, Color color) {

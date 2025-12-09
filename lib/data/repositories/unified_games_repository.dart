@@ -25,6 +25,7 @@ class UnifiedGamesRepository {
             platinum_trophies,
             xbox_total_achievements,
             xbox_achievements_earned,
+            statusxp_effective,
             game_titles!inner(
               name,
               cover_url
@@ -106,6 +107,7 @@ class UnifiedGamesRepository {
           silverCount: game['silver_trophies'] as int? ?? 0,
           goldCount: game['gold_trophies'] as int? ?? 0,
           platinumCount: game['platinum_trophies'] as int? ?? 0,
+          statusXP: game['statusxp_effective'] as int? ?? 0,
         ));
       }
       

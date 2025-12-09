@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/data/repositories/leaderboard_repository.dart';
 import 'package:statusxp/domain/leaderboard_entry.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
+import 'package:statusxp/ui/screens/flex_room_screen.dart';
 
 /// Leaderboard type enum
 enum LeaderboardType {
@@ -197,38 +198,51 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     final currentUserId = ref.read(currentUserIdProvider);
     final isCurrentUser = entry.userId == currentUserId;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isCurrentUser
-            ? accentColor.withOpacity(0.15)
-            : const Color(0xFF0A0E27).withOpacity(0.8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
+    return InkWell(
+      onTap: () {
+        // Navigate to user's Flex Room
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => FlexRoomScreen(viewerId: entry.userId),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
           color: isCurrentUser
-              ? accentColor
-              : medalColor ?? accentColor.withOpacity(0.3),
-          width: isCurrentUser ? 2 : 1,
+              ? accentColor.withOpacity(0.15)
+              : const Color(0xFF0A0E27).withOpacity(0.8),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isCurrentUser
+                ? accentColor
+                : medalColor ?? accentColor.withOpacity(0.3),
+            width: isCurrentUser ? 2 : 1,
+          ),
+          boxShadow: isCurrentUser
+              ? [
+                  BoxShadow(
+                    color: accentColor.withOpacity(0.3),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : null,
         ),
-        boxShadow: isCurrentUser
-            ? [
-                BoxShadow(
-                  color: accentColor.withOpacity(0.3),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                ),
-              ]
-            : null,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
           children: [
-            // Rank number or medal
+            // Rank number or medal with ordinal text
             SizedBox(
-              width: 50,
-              child: medalIcon != null
-                  ? Icon(
+              width: 60,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (medalIcon != null)
+                    Icon(
                       medalIcon,
                       color: medalColor,
                       size: 36,
@@ -239,7 +253,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                         ),
                       ],
                     )
-                  : Text(
+                  else
+                    Text(
                       '#$rank',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -248,6 +263,19 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _getOrdinal(rank),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: medalColor ?? Colors.white.withOpacity(0.4),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(width: 12),
@@ -266,11 +294,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
             const SizedBox(width: 12),
 
-            // User info
+            // User info and score - restructured for longer names
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Top row: Full name with YOU badge
                   Row(
                     children: [
                       Flexible(
@@ -321,53 +350,59 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    _getSubtitle(entry, type),
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 12,
-                    ),
+                  // Bottom row: Games count on left, score + label on right
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _getSubtitle(entry, type),
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 12,
+                        ),
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _formatScore(entry.score, type),
+                            style: TextStyle(
+                              color: accentColor,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              height: 1.0,
+                              shadows: [
+                                Shadow(
+                                  color: accentColor.withOpacity(0.6),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Text(
+                              _getScoreLabel(type),
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.4),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(width: 12),
-
-            // Score
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _formatScore(entry.score),
-                  style: TextStyle(
-                    color: accentColor,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    height: 1.0,
-                    shadows: [
-                      Shadow(
-                        color: accentColor.withOpacity(0.6),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _getScoreLabel(type),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
-    );
+    ),
+    );  // Close InkWell
   }
 
   String _getSubtitle(LeaderboardEntry entry, LeaderboardType type) {
@@ -375,7 +410,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       case LeaderboardType.statusXP:
         return '${entry.gamesCount} games';
       case LeaderboardType.platinums:
-        return '${entry.gamesCount} games with platinum';
+        return '${entry.gamesCount} games';
       case LeaderboardType.xboxAchievements:
       case LeaderboardType.steamAchievements:
         return '${entry.gamesCount} games';
@@ -394,13 +429,30 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     }
   }
 
-  String _formatScore(int score) {
+  String _formatScore(int score, LeaderboardType type) {
+    // Use abbreviated format for all leaderboards
     if (score >= 1000000) {
       return '${(score / 1000000).toStringAsFixed(1)}M';
     } else if (score >= 1000) {
       return '${(score / 1000).toStringAsFixed(1)}k';
     }
     return score.toString();
+  }
+
+  String _getOrdinal(int rank) {
+    if (rank % 100 >= 11 && rank % 100 <= 13) {
+      return '${rank}th';
+    }
+    switch (rank % 10) {
+      case 1:
+        return '${rank}st';
+      case 2:
+        return '${rank}nd';
+      case 3:
+        return '${rank}rd';
+      default:
+        return '${rank}th';
+    }
   }
 }
 

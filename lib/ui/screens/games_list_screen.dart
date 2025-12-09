@@ -80,11 +80,10 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
           final bRarity = b.platinumRarity ?? double.infinity;
           return aRarity.compareTo(bRarity);
         case GameSortOption.lastPlayed:
-          // TODO: Implement when we have last_played_at data
-          // For now, sort by progress (most completed first)
-          final aProgress = a.totalTrophies > 0 ? (a.earnedTrophies / a.totalTrophies) : 0;
-          final bProgress = b.totalTrophies > 0 ? (b.earnedTrophies / b.totalTrophies) : 0;
-          return bProgress.compareTo(aProgress);
+          // Sort by updatedAt (most recent first)
+          final aTime = a.updatedAt ?? DateTime(1970);
+          final bTime = b.updatedAt ?? DateTime(1970);
+          return bTime.compareTo(aTime);
         case GameSortOption.platinumEarned:
           // Platinumed games first
           if (a.hasPlatinum != b.hasPlatinum) {

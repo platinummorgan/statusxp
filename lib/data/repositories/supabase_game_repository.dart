@@ -76,28 +76,34 @@ class SupabaseGameRepository {
         print('DEBUG: Platinum rarity map has ${platinumRarityMap.length} entries');
         
         // Fetch last trophy earned date for each game
-        final lastTrophyResponse = await _client
-            .from('user_achievements')
-            .select('achievement_id, earned_at, achievements!inner(game_title_id)')
-            .eq('user_id', userId)
-            .not('earned_at', 'is', null)
-            .order('earned_at', ascending: false);
-        
-        // Group by game_title_id and take the most recent
-        for (final row in (lastTrophyResponse as List)) {
-          final achievementData = row['achievements'] as Map<String, dynamic>;
-          final gameTitleId = achievementData['game_title_id'] as int;
-          final earnedAtStr = row['earned_at'] as String?;
+        try {
+          print('DEBUG: Fetching last trophy dates...');
+          final lastTrophyResponse = await _client
+              .from('user_achievements')
+              .select('achievement_id, earned_at, achievements!inner(game_title_id)')
+              .not('earned_at', 'is', null)
+              .order('earned_at', ascending: false);
           
-          if (earnedAtStr != null && !lastTrophyMap.containsKey(gameTitleId)) {
-            final earnedAt = DateTime.tryParse(earnedAtStr);
-            if (earnedAt != null) {
-              lastTrophyMap[gameTitleId] = earnedAt;
+          print('DEBUG: Got ${(lastTrophyResponse as List).length} achievement records');
+          
+          // Group by game_title_id and take the most recent
+          for (final row in (lastTrophyResponse as List)) {
+            final achievementData = row['achievements'] as Map<String, dynamic>;
+            final gameTitleId = achievementData['game_title_id'] as int;
+            final earnedAtStr = row['earned_at'] as String?;
+            
+            if (earnedAtStr != null && !lastTrophyMap.containsKey(gameTitleId)) {
+              final earnedAt = DateTime.tryParse(earnedAtStr);
+              if (earnedAt != null) {
+                lastTrophyMap[gameTitleId] = earnedAt;
+              }
             }
           }
+          
+          print('DEBUG: Last trophy map has ${lastTrophyMap.length} entries');
+        } catch (e) {
+          print('ERROR fetching last trophy dates: $e');
         }
-        
-        print('DEBUG: Last trophy map has ${lastTrophyMap.length} entries');
       }
 
       final games = (response as List).map((row) {

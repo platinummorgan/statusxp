@@ -399,21 +399,20 @@ class UnifiedGamesListScreen extends ConsumerWidget {
   }
 
   Widget _buildStatusXPBadge(UnifiedGame game) {
-    // TODO: Calculate actual StatusXP from achievements
-    // For now, use a placeholder based on completion
-    final statusXP = (game.overallCompletion * 50).toInt();
+    // Get total StatusXP across all platforms for this game
+    final statusXP = game.getTotalStatusXP();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.5),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: CyberpunkTheme.neonOrange, width: 2),
+        border: Border.all(color: CyberpunkTheme.neonPurple, width: 2),
       ),
       child: Text(
         'StatusXP $statusXP',
         style: const TextStyle(
-          color: CyberpunkTheme.neonOrange,
+          color: CyberpunkTheme.neonPurple,
           fontSize: 11,
           fontWeight: FontWeight.bold,
         ),

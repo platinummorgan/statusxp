@@ -51,6 +51,11 @@ class UnifiedGame extends Equatable {
     }
   }
   
+  /// Get total StatusXP across all platforms for this game
+  int getTotalStatusXP() {
+    return platforms.fold<int>(0, (sum, p) => sum + p.statusXP);
+  }
+  
   @override
   List<Object?> get props => [title, coverUrl, platforms, overallCompletion];
 }
@@ -88,6 +93,9 @@ class PlatformGameData extends Equatable {
   final int goldCount;
   final int platinumCount;
   
+  /// StatusXP earned for this game
+  final int statusXP;
+  
   const PlatformGameData({
     required this.platform,
     required this.gameId,
@@ -101,6 +109,7 @@ class PlatformGameData extends Equatable {
     this.silverCount = 0,
     this.goldCount = 0,
     this.platinumCount = 0,
+    this.statusXP = 0,
   });
   
   @override
@@ -117,5 +126,6 @@ class PlatformGameData extends Equatable {
     silverCount,
     goldCount,
     platinumCount,
+    statusXP,
   ];
 }

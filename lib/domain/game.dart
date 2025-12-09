@@ -45,6 +45,9 @@ class Game extends Equatable {
   
   /// Number of platinum trophies earned (0 or 1)
   final int platinumTrophies;
+  
+  /// Last updated timestamp (for sorting by recency)
+  final DateTime? updatedAt;
 
   const Game({
     required this.id,
@@ -60,6 +63,7 @@ class Game extends Equatable {
     this.silverTrophies = 0,
     this.goldTrophies = 0,
     this.platinumTrophies = 0,
+    this.updatedAt,
   });
 
   /// Creates a copy of this Game with the given fields replaced with new values.
@@ -152,6 +156,7 @@ class Game extends Equatable {
         silverTrophies,
         goldTrophies,
         platinumTrophies,
+        updatedAt,
       ];
 
   @override

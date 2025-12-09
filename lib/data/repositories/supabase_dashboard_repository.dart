@@ -38,19 +38,24 @@ class SupabaseDashboardRepository {
     );
   }
 
-  /// Gets total StatusXP from user_statusxp_summary view
+  /// Gets total StatusXP by summing statusxp_effective from user_games
   Future<int> _getStatusXPTotal(String userId) async {
     final response = await _client
-        .from('user_statusxp_summary')
-        .select('total_statusxp')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .from('user_games')
+        .select('statusxp_effective')
+        .eq('user_id', userId);
 
-    if (response == null) {
+    if ((response as List).isEmpty) {
       return 0;
     }
 
-    return response['total_statusxp'] as int? ?? 0;
+    // Sum all statusxp_effective values
+    int total = 0;
+    for (final game in response) {
+      total += (game['statusxp_effective'] as int? ?? 0);
+    }
+
+    return total;
   }
 
   /// Gets platform-specific stats

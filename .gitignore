@@ -46,3 +46,8 @@ app.*.map.json
 
 # Environment variables
 .env
+
+# Keystore files - NEVER commit these!
+*.jks
+*.keystore
+key.properties

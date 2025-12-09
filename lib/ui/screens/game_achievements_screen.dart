@@ -554,7 +554,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                       if (statusXP != null)
                         _buildBadge(
                           '${statusXP.toStringAsFixed(1)} XP',
-                          CyberpunkTheme.neonOrange,
+                          CyberpunkTheme.neonPurple,
                           Icons.bolt,
                         ),
                       // Earned date
