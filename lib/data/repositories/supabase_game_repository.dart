@@ -35,6 +35,7 @@ class SupabaseGameRepository {
             silver_trophies,
             gold_trophies,
             platinum_trophies,
+            last_played_at,
             game_titles!inner(
               name, 
               cover_url
@@ -132,8 +133,12 @@ class SupabaseGameRepository {
           print('DEBUG: ${gameTitle['name']} has platinum rarity: $platinumRarity');
         }
         
-        // Get last trophy earned date from our map
-        final updatedAt = lastTrophyMap[gameTitleId];
+        // Try to get from achievement map first, fallback to last_played_at
+        DateTime? updatedAt = lastTrophyMap[gameTitleId];
+        if (updatedAt == null) {
+          final lastPlayedStr = row['last_played_at'] as String?;
+          updatedAt = lastPlayedStr != null ? DateTime.tryParse(lastPlayedStr) : null;
+        }
         
         return Game(
           id: gameTitleId.toString(), // Use game_title_id, not user_games.id

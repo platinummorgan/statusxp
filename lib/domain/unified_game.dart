@@ -56,6 +56,19 @@ class UnifiedGame extends Equatable {
     return platforms.fold<int>(0, (sum, p) => sum + p.statusXP);
   }
   
+  /// Get most recent last played timestamp across all platforms
+  DateTime? getMostRecentPlayTime() {
+    DateTime? mostRecent;
+    for (final platform in platforms) {
+      if (platform.lastPlayedAt != null) {
+        if (mostRecent == null || platform.lastPlayedAt!.isAfter(mostRecent)) {
+          mostRecent = platform.lastPlayedAt;
+        }
+      }
+    }
+    return mostRecent;
+  }
+  
   @override
   List<Object?> get props => [title, coverUrl, platforms, overallCompletion];
 }
@@ -96,6 +109,9 @@ class PlatformGameData extends Equatable {
   /// StatusXP earned for this game
   final int statusXP;
   
+  /// Last played/synced timestamp
+  final DateTime? lastPlayedAt;
+  
   const PlatformGameData({
     required this.platform,
     required this.gameId,
@@ -110,6 +126,7 @@ class PlatformGameData extends Equatable {
     this.goldCount = 0,
     this.platinumCount = 0,
     this.statusXP = 0,
+    this.lastPlayedAt,
   });
   
   @override
@@ -127,5 +144,6 @@ class PlatformGameData extends Equatable {
     goldCount,
     platinumCount,
     statusXP,
+    lastPlayedAt,
   ];
 }

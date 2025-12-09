@@ -26,6 +26,7 @@ class UnifiedGamesRepository {
             xbox_total_achievements,
             xbox_achievements_earned,
             statusxp_effective,
+            last_played_at,
             game_titles!inner(
               name,
               cover_url
@@ -96,6 +97,9 @@ class UnifiedGamesRepository {
         
         totalCompletion += completion;
         
+        final lastPlayedStr = game['last_played_at'] as String?;
+        final lastPlayedAt = lastPlayedStr != null ? DateTime.tryParse(lastPlayedStr) : null;
+        
         platforms.add(PlatformGameData(
           platform: platform,
           gameId: (game['game_title_id'] ?? game['id']).toString(),
@@ -108,6 +112,7 @@ class UnifiedGamesRepository {
           goldCount: game['gold_trophies'] as int? ?? 0,
           platinumCount: game['platinum_trophies'] as int? ?? 0,
           statusXP: game['statusxp_effective'] as int? ?? 0,
+          lastPlayedAt: lastPlayedAt,
         ));
       }
       

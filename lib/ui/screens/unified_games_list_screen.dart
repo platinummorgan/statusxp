@@ -287,10 +287,25 @@ class UnifiedGamesListScreen extends ConsumerWidget {
         filtered.sort((a, b) => b.title.compareTo(a.title));
         break;
       case GameSort.lastPlayed:
-        // TODO: Implement when we have last_played_at data
+        filtered.sort((a, b) {
+          final aTime = a.getMostRecentPlayTime();
+          final bTime = b.getMostRecentPlayTime();
+          if (aTime == null && bTime == null) return a.title.compareTo(b.title);
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          return bTime.compareTo(aTime); // Most recent first
+        });
         break;
       case GameSort.lastTrophy:
-        // TODO: Implement when we have last trophy earned data
+        // Same as lastPlayed for now (using last_played_at field)
+        filtered.sort((a, b) {
+          final aTime = a.getMostRecentPlayTime();
+          final bTime = b.getMostRecentPlayTime();
+          if (aTime == null && bTime == null) return a.title.compareTo(b.title);
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          return bTime.compareTo(aTime); // Most recent first
+        });
         break;
       case GameSort.rarity:
         // TODO: Implement rarity-based sorting
