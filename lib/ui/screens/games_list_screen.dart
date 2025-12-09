@@ -80,12 +80,18 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
           final bRarity = b.platinumRarity ?? double.infinity;
           return aRarity.compareTo(bRarity);
         case GameSortOption.lastPlayed:
-          return 0; // Default order from database
+          // TODO: Implement when we have last_played_at data
+          // For now, sort by progress (most completed first)
+          final aProgress = a.totalTrophies > 0 ? (a.earnedTrophies / a.totalTrophies) : 0;
+          final bProgress = b.totalTrophies > 0 ? (b.earnedTrophies / b.totalTrophies) : 0;
+          return bProgress.compareTo(aProgress);
         case GameSortOption.platinumEarned:
+          // Platinumed games first
           if (a.hasPlatinum != b.hasPlatinum) {
             return a.hasPlatinum ? -1 : 1;
           }
-          return 0;
+          // If both have platinum or both don't, sort by name
+          return a.name.compareTo(b.name);
       }
     });
 
