@@ -53,6 +53,7 @@ class SupabaseGameRepository {
       print('DEBUG: Fetching platinum rarity for ${gameTitleIds.length} games');
       
       final Map<int, double> platinumRarityMap = {};
+      final Map<int, DateTime> lastTrophyMap = {};
       
       if (gameTitleIds.isNotEmpty) {
         final rarityResponse = await _client
@@ -73,6 +74,30 @@ class SupabaseGameRepository {
         }
         
         print('DEBUG: Platinum rarity map has ${platinumRarityMap.length} entries');
+        
+        // Fetch last trophy earned date for each game
+        final lastTrophyResponse = await _client
+            .from('user_achievements')
+            .select('achievement_id, earned_at, achievements!inner(game_title_id)')
+            .eq('user_id', userId)
+            .not('earned_at', 'is', null)
+            .order('earned_at', ascending: false);
+        
+        // Group by game_title_id and take the most recent
+        for (final row in (lastTrophyResponse as List)) {
+          final achievementData = row['achievements'] as Map<String, dynamic>;
+          final gameTitleId = achievementData['game_title_id'] as int;
+          final earnedAtStr = row['earned_at'] as String?;
+          
+          if (earnedAtStr != null && !lastTrophyMap.containsKey(gameTitleId)) {
+            final earnedAt = DateTime.tryParse(earnedAtStr);
+            if (earnedAt != null) {
+              lastTrophyMap[gameTitleId] = earnedAt;
+            }
+          }
+        }
+        
+        print('DEBUG: Last trophy map has ${lastTrophyMap.length} entries');
       }
 
       final games = (response as List).map((row) {
@@ -86,6 +111,9 @@ class SupabaseGameRepository {
         if (platinumRarity != null) {
           print('DEBUG: ${gameTitle['name']} has platinum rarity: $platinumRarity');
         }
+        
+        // Get last trophy earned date from our map
+        final updatedAt = lastTrophyMap[gameTitleId];
         
         return Game(
           id: gameTitleId.toString(), // Use game_title_id, not user_games.id
@@ -101,6 +129,7 @@ class SupabaseGameRepository {
           silverTrophies: row['silver_trophies'] as int? ?? 0,
           goldTrophies: row['gold_trophies'] as int? ?? 0,
           platinumTrophies: row['platinum_trophies'] as int? ?? 0,
+          updatedAt: updatedAt,
         );
       }).toList();
 
