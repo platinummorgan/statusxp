@@ -1,18 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
 import 'package:statusxp/ui/screens/auth/sign_in_screen.dart';
+import 'package:statusxp/ui/screens/onboarding_screen.dart';
 
 /// Authentication gate that controls access to the main app.
 /// 
-/// Shows the sign-in screen when no user is authenticated,
+/// Shows the onboarding screen on first launch, sign-in screen when no user is authenticated,
 /// and the main app when a user is logged in.
-class AuthGate extends ConsumerWidget {
+class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends ConsumerState<AuthGate> {
+  bool _needsOnboarding = false;
+  bool _checkingOnboarding = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboardingStatus();
+  }
+
+  Future<void> _checkOnboardingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+    setState(() {
+      _needsOnboarding = !onboardingComplete;
+      _checkingOnboarding = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_checkingOnboarding) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_needsOnboarding) {
+      return const OnboardingScreen();
+    }
+
     final authStateAsync = ref.watch(authStateProvider);
 
     return authStateAsync.when(

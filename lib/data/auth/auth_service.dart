@@ -1,13 +1,21 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 /// Service for managing Supabase authentication.
 /// 
 /// Provides a clean abstraction over Supabase Auth for email/password authentication,
-/// session management, and auth state changes.
+/// Google Sign-In, session management, and auth state changes.
 class AuthService {
   final SupabaseClient _client;
+  final GoogleSignIn _googleSignIn;
   
-  AuthService(this._client);
+  AuthService(this._client) 
+      : _googleSignIn = GoogleSignIn(
+          serverClientId: const String.fromEnvironment(
+            'GOOGLE_SERVER_CLIENT_ID',
+            defaultValue: '',
+          ),
+        );
   
   /// Sign up a new user with email and password.
   /// 
@@ -42,6 +50,37 @@ class AuthService {
   /// Clears the session and revokes the refresh token.
   Future<void> signOut() async {
     await _client.auth.signOut();
+  }
+  
+  /// Sign in with Google using OAuth.
+  /// 
+  /// Opens Google Sign-In flow and exchanges the Google ID token for a Supabase session.
+  /// Throws [AuthException] if sign in fails or is cancelled.
+  Future<AuthResponse> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        throw AuthException('Google Sign-In was cancelled');
+      }
+      
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+      final String? accessToken = googleAuth.accessToken;
+      
+      if (idToken == null) {
+        throw AuthException('Failed to get Google ID token');
+      }
+      
+      // Sign in to Supabase with Google credentials
+      return await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+    } catch (e) {
+      rethrow;
+    }
   }
   
   /// Get the currently authenticated user.

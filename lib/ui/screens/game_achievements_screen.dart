@@ -607,7 +607,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                 ),
                                 child: Text(
                                   creditBadge,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: CyberpunkTheme.neonPurple,
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -746,13 +746,13 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               // Header
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.lightbulb,
                     color: CyberpunkTheme.neonPurple,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
+                  const Expanded(
                     child: Text(
                       'ACHIEVEMENT GUIDE',
                       style: TextStyle(
@@ -785,7 +785,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 const SizedBox(height: 8),
                 Text(
                   achievementDescription,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
                   ),
@@ -844,13 +844,13 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               // Header
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.lightbulb,
                     color: CyberpunkTheme.neonPurple,
                     size: 32,
                   ),
                   const SizedBox(width: 12),
-                  Expanded(
+                  const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -890,10 +890,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
                     Icon(Icons.schedule, color: CyberpunkTheme.neonCyan, size: 32),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -921,7 +921,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               ),
               
               const SizedBox(height: 24),
-              Text(
+              const Text(
                 'OR BUY AI PACK',
                 style: TextStyle(
                   color: Colors.white54,
@@ -971,7 +971,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                 children: [
                                   Text(
                                     pack.title,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -990,7 +990,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                       ),
                                       child: Text(
                                         pack.badge!,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
@@ -1002,7 +1002,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                               ),
                               Text(
                                 '${pack.credits} AI uses · ${pack.perUsePrice}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 13,
                                 ),
@@ -1012,7 +1012,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                         ),
                         Text(
                           pack.displayPrice,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: CyberpunkTheme.neonCyan,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -1043,9 +1043,9 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.star, color: CyberpunkTheme.neonPurple, size: 32),
+                    const Icon(Icons.star, color: CyberpunkTheme.neonPurple, size: 32),
                     const SizedBox(width: 16),
-                    Expanded(
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1071,13 +1071,13 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                       onPressed: () {
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                          const SnackBar(
                             content: Text('Premium coming soon!'),
                             backgroundColor: CyberpunkTheme.neonPurple,
                           ),
                         );
                       },
-                      child: Text(
+                      child: const Text(
                         'LEARN MORE',
                         style: TextStyle(
                           color: CyberpunkTheme.neonPurple,
@@ -1278,9 +1278,9 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: CyberpunkTheme.neonPink, size: 48),
+            const Icon(Icons.error_outline, color: CyberpunkTheme.neonPink, size: 48),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Error generating guide',
               style: TextStyle(
                 color: Colors.white,
@@ -1291,7 +1291,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -1315,13 +1315,13 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_isLoading && _guideText.isEmpty)
-            Center(
+            const Center(
               child: Column(
                 children: [
                   CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonPurple),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     'Generating guide...',
                     style: TextStyle(color: Colors.white70),
@@ -1332,8 +1332,8 @@ class _AIGuideContentState extends State<_AIGuideContent> {
           else
             _buildGuideText(),
           if (_isLoading && _guideText.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
               child: Row(
                 children: [
                   SizedBox(
@@ -1344,7 +1344,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
                       valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonPurple),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     'Generating...',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
@@ -1393,7 +1393,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
           onTap: () => _launchURL(url),
           child: Text(
             url,
-            style: TextStyle(
+            style: const TextStyle(
               color: CyberpunkTheme.neonCyan,
               decoration: TextDecoration.underline,
               fontSize: 14,
@@ -1430,7 +1430,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF0A0E27),
-        title: Text(
+        title: const Text(
           'Open External Link',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
@@ -1438,14 +1438,14 @@ class _AIGuideContentState extends State<_AIGuideContent> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'This will open YouTube in your browser or YouTube app.',
               style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 12),
             Text(
               url,
-              style: TextStyle(
+              style: const TextStyle(
                 color: CyberpunkTheme.neonCyan,
                 fontSize: 12,
               ),
@@ -1455,7 +1455,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('CANCEL', style: TextStyle(color: Colors.white70)),
+            child: const Text('CANCEL', style: TextStyle(color: Colors.white70)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),

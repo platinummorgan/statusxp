@@ -449,8 +449,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // App Settings Section
                 _buildSectionHeader('App Settings'),
                 
-                // Preferred Display Platform
+                // Support Development (FIRST)
+                ListTile(
+                  leading: const Icon(Icons.favorite, color: Colors.pink),
+                  title: const Text('Support Development'),
+                  subtitle: const Text('Buy the developer a coffee ☕'),
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: _showSupportDialog,
+                ),
+
+                const Divider(height: 1),
+
+                // Preferred Display Platform (SECOND)
                 _buildPreferredPlatformTile(),
+
+                const Divider(height: 1),
+
+                // Contact Support (THIRD)
+                ListTile(
+                  leading: const Icon(Icons.email_outlined),
+                  title: const Text('Contact Support'),
+                  subtitle: const Text('support@platovalabs.com'),
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () => _openUrl('mailto:support@platovalabs.com'),
+                ),
 
                 const Divider(height: 1),
                 
@@ -458,12 +480,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: const Text('About StatusXP'),
-                  subtitle: const Text('Version 1.0.0 Beta'),
+                  subtitle: const Text('Version 1.0.0'),
                   onTap: () {
                     showAboutDialog(
                       context: context,
                       applicationName: 'StatusXP',
-                      applicationVersion: '1.0.0 Beta',
+                      applicationVersion: '1.0.0',
                       applicationLegalese: '© 2025 StatusXP\n\nThe ultimate cross-platform achievement tracker',
                       children: [
                         const SizedBox(height: 16),
@@ -482,7 +504,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: const Icon(Icons.privacy_tip_outlined),
                   title: const Text('Privacy Policy'),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _openUrl('YOUR_GITHUB_PRIVACY_URL_HERE'),
+                  onTap: () => _openUrl('https://raw.githubusercontent.com/platinummorgan/statusxp/refs/heads/main/PRIVACY.md'),
                 ),
 
                 const Divider(height: 1),
@@ -492,18 +514,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: const Icon(Icons.description_outlined),
                   title: const Text('Terms of Service'),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _openUrl('YOUR_GITHUB_TOS_URL_HERE'),
-                ),
-
-                const Divider(height: 1),
-
-                // Contact Support
-                ListTile(
-                  leading: const Icon(Icons.email_outlined),
-                  title: const Text('Contact Support'),
-                  subtitle: const Text('support@platovalabs.com'),
-                  trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _openUrl('mailto:support@platovalabs.com'),
+                  onTap: () => _openUrl('https://raw.githubusercontent.com/platinummorgan/statusxp/refs/heads/main/TERMS_OF_SERVICE.md'),
                 ),
 
                 const Divider(height: 1),
@@ -517,21 +528,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     showLicensePage(
                       context: context,
                       applicationName: 'StatusXP',
-                      applicationVersion: '1.0.0 Beta',
+                      applicationVersion: '1.0.0',
                       applicationLegalese: '© 2025 StatusXP',
                     );
                   },
-                ),
-
-                const Divider(height: 1),
-
-                // Support Development
-                ListTile(
-                  leading: const Icon(Icons.favorite, color: Colors.pink),
-                  title: const Text('Support Development'),
-                  subtitle: const Text('Buy the developer a coffee ☕'),
-                  trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: _showSupportDialog,
                 ),
 
                 const Divider(height: 1),
@@ -588,7 +588,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       title: Row(
         children: [
-          Text(title),
+          Flexible(
+            child: Text(
+              title,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
           const SizedBox(width: 8),
           if (isConnected)
             Container(
