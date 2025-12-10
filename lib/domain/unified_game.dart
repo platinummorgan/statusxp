@@ -69,6 +69,33 @@ class UnifiedGame extends Equatable {
     return mostRecent;
   }
   
+  /// Get most recent trophy earned timestamp across all platforms
+  DateTime? getMostRecentTrophyTime() {
+    DateTime? mostRecent;
+    for (final platform in platforms) {
+      if (platform.lastTrophyEarnedAt != null) {
+        if (mostRecent == null || platform.lastTrophyEarnedAt!.isAfter(mostRecent)) {
+          mostRecent = platform.lastTrophyEarnedAt;
+        }
+      }
+    }
+    return mostRecent;
+  }
+  
+  /// Get the rarest achievement rarity across all platforms
+  /// Returns the lowest rarity percentage (rarest achievement)
+  double? getRarestAchievementRarity() {
+    double? rarest;
+    for (final platform in platforms) {
+      if (platform.rarestAchievementRarity != null) {
+        if (rarest == null || platform.rarestAchievementRarity! < rarest) {
+          rarest = platform.rarestAchievementRarity;
+        }
+      }
+    }
+    return rarest;
+  }
+  
   @override
   List<Object?> get props => [title, coverUrl, platforms, overallCompletion];
 }
@@ -112,6 +139,9 @@ class PlatformGameData extends Equatable {
   /// Last played/synced timestamp
   final DateTime? lastPlayedAt;
   
+  /// Most recent trophy earned timestamp
+  final DateTime? lastTrophyEarnedAt;
+  
   const PlatformGameData({
     required this.platform,
     required this.gameId,
@@ -127,6 +157,7 @@ class PlatformGameData extends Equatable {
     this.platinumCount = 0,
     this.statusXP = 0,
     this.lastPlayedAt,
+    this.lastTrophyEarnedAt,
   });
   
   @override
@@ -145,5 +176,6 @@ class PlatformGameData extends Equatable {
     platinumCount,
     statusXP,
     lastPlayedAt,
+    lastTrophyEarnedAt,
   ];
 }

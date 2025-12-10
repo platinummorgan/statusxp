@@ -19,6 +19,22 @@ class NewDashboardScreen extends ConsumerStatefulWidget {
 
 class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
   @override
+  void initState() {
+    super.initState();
+    // Refresh data when screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(dashboardStatsProvider);
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh data whenever we navigate back to this screen
+    ref.invalidate(dashboardStatsProvider);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dashboardStatsAsync = ref.watch(dashboardStatsProvider);

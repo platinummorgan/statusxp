@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/flex_room_data.dart';
 import 'package:statusxp/data/repositories/flex_room_repository.dart';
@@ -39,6 +38,15 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   void initState() {
     super.initState();
     // Load profile after the first frame to ensure ref is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserProfile();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload profile when navigating back
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadUserProfile();
     });

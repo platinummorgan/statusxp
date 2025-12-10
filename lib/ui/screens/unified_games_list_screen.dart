@@ -7,11 +7,11 @@ import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 
 /// Sort options for games list
 enum GameSort {
-  lastPlayed,
   lastTrophy,
   nameAsc,
   nameDesc,
-  rarity,
+  rarityAsc,
+  rarityDesc,
 }
 
 /// Platform filter state provider (empty set = All)
@@ -221,10 +221,6 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       ),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<GameSort>>[
         const PopupMenuItem<GameSort>(
-          value: GameSort.lastPlayed,
-          child: Text('Last Played', style: TextStyle(color: Colors.white)),
-        ),
-        const PopupMenuItem<GameSort>(
           value: GameSort.lastTrophy,
           child: Text('Last Trophy', style: TextStyle(color: Colors.white)),
         ),
@@ -237,8 +233,12 @@ class UnifiedGamesListScreen extends ConsumerWidget {
           child: Text('ABC Descending', style: TextStyle(color: Colors.white)),
         ),
         const PopupMenuItem<GameSort>(
-          value: GameSort.rarity,
-          child: Text('Rarity', style: TextStyle(color: Colors.white)),
+          value: GameSort.rarityAsc,
+          child: Text('Rarity (Common First)', style: TextStyle(color: Colors.white)),
+        ),
+        const PopupMenuItem<GameSort>(
+          value: GameSort.rarityDesc,
+          child: Text('Rarity (Rare First)', style: TextStyle(color: Colors.white)),
         ),
       ],
       child: Container(
@@ -286,29 +286,36 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       case GameSort.nameDesc:
         filtered.sort((a, b) => b.title.compareTo(a.title));
         break;
-      case GameSort.lastPlayed:
-        filtered.sort((a, b) {
-          final aTime = a.getMostRecentPlayTime();
-          final bTime = b.getMostRecentPlayTime();
-          if (aTime == null && bTime == null) return a.title.compareTo(b.title);
-          if (aTime == null) return 1;
-          if (bTime == null) return -1;
-          return bTime.compareTo(aTime); // Most recent first
-        });
-        break;
       case GameSort.lastTrophy:
-        // Same as lastPlayed for now (using last_played_at field)
+        // Sort by most recent trophy earned timestamp
         filtered.sort((a, b) {
-          final aTime = a.getMostRecentPlayTime();
-          final bTime = b.getMostRecentPlayTime();
+          final aTime = a.getMostRecentTrophyTime();
+          final bTime = b.getMostRecentTrophyTime();
           if (aTime == null && bTime == null) return a.title.compareTo(b.title);
           if (aTime == null) return 1;
           if (bTime == null) return -1;
           return bTime.compareTo(aTime); // Most recent first
         });
         break;
-      case GameSort.rarity:
-        // TODO: Implement rarity-based sorting
+      case GameSort.rarityAsc:
+        // Sort by rarest achievement rarity (common first = higher percentage first)
+        filtered.sort((a, b) {
+          final aRarity = a.getRarestAchievementRarity();
+          final bRarity = b.getRarestAchievementRarity();
+          if (aRarity == null) return 1;
+          if (bRarity == null) return -1;
+          return bRarity.compareTo(aRarity); // Higher rarity % = more common
+        });
+        break;
+      case GameSort.rarityDesc:
+        // Sort by rarest achievement rarity (rare first = lower percentage first)
+        filtered.sort((a, b) {
+          final aRarity = a.getRarestAchievementRarity();
+          final bRarity = b.getRarestAchievementRarity();
+          if (aRarity == null) return 1;
+          if (bRarity == null) return -1;
+          return aRarity.compareTo(bRarity); // Lower rarity % = more rare
+        });
         break;
     }
 

@@ -176,10 +176,11 @@ export async function syncPSNAchievements(
           }
 
           // Find or create game_title
+          const trimmedTitle = title.trophyTitleName.trim();
           const { data: existingGame } = await supabase
             .from('game_titles')
             .select('id, cover_url')
-            .ilike('name', title.trophyTitleName)
+            .ilike('name', trimmedTitle)
             .maybeSingle();
 
           let gameTitle;
@@ -195,7 +196,7 @@ export async function syncPSNAchievements(
             const { data: newGame, error: insertError } = await supabase
               .from('game_titles')
               .insert({
-                name: title.trophyTitleName,
+                name: trimmedTitle,
                 cover_url: title.trophyTitleIconUrl,
                 metadata: { psn_np_communication_id: title.npCommunicationId },
               })

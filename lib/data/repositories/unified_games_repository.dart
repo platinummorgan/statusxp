@@ -27,6 +27,8 @@ class UnifiedGamesRepository {
             xbox_achievements_earned,
             statusxp_effective,
             last_played_at,
+            last_trophy_earned_at,
+            rarest_earned_achievement_rarity,
             game_titles!inner(
               name,
               cover_url
@@ -100,12 +102,18 @@ class UnifiedGamesRepository {
         final lastPlayedStr = game['last_played_at'] as String?;
         final lastPlayedAt = lastPlayedStr != null ? DateTime.tryParse(lastPlayedStr) : null;
         
+        final lastTrophyStr = game['last_trophy_earned_at'] as String?;
+        final lastTrophyEarnedAt = lastTrophyStr != null ? DateTime.tryParse(lastTrophyStr) : null;
+        
+        final rarestRarity = game['rarest_earned_achievement_rarity'] as num?;
+        
         platforms.add(PlatformGameData(
           platform: platform,
           gameId: (game['game_title_id'] ?? game['id']).toString(),
           achievementsEarned: earnedTrophies,
           achievementsTotal: totalTrophies,
           completion: completion,
+          rarestAchievementRarity: rarestRarity?.toDouble(),
           hasPlatinum: game['has_platinum'] as bool? ?? false,
           bronzeCount: game['bronze_trophies'] as int? ?? 0,
           silverCount: game['silver_trophies'] as int? ?? 0,
@@ -113,6 +121,7 @@ class UnifiedGamesRepository {
           platinumCount: game['platinum_trophies'] as int? ?? 0,
           statusXP: game['statusxp_effective'] as int? ?? 0,
           lastPlayedAt: lastPlayedAt,
+          lastTrophyEarnedAt: lastTrophyEarnedAt,
         ));
       }
       

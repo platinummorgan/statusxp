@@ -89,31 +89,29 @@ class SupabaseGameRepository {
           developer.log('DEBUG: Got response type: ${lastTrophyResponse.runtimeType}');
           developer.log('DEBUG: Response: $lastTrophyResponse');
           
-          if (lastTrophyResponse is List) {
-            developer.log('DEBUG: Got ${lastTrophyResponse.length} achievement records');
-            
-            // Group by game_title_id and take the most recent
-            for (final row in lastTrophyResponse) {
-              try {
-                final achievementData = row['achievements'];
-                developer.log('DEBUG: Achievement data: $achievementData, type: ${achievementData.runtimeType}');
-                
-                final gameTitleId = achievementData['game_title_id'] as int;
-                final earnedAtStr = row['earned_at'] as String?;
-                
-                if (earnedAtStr != null && !lastTrophyMap.containsKey(gameTitleId)) {
-                  final earnedAt = DateTime.tryParse(earnedAtStr);
-                  if (earnedAt != null) {
-                    lastTrophyMap[gameTitleId] = earnedAt;
-                    developer.log('DEBUG: Added game $gameTitleId with date $earnedAt');
-                  }
+          developer.log('DEBUG: Got ${lastTrophyResponse.length} achievement records');
+          
+          // Group by game_title_id and take the most recent
+          for (final row in lastTrophyResponse) {
+            try {
+              final achievementData = row['achievements'];
+              developer.log('DEBUG: Achievement data: $achievementData, type: ${achievementData.runtimeType}');
+              
+              final gameTitleId = achievementData['game_title_id'] as int;
+              final earnedAtStr = row['earned_at'] as String?;
+              
+              if (earnedAtStr != null && !lastTrophyMap.containsKey(gameTitleId)) {
+                final earnedAt = DateTime.tryParse(earnedAtStr);
+                if (earnedAt != null) {
+                  lastTrophyMap[gameTitleId] = earnedAt;
+                  developer.log('DEBUG: Added game $gameTitleId with date $earnedAt');
                 }
-              } catch (rowError) {
-                developer.log('ERROR parsing row: $rowError');
               }
+            } catch (rowError) {
+              developer.log('ERROR parsing row: $rowError');
             }
           }
-          
+                  
           developer.log('DEBUG: Last trophy map has ${lastTrophyMap.length} entries');
         } catch (e, stackTrace) {
           developer.log('ERROR fetching last trophy dates: $e');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
+import 'package:statusxp/services/sync_limit_service.dart';
 
 /// Steam Sync Screen - Manage Steam achievement syncing
 class SteamSyncScreen extends ConsumerStatefulWidget {
@@ -19,11 +20,23 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
   int _syncProgress = 0;
   String? _error;
   DateTime? _lastSyncAt;
+  final SyncLimitService _syncLimitService = SyncLimitService();
+  SyncLimitStatus? _rateLimitStatus;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _checkRateLimit();
+  }
+
+  Future<void> _checkRateLimit() async {
+    final status = await _syncLimitService.canUserSync('steam');
+    if (mounted) {
+      setState(() {
+        _rateLimitStatus = status;
+      });
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -75,17 +88,35 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
       return;
     }
 
+    // Check rate limit first
+    final limitStatus = await _syncLimitService.canUserSync('steam');
+    if (!limitStatus.canSync) {
+      setState(() {
+        _error = limitStatus.reason;
+      });
+      return;
+    }
+
     setState(() => _isSyncing = true);
 
     try {
       final supabase = Supabase.instance.client;
       await supabase.functions.invoke('steam-start-sync');
 
+      // Record successful sync start
+      await _syncLimitService.recordSync('steam', success: true);
+      
+      // Refresh rate limit status
+      await _checkRateLimit();
+
       if (mounted) {
         // Poll for status updates
         _pollSyncStatus();
       }
     } catch (e) {
+      // Record failed sync
+      await _syncLimitService.recordSync('steam', success: false);
+      
       if (mounted) {
         setState(() {
           _error = 'Failed to start sync: $e';
@@ -182,29 +213,76 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
       );
     }
 
+    final isSyncDisabled = (_rateLimitStatus != null && !_rateLimitStatus!.canSync) || _isSyncing;
+    
+    // Build rate limit message
+    String? rateLimitMessage;
+    if (_rateLimitStatus != null && !_rateLimitStatus!.canSync) {
+      if (_rateLimitStatus!.waitSeconds > 0) {
+        rateLimitMessage = 'Steam sync on cooldown. Next sync available in ${_rateLimitStatus!.waitTimeFormatted}';
+      } else {
+        rateLimitMessage = _rateLimitStatus!.reason;
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Steam Sync')),
-      body: PlatformSyncWidget(
-        platformName: 'Steam',
-        platformColor: const Color(0xFF1B2838),
-        platformIcon: const Icon(
-          Icons.videogame_asset,
-          size: 64,
-          color: Colors.white,
-        ),
-        syncStatus: _syncStatus,
-        syncProgress: _syncProgress,
-        lastSyncAt: _lastSyncAt,
-        errorMessage: _error,
-        isSyncing: _isSyncing,
-        onSyncPressed: _startSync,
-        onStopPressed: _stopSync,
-        syncDescription: const [
-          'Syncs all your Steam games with achievements',
-          'Processes 5 games at a time to avoid timeouts',
-          'Automatically resumes until all games are synced',
-          'Fetches global achievement percentages',
-          'You can stop the sync at any time and resume later',
+      body: Column(
+        children: [
+          if (rateLimitMessage != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.2),
+                border: Border.all(color: Colors.orange),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule, color: Colors.orange),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      rateLimitMessage,
+                      style: const TextStyle(color: Colors.orange),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: AbsorbPointer(
+              absorbing: isSyncDisabled,
+              child: Opacity(
+                opacity: isSyncDisabled ? 0.5 : 1.0,
+                child: PlatformSyncWidget(
+                  platformName: 'Steam',
+                  platformColor: const Color(0xFF1B2838),
+                  platformIcon: const Icon(
+                    Icons.videogame_asset,
+                    size: 64,
+                    color: Colors.white,
+                  ),
+                  syncStatus: _syncStatus,
+                  syncProgress: _syncProgress,
+                  lastSyncAt: _lastSyncAt,
+                  errorMessage: _error,
+                  isSyncing: _isSyncing,
+                  onSyncPressed: _startSync,
+                  onStopPressed: _stopSync,
+                  syncDescription: const [
+                    'Syncs all your Steam games with achievements',
+                    'Processes 5 games at a time to avoid timeouts',
+                    'Automatically resumes until all games are synced',
+                    'Fetches global achievement percentages',
+                    'You can stop the sync at any time and resume later',
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

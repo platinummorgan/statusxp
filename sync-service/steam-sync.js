@@ -162,10 +162,11 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         
         // Search for existing game_title by name (case-insensitive)
         let gameTitle = null;
+        const trimmedName = game.name.trim();
         const { data: existingGame } = await supabase
           .from('game_titles')
           .select('id, name, cover_url')
-          .ilike('name', game.name)
+          .ilike('name', trimmedName)
           .limit(1)
           .maybeSingle();
         
@@ -185,7 +186,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           const { data: newGame } = await supabase
             .from('game_titles')
             .insert({
-              name: game.name,
+              name: trimmedName,
               cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`,
               metadata: {
                 steam_app_id: game.appid,

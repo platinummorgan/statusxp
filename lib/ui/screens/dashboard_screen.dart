@@ -22,6 +22,20 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(userStatsProvider);
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    ref.invalidate(userStatsProvider);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final userStatsAsync = ref.watch(userStatsProvider);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
@@ -7,6 +8,7 @@ import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Settings Screen - Platform connections and app configuration
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -138,6 +140,143 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       }
     }
+  }
+
+  Future<void> _openUrl(String urlString) async {
+    HapticFeedback.lightImpact();
+    try {
+      final url = Uri.parse(urlString);
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not open: $urlString')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening link: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showSupportDialog() async {
+    HapticFeedback.lightImpact();
+    
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.favorite, color: Colors.pink, size: 28),
+            SizedBox(width: 12),
+            Text('Support Development'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Thanks for considering supporting StatusXP! 🙏',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'This app is built with passion and zero ads. Your support helps keep it that way and motivates continued development!',
+              style: TextStyle(fontSize: 14, color: Colors.white70),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Choose your preferred method:',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 16),
+            // PayPal Button
+            InkWell(
+              onTap: () async {
+                final url = Uri.parse('https://paypal.me/platinummorgan');
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                  if (context.mounted) Navigator.pop(context);
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Could not open PayPal link')),
+                    );
+                  }
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0070BA), Color(0xFF1546A0)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'P',
+                          style: TextStyle(
+                            color: Color(0xFF0070BA),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'PayPal',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            'One-time tip via PayPal',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.open_in_new, color: Colors.white70, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _signOut() async {
@@ -334,6 +473,65 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ],
                     );
                   },
+                ),
+
+                const Divider(height: 1),
+
+                // Privacy Policy
+                ListTile(
+                  leading: const Icon(Icons.privacy_tip_outlined),
+                  title: const Text('Privacy Policy'),
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () => _openUrl('YOUR_GITHUB_PRIVACY_URL_HERE'),
+                ),
+
+                const Divider(height: 1),
+
+                // Terms of Service
+                ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: const Text('Terms of Service'),
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () => _openUrl('YOUR_GITHUB_TOS_URL_HERE'),
+                ),
+
+                const Divider(height: 1),
+
+                // Contact Support
+                ListTile(
+                  leading: const Icon(Icons.email_outlined),
+                  title: const Text('Contact Support'),
+                  subtitle: const Text('support@platovalabs.com'),
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: () => _openUrl('mailto:support@platovalabs.com'),
+                ),
+
+                const Divider(height: 1),
+
+                // Open Source Licenses
+                ListTile(
+                  leading: const Icon(Icons.code),
+                  title: const Text('Open Source Licenses'),
+                  trailing: const Icon(Icons.chevron_right, size: 16),
+                  onTap: () {
+                    showLicensePage(
+                      context: context,
+                      applicationName: 'StatusXP',
+                      applicationVersion: '1.0.0 Beta',
+                      applicationLegalese: '© 2025 StatusXP',
+                    );
+                  },
+                ),
+
+                const Divider(height: 1),
+
+                // Support Development
+                ListTile(
+                  leading: const Icon(Icons.favorite, color: Colors.pink),
+                  title: const Text('Support Development'),
+                  subtitle: const Text('Buy the developer a coffee ☕'),
+                  trailing: const Icon(Icons.open_in_new, size: 16),
+                  onTap: _showSupportDialog,
                 ),
 
                 const Divider(height: 1),

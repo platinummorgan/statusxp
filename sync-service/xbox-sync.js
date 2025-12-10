@@ -238,10 +238,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             // Search for existing game_title by name (case-insensitive)
             let gameTitle = null;
+            const trimmedName = title.name.trim();
             const { data: existingGame } = await supabase
               .from('game_titles')
               .select('id, name, cover_url')
-              .ilike('name', title.name)
+              .ilike('name', trimmedName)
               .limit(1)
               .maybeSingle();
             
@@ -259,7 +260,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const { data: newGame, error: insertError } = await supabase
                 .from('game_titles')
                 .insert({
-                  name: title.name,
+                  name: trimmedName,
                   cover_url: title.displayImage,
                   metadata: {
                     xbox_title_id: title.titleId,

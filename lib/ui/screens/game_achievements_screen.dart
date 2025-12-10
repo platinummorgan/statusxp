@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/services/achievement_guide_service.dart';
+import 'package:statusxp/services/youtube_search_service.dart';
+import 'package:statusxp/services/ai_credit_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Game Achievements Screen - Shows achievements/trophies for a specific game on a platform
 class GameAchievementsScreen extends ConsumerStatefulWidget {
@@ -28,11 +32,19 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
   String? _error;
   bool _showHiddenAchievements = false;
   final Map<String, bool> _expandedGroups = {'Base Game': true}; // Base Game expanded by default
+  int _refreshKey = 0; // Key to force FutureBuilder refresh
 
   @override
   void initState() {
     super.initState();
     _loadAchievements();
+  }
+
+  void _refreshAICreditBadge() {
+    // Force all FutureBuilders to rebuild with fresh credit data
+    setState(() {
+      _refreshKey++;
+    });
   }
 
   Future<void> _loadAchievements() async {
@@ -566,6 +578,54 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                         ),
                     ],
                   ),
+                  // Get Help button with AI credit badge
+                  if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements) ...[
+                    const SizedBox(height: 8),
+                    FutureBuilder<AICreditStatus>(
+                      key: ValueKey('credit_badge_${achievement['id']}_$_refreshKey'),
+                      future: AICreditService().checkCredits(),
+                      builder: (context, snapshot) {
+                        final creditBadge = snapshot.hasData ? snapshot.data!.badgeText : '...';
+                        
+                        return TextButton.icon(
+                          onPressed: () => _showAIGuideDialog(context, achievement),
+                          icon: const Icon(Icons.lightbulb_outline, size: 16),
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Get Help'),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: CyberpunkTheme.neonPurple,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  creditBadge,
+                                  style: TextStyle(
+                                    color: CyberpunkTheme.neonPurple,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: CyberpunkTheme.neonPurple,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -641,6 +701,780 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       return '${(diff.inDays / 365).floor()}y ago';
     } catch (e) {
       return isoDate;
+    }
+  }
+
+  Future<void> _showAIGuideDialog(BuildContext context, Map<String, dynamic> achievement) async {
+    final achievementName = achievement['name'] as String? ?? 'Unknown Achievement';
+    final achievementDescription = achievement['description'] as String? ?? '';
+    
+    // Check AI credits first
+    final creditService = AICreditService();
+    final creditStatus = await creditService.checkCredits();
+    
+    if (!creditStatus.canUse) {
+      // Show purchase dialog
+      _showAIPurchaseDialog(context, creditStatus);
+      return;
+    }
+    
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0E27).withOpacity(0.95),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                blurRadius: 20,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.lightbulb,
+                    color: CyberpunkTheme.neonPurple,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'ACHIEVEMENT GUIDE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    color: Colors.white70,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.white24, height: 24),
+              
+              // Achievement name
+              Text(
+                achievementName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (achievementDescription.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  achievementDescription,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              
+              // AI Guide content
+              Expanded(
+                child: _AIGuideContent(
+                  gameTitle: widget.gameName,
+                  achievementName: achievementName,
+                  achievementDescription: achievementDescription,
+                  platform: widget.platform,
+                  achievementId: achievement['id']?.toString(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    
+    // Refresh AI credit badge after dialog closes
+    _refreshAICreditBadge();
+  }
+
+  void _showAIPurchaseDialog(BuildContext context, AICreditStatus status) {
+    final creditService = AICreditService();
+    final packs = creditService.getAvailablePacks();
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 450),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0E27).withOpacity(0.95),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                blurRadius: 20,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.lightbulb,
+                    color: CyberpunkTheme.neonPurple,
+                    size: 32,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'OUT OF AI CREDITS',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        Text(
+                          'Free AI used up for today',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    color: Colors.white70,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.white24, height: 32),
+              
+              // Free option
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.schedule, color: CyberpunkTheme.neonCyan, size: 32),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Wait until tomorrow',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'Get 3 more free AI uses tomorrow',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              Text(
+                'OR BUY AI PACK',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Pack options
+              ...packs.map((pack) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _purchaseAIPack(context, pack);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white10,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: pack.badge != null 
+                            ? CyberpunkTheme.neonPurple 
+                            : Colors.white24,
+                        width: pack.badge != null ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.shopping_bag,
+                          color: pack.badge != null 
+                              ? CyberpunkTheme.neonPurple 
+                              : CyberpunkTheme.neonCyan,
+                          size: 32,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    pack.title,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  if (pack.badge != null) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: CyberpunkTheme.neonPurple,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        pack.badge!,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              Text(
+                                '${pack.credits} AI uses · ${pack.perUsePrice}',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          pack.displayPrice,
+                          style: TextStyle(
+                            color: CyberpunkTheme.neonCyan,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )),
+              
+              const SizedBox(height: 16),
+              
+              // Premium option teaser
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      CyberpunkTheme.neonPurple.withOpacity(0.2),
+                      CyberpunkTheme.neonCyan.withOpacity(0.2),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.star, color: CyberpunkTheme.neonPurple, size: 32),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'StatusXP Plus',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '100 AI/month + faster syncs · \$2.49/mo',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Premium coming soon!'),
+                            backgroundColor: CyberpunkTheme.neonPurple,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'LEARN MORE',
+                        style: TextStyle(
+                          color: CyberpunkTheme.neonPurple,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _purchaseAIPack(BuildContext context, AIPack pack) {
+    // TODO: Implement actual payment flow (Google Play Billing / In-App Purchase)
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Purchase ${pack.title}'),
+        content: Text(
+          'Payment integration coming soon!\n\n'
+          'This will use Google Play Billing for Android and App Store In-App Purchase for iOS.\n\n'
+          '${pack.credits} AI uses for ${pack.displayPrice}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Widget that displays AI-generated achievement guide with streaming support
+class _AIGuideContent extends StatefulWidget {
+  final String gameTitle;
+  final String achievementName;
+  final String achievementDescription;
+  final String platform;
+  final String? achievementId;
+
+  const _AIGuideContent({
+    required this.gameTitle,
+    required this.achievementName,
+    required this.achievementDescription,
+    required this.platform,
+    this.achievementId,
+  });
+
+  @override
+  State<_AIGuideContent> createState() => _AIGuideContentState();
+}
+
+class _AIGuideContentState extends State<_AIGuideContent> {
+  final _guideService = AchievementGuideService();
+  String _guideText = '';
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGuide();
+  }
+
+  Future<void> _loadGuide() async {
+    // Check if we already have a cached guide in the database
+    final cached = await _checkCachedGuide();
+    if (cached != null) {
+      setState(() {
+        _guideText = cached;
+      });
+      return;
+    }
+
+    // Consume AI credit before generating
+    final creditService = AICreditService();
+    try {
+      await creditService.consumeCredit();
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to use AI credit: $e';
+      });
+      return;
+    }
+
+    // Generate new guide
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final stream = _guideService.generateGuide(
+        gameTitle: widget.gameTitle,
+        achievementName: widget.achievementName,
+        achievementDescription: widget.achievementDescription,
+        platform: widget.platform,
+      );
+
+      await for (final chunk in stream) {
+        setState(() {
+          _guideText += chunk;
+        });
+      }
+
+      // Search for YouTube video and append to guide
+      await _appendYouTubeLink();
+
+      // Save to database
+      await _saveGuideToDatabase(_guideText);
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _appendYouTubeLink() async {
+    try {
+      final youtubeService = YouTubeSearchService();
+      final videoUrl = await youtubeService.searchAchievementGuide(
+        gameTitle: widget.gameTitle,
+        achievementName: widget.achievementName,
+      );
+
+      if (videoUrl != null) {
+        // Replace "No specific video guide found" with actual link
+        setState(() {
+          if (_guideText.contains('No specific video guide found')) {
+            _guideText = _guideText.replaceAll(
+              'No specific video guide found',
+              videoUrl,
+            );
+          } else {
+            // If AI didn't include YouTube section, append it
+            _guideText += '\n\nYouTube reference:\n$videoUrl';
+          }
+        });
+      }
+    } catch (e) {
+      print('Error fetching YouTube link: $e');
+      // Continue without YouTube link if it fails
+    }
+  }
+
+  Future<String?> _checkCachedGuide() async {
+    if (widget.achievementId == null) return null;
+
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('achievements')
+          .select('ai_guide')
+          .eq('id', widget.achievementId!)
+          .single();
+
+      return response['ai_guide'] as String?;
+    } catch (e) {
+      print('Error checking cached guide: $e');
+      return null;
+    }
+  }
+
+  Future<void> _saveGuideToDatabase(String guide) async {
+    if (widget.achievementId == null) return;
+
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase
+          .from('achievements')
+          .update({
+            'ai_guide': guide,
+            'ai_guide_generated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', widget.achievementId!);
+    } catch (e) {
+      print('Error saving guide to database: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, color: CyberpunkTheme.neonPink, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'Error generating guide',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: TextStyle(color: Colors.white70, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _error = null;
+                  _guideText = '';
+                });
+                _loadGuide();
+              },
+              child: const Text('RETRY'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_isLoading && _guideText.isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonPurple),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Generating guide...',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            )
+          else
+            _buildGuideText(),
+          if (_isLoading && _guideText.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonPurple),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Generating...',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuideText() {
+    final urlPattern = RegExp(r'https?://[^\s]+');
+    final matches = urlPattern.allMatches(_guideText);
+    
+    if (matches.isEmpty) {
+      // No URLs, just show plain text
+      return Text(
+        _guideText,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 14,
+          height: 1.5,
+        ),
+      );
+    }
+
+    // Build text with clickable links
+    final spans = <InlineSpan>[];
+    int lastIndex = 0;
+
+    for (final match in matches) {
+      // Add text before the URL
+      if (match.start > lastIndex) {
+        spans.add(TextSpan(
+          text: _guideText.substring(lastIndex, match.start),
+          style: const TextStyle(color: Colors.white),
+        ));
+      }
+
+      // Add clickable URL
+      final url = match.group(0)!;
+      spans.add(WidgetSpan(
+        child: GestureDetector(
+          onTap: () => _launchURL(url),
+          child: Text(
+            url,
+            style: TextStyle(
+              color: CyberpunkTheme.neonCyan,
+              decoration: TextDecoration.underline,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ));
+
+      lastIndex = match.end;
+    }
+
+    // Add remaining text after last URL
+    if (lastIndex < _guideText.length) {
+      spans.add(TextSpan(
+        text: _guideText.substring(lastIndex),
+        style: const TextStyle(color: Colors.white),
+      ));
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 14,
+          height: 1.5,
+        ),
+        children: spans,
+      ),
+    );
+  }
+
+  Future<void> _launchURL(String url) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF0A0E27),
+        title: Text(
+          'Open External Link',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This will open YouTube in your browser or YouTube app.',
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              url,
+              style: TextStyle(
+                color: CyberpunkTheme.neonCyan,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('CANCEL', style: TextStyle(color: Colors.white70)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: CyberpunkTheme.neonCyan,
+            ),
+            child: const Text('OPEN'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        print('Could not launch $url');
+      }
     }
   }
 }

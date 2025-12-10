@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
+import 'package:statusxp/services/sync_limit_service.dart';
 
 /// Screen for syncing Xbox achievements
 class XboxSyncScreen extends ConsumerStatefulWidget {
@@ -16,8 +17,33 @@ class XboxSyncScreen extends ConsumerStatefulWidget {
 class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
   bool _isSyncing = false;
   String? _errorMessage;
+  final SyncLimitService _syncLimitService = SyncLimitService();
+  SyncLimitStatus? _rateLimitStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkRateLimit();
+  }
+
+  Future<void> _checkRateLimit() async {
+    final status = await _syncLimitService.canUserSync('xbox');
+    if (mounted) {
+      setState(() {
+        _rateLimitStatus = status;
+      });
+    }
+  }
 
   Future<void> _startSync() async {
+    // Check rate limit first
+    final limitStatus = await _syncLimitService.canUserSync('xbox');
+    if (!limitStatus.canSync) {
+      setState(() {
+        _errorMessage = limitStatus.reason;
+      });
+      return;
+    }
     setState(() {
       _isSyncing = true;
       _errorMessage = null;
@@ -27,11 +53,20 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
       final xboxService = ref.read(xboxServiceProvider);
       await xboxService.startSync();
 
+      // Record successful sync start
+      await _syncLimitService.recordSync('xbox', success: true);
+      
+      // Refresh rate limit status
+      await _checkRateLimit();
+
       if (mounted) {
         // Start polling for status updates
         _pollSyncStatus();
       }
     } on XboxRateLimitException catch (e) {
+      // Record failed sync
+      await _syncLimitService.recordSync('xbox', success: false);
+      
       if (mounted) {
         setState(() {
           _errorMessage = e.message;
@@ -39,6 +74,9 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
         });
       }
     } catch (e) {
+      // Record failed sync
+      await _syncLimitService.recordSync('xbox', success: false);
+      
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -177,28 +215,74 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
         ),
         data: (status) {
           final isSyncing = status.status == 'syncing' || status.status == 'pending' || _isSyncing;
+          final isSyncDisabled = (_rateLimitStatus != null && !_rateLimitStatus!.canSync) || isSyncing;
+          
+          // Build rate limit message
+          String? rateLimitMessage;
+          if (_rateLimitStatus != null && !_rateLimitStatus!.canSync) {
+            if (_rateLimitStatus!.waitSeconds > 0) {
+              rateLimitMessage = 'Xbox sync on cooldown. Next sync available in ${_rateLimitStatus!.waitTimeFormatted}';
+            } else {
+              rateLimitMessage = _rateLimitStatus!.reason;
+            }
+          }
 
-          return PlatformSyncWidget(
-            platformName: 'Xbox',
-            platformColor: const Color(0xFF107C10),
-            platformIcon: const Icon(
-              Icons.gamepad,
-              size: 64,
-              color: Colors.white,
-            ),
-            syncStatus: status.status,
-            syncProgress: status.progress,
-            lastSyncAt: status.lastSyncAt,
-            errorMessage: _errorMessage ?? status.error,
-            isSyncing: isSyncing,
-            onSyncPressed: _startSync,
-            onStopPressed: _stopSync,
-            syncDescription: const [
-              'Syncs all your Xbox games with achievements',
-              'Processes 5 games at a time to avoid timeouts',
-              'Automatically resumes until all games are synced',
-              'Fetches global achievement rarity data',
-              'You can stop the sync at any time and resume later',
+          return Column(
+            children: [
+              if (rateLimitMessage != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.2),
+                    border: Border.all(color: Colors.orange),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.schedule, color: Colors.orange),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          rateLimitMessage,
+                          style: const TextStyle(color: Colors.orange),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Expanded(
+                child: AbsorbPointer(
+                  absorbing: isSyncDisabled,
+                  child: Opacity(
+                    opacity: isSyncDisabled ? 0.5 : 1.0,
+                    child: PlatformSyncWidget(
+                      platformName: 'Xbox',
+                      platformColor: const Color(0xFF107C10),
+                      platformIcon: const Icon(
+                        Icons.gamepad,
+                        size: 64,
+                        color: Colors.white,
+                      ),
+                      syncStatus: status.status,
+                      syncProgress: status.progress,
+                      lastSyncAt: status.lastSyncAt,
+                      errorMessage: _errorMessage ?? status.error,
+                      isSyncing: isSyncing,
+                      onSyncPressed: _startSync,
+                      onStopPressed: _stopSync,
+                      syncDescription: const [
+                        'Syncs all your Xbox games with achievements',
+                        'Processes 5 games at a time to avoid timeouts',
+                        'Automatically resumes until all games are synced',
+                        'Fetches global achievement rarity data',
+                        'You can stop the sync at any time and resume later',
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           );
         },
