@@ -309,6 +309,16 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       logMemory(`After processing Steam batch ${i / BATCH_SIZE + 1}`);
     }
 
+    // Calculate StatusXP for all achievements and games
+    console.log('Calculating StatusXP values...');
+    try {
+      await supabase.rpc('calculate_user_achievement_statusxp');
+      await supabase.rpc('calculate_user_game_statusxp');
+      console.log('✅ StatusXP calculation complete');
+    } catch (calcError) {
+      console.error('⚠️ StatusXP calculation failed:', calcError);
+    }
+
     // Mark as completed
     await supabase
       .from('profiles')
