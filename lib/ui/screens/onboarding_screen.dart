@@ -24,8 +24,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_complete', true);
     
+    // Trigger a full app rebuild by replacing the entire route stack
     if (mounted) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
     }
   }
 

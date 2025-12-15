@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -18,9 +19,12 @@ class NewDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
+  bool _showStatusXPHint = false;
+
   @override
   void initState() {
     super.initState();
+    _checkIfShouldShowHint();
     // Refresh data when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(dashboardStatsProvider);
@@ -32,6 +36,26 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
     super.didChangeDependencies();
     // Refresh data whenever we navigate back to this screen
     ref.invalidate(dashboardStatsProvider);
+  }
+
+  Future<void> _checkIfShouldShowHint() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenHint = prefs.getBool('has_seen_statusxp_hint') ?? false;
+    if (!hasSeenHint && mounted) {
+      setState(() {
+        _showStatusXPHint = true;
+      });
+    }
+  }
+
+  Future<void> _hideHintPermanently() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_statusxp_hint', true);
+    if (mounted) {
+      setState(() {
+        _showStatusXPHint = false;
+      });
+    }
   }
 
   @override
@@ -195,48 +219,109 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
   }
 
   Widget _buildStatusXPCircle(int totalStatusXP) {
-    return Container(
-      width: 220,
-      height: 220,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: CyberpunkTheme.neonPurple, width: 4),
-        boxShadow: [
-          BoxShadow(
-            color: CyberpunkTheme.neonPurple.withOpacity(0.5),
-            blurRadius: 30,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return GestureDetector(
+      onTap: () {
+        _hideHintPermanently();
+        _showStatusXPBreakdown(context);
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Text(
-            'StatusXP',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 1.5,
+          Container(
+            width: 220,
+            height: 220,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: CyberpunkTheme.neonPurple, width: 4),
+              boxShadow: [
+                BoxShadow(
+                  color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _formatNumber(totalStatusXP),
-            style: TextStyle(
-              color: CyberpunkTheme.neonPurple,
-              fontSize: 48,
-              fontWeight: FontWeight.w900,
-              height: 1.0,
-              shadows: [
-                ...CyberpunkTheme.neonGlow(
-                  color: CyberpunkTheme.neonPurple,
-                  blurRadius: 12,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'StatusXP',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.6),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _formatNumber(totalStatusXP),
+                  style: TextStyle(
+                    color: CyberpunkTheme.neonPurple,
+                    fontSize: 48,
+                    fontWeight: FontWeight.w900,
+                    height: 1.0,
+                    shadows: [
+                      ...CyberpunkTheme.neonGlow(
+                        color: CyberpunkTheme.neonPurple,
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+          // One-time hint badge
+          if (_showStatusXPHint)
+            Positioned(
+              bottom: -10,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: AnimatedOpacity(
+                  opacity: _showStatusXPHint ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: CyberpunkTheme.neonPurple.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: CyberpunkTheme.neonPurple,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.touch_app,
+                          color: Colors.white,
+                          size: 12,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'TAP FOR BREAKDOWN',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -507,6 +592,161 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
     return number.toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (Match m) => '${m[1]},',
+    );
+  }
+
+  void _showStatusXPBreakdown(BuildContext context) {
+    final dashboardStats = ref.read(dashboardStatsProvider).value;
+    if (dashboardStats == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0E27).withOpacity(0.95),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                blurRadius: 20,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.leaderboard,
+                    color: CyberpunkTheme.neonPurple,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'STATUSXP BREAKDOWN',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    color: Colors.white70,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.white24, height: 24),
+              
+              // Platform breakdown
+              _buildBreakdownRow(
+                'PlayStation',
+                dashboardStats.psnStats.statusXP,
+                const Color(0xFF00A8E1),
+              ),
+              const SizedBox(height: 16),
+              _buildBreakdownRow(
+                'Xbox',
+                dashboardStats.xboxStats.statusXP,
+                const Color(0xFF107C10),
+              ),
+              const SizedBox(height: 16),
+              _buildBreakdownRow(
+                'Steam',
+                dashboardStats.steamStats.statusXP,
+                const Color(0xFF66C0F4),
+              ),
+              
+              const Divider(color: Colors.white24, height: 32),
+              
+              // Total
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'TOTAL',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  Text(
+                    _formatNumber(dashboardStats.totalStatusXP),
+                    style: TextStyle(
+                      color: CyberpunkTheme.neonPurple,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      shadows: [
+                        ...CyberpunkTheme.neonGlow(
+                          color: CyberpunkTheme.neonPurple,
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBreakdownRow(String platform, int xp, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.5),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            platform.toUpperCase(),
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ),
+        Text(
+          _formatNumber(xp),
+          style: TextStyle(
+            color: color,
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -81,15 +81,20 @@ class SupabaseDashboardRepository {
       platformCodes = ['Steam'];
     }
     
-    // Get game count for platform by joining with platforms table
+    // Get game count and StatusXP for platform by joining with platforms table
     final gamesResponse = await _client
         .from('user_games')
-        .select('id, platforms!inner(code)')
+        .select('id, statusxp_effective, platforms!inner(code)')
         .eq('user_id', userId)
-        .inFilter('platforms.code', platformCodes)
-        .count();
+        .inFilter('platforms.code', platformCodes);
 
-    final gamesCount = gamesResponse.count;
+    final gamesCount = (gamesResponse as List).length;
+    
+    // Sum statusXP for this platform
+    int platformStatusXP = 0;
+    for (final game in gamesResponse) {
+      platformStatusXP += (game['statusxp_effective'] as int? ?? 0);
+    }
 
     // Get platinum count (PSN only) - need to join with achievements table
     int platinums = 0;
@@ -109,6 +114,7 @@ class SupabaseDashboardRepository {
       platinums: platinums,
       achievementsUnlocked: achievementsCount,
       gamesCount: gamesCount,
+      statusXP: platformStatusXP,
     );
   }
 

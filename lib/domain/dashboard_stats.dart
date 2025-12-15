@@ -92,6 +92,9 @@ class PlatformStats extends Equatable {
   /// Number of games with achievements on this platform
   final int gamesCount;
   
+  /// StatusXP earned on this platform
+  final int statusXP;
+  
   /// Average achievements per game (calculated)
   double get averagePerGame => 
       gamesCount > 0 ? achievementsUnlocked / gamesCount : 0.0;
@@ -100,16 +103,18 @@ class PlatformStats extends Equatable {
     this.platinums = 0,
     required this.achievementsUnlocked,
     required this.gamesCount,
+    this.statusXP = 0,
   });
 
   /// Creates empty platform stats
   const PlatformStats.empty()
       : platinums = 0,
         achievementsUnlocked = 0,
-        gamesCount = 0;
+        gamesCount = 0,
+        statusXP = 0;
 
   @override
-  List<Object?> get props => [platinums, achievementsUnlocked, gamesCount];
+  List<Object?> get props => [platinums, achievementsUnlocked, gamesCount, statusXP];
 
   @override
   bool get stringify => true;

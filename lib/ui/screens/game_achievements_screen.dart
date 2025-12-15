@@ -801,6 +801,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                   achievementDescription: achievementDescription,
                   platform: widget.platform,
                   achievementId: achievement['id']?.toString(),
+                  onCreditConsumed: _refreshAICreditBadge,
                 ),
               ),
             ],
@@ -1125,6 +1126,7 @@ class _AIGuideContent extends StatefulWidget {
   final String achievementDescription;
   final String platform;
   final String? achievementId;
+  final VoidCallback? onCreditConsumed;
 
   const _AIGuideContent({
     required this.gameTitle,
@@ -1132,6 +1134,7 @@ class _AIGuideContent extends StatefulWidget {
     required this.achievementDescription,
     required this.platform,
     this.achievementId,
+    this.onCreditConsumed,
   });
 
   @override
@@ -1162,6 +1165,8 @@ class _AIGuideContentState extends State<_AIGuideContent> {
 
     // Consume AI credit before generating
     final creditService = AICreditService();
+      // Immediately refresh the credit badge on the parent screen
+      widget.onCreditConsumed?.call();
     try {
       await creditService.consumeCredit();
     } catch (e) {

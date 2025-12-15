@@ -61,7 +61,7 @@ class AuthService {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
-        throw AuthException('Google Sign-In was cancelled');
+        throw const AuthException('Google Sign-In was cancelled');
       }
       
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
@@ -69,7 +69,7 @@ class AuthService {
       final String? accessToken = googleAuth.accessToken;
       
       if (idToken == null) {
-        throw AuthException('Failed to get Google ID token');
+        throw const AuthException('Failed to get Google ID token');
       }
       
       // Sign in to Supabase with Google credentials

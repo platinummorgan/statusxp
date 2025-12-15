@@ -225,6 +225,18 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           console.log(`Could not fetch global stats for ${game.name}:`, error.message);
         }
 
+        // Find most recent achievement unlock time
+        let lastTrophyEarnedAt = null;
+        for (const achievement of achievements) {
+          const playerAch = playerAchievements.find(a => a.apiname === achievement.name);
+          if (playerAch && playerAch.achieved === 1 && playerAch.unlocktime > 0) {
+            const unlockDate = new Date(playerAch.unlocktime * 1000);
+            if (!lastTrophyEarnedAt || unlockDate > lastTrophyEarnedAt) {
+              lastTrophyEarnedAt = unlockDate;
+            }
+          }
+        }
+
         // Upsert user_games
         await supabase
           .from('user_games')
@@ -235,6 +247,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             total_trophies: achievements.length,
             earned_trophies: unlockedCount,
             completion_percent: progress,
+            last_trophy_earned_at: lastTrophyEarnedAt ? lastTrophyEarnedAt.toISOString() : null,
           }, {
             onConflict: 'user_id,game_title_id,platform_id',
           });
