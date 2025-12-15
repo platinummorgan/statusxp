@@ -45,7 +45,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (userId != null) {
         final data = await supabase
             .from('profiles')
-            .select('psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, steam_id, steam_api_key, steam_display_name, preferred_display_platform')
+            .select('psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, steam_id, steam_api_key, steam_display_name, preferred_display_platform, last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at')
             .eq('id', userId)
             .single();
         
@@ -334,11 +334,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Platform Connections Section
                 _buildSectionHeader('Platform Connections'),
                 
-                // PlayStation Network
+                // PlayStation
                 _buildPlatformTile(
                   icon: Icons.sports_esports,
                   iconColor: const Color(0xFF0070CC), // PlayStation blue
-                  title: 'PlayStation Network',
+                  title: 'PlayStation',
                   subtitle: _profile?['psn_online_id'] != null
                       ? 'Connected as ${_profile!['psn_online_id']}'
                       : 'Not connected',
@@ -347,6 +347,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     data: (status) => status.isLinked ? status.status : null,
                     orElse: () => null,
                   ),
+                  lastSyncAt: _profile?['last_psn_sync_at'] != null
+                      ? DateTime.parse(_profile!['last_psn_sync_at'])
+                      : null,
                   onTap: () async {
                     if (_profile?['psn_account_id'] != null) {
                       // Already connected - go to sync screen
@@ -371,11 +374,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const Divider(height: 1),
 
-                // Xbox Live
+                // Xbox
                 _buildPlatformTile(
                   icon: Icons.videogame_asset,
                   iconColor: const Color(0xFF107C10), // Xbox green
-                  title: 'Xbox Live',
+                  title: 'Xbox',
                   subtitle: _profile?['xbox_gamertag'] != null
                       ? 'Connected as ${_profile!['xbox_gamertag']}'
                       : 'Not connected',
@@ -384,6 +387,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     data: (status) => status.isLinked ? status.status : null,
                     orElse: () => null,
                   ),
+                  lastSyncAt: _profile?['last_xbox_sync_at'] != null
+                      ? DateTime.parse(_profile!['last_xbox_sync_at'])
+                      : null,
                   onTap: () async {
                     if (_profile?['xbox_xuid'] != null) {
                       // Already connected - show sync screen
@@ -417,6 +423,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ? 'Connected as ${_profile!['steam_display_name'] ?? 'Unknown'}'
                       : 'Not connected',
                   isConnected: _profile?['steam_id'] != null,
+                  syncStatus: _profile?['steam_id'] != null ? 'success' : null,
+                  lastSyncAt: _profile?['last_steam_sync_at'] != null
+                      ? DateTime.parse(_profile!['last_steam_sync_at'])
+                      : null,
                   onTap: () async {
                     if (_profile?['steam_id'] != null) {
                       // Already connected - go to sync screen
@@ -571,8 +581,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String title,
     required String subtitle,
     required bool isConnected,
-    String? syncStatus,
-    bool isComingSoon = false,
+    String? syncStatus,    DateTime? lastSyncAt,    bool isComingSoon = false,
     required VoidCallback onTap,
     VoidCallback? onDisconnect,
   }) {
@@ -637,7 +646,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Text(subtitle),
           if (syncStatus != null) ...[
             const SizedBox(height: 4),
-            _buildSyncStatusChip(syncStatus),
+            _buildSyncStatusChip(syncStatus, lastSyncAt),
           ],
         ],
       ),
@@ -760,7 +769,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildSyncStatusChip(String status) {
+  Widget _buildSyncStatusChip(String status, DateTime? lastSyncAt) {
+    String formatLastSync(DateTime dateTime) {
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+      
+      if (difference.inMinutes < 1) return 'Just now';
+      if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
+      if (difference.inHours < 24) return '${difference.inHours}h ago';
+      if (difference.inDays < 7) return '${difference.inDays}d ago';
+      
+      // Format as date
+      return '${dateTime.month}/${dateTime.day}/${dateTime.year}';
+    }
     Color color;
     String text;
     IconData icon;
@@ -774,7 +795,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         break;
       case 'success':
         color = Colors.green;
-        text = 'Synced';
+        text = lastSyncAt != null ? 'Synced ${formatLastSync(lastSyncAt)}' : 'Synced';
         icon = Icons.check_circle;
         break;
       case 'error':
