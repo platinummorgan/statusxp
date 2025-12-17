@@ -298,7 +298,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
                         ),
                       ],
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
@@ -306,7 +306,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
                           color: Colors.white,
                           size: 12,
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Text(
                           'TAP FOR BREAKDOWN',
                           style: TextStyle(
@@ -626,7 +626,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
               // Header
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.leaderboard,
                     color: CyberpunkTheme.neonPurple,
                     size: 24,

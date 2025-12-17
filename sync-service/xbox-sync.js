@@ -209,6 +209,18 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
     logMemory('After filtering gamesWithProgress');
 
+    // Load existing user_games to enable cheap diff
+    const { data: existingUserGames } = await supabase
+      .from('user_games')
+      .select('game_title_id, platform_id, xbox_total_achievements, xbox_achievements_earned, last_rarity_sync')
+      .eq('user_id', userId);
+    
+    const userGamesMap = new Map();
+    for (const ug of existingUserGames || []) {
+      userGamesMap.set(`${ug.game_title_id}_${ug.platform_id}`, ug);
+    }
+    console.log(`Loaded ${userGamesMap.size} existing user_games for diff check`);
+
     let processedGames = 0;
     let totalAchievements = 0;
 
@@ -277,6 +289,38 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
 
             if (!gameTitle) { console.log('Upserted game_title - no result'); continue; }
+
+            // Cheap diff: Check if game data changed
+            const apiTotalAchievements = title.achievement.totalAchievements || 0;
+            const apiEarnedAchievements = title.achievement.currentAchievements || 0;
+            
+            const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
+            const isNewGame = !existingUserGame;
+            const countsChanged = existingUserGame && 
+              (existingUserGame.xbox_total_achievements !== apiTotalAchievements || 
+               existingUserGame.xbox_achievements_earned !== apiEarnedAchievements);
+            
+            // Check if rarity is stale (>30 days old)
+            let needRarityRefresh = false;
+            if (!isNewGame && !countsChanged && existingUserGame) {
+              const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
+              const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+              needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
+            }
+            
+            const needsProcessing = isNewGame || countsChanged || needRarityRefresh;
+            
+            if (!needsProcessing) {
+              console.log(`⏭️  Skip ${title.name} - no changes`);
+              processedGames++;
+              const progressPercent = Math.floor((processedGames / gamesWithProgress.length) * 100);
+              await supabase.from('profiles').update({ xbox_sync_progress: progressPercent }).eq('id', userId);
+              continue;
+            }
+            
+            if (needRarityRefresh) {
+              console.log(`🔄 RARITY REFRESH: ${title.name} (>30 days since last rarity sync)`);
+            }
 
             // Log the achievement data from Xbox API
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);

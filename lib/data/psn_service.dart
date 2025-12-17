@@ -95,11 +95,25 @@ class PSNService {
 
   /// Get current sync status
   Future<PSNSyncStatus> getSyncStatus() async {
+    // Check if user is authenticated
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw Exception('Not authenticated. Please sign in again.');
+    }
+
+    // Refresh session to ensure valid token
+    try {
+      await _client.auth.refreshSession();
+    } catch (e) {
+      // If refresh fails, user needs to sign in again
+      throw Exception('Session expired. Please sign out and sign in again.');
+    }
+
     final response = await _client.functions.invoke('psn-sync-status');
 
     if (response.status != 200) {
       final error = response.data['error'] ?? 'Failed to get sync status';
-      throw Exception(error);
+      throw Exception('Status ${ response.status}: $error');
     }
 
     final data = response.data as Map<String, dynamic>;

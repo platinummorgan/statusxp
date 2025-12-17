@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Service for managing Supabase authentication.
 /// 
@@ -11,10 +12,7 @@ class AuthService {
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
-          serverClientId: const String.fromEnvironment(
-            'GOOGLE_SERVER_CLIENT_ID',
-            defaultValue: '',
-          ),
+          serverClientId: dotenv.env['GOOGLE_SERVER_CLIENT_ID'] ?? '',
         );
   
   /// Sign up a new user with email and password.
