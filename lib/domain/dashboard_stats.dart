@@ -19,7 +19,7 @@ class DashboardStats extends Equatable {
   final bool isPsPlus;
   
   /// Total StatusXP across all platforms
-  final int totalStatusXP;
+  final double totalStatusXP;
   
   /// PSN platform stats
   final PlatformStats psnStats;
@@ -47,7 +47,7 @@ class DashboardStats extends Equatable {
     String? displayPlatform,
     String? avatarUrl,
     bool? isPsPlus,
-    int? totalStatusXP,
+    double? totalStatusXP,
     PlatformStats? psnStats,
     PlatformStats? xboxStats,
     PlatformStats? steamStats,
@@ -93,7 +93,7 @@ class PlatformStats extends Equatable {
   final int gamesCount;
   
   /// StatusXP earned on this platform
-  final int statusXP;
+  final double statusXP;
   
   /// Average achievements per game (calculated)
   double get averagePerGame => 

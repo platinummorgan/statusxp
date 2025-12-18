@@ -119,7 +119,7 @@ class UnifiedGamesRepository {
           silverCount: game['silver_trophies'] as int? ?? 0,
           goldCount: game['gold_trophies'] as int? ?? 0,
           platinumCount: game['platinum_trophies'] as int? ?? 0,
-          statusXP: game['statusxp_effective'] as int? ?? 0,
+          statusXP: ((game['statusxp_effective'] as num?)?.toDouble() ?? 0.0).toInt(),
           lastPlayedAt: lastPlayedAt,
           lastTrophyEarnedAt: lastTrophyEarnedAt,
         ));

@@ -147,7 +147,7 @@ class FlexTile {
       platform: json['platform'] as String,
       rarityPercent: (json['rarity_percent'] as num?)?.toDouble(),
       rarityBand: json['rarity_band'] as String?,
-      statusXP: (json['status_xp'] as num?)?.toInt(),
+      statusXP: ((json['status_xp'] as num?)?.toDouble() ?? 0.0).toInt(),
       earnedAt: json['earned_at'] != null
           ? DateTime.parse(json['earned_at'] as String)
           : null,

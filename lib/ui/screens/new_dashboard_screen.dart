@@ -218,7 +218,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
     );
   }
 
-  Widget _buildStatusXPCircle(int totalStatusXP) {
+  Widget _buildStatusXPCircle(double totalStatusXP) {
     return GestureDetector(
       onTap: () {
         _hideHintPermanently();
@@ -255,7 +255,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _formatNumber(totalStatusXP),
+                  _formatNumber(totalStatusXP.toInt()),
                   style: TextStyle(
                     color: CyberpunkTheme.neonPurple,
                     fontSize: 48,
@@ -687,7 +687,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
                     ),
                   ),
                   Text(
-                    _formatNumber(dashboardStats.totalStatusXP),
+                    _formatNumber(dashboardStats.totalStatusXP.toInt()),
                     style: TextStyle(
                       color: CyberpunkTheme.neonPurple,
                       fontSize: 24,
@@ -709,7 +709,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
     );
   }
 
-  Widget _buildBreakdownRow(String platform, int xp, Color color) {
+  Widget _buildBreakdownRow(String platform, double xp, Color color) {
     return Row(
       children: [
         Container(
@@ -739,7 +739,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
           ),
         ),
         Text(
-          _formatNumber(xp),
+          _formatNumber(xp.toInt()),
           style: TextStyle(
             color: color,
             fontSize: 20,

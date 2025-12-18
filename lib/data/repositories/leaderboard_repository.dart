@@ -41,7 +41,7 @@ class LeaderboardRepository {
       for (final row in response) {
         final userId = row['user_id'] as String;
         final gameId = row['game_title_id'] as int;
-        final statusxp = (row['statusxp_effective'] as num?)?.toInt() ?? 0;
+        final statusxp = ((row['statusxp_effective'] as num?)?.toDouble() ?? 0.0).toInt();
         final profile = row['profiles'] as Map<String, dynamic>?;
 
         if (userMap.containsKey(userId)) {

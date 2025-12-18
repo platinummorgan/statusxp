@@ -213,7 +213,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                             child: Column(
                               children: [
                                 Text(
-                                  _formatNumber(dashboardStats.totalStatusXP),
+                                  _formatNumber(dashboardStats.totalStatusXP.toInt()),
                                   style: theme.textTheme.displayLarge?.copyWith(
                                     color: CyberpunkTheme.neonPurple,
                                     fontSize: 56,

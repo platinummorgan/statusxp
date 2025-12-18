@@ -20,7 +20,7 @@ class SupabaseDashboardRepository {
       _getUserProfile(userId),
     ]);
 
-    final totalStatusXP = results[0] as int;
+    final totalStatusXP = results[0] as double;
     final psnStats = results[1] as PlatformStats;
     final xboxStats = results[2] as PlatformStats;
     final steamStats = results[3] as PlatformStats;
@@ -39,20 +39,20 @@ class SupabaseDashboardRepository {
   }
 
   /// Gets total StatusXP by summing statusxp_effective from user_games
-  Future<int> _getStatusXPTotal(String userId) async {
+  Future<double> _getStatusXPTotal(String userId) async {
     final response = await _client
         .from('user_games')
         .select('statusxp_effective')
         .eq('user_id', userId);
 
     if ((response as List).isEmpty) {
-      return 0;
+      return 0.0;
     }
 
     // Sum all statusxp_effective values
-    int total = 0;
+    double total = 0.0;
     for (final game in response) {
-      total += (game['statusxp_effective'] as int? ?? 0);
+      total += ((game['statusxp_effective'] as num?)?.toDouble() ?? 0.0);
     }
 
     return total;
@@ -91,9 +91,9 @@ class SupabaseDashboardRepository {
     final gamesCount = (gamesResponse as List).length;
     
     // Sum statusXP for this platform
-    int platformStatusXP = 0;
+    double platformStatusXP = 0.0;
     for (final game in gamesResponse) {
-      platformStatusXP += (game['statusxp_effective'] as int? ?? 0);
+      platformStatusXP += ((game['statusxp_effective'] as num?)?.toDouble() ?? 0.0);
     }
 
     // Get platinum count (PSN only) - need to join with achievements table
