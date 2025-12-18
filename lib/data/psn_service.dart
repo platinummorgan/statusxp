@@ -98,15 +98,29 @@ class PSNService {
     // Check if user is authenticated
     final user = _client.auth.currentUser;
     if (user == null) {
-      throw Exception('Not authenticated. Please sign in again.');
+      // Return default status instead of throwing
+      return PSNSyncStatus(
+        isLinked: false,
+        status: 'error',
+        progress: 0,
+        error: 'Not authenticated. Please sign in.',
+        lastSyncAt: null,
+        latestLog: null,
+      );
     }
-
-    // Refresh session to ensure valid token
+    
+    // Try to refresh session
     try {
       await _client.auth.refreshSession();
     } catch (e) {
-      // If refresh fails, user needs to sign in again
-      throw Exception('Session expired. Please sign out and sign in again.');
+      return PSNSyncStatus(
+        isLinked: false,
+        status: 'error',
+        progress: 0,
+        error: 'Session expired. Please sign in again.',
+        lastSyncAt: null,
+        latestLog: null,
+      );
     }
 
     final response = await _client.functions.invoke('psn-sync-status');
