@@ -7,6 +7,9 @@ import 'package:statusxp/ui/screens/psn/psn_connect_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
+import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
+import 'package:statusxp/theme/colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -459,7 +462,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // App Settings Section
                 _buildSectionHeader('App Settings'),
                 
-                // Support Development (FIRST)
+                // Premium Subscription (FIRST)
+                FutureBuilder<bool>(
+                  future: SubscriptionService().isPremiumActive(),
+                  builder: (context, snapshot) {
+                    final isPremium = snapshot.data ?? false;
+                    
+                    return ListTile(
+                      leading: Icon(
+                        Icons.diamond,
+                        color: isPremium ? const Color(0xFFFFD700) : accentPrimary,
+                      ),
+                      title: Text(isPremium ? 'Premium Active' : 'Upgrade to Premium'),
+                      subtitle: Text(
+                        isPremium 
+                            ? 'Unlimited AI • Faster syncs' 
+                            : 'Unlock unlimited features'
+                      ),
+                      trailing: isPremium 
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: accentSuccess.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: accentSuccess),
+                              ),
+                              child: const Text(
+                                'ACTIVE',
+                                style: TextStyle(
+                                  color: accentSuccess,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PremiumSubscriptionScreen(),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+
+                const Divider(height: 1),
+                
+                // Support Development (SECOND)
                 ListTile(
                   leading: const Icon(Icons.favorite, color: Colors.pink),
                   title: const Text('Support Development'),
@@ -470,12 +522,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const Divider(height: 1),
 
-                // Preferred Display Platform (SECOND)
+                // Preferred Display Platform (THIRD)
                 _buildPreferredPlatformTile(),
 
                 const Divider(height: 1),
 
-                // Contact Support (THIRD)
+                // Contact Support (FOURTH)
                 ListTile(
                   leading: const Icon(Icons.email_outlined),
                   title: const Text('Contact Support'),

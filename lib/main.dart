@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:statusxp/config/supabase_config.dart';
 import 'package:statusxp/theme/theme.dart';
 import 'package:statusxp/ui/screens/auth/auth_gate.dart';
+import 'package:statusxp/services/subscription_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -16,6 +17,9 @@ void main() async {
     url: SupabaseConfig.supabaseUrl,
     anonKey: SupabaseConfig.supabaseAnonKey,
   );
+
+  // Initialize subscription service
+  await SubscriptionService().initialize();
 
   runApp(const ProviderScope(child: StatusXPApp()));
 }
