@@ -459,9 +459,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         scale: _scaleAnimation,
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
@@ -537,6 +538,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),

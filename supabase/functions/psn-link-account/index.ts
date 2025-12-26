@@ -12,6 +12,10 @@ import {
   getUserTrophyProfileSummary,
   getUserProfile,
 } from '../_shared/psn-api.ts';
+import {
+  checkForExistingPlatformAccount,
+  mergeUserAccounts,
+} from '../_shared/account-merge.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,6 +91,42 @@ serve(async (req) => {
     }
 
     console.log('Storing PSN credentials...');
+    
+    // Check if this PSN account already exists for a different user
+    const mergeCheck = await checkForExistingPlatformAccount(
+      supabase,
+      user.id,
+      'psn',
+      userProfile.onlineId
+    );
+
+    if (mergeCheck.shouldMerge && mergeCheck.existingUserId) {
+      console.log(`🔗 PSN account ${userProfile.onlineId} already exists under user ${mergeCheck.existingUserId}`);
+      
+      return new Response(
+        JSON.stringify({
+          requiresConfirmation: true,
+          existingUserId: mergeCheck.existingUserId,
+          platform: 'PSN',
+          username: userProfile.onlineId,
+          message: `This PSN account (${userProfile.onlineId}) is already connected to another account. Do you want to link it to this account?`,
+          // Store these for the confirmation step
+          credentials: {
+            accountId: profile.accountId,
+            onlineId: userProfile.onlineId,
+            avatarUrl: userProfile.avatarUrls?.find(a => a.size === 'm')?.avatarUrl || userProfile.avatarUrls?.[0]?.avatarUrl || null,
+            isPlus: userProfile.isPlus,
+            npssoToken: npssoToken,
+            accessToken: authorization.accessToken,
+            refreshToken: authorization.refreshToken,
+            expiresIn: authorization.expiresIn,
+            trophyLevel: parseInt(profile.trophyLevel.toString()),
+            trophyTier: profile.trophyTier,
+          },
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
     
     // Calculate token expiry
     const expiresAt = new Date();

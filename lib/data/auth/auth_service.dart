@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'dart:io' show Platform;
 
 /// Service for managing Supabase authentication.
 /// 
@@ -80,6 +82,47 @@ class AuthService {
       );
     } catch (e) {
       rethrow;
+    }
+  }
+  
+  /// Sign in with Apple using OAuth.
+  /// 
+  /// Opens Apple Sign-In flow and exchanges the Apple ID token for a Supabase session.
+  /// Throws [AuthException] if sign in fails or is cancelled.
+  /// Only available on iOS 13+ and macOS 10.15+.
+  Future<AuthResponse> signInWithApple() async {
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      
+      final idToken = credential.identityToken;
+      
+      if (idToken == null) {
+        throw const AuthException('Failed to get Apple ID token');
+      }
+      
+      // Sign in to Supabase with Apple credentials
+      return await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+  
+  /// Check if Sign in with Apple is available on this platform.
+  /// 
+  /// Returns true on iOS 13+ and macOS 10.15+, false otherwise.
+  Future<bool> get isAppleSignInAvailable async {
+    try {
+      return Platform.isIOS || Platform.isMacOS;
+    } catch (e) {
+      return false;
     }
   }
   

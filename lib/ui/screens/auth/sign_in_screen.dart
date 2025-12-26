@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
+import 'dart:io' show Platform;
 
 /// Sign in and sign up screen for Supabase email/password authentication.
 /// 
@@ -244,6 +246,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   ),
                   const SizedBox(height: 16),
                   
+                  // Apple Sign-In Button (iOS/macOS only, required by Apple)
+                  if (Platform.isIOS || Platform.isMacOS)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SignInWithAppleButton(
+                        onPressed: _isLoading ? () {} : _signInWithApple,
+                        text: 'Sign in with Apple',
+                        height: 48,
+                        style: SignInWithAppleButtonStyle.black,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  
                   // Google Sign-In Button (Official Google branding)
                   SizedBox(
                     height: 48,
@@ -335,6 +350,39 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Google Sign-In failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+  
+  /// Handle Apple Sign-In
+  Future<void> _signInWithApple() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithApple();
+      // AuthGate will handle navigation automatically
+    } on AuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Apple Sign-In failed: $e'),
             backgroundColor: Colors.red,
           ),
         );

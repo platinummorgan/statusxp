@@ -51,6 +51,54 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
       final psnService = ref.read(psnServiceProvider);
       final result = await psnService.linkAccount(npsso);
 
+      // Check if confirmation is required
+      if (result.requiresConfirmation) {
+        if (!mounted) return;
+        
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Link Existing Account?'),
+            content: Text(result.message ?? 'This PSN account is already connected to another account. Do you want to link it to this account?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Link Account'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed == true && result.credentials != null) {
+          // User confirmed - perform the merge
+          await psnService.confirmMerge(result.existingUserId!, result.credentials!);
+          
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+              _successMessage = 'Account linked successfully! Your gaming data has been merged.';
+            });
+
+            Future.delayed(const Duration(seconds: 2), () {
+              if (mounted) {
+                Navigator.of(context).pop(true);
+              }
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        }
+        return;
+      }
+
       if (mounted) {
         setState(() {
           _isLoading = false;

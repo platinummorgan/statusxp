@@ -32,12 +32,42 @@ class PSNService {
     }
 
     final data = response.data as Map<String, dynamic>;
+    
+    // Check if confirmation is required
+    if (data['requiresConfirmation'] == true) {
+      return PSNLinkResult(
+        success: false,
+        requiresConfirmation: true,
+        existingUserId: data['existingUserId'] as String,
+        platform: data['platform'] as String,
+        username: data['username'] as String,
+        message: data['message'] as String,
+        credentials: data['credentials'],
+      );
+    }
+    
     return PSNLinkResult(
       success: data['success'] as bool,
       accountId: data['accountId'] as String,
       trophyLevel: data['trophyLevel'] as int,
       totalTrophies: data['totalTrophies'] as int,
     );
+  }
+  
+  /// Confirm and execute account merge
+  Future<void> confirmMerge(String existingUserId, Map<String, dynamic> credentials) async {
+    final response = await _client.functions.invoke(
+      'psn-confirm-merge',
+      body: {
+        'existingUserId': existingUserId,
+        'credentials': credentials,
+      },
+    );
+
+    if (response.status != 200) {
+      final error = response.data['error'] ?? 'Failed to merge accounts';
+      throw Exception(error);
+    }
   }
 
   /// Start syncing trophy data from PSN
@@ -154,15 +184,27 @@ class PSNService {
 /// Result from linking PSN account
 class PSNLinkResult {
   final bool success;
-  final String accountId;
-  final int trophyLevel;
-  final int totalTrophies;
+  final String? accountId;
+  final int? trophyLevel;
+  final int? totalTrophies;
+  final bool requiresConfirmation;
+  final String? existingUserId;
+  final String? platform;
+  final String? username;
+  final String? message;
+  final Map<String, dynamic>? credentials;
 
   PSNLinkResult({
     required this.success,
-    required this.accountId,
-    required this.trophyLevel,
-    required this.totalTrophies,
+    this.accountId,
+    this.trophyLevel,
+    this.totalTrophies,
+    this.requiresConfirmation = false,
+    this.existingUserId,
+    this.platform,
+    this.username,
+    this.message,
+    this.credentials,
   });
 }
 

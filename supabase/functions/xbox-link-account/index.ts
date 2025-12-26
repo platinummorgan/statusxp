@@ -6,6 +6,10 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  checkForExistingPlatformAccount,
+  mergeUserAccounts,
+} from '../_shared/account-merge.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -223,6 +227,37 @@ serve(async (req) => {
     }
 
     console.log('Storing Xbox credentials...');
+    
+    // Check if this Xbox account already exists for a different user
+    const mergeCheck = await checkForExistingPlatformAccount(
+      supabase,
+      user.id,
+      'xbox',
+      xboxAuth.gamertag
+    );
+
+    if (mergeCheck.shouldMerge && mergeCheck.existingUserId) {
+      console.log(`🔗 Xbox account ${xboxAuth.gamertag} already exists under user ${mergeCheck.existingUserId}`);
+      
+      return new Response(
+        JSON.stringify({
+          requiresConfirmation: true,
+          existingUserId: mergeCheck.existingUserId,
+          platform: 'Xbox',
+          username: xboxAuth.gamertag,
+          message: `This Xbox account (${xboxAuth.gamertag}) is already connected to another account. Do you want to link it to this account?`,
+          credentials: {
+            xuid: xboxAuth.xuid,
+            gamertag: xboxAuth.gamertag,
+            userHash: xboxAuth.userHash,
+            accessToken: xboxAuth.accessToken,
+            refreshToken: xboxAuth.refreshToken,
+            expiresIn: xboxAuth.expiresIn,
+          },
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
     
     // Calculate token expiry
     const expiresAt = new Date();

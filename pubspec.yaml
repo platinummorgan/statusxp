@@ -80,6 +80,9 @@ dependencies:
   # Google Sign-In
   google_sign_in: ^6.2.1
   
+  # Apple Sign-In (Required by Apple when offering third-party sign-in)
+  sign_in_with_apple: ^6.1.3
+  
   # In-App Purchases for Premium Subscription
   in_app_purchase: ^3.2.0
 
