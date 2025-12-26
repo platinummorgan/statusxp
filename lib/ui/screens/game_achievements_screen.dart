@@ -823,7 +823,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 450),
+          constraints: const BoxConstraints(maxWidth: 450, maxHeight: 700),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: const Color(0xFF0A0E27).withOpacity(0.95),
@@ -839,9 +839,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               // Header
               Row(
                 children: [
@@ -968,7 +969,9 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Text(
                                     pack.title,
@@ -978,8 +981,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  if (pack.badge != null) ...[
-                                    const SizedBox(width: 8),
+                                  if (pack.badge != null)
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 8,
@@ -998,7 +1000,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                         ),
                                       ),
                                     ),
-                                  ],
                                 ],
                               ),
                               Text(
@@ -1091,31 +1092,116 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  void _purchaseAIPack(BuildContext context, AIPack pack) {
-    // TODO: Implement actual payment flow (Google Play Billing / In-App Purchase)
-    showDialog(
+  void _purchaseAIPack(BuildContext context, AIPack pack) async {
+    final subscriptionService = SubscriptionService();
+    
+    // Check if user is premium (shouldn't see this, but double-check)
+    final isPremium = await subscriptionService.isPremiumActive();
+    if (isPremium) {
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Already Premium'),
+            content: const Text(
+              'You already have unlimited AI guides with your Premium subscription!\n\n'
+              'No need to purchase AI packs. Enjoy unlimited access! 🎉'
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+    
+    // Find the matching product
+    final productId = _getProductIdForPack(pack.type);
+    final product = subscriptionService.aiPackProducts.firstWhere(
+      (p) => p.id == productId,
+      orElse: () => throw Exception('Product not found'),
+    );
+    
+    if (!context.mounted) return;
+    
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Purchase ${pack.title}'),
+        title: Text('Purchase ${pack.title}?'),
         content: Text(
-          'Payment integration coming soon!\n\n'
-          'This will use Google Play Billing for Android and App Store In-App Purchase for iOS.\n\n'
-          '${pack.credits} AI uses for ${pack.displayPrice}',
+          'Get ${pack.credits} AI achievement guides for ${pack.displayPrice}.\n\n'
+          'This is a one-time purchase. Credits never expire!',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('PURCHASE'),
           ),
         ],
       ),
     );
+    
+    if (confirmed != true || !context.mounted) return;
+    
+    // Attempt purchase
+    try {
+      final success = await subscriptionService.purchaseAIPack(product);
+      
+      if (!context.mounted) return;
+      
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ ${pack.credits} AI credits added!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Purchase cancelled or failed'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+  
+  String _getProductIdForPack(String packType) {
+    switch (packType) {
+      case 'small':
+        return SubscriptionService.aiPackSmallId;
+      case 'medium':
+        return SubscriptionService.aiPackMediumId;
+      case 'large':
+        return SubscriptionService.aiPackLargeId;
+      default:
+        throw Exception('Unknown pack type: $packType');
+    }
   }
 }
 

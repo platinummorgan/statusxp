@@ -177,21 +177,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [
             Icon(Icons.favorite, color: Colors.pink, size: 28),
             SizedBox(width: 12),
-            Text('Support Development'),
+            Expanded(
+              child: Text('Support Development'),
+            ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Thanks for considering supporting StatusXP! 🙏',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 16, 
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'This app is built with passion and zero ads. Your support helps keep it that way and motivates continued development!',
-              style: TextStyle(fontSize: 14, color: Colors.white70),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -533,7 +542,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: const Text('Contact Support'),
                   subtitle: const Text('support@platovalabs.com'),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _openUrl('mailto:support@platovalabs.com'),
+                  onTap: () async {
+                    const email = 'support@platovalabs.com';
+                    final Uri emailUri = Uri(
+                      scheme: 'mailto',
+                      path: email,
+                      query: 'subject=StatusXP Support Request',
+                    );
+                    
+                    try {
+                      // Try to launch email directly (don't use canLaunchUrl for mailto - it's unreliable)
+                      await launchUrl(emailUri);
+                    } catch (e) {
+                      // Fallback: copy email to clipboard
+                      if (mounted) {
+                        await Clipboard.setData(const ClipboardData(text: email));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Email copied to clipboard: support@platovalabs.com'),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
 
                 const Divider(height: 1),
@@ -577,23 +609,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: const Text('Terms of Service'),
                   trailing: const Icon(Icons.open_in_new, size: 16),
                   onTap: () => _openUrl('https://raw.githubusercontent.com/platinummorgan/statusxp/refs/heads/main/TERMS_OF_SERVICE.md'),
-                ),
-
-                const Divider(height: 1),
-
-                // Open Source Licenses
-                ListTile(
-                  leading: const Icon(Icons.code),
-                  title: const Text('Open Source Licenses'),
-                  trailing: const Icon(Icons.chevron_right, size: 16),
-                  onTap: () {
-                    showLicensePage(
-                      context: context,
-                      applicationName: 'StatusXP',
-                      applicationVersion: '1.0.0',
-                      applicationLegalese: '© 2025 StatusXP',
-                    );
-                  },
                 ),
 
                 const Divider(height: 1),

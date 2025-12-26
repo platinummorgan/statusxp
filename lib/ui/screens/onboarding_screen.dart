@@ -89,7 +89,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'StatusXP',
                     style: TextStyle(
                       fontSize: 18,
@@ -100,7 +100,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   ),
                   TextButton(
                     onPressed: _completeOnboarding,
-                    child: Text(
+                    child: const Text(
                       'Skip',
                       style: TextStyle(color: textSecondary),
                     ),
@@ -237,14 +237,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ),
                   ],
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.videogame_asset_rounded,
                   size: 80,
                   color: accentPrimary,
                 ),
               ),
               const SizedBox(height: 48),
-              Text(
+              const Text(
                 'Welcome to StatusXP',
                 style: TextStyle(
                   fontSize: 28,
@@ -254,7 +254,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Your cross-platform achievement tracker',
                 style: TextStyle(
                   fontSize: 16,
@@ -311,7 +311,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            const Text(
               'Connect Your Platforms',
               style: TextStyle(
                 fontSize: 28,
@@ -321,7 +321,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'Sync achievements from all your gaming accounts',
               style: TextStyle(
                 fontSize: 16,
@@ -364,14 +364,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   color: accentSuccess.withOpacity(0.3),
                 ),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(
                     Icons.security,
                     color: accentSuccess,
                     size: 20,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Your credentials are secure and never stored',
@@ -399,7 +399,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            const Text(
               'Powerful Features',
               style: TextStyle(
                 fontSize: 28,
@@ -409,7 +409,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'Everything you need to master your games',
               style: TextStyle(
                 fontSize: 16,
@@ -480,14 +480,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ),
                   ],
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.rocket_launch,
                   size: 80,
                   color: accentSuccess,
                 ),
               ),
               const SizedBox(height: 48),
-              Text(
+              const Text(
                 'You\'re All Set!',
                 style: TextStyle(
                   fontSize: 32,
@@ -497,7 +497,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Ready to start tracking your achievements?',
                 style: TextStyle(
                   fontSize: 18,
@@ -517,7 +517,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ),
                 child: Column(
                   children: [
-                    Text(
+                    const Text(
                       'Next Steps:',
                       style: TextStyle(
                         fontSize: 16,
@@ -558,7 +558,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         Expanded(
           child: Text(
             text,
-            style: TextStyle(
+            style: const TextStyle(
               color: textPrimary,
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -614,7 +614,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 children: [
                   Text(
                     name,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: textPrimary,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -623,7 +623,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: textSecondary,
                       fontSize: 12,
                     ),
@@ -670,7 +670,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -679,7 +679,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: textSecondary,
                     fontSize: 13,
                   ),
@@ -705,7 +705,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           child: Center(
             child: Text(
               number,
-              style: TextStyle(
+              style: const TextStyle(
                 color: accentPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -717,7 +717,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         Expanded(
           child: Text(
             text,
-            style: TextStyle(
+            style: const TextStyle(
               color: textSecondary,
               fontSize: 14,
             ),

@@ -43,12 +43,19 @@ class SubscriptionService {
   // Product IDs (configure these in Google Play Console and App Store Connect)
   static const String monthlySubscriptionId = 'statusxp_premium_monthly';
   
+  // AI Pack Product IDs (consumable)
+  static const String aiPackSmallId = 'statusxp_ai_pack_small';
+  static const String aiPackMediumId = 'statusxp_ai_pack_medium';
+  static const String aiPackLargeId = 'statusxp_ai_pack_large';
+  
   // Available subscription plans
   List<ProductDetails> _products = [];
+  List<ProductDetails> _aiPackProducts = [];
   bool _isAvailable = false;
   bool _purchasePending = false;
   
   List<ProductDetails> get products => _products;
+  List<ProductDetails> get aiPackProducts => _aiPackProducts;
   bool get isAvailable => _isAvailable;
   bool get purchasePending => _purchasePending;
 
@@ -80,7 +87,12 @@ class SubscriptionService {
   Future<void> _loadProducts() async {
     if (!_isAvailable) return;
 
-    const Set<String> productIds = {monthlySubscriptionId};
+    const Set<String> productIds = {
+      monthlySubscriptionId,
+      aiPackSmallId,
+      aiPackMediumId,
+      aiPackLargeId,
+    };
     
     try {
       final ProductDetailsResponse response = await _iap.queryProductDetails(productIds);
@@ -95,8 +107,13 @@ class SubscriptionService {
         return;
       }
       
-      _products = response.productDetails;
-      debugPrint('Loaded ${_products.length} products');
+      // Separate subscription from consumable products
+      _products = response.productDetails.where((p) => p.id == monthlySubscriptionId).toList();
+      _aiPackProducts = response.productDetails.where((p) => 
+        p.id == aiPackSmallId || p.id == aiPackMediumId || p.id == aiPackLargeId
+      ).toList();
+      
+      debugPrint('Loaded ${_products.length} subscription(s) and ${_aiPackProducts.length} AI pack(s)');
     } catch (e) {
       debugPrint('Error querying products: $e');
     }
@@ -112,8 +129,12 @@ class SubscriptionService {
         
         if (purchase.status == PurchaseStatus.purchased || 
             purchase.status == PurchaseStatus.restored) {
-          // Verify and activate subscription
-          await _verifyAndActivateSubscription(purchase);
+          // Check if it's subscription or AI pack
+          if (purchase.productID == monthlySubscriptionId) {
+            await _verifyAndActivateSubscription(purchase);
+          } else if (_isAIPackProduct(purchase.productID)) {
+            await _verifyAndGrantAICredits(purchase);
+          }
         }
         
         if (purchase.status == PurchaseStatus.error) {
@@ -125,6 +146,63 @@ class SubscriptionService {
           await _iap.completePurchase(purchase);
         }
       }
+    }
+  }
+
+  /// Check if product ID is an AI pack
+  bool _isAIPackProduct(String productId) {
+    return productId == aiPackSmallId || 
+           productId == aiPackMediumId || 
+           productId == aiPackLargeId;
+  }
+
+  /// Verify AI pack purchase and grant credits
+  Future<bool> _verifyAndGrantAICredits(PurchaseDetails purchase) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        debugPrint('User not authenticated');
+        return false;
+      }
+
+      final packDetails = getAIPackDetails(purchase.productID);
+      if (packDetails == null) {
+        debugPrint('Unknown AI pack product: ${purchase.productID}');
+        return false;
+      }
+
+      String? platform;
+      if (Platform.isAndroid) {
+        platform = 'google_play';
+      } else if (Platform.isIOS) {
+        platform = 'app_store';
+      }
+
+      // Grant AI credits via RPC function
+      final response = await _supabase.rpc(
+        'add_ai_pack_credits',
+        params: {
+          'p_user_id': userId,
+          'p_pack_type': packDetails['type'],
+          'p_credits': packDetails['credits'],
+          'p_price': packDetails['price'],
+          'p_platform': platform ?? 'unknown',
+        },
+      );
+
+      final result = response as Map<String, dynamic>;
+      final success = result['success'] ?? false;
+      
+      if (success) {
+        debugPrint('AI credits granted: ${packDetails['credits']} credits');
+      } else {
+        debugPrint('Failed to grant AI credits');
+      }
+      
+      return success;
+    } catch (e) {
+      debugPrint('Error granting AI credits: $e');
+      return false;
     }
   }
 
@@ -270,6 +348,51 @@ class SubscriptionService {
       '❤️ Support Development',
     ],
   );
+
+  /// Purchase an AI credit pack (consumable)
+  Future<bool> purchaseAIPack(ProductDetails product) async {
+    if (!_isAvailable) {
+      debugPrint('IAP not available');
+      return false;
+    }
+
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        debugPrint('User must be logged in to purchase');
+        return false;
+      }
+
+      final PurchaseParam purchaseParam = PurchaseParam(
+        productDetails: product,
+      );
+
+      _purchasePending = true;
+      
+      // Consumable purchase
+      final bool success = await _iap.buyConsumable(purchaseParam: purchaseParam);
+      
+      return success;
+    } catch (e) {
+      debugPrint('Error purchasing AI pack: $e');
+      _purchasePending = false;
+      return false;
+    }
+  }
+  
+  /// Get AI pack details by product ID
+  Map<String, dynamic>? getAIPackDetails(String productId) {
+    switch (productId) {
+      case aiPackSmallId:
+        return {'type': 'small', 'credits': 20, 'price': 1.99};
+      case aiPackMediumId:
+        return {'type': 'medium', 'credits': 60, 'price': 4.99};
+      case aiPackLargeId:
+        return {'type': 'large', 'credits': 150, 'price': 9.99};
+      default:
+        return null;
+    }
+  }
 
   /// Dispose resources
   void dispose() {
