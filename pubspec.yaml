@@ -145,7 +145,7 @@ flutter:
 # Flutter Launcher Icons configuration
 flutter_launcher_icons:
   android: true
-  ios: false  # Set to true when you have a MacBook
+  ios: true
   image_path: "app_icon.png"
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "app_icon.png"
