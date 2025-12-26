@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/services/achievement_guide_service.dart';
 import 'package:statusxp/services/youtube_search_service.dart';
 import 'package:statusxp/services/ai_credit_service.dart';
+import 'package:statusxp/services/subscription_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Game Achievements Screen - Shows achievements/trophies for a specific game on a platform
