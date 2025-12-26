@@ -6,6 +6,7 @@ import 'package:statusxp/services/achievement_guide_service.dart';
 import 'package:statusxp/services/youtube_search_service.dart';
 import 'package:statusxp/services/ai_credit_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Game Achievements Screen - Shows achievements/trophies for a specific game on a platform
@@ -1053,7 +1054,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'StatusXP Plus',
+                            'Premium',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -1061,7 +1062,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                             ),
                           ),
                           Text(
-                            '100 AI/month + faster syncs · \$2.49/mo',
+                            'Unlimited syncs, AI guides & ad-free · \$4.99/mo',
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 13,
@@ -1073,10 +1074,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                     TextButton(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Premium coming soon!'),
-                            backgroundColor: CyberpunkTheme.neonPurple,
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PremiumSubscriptionScreen(),
                           ),
                         );
                       },

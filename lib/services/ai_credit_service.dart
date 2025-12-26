@@ -142,28 +142,28 @@ class AICreditService {
     return [
       AIPack(
         type: 'small',
-        credits: 20,
+        credits: 10,
         price: 1.99,
         title: 'AI Pack S',
-        description: '20 AI uses',
-        pricePerUse: 0.10, // ~10¢ per use
+        description: '10 AI uses',
+        pricePerUse: 0.20, // ~20¢ per use
       ),
       AIPack(
         type: 'medium',
-        credits: 60,
+        credits: 30,
         price: 4.99,
         title: 'AI Pack M',
-        description: '60 AI uses',
-        pricePerUse: 0.08, // ~8¢ per use
+        description: '30 AI uses',
+        pricePerUse: 0.17, // ~17¢ per use
         badge: 'BEST VALUE',
       ),
       AIPack(
         type: 'large',
-        credits: 150,
+        credits: 75,
         price: 9.99,
         title: 'AI Pack L',
-        description: '150 AI uses',
-        pricePerUse: 0.07, // ~7¢ per use
+        description: '75 AI uses',
+        pricePerUse: 0.13, // ~13¢ per use
       ),
     ];
   }
