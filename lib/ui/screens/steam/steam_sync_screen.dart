@@ -185,7 +185,15 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
 
   Future<void> _stopSync() async {
     try {
-      await Supabase.instance.client.functions.invoke('steam-stop-sync');
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('Not authenticated');
+      }
+
+      await Supabase.instance.client.functions.invoke(
+        'steam-stop-sync',
+        body: {'userId': userId},
+      );
       setState(() => _isSyncing = false);
       await _loadProfile();
     } catch (e) {

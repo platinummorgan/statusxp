@@ -1,7 +1,7 @@
 /**
  * Xbox Stop Sync Edge Function
  * 
- * Stops an in-progress Xbox achievement sync
+ * Stops an in-progress Xbox achievement sync by forwarding to sync service
  */
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -35,23 +35,25 @@ serve(async (req) => {
       });
     }
 
-    // Update sync status to error (which will stop the background process)
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        xbox_sync_status: 'error',
-        xbox_sync_error: 'Sync stopped by user',
-      })
-      .eq('id', user.id);
+    // Forward to sync service to handle graceful cancellation
+    const syncServiceUrl = Deno.env.get('SYNC_SERVICE_URL') || 'https://statusxp-sync-production.up.railway.app';
+    const response = await fetch(`${syncServiceUrl}/sync/xbox/stop`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId: user.id }),
+    });
 
-    if (updateError) {
-      throw updateError;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to stop sync');
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Sync stopped successfully',
+        message: 'Sync stop requested successfully',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
