@@ -279,11 +279,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                   ),
                 ),
               Expanded(
-                child: AbsorbPointer(
-                  absorbing: isSyncDisabled,
-                  child: Opacity(
-                    opacity: isSyncDisabled ? 0.5 : 1.0,
-                    child: PlatformSyncWidget(
+                child: PlatformSyncWidget(
                       platformName: 'Xbox',
                       platformColor: const Color(0xFF107C10),
                       platformIcon: const Icon(
@@ -314,8 +310,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                         '• Global achievement rarity percentages',
                         '• Processes 5 games at a time (you can stop/resume anytime)',
                       ],
-                    ),
-                  ),
+
                 ),
               ),
             ],

@@ -276,11 +276,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                   ),
                 ),
               Expanded(
-                child: AbsorbPointer(
-                  absorbing: isSyncDisabled,
-                  child: Opacity(
-                    opacity: isSyncDisabled ? 0.5 : 1.0,
-                    child: PlatformSyncWidget(
+                child: PlatformSyncWidget(
                       platformName: 'PlayStation',
                       platformColor: const Color(0xFF003791),
                       platformIcon: const Icon(
@@ -310,8 +306,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                         '• Global trophy rarity percentages',
                         '• Processes 5 games at a time (you can stop/resume anytime)',
                       ],
-                    ),
-                  ),
+
                 ),
               ),
             ],

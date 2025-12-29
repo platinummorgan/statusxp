@@ -267,11 +267,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
               ),
             ),
           Expanded(
-            child: AbsorbPointer(
-              absorbing: isSyncDisabled,
-              child: Opacity(
-                opacity: isSyncDisabled ? 0.5 : 1.0,
-                child: PlatformSyncWidget(
+            child: PlatformSyncWidget(
                   platformName: 'Steam',
                   platformColor: const Color(0xFF1B2838),
                   platformIcon: const Icon(
@@ -302,8 +298,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
                     '',
                     '⚠️ Note: Your Steam profile must be Public for sync to work',
                   ],
-                ),
-              ),
+
             ),
           ),
         ],
