@@ -126,6 +126,9 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                 _isSyncing = false;
               });
               
+              // Refresh games list and stats to show updated data
+              ref.refreshCoreData();
+              
               // Check for newly unlocked achievements
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;

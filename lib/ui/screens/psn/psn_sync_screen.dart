@@ -102,6 +102,9 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                 _isSyncing = false;
               });
               
+              // Refresh games list and stats to show updated data
+              ref.refreshCoreData();
+              
               // Check for newly unlocked achievements
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;

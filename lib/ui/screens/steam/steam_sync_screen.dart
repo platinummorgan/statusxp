@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
 import 'package:statusxp/services/sync_limit_service.dart';
 
@@ -166,6 +167,11 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
           if (newStatus == 'success' || newStatus == 'error') {
             setState(() => _isSyncing = false);
             await _loadProfile(); // Full reload on completion
+            
+            // Refresh games list and stats to show updated data
+            if (newStatus == 'success') {
+              ref.refreshCoreData();
+            }
             break;
           }
         }

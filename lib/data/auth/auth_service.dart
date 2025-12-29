@@ -11,8 +11,9 @@ class AuthService {
   final SupabaseClient _client;
   final GoogleSignIn _googleSignIn;
   
-  // Hardcoded Google Client ID - this is not sensitive and needs to be in the app
-  static const String _googleClientId = '395832690159-d33nisbrsnug842tp3ssvfklq3qlvr0d.apps.googleusercontent.com';
+  // Hardcoded Google Web Client ID (for backend/Supabase) - this is not sensitive and needs to be in the app
+  // The Android client ID is auto-detected from package name + SHA-1
+  static const String _googleClientId = '395832690159-snjk36er87mnvh21bkk10f6lu6i9abaq.apps.googleusercontent.com';
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
