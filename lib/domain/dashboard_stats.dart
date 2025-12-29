@@ -89,6 +89,9 @@ class PlatformStats extends Equatable {
   /// Total achievements/trophies unlocked on this platform
   final int achievementsUnlocked;
   
+  /// Xbox Gamerscore (Xbox only, 0 for other platforms)
+  final int gamerscore;
+  
   /// Number of games with achievements on this platform
   final int gamesCount;
   
@@ -102,6 +105,7 @@ class PlatformStats extends Equatable {
   const PlatformStats({
     this.platinums = 0,
     required this.achievementsUnlocked,
+    this.gamerscore = 0,
     required this.gamesCount,
     this.statusXP = 0,
   });
@@ -110,11 +114,12 @@ class PlatformStats extends Equatable {
   const PlatformStats.empty()
       : platinums = 0,
         achievementsUnlocked = 0,
+        gamerscore = 0,
         gamesCount = 0,
         statusXP = 0;
 
   @override
-  List<Object?> get props => [platinums, achievementsUnlocked, gamesCount, statusXP];
+  List<Object?> get props => [platinums, achievementsUnlocked, gamerscore, gamesCount, statusXP];
 
   @override
   bool get stringify => true;

@@ -8,6 +8,7 @@ class MetaAchievement {
   final int sortOrder;
   final DateTime? unlockedAt;
   final String? customTitle;
+  final List<String>? requiredPlatforms;
 
   MetaAchievement({
     required this.id,
@@ -18,6 +19,7 @@ class MetaAchievement {
     required this.sortOrder,
     this.unlockedAt,
     this.customTitle,
+    this.requiredPlatforms,
   });
 
   bool get isUnlocked => unlockedAt != null;
@@ -36,6 +38,9 @@ class MetaAchievement {
           ? DateTime.parse(json['unlocked_at'] as String)
           : null,
       customTitle: json['custom_title'] as String?,
+      requiredPlatforms: json['required_platforms'] != null
+          ? List<String>.from(json['required_platforms'] as List)
+          : null,
     );
   }
 }

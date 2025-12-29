@@ -109,7 +109,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
               
-              final checker = ref.read(achievementCheckerServiceProvider);
+              final checker = ref.read(platformAchievementCheckerProvider);
               try {
                 final newlyUnlocked = await checker.checkAndUnlockAchievements(userId);
                 if (newlyUnlocked.isNotEmpty && mounted) {

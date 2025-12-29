@@ -110,9 +110,24 @@ class SupabaseDashboardRepository {
       platinums = platinumResponse.count;
     }
 
+    // Get gamerscore (Xbox only)
+    int gamerscore = 0;
+    if (platform == 'xbox') {
+      final gamerscoreResponse = await _client
+          .from('user_games')
+          .select('xbox_current_gamerscore, platforms!inner(code)')
+          .eq('user_id', userId)
+          .inFilter('platforms.code', platformCodes);
+      
+      for (final game in (gamerscoreResponse as List)) {
+        gamerscore += (game['xbox_current_gamerscore'] as int?) ?? 0;
+      }
+    }
+
     return PlatformStats(
       platinums: platinums,
       achievementsUnlocked: achievementsCount,
+      gamerscore: gamerscore,
       gamesCount: gamesCount,
       statusXP: platformStatusXP,
     );

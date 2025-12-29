@@ -1,4 +1,3 @@
-import 'dart:developer' as developer;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:statusxp/domain/game.dart';

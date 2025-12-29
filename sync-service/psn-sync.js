@@ -414,6 +414,7 @@ export async function syncPSNAchievements(
                 {
                   game_title_id: gameTitle.id,
                   platform: 'psn',
+                  platform_version: platformCode, // PS3, PS4, PS5, PSVITA
                   platform_achievement_id: trophyMeta.trophyId.toString(),
                   name: trophyMeta.trophyName,
                   description: trophyMeta.trophyDetail,
@@ -435,6 +436,15 @@ export async function syncPSNAchievements(
             if (!achievementRecord) continue;
 
             if (userTrophy?.earned) {
+              // VALIDATION: Prevent phantom platinums
+              // Don't create platinum user_achievement if user_games.has_platinum = false
+              if (trophyMeta.trophyType === 'platinum' && !userGame.has_platinum) {
+                console.log(
+                  `⚠️ [VALIDATION BLOCKED] Preventing phantom platinum for ${game.trophyTitleName}: user_games.has_platinum = false`
+                );
+                continue;
+              }
+
               await supabase
                 .from('user_achievements')
                 .upsert(

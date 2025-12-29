@@ -5,6 +5,7 @@ import 'package:statusxp/data/repositories/meta_achievement_repository.dart';
 import 'package:statusxp/services/achievement_checker_service.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/providers/connected_platforms_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
@@ -18,7 +19,9 @@ final achievementCheckerServiceProvider = Provider<AchievementCheckerService>((r
 
 final allAchievementsProvider = FutureProvider.family<List<MetaAchievement>, String>((ref, userId) async {
   final repository = ref.read(metaAchievementRepositoryProvider);
-  return repository.getAllAchievements(userId);
+  // Get user's connected platforms for filtering
+  final connectedPlatforms = await ref.watch(connectedPlatformsProvider.future);
+  return repository.getAllAchievements(userId, connectedPlatforms: connectedPlatforms);
 });
 
 /// Achievements Screen - View all meta-achievements and track progress
@@ -31,6 +34,7 @@ class AchievementsScreen extends ConsumerStatefulWidget {
 
 class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
   String _selectedCategory = 'all';
+  String _selectedPlatformFilter = 'all'; // all, psn, xbox, steam, cross
 
   final Map<String, String> _categoryNames = {
     'all': 'All Achievements',
@@ -144,9 +148,28 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
           child: Text('Error loading achievements: $error', style: const TextStyle(color: Colors.white)),
         ),
         data: (achievements) {
-          final filtered = _selectedCategory == 'all'
+          // Apply category filter
+          var filtered = _selectedCategory == 'all'
               ? achievements
               : achievements.where((a) => a.category == _selectedCategory).toList();
+
+          // Apply platform filter
+          if (_selectedPlatformFilter != 'all') {
+            filtered = filtered.where((a) {
+              final requiredPlatforms = a.requiredPlatforms ?? [];
+              if (_selectedPlatformFilter == 'cross') {
+                // Cross-platform: must have all 3 platforms
+                return requiredPlatforms.length == 3 &&
+                    requiredPlatforms.contains('psn') &&
+                    requiredPlatforms.contains('xbox') &&
+                    requiredPlatforms.contains('steam');
+              } else {
+                // Single platform: must have EXACTLY 1 platform and it must match
+                return requiredPlatforms.length == 1 &&
+                    requiredPlatforms.contains(_selectedPlatformFilter);
+              }
+            }).toList();
+          }
 
           final unlockedCount = achievements.where((a) => a.isUnlocked).length;
           final totalCount = achievements.length;
@@ -195,6 +218,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                   ],
                 ),
               ),
+
+              // Platform Filter
+              _buildPlatformFilters(context, achievements),
 
               // Category Filter
               SizedBox(
@@ -360,5 +386,114 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     } else {
       return DateFormat('MMM d, yyyy').format(date);
     }
+  }
+
+  Widget _buildPlatformFilters(BuildContext context, List<MetaAchievement> achievements) {
+    // Count achievements per platform
+    int psCount = 0;
+    int xboxCount = 0;
+    int steamCount = 0;
+    int crossCount = 0;
+
+    for (final achievement in achievements) {
+      final platforms = achievement.requiredPlatforms ?? [];
+      if (platforms.isEmpty) continue;
+
+      if (platforms.length == 3 &&
+          platforms.contains('psn') &&
+          platforms.contains('xbox') &&
+          platforms.contains('steam')) {
+        crossCount++;
+      } else if (platforms.contains('psn')) {
+        psCount++;
+      } else if (platforms.contains('xbox')) {
+        xboxCount++;
+      } else if (platforms.contains('steam')) {
+        steamCount++;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildPlatformChip('PS', psCount, const Color(0xFF0070CC), Icons.videogame_asset, 'psn'),
+              _buildPlatformChip('XBOX', xboxCount, const Color(0xFF107C10), Icons.sports_esports, 'xbox'),
+              _buildPlatformChip('STEAM', steamCount, const Color(0xFF66C0F4), Icons.store, 'steam'),
+              _buildPlatformChip('CROSS', crossCount, CyberpunkTheme.neonPurple, Icons.sync_alt, 'cross'),
+            ],
+          ),
+          if (_selectedPlatformFilter != 'all') ...[
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  _selectedPlatformFilter = 'all';
+                });
+              },
+              icon: const Icon(Icons.clear, size: 16),
+              label: const Text('Clear Filter'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white70,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlatformChip(String label, int count, Color color, IconData icon, String filterValue) {
+    final isSelected = _selectedPlatformFilter == filterValue;
+    
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedPlatformFilter = filterValue;
+          });
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(isSelected ? 0.15 : 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: color.withOpacity(isSelected ? 0.5 : 0.2),
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                count.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

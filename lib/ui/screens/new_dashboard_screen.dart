@@ -343,11 +343,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
 
         // Xbox Circle
         _buildPlatformCircle(
-          label: 'Xbox Achievs',
-          value: stats.xboxStats.achievementsUnlocked.toString(),
+          label: 'Xbox Gamerscore',
+          value: stats.xboxStats.gamerscore.toString(),
           subtitle: '${stats.xboxStats.gamesCount} Games',
           bottomLabel:
-              '${stats.xboxStats.averagePerGame.toStringAsFixed(0)} AVG/GAME',
+              '${stats.xboxStats.achievementsUnlocked} ACHIEVEMENTS',
           color: const Color(0xFF107C10), // Xbox Green
         ),
 

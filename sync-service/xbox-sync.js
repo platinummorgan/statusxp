@@ -490,12 +490,14 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const achievementUpsert = {
                 game_title_id: gameTitle.id,
                 platform: 'xbox',
+                platform_version: 'XBOXONE',
                 platform_achievement_id: achievement.id,
                 name: achievement.name,
                 description: achievement.description,
                 icon_url: achievement.mediaAssets?.[0]?.url,
                 xbox_gamerscore: achievement.rewards?.[0]?.value || 0,
                 xbox_is_secret: achievement.isSecret || false,
+                is_platinum: false, // Xbox doesn't have platinums
                 is_dlc: isDLC,
                 dlc_name: null,
               };
@@ -519,6 +521,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
               // Upsert user_achievement if unlocked
               if (achievement.progressState === 'Achieved') {
+                // SAFETY: Xbox should never have platinums
+                if (achievementRecord.is_platinum) {
+                  console.log(`⚠️ [VALIDATION BLOCKED] Xbox achievement marked as platinum: ${achievement.name}`);
+                  continue;
+                }
+
                 await supabase
                   .from('user_achievements')
                   .upsert({

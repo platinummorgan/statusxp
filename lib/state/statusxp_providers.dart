@@ -11,6 +11,7 @@ import 'package:statusxp/data/repositories/supabase_dashboard_repository.dart';
 import 'package:statusxp/data/repositories/trophy_room_repository.dart';
 import 'package:statusxp/data/repositories/unified_games_repository.dart';
 import 'package:statusxp/data/supabase_game_edit_service.dart';
+import 'package:statusxp/services/platform_achievement_checker.dart';
 import 'package:statusxp/domain/game.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/trophy_room_data.dart';
@@ -95,6 +96,12 @@ final trophiesRepositoryProvider = Provider<SupabaseTrophiesRepository>((ref) {
 final trophyRoomRepositoryProvider = Provider<TrophyRoomRepository>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return TrophyRoomRepository(client);
+});
+
+/// Provider for the Platform Achievement Checker instance.
+final platformAchievementCheckerProvider = Provider<PlatformAchievementChecker>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return PlatformAchievementChecker(client);
 });
 
 /// Provider for the SupabaseDashboardRepository instance.

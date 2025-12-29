@@ -12,7 +12,11 @@ class MetaAchievementRepository {
   MetaAchievementRepository(this._client);
 
   /// Get all meta-achievements with unlock status for a user
-  Future<List<MetaAchievement>> getAllAchievements(String userId) async {
+  /// Optionally filter by connected platforms
+  Future<List<MetaAchievement>> getAllAchievements(
+    String userId, {
+    Set<String>? connectedPlatforms,
+  }) async {
     try {
       // Get all meta-achievements
       final achievementsResponse = await _client
@@ -38,6 +42,22 @@ class MetaAchievementRepository {
         final id = achievement['id'] as String;
         final unlocked = unlockedMap[id];
 
+        // Check platform requirements if filtering is enabled
+        if (connectedPlatforms != null) {
+          final requiredPlatforms = achievement['required_platforms'] as List?;
+          
+          // If achievement has platform requirements, check if user meets them
+          if (requiredPlatforms != null && requiredPlatforms.isNotEmpty) {
+            // User must have ALL required platforms
+            final hasAllRequired = requiredPlatforms.every(
+              (platform) => connectedPlatforms.contains(platform as String),
+            );
+            
+            // Skip this achievement if user doesn't have required platforms
+            if (!hasAllRequired) continue;
+          }
+        }
+
         achievements.add(MetaAchievement(
           id: id,
           category: achievement['category'] as String,
@@ -49,6 +69,9 @@ class MetaAchievementRepository {
               ? DateTime.parse(unlocked!['unlocked_at'] as String)
               : null,
           customTitle: unlocked?['custom_title'] as String?,
+          requiredPlatforms: achievement['required_platforms'] != null
+              ? List<String>.from(achievement['required_platforms'] as List)
+              : null,
         ));
       }
 

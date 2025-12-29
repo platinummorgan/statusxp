@@ -327,12 +327,14 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             .upsert({
               game_title_id: gameTitle.id,
               platform: 'steam',
+              platform_version: 'STEAM',
               platform_achievement_id: achievement.name,
               name: achievement.displayName || achievement.name,
               description: achievement.description || '',
               icon_url: achievement.icon || '',
               steam_hidden: achievement.hidden === 1,
               rarity_global: rarityPercent,
+              is_platinum: false, // Steam doesn't have platinums
               is_dlc: isDLC,
               dlc_name: dlcName,
             }, {
@@ -350,6 +352,12 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
           // Upsert user_achievement if unlocked
           if (playerAchievement && playerAchievement.achieved === 1) {
+            // SAFETY: Steam should never have platinums
+            if (achievementRecord.is_platinum) {
+              console.log(`⚠️ [VALIDATION BLOCKED] Steam achievement marked as platinum: ${achievement.name}`);
+              continue;
+            }
+
             await supabase
               .from('user_achievements')
               .upsert({
