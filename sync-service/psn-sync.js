@@ -336,8 +336,18 @@ export async function syncPSNAchievements(
 
           // Create a map of user trophy data by trophyId for easy lookup
           const userTrophyMap = new Map();
+          let mostRecentTrophyDate = null;
+          
           for (const userTrophy of (userTrophyData?.trophies || [])) {
             userTrophyMap.set(userTrophy.trophyId, userTrophy);
+            
+            // Track the most recent trophy earned date
+            if (userTrophy?.earned && userTrophy?.earnedDateTime) {
+              const earnedDate = new Date(userTrophy.earnedDateTime);
+              if (!mostRecentTrophyDate || earnedDate > mostRecentTrophyDate) {
+                mostRecentTrophyDate = earnedDate;
+              }
+            }
           }
 
           for (const trophyMeta of trophyMetadata.trophies) {
@@ -411,6 +421,18 @@ export async function syncPSNAchievements(
 
               totalTrophies++;
             }
+          }
+
+          // Update user_games with the most recent trophy earned date
+          if (mostRecentTrophyDate) {
+            await supabase
+              .from('user_games')
+              .update({
+                last_trophy_earned_at: mostRecentTrophyDate.toISOString(),
+              })
+              .eq('user_id', userId)
+              .eq('game_title_id', gameTitle.id)
+              .eq('platform_id', platform.id);
           }
 
           processedGames++;

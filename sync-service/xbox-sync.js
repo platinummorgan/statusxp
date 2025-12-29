@@ -436,7 +436,17 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               });
 
             // Process achievements for this title
+            let mostRecentAchievementDate = null;
+            
             for (const achievement of achievementsForTitle) {
+              // Track the most recent achievement earned date
+              if (achievement.progressState === 'Achieved' && achievement.progression?.timeUnlocked) {
+                const earnedDate = new Date(achievement.progression.timeUnlocked);
+                if (!mostRecentAchievementDate || earnedDate > mostRecentAchievementDate) {
+                  mostRecentAchievementDate = earnedDate;
+                }
+              }
+              
               // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
               // For now, we'll default to false as Xbox API doesn't clearly separate DLC
               const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
@@ -489,6 +499,18 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 
                 totalAchievements++;
               }
+            }
+
+            // Update user_games with the most recent achievement earned date
+            if (mostRecentAchievementDate) {
+              await supabase
+                .from('user_games')
+                .update({
+                  last_trophy_earned_at: mostRecentAchievementDate.toISOString(),
+                })
+                .eq('user_id', userId)
+                .eq('game_title_id', gameTitle.id)
+                .eq('platform_id', platform.id);
             }
 
             processedGames++;
