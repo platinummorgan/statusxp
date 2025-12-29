@@ -36,6 +36,7 @@ class SupabaseGameRepository {
             gold_trophies,
             platinum_trophies,
             last_played_at,
+            last_trophy_earned_at,
             game_titles!inner(
               name, 
               cover_url
@@ -55,7 +56,6 @@ class SupabaseGameRepository {
       print('DEBUG: Fetching platinum rarity for ${gameTitleIds.length} games');
       
       final Map<int, double> platinumRarityMap = {};
-      final Map<int, DateTime> lastTrophyMap = {};
       
       if (gameTitleIds.isNotEmpty) {
         final rarityResponse = await _client
@@ -76,47 +76,6 @@ class SupabaseGameRepository {
         }
         
         print('DEBUG: Platinum rarity map has ${platinumRarityMap.length} entries');
-        
-        // Fetch last trophy earned date for each game
-        try {
-          developer.log('DEBUG: Fetching last trophy dates...');
-          final lastTrophyResponse = await _client
-              .from('user_achievements')
-              .select('achievement_id, earned_at, achievements!inner(game_title_id)')
-              .not('earned_at', 'is', null)
-              .order('earned_at', ascending: false);
-          
-          developer.log('DEBUG: Got response type: ${lastTrophyResponse.runtimeType}');
-          developer.log('DEBUG: Response: $lastTrophyResponse');
-          
-          developer.log('DEBUG: Got ${lastTrophyResponse.length} achievement records');
-          
-          // Group by game_title_id and take the most recent
-          for (final row in lastTrophyResponse) {
-            try {
-              final achievementData = row['achievements'];
-              developer.log('DEBUG: Achievement data: $achievementData, type: ${achievementData.runtimeType}');
-              
-              final gameTitleId = achievementData['game_title_id'] as int;
-              final earnedAtStr = row['earned_at'] as String?;
-              
-              if (earnedAtStr != null && !lastTrophyMap.containsKey(gameTitleId)) {
-                final earnedAt = DateTime.tryParse(earnedAtStr);
-                if (earnedAt != null) {
-                  lastTrophyMap[gameTitleId] = earnedAt;
-                  developer.log('DEBUG: Added game $gameTitleId with date $earnedAt');
-                }
-              }
-            } catch (rowError) {
-              developer.log('ERROR parsing row: $rowError');
-            }
-          }
-                  
-          developer.log('DEBUG: Last trophy map has ${lastTrophyMap.length} entries');
-        } catch (e, stackTrace) {
-          developer.log('ERROR fetching last trophy dates: $e');
-          developer.log('Stack trace: $stackTrace');
-        }
       }
 
       final games = (response as List).map((row) {
@@ -131,8 +90,10 @@ class SupabaseGameRepository {
           print('DEBUG: ${gameTitle['name']} has platinum rarity: $platinumRarity');
         }
         
-        // Try to get from achievement map first, fallback to last_played_at
-        DateTime? updatedAt = lastTrophyMap[gameTitleId];
+        // Use last_trophy_earned_at from database, fallback to last_played_at
+        final lastTrophyStr = row['last_trophy_earned_at'] as String?;
+        DateTime? updatedAt = lastTrophyStr != null ? DateTime.tryParse(lastTrophyStr) : null;
+        
         if (updatedAt == null) {
           final lastPlayedStr = row['last_played_at'] as String?;
           updatedAt = lastPlayedStr != null ? DateTime.tryParse(lastPlayedStr) : null;
