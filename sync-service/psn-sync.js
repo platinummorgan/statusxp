@@ -147,6 +147,31 @@ export async function syncPSNAchievements(
     console.log(`Using BATCH_SIZE=${BATCH_SIZE}, MAX_CONCURRENT=${MAX_CONCURRENT}`);
 
     for (let i = 0; i < gamesWithTrophies.length; i += BATCH_SIZE) {
+      // Check if sync was cancelled
+      const { data: profileCheck } = await supabase
+        .from('profiles')
+        .select('psn_sync_status')
+        .eq('id', userId)
+        .single();
+      
+      if (profileCheck?.psn_sync_status === 'cancelling') {
+        console.log('PSN sync cancelled by user');
+        await supabase
+          .from('profiles')
+          .update({ 
+            psn_sync_status: 'idle',
+            psn_sync_progress: 0 
+          })
+          .eq('id', userId);
+        
+        await supabase
+          .from('psn_sync_logs')
+          .update({ status: 'cancelled', error: 'Cancelled by user' })
+          .eq('id', syncLogId);
+        
+        return;
+      }
+      
       const batch = gamesWithTrophies.slice(i, i + BATCH_SIZE);
       logMemory(`Before processing PSN batch ${i / BATCH_SIZE + 1}`);
 

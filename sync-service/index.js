@@ -141,6 +141,85 @@ app.post('/sync/steam', async (req, res) => {
   })();
 });
 
+// Stop sync endpoints - set cancellation flag in database
+app.post('/sync/xbox/stop', async (req, res) => {
+  const { userId } = req.body;
+  
+  if (!userId) {
+    return res.status(400).json({ error: 'userId required' });
+  }
+
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    await supabase
+      .from('profiles')
+      .update({ xbox_sync_status: 'cancelling' })
+      .eq('id', userId);
+
+    res.json({ success: true, message: 'Xbox sync cancellation requested' });
+  } catch (err) {
+    console.error('Error stopping Xbox sync:', err);
+    res.status(500).json({ error: 'Failed to stop sync' });
+  }
+});
+
+app.post('/sync/psn/stop', async (req, res) => {
+  const { userId } = req.body;
+  
+  if (!userId) {
+    return res.status(400).json({ error: 'userId required' });
+  }
+
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    await supabase
+      .from('profiles')
+      .update({ psn_sync_status: 'cancelling' })
+      .eq('id', userId);
+
+    res.json({ success: true, message: 'PSN sync cancellation requested' });
+  } catch (err) {
+    console.error('Error stopping PSN sync:', err);
+    res.status(500).json({ error: 'Failed to stop sync' });
+  }
+});
+
+app.post('/sync/steam/stop', async (req, res) => {
+  const { userId } = req.body;
+  
+  if (!userId) {
+    return res.status(400).json({ error: 'userId required' });
+  }
+
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    await supabase
+      .from('profiles')
+      .update({ steam_sync_status: 'cancelling' })
+      .eq('id', userId);
+
+    res.json({ success: true, message: 'Steam sync cancellation requested' });
+  } catch (err) {
+    console.error('Error stopping Steam sync:', err);
+    res.status(500).json({ error: 'Failed to stop sync' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Sync service running on port ${PORT}`);
 });

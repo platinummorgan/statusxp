@@ -123,6 +123,26 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
     // Process in batches to limit memory use
     for (let i = 0; i < ownedGames.length; i += BATCH_SIZE) {
+      // Check if sync was cancelled
+      const { data: profileCheck } = await supabase
+        .from('profiles')
+        .select('steam_sync_status')
+        .eq('id', userId)
+        .single();
+      
+      if (profileCheck?.steam_sync_status === 'cancelling') {
+        console.log('Steam sync cancelled by user');
+        await supabase
+          .from('profiles')
+          .update({ 
+            steam_sync_status: 'idle',
+            steam_sync_progress: 0 
+          })
+          .eq('id', userId);
+        
+        return;
+      }
+      
       const batch = ownedGames.slice(i, i + BATCH_SIZE);
       logMemory(`Before processing Steam batch ${i / BATCH_SIZE + 1}`);
       if (MAX_CONCURRENT <= 1) {

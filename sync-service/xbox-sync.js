@@ -227,6 +227,31 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     // Process in batches to avoid OOM and reduce memory footprint
     // NOTE: BATCH_SIZE configurable via env var
     for (let i = 0; i < gamesWithProgress.length; i += BATCH_SIZE) {
+      // Check if sync was cancelled
+      const { data: profileCheck } = await supabase
+        .from('profiles')
+        .select('xbox_sync_status')
+        .eq('id', userId)
+        .single();
+      
+      if (profileCheck?.xbox_sync_status === 'cancelling') {
+        console.log('Xbox sync cancelled by user');
+        await supabase
+          .from('profiles')
+          .update({ 
+            xbox_sync_status: 'idle',
+            xbox_sync_progress: 0 
+          })
+          .eq('id', userId);
+        
+        await supabase
+          .from('xbox_sync_logs')
+          .update({ status: 'cancelled', error: 'Cancelled by user' })
+          .eq('id', syncLogId);
+        
+        return;
+      }
+      
       const batch = gamesWithProgress.slice(i, i + BATCH_SIZE);
       logMemory(`Before processing batch ${i / BATCH_SIZE + 1}`);
       // Process the batch with limited concurrency to reduce memory spikes
@@ -237,7 +262,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             console.log(`Processing game: ${title.name} (${title.titleId})`);
             
             // Get or create Xbox One platform
-            const { data: platform } = await supabase
+            const { data: platform} = await supabase
               .from('platforms')
               .select('id')
               .eq('code', 'XBOXONE')
