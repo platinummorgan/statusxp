@@ -173,7 +173,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.stars,
             size: 64,
             color: accentPrimary,
@@ -188,7 +188,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Enjoying unlimited features',
             style: TextStyle(
               fontSize: 16,
@@ -200,7 +200,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
             onPressed: () => _subscriptionService.manageSubscription(),
             style: OutlinedButton.styleFrom(
               foregroundColor: accentPrimary,
-              side: BorderSide(color: accentPrimary),
+              side: const BorderSide(color: accentPrimary),
             ),
             child: const Text('Manage Subscription'),
           ),
@@ -256,7 +256,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Get unlimited AI guides and faster syncs',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -341,7 +341,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
             children: [
               Text(
                 plan.price,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.w900,
                   color: accentPrimary,
@@ -349,8 +349,8 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                 ),
               ),
               const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
                 child: Text(
                   '/month',
                   style: TextStyle(
@@ -362,7 +362,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
             ],
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Cancel anytime',
             style: TextStyle(
               fontSize: 12,
@@ -421,7 +421,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
   }
 
   Widget _buildFooter() {
-    return Text(
+    return const Text(
       'Subscription renews automatically unless cancelled.\n'
       'Managed through your Google Play or App Store account.',
       textAlign: TextAlign.center,

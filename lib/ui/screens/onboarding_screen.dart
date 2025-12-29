@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/theme/colors.dart';
-import 'dart:math' as math;
 
 /// Enhanced onboarding screen with interactive features and animations
 /// 

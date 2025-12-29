@@ -351,8 +351,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   icon: Icons.sports_esports,
                   iconColor: const Color(0xFF0070CC), // PlayStation blue
                   title: 'PlayStation',
-                  subtitle: _profile?['psn_online_id'] != null
-                      ? 'Connected as ${_profile!['psn_online_id']}'
+                  subtitle: _profile?['psn_account_id'] != null
+                      ? (_profile!['psn_online_id'] != null
+                          ? 'Connected as ${_profile!['psn_online_id']}'
+                          : 'Connected (sync needed)')
                       : 'Not connected',
                   isConnected: _profile?['psn_account_id'] != null,
                   syncStatus: psnSyncStatus.maybeWhen(

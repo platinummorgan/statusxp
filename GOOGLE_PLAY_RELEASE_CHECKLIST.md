@@ -150,24 +150,13 @@ Example declarations:
 
 Your gaming identity, leveled up!
 
-NEW FEATURES:
-• Multi-platform achievement tracking (PlayStation, Xbox, Steam & more)
-• Unified gaming profile dashboard with comprehensive stats
-• Game library management with editing capabilities
+FEATURES:
+• Track achievements across PlayStation, Xbox & Steam
+• Unified dashboard with comprehensive stats & progress
 • Shareable status poster cards
-• Dark theme with gaming aesthetics
-• Local data persistence
-• Smooth animations and haptic feedback
+• Dark cyberpunk theme with smooth animations
 
-PLATFORM SUPPORT:
-• PlayStation Network (PSN)
-• Xbox Live
-• Steam
-• Nintendo
-• RetroAchievements
-• More coming soon!
-
-Track all your gaming achievements in one beautiful app. Download now and showcase your gaming identity!
+Track all your gaming achievements in one beautiful app!
 ```
 
 ---

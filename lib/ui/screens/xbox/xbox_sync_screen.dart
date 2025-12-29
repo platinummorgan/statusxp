@@ -5,6 +5,7 @@ import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
 import 'package:statusxp/services/sync_limit_service.dart';
+import 'package:statusxp/ui/screens/achievements_screen.dart';
 
 /// Screen for syncing Xbox achievements
 class XboxSyncScreen extends ConsumerStatefulWidget {
@@ -124,6 +125,28 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
               setState(() {
                 _isSyncing = false;
               });
+              
+              // Check for newly unlocked achievements
+              final userId = ref.read(currentUserIdProvider);
+              if (userId == null) return;
+              
+              final checker = ref.read(achievementCheckerServiceProvider);
+              try {
+                final newlyUnlocked = await checker.checkAndUnlockAchievements(userId);
+                if (newlyUnlocked.isNotEmpty && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('🎉 Unlocked ${newlyUnlocked.length} achievement(s)!'),
+                      action: SnackBarAction(
+                        label: 'View',
+                        onPressed: () => context.push('/achievements'),
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                print('Error checking achievements: $e');
+              }
             }
             return;
           }

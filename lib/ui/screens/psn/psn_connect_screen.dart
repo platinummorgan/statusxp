@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/screens/psn/psn_webview_login_screen.dart';
 
@@ -108,10 +109,10 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
               'Total Trophies: ${result.totalTrophies}';
         });
 
-        // Navigate back after a short delay
+        // Navigate to sync screen after successful link
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
-            Navigator.of(context).pop(true);
+            context.go('/psn-sync');
           }
         });
       }

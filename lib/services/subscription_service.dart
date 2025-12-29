@@ -5,6 +5,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Subscription plans available
 class SubscriptionPlan {
@@ -317,17 +318,26 @@ class SubscriptionService {
 
   /// Cancel subscription (redirects to store management)
   Future<void> manageSubscription() async {
-    if (Platform.isAndroid) {
-      // Open Google Play subscriptions page
-      // User must cancel through Play Store
-      debugPrint('Redirect to Google Play subscriptions');
-      // In production, use url_launcher to open:
-      // https://play.google.com/store/account/subscriptions
-    } else if (Platform.isIOS) {
-      // Open App Store subscriptions page
-      debugPrint('Redirect to App Store subscriptions');
-      // In production, use url_launcher to open:
-      // https://apps.apple.com/account/subscriptions
+    try {
+      if (Platform.isAndroid) {
+        // Open Google Play subscriptions page
+        final uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          debugPrint('Could not launch Google Play subscriptions');
+        }
+      } else if (Platform.isIOS) {
+        // Open App Store subscriptions page
+        final uri = Uri.parse('https://apps.apple.com/account/subscriptions');
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          debugPrint('Could not launch App Store subscriptions');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error opening subscription management: $e');
     }
   }
 

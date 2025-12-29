@@ -12,7 +12,7 @@ class AuthService {
   final GoogleSignIn _googleSignIn;
   
   // Hardcoded Google Client ID - this is not sensitive and needs to be in the app
-  static const String _googleClientId = '395832690159-snjk36er87mnvh21bkk10f6lu6i9abaq.apps.googleusercontent.com';
+  static const String _googleClientId = '395832690159-d33nisbrsnug842tp3ssvfklq3qlvr0d.apps.googleusercontent.com';
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
@@ -30,6 +30,7 @@ class AuthService {
     return await _client.auth.signUp(
       email: email,
       password: password,
+      emailRedirectTo: 'com.platovalabs.statusxp://login-callback',
     );
   }
   

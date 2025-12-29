@@ -53,7 +53,8 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    final userId = ref.read(currentUserIdProvider);
+    final currentUserId = ref.read(currentUserIdProvider);
+    final userId = widget.viewerId ?? currentUserId; // View someone else's profile or your own
     final supabase = Supabase.instance.client;
     
     try {

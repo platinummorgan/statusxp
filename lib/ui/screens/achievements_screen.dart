@@ -4,6 +4,7 @@ import 'package:statusxp/domain/meta_achievement.dart';
 import 'package:statusxp/data/repositories/meta_achievement_repository.dart';
 import 'package:statusxp/services/achievement_checker_service.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
@@ -53,7 +54,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
   }
 
   Future<void> _checkAchievements() async {
-    const userId = '84b60ad6-cb2c-484f-8953-bf814551fd7a'; // TODO: Get from auth
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return;
+    
     final checker = ref.read(achievementCheckerServiceProvider);
     
     try {
