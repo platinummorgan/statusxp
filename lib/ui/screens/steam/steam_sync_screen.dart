@@ -227,7 +227,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
       );
     }
 
-    final isSyncDisabled = (_rateLimitStatus != null && !_rateLimitStatus!.canSync) || _isSyncing;
+    final isSyncDisabled = _rateLimitStatus != null && !_rateLimitStatus!.canSync;
     
     // Build rate limit message
     String? rateLimitMessage;

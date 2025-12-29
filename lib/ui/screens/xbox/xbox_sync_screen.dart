@@ -241,7 +241,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
         ),
         data: (status) {
           final isSyncing = status.status == 'syncing' || status.status == 'pending' || _isSyncing;
-          final isSyncDisabled = (_rateLimitStatus != null && !_rateLimitStatus!.canSync) || isSyncing;
+          final isSyncDisabled = _rateLimitStatus != null && !_rateLimitStatus!.canSync;
           
           // Build rate limit message
           String? rateLimitMessage;

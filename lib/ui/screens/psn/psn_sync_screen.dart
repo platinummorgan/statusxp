@@ -156,9 +156,18 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
   }
 
   Future<void> _stopSync() async {
+    // Immediate feedback to confirm function is called
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Stop sync clicked...')),
+      );
+    }
+    
     try {
+      print('DEBUG: Starting PSN stop sync...');
       final psnService = ref.read(psnServiceProvider);
       await psnService.stopSync();
+      print('DEBUG: PSN stop sync completed');
 
       if (mounted) {
         setState(() {
@@ -166,12 +175,21 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
         });
 
         ref.invalidate(psnSyncStatusProvider);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sync stopped')),
+        );
       }
     } catch (e) {
+      print('ERROR: PSN stop sync failed: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to stop sync: ${e.toString()}';
         });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
       }
     }
   }
@@ -220,7 +238,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
 
           final isSyncing = status.isSyncing || status.isPending || _isSyncing;
 
-          final isSyncDisabled = (_rateLimitStatus != null && !_rateLimitStatus!.canSync) || isSyncing;
+          final isSyncDisabled = _rateLimitStatus != null && !_rateLimitStatus!.canSync;
           
           // Build rate limit message
           String? rateLimitMessage;
