@@ -286,27 +286,31 @@ export async function syncPSNAchievements(
 
           console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${title.trophyTitleName} (earned: ${apiEarnedTrophies})`);
 
-          // Always upsert user_games snapshot
+          // Update or insert user_games snapshot
+          const userGameData = {
+            user_id: userId,
+            game_title_id: gameTitle.id,
+            platform_id: platform.id,
+            completion_percent: apiProgress,
+            total_trophies: apiTotalTrophies,
+            earned_trophies: apiEarnedTrophies,
+            last_rarity_sync: new Date().toISOString(),
+            bronze_trophies: earned.bronze || 0,
+            silver_trophies: earned.silver || 0,
+            gold_trophies: earned.gold || 0,
+            platinum_trophies: earned.platinum || 0,
+            has_platinum: (earned.platinum || 0) > 0,
+            last_played_at: title.lastUpdatedDateTime,
+          };
+          
+          // Preserve last_trophy_earned_at if it exists (will be updated later after processing trophies)
+          if (existingUserGame && existingUserGame.last_trophy_earned_at) {
+            userGameData.last_trophy_earned_at = existingUserGame.last_trophy_earned_at;
+          }
+          
           await supabase
             .from('user_games')
-            .upsert(
-              {
-                user_id: userId,
-                game_title_id: gameTitle.id,
-                platform_id: platform.id,
-                completion_percent: apiProgress,
-                total_trophies: apiTotalTrophies,
-                earned_trophies: apiEarnedTrophies,
-                last_rarity_sync: new Date().toISOString(),
-                bronze_trophies: earned.bronze || 0,
-                silver_trophies: earned.silver || 0,
-                gold_trophies: earned.gold || 0,
-                platinum_trophies: earned.platinum || 0,
-                has_platinum: (earned.platinum || 0) > 0,
-                last_played_at: title.lastUpdatedDateTime,
-              },
-              { onConflict: 'user_id,game_title_id,platform_id' }
-            );
+            .upsert(userGameData, { onConflict: 'user_id,game_title_id,platform_id' });
 
           if (!needTrophies) {
             // No changes + trophies complete → skip heavy call

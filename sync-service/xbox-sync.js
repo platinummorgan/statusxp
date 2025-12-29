@@ -442,21 +442,28 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Upsert user_games
             // Use totalAchievementsFromAPI (the count we actually fetched) since we now paginate and get all achievements
             // title.achievement.totalAchievements from Xbox API can sometimes be 0 or incorrect
+            const userGameData = {
+              user_id: userId,
+              game_title_id: gameTitle.id,
+              platform_id: platform.id,
+              total_trophies: totalAchievementsFromAPI,
+              earned_trophies: title.achievement.currentAchievements,
+              completion_percent: title.achievement.progressPercentage,
+              xbox_current_gamerscore: title.achievement.currentGamerscore,
+              xbox_max_gamerscore: title.achievement.totalGamerscore,
+              xbox_achievements_earned: title.achievement.currentAchievements,
+              xbox_total_achievements: totalAchievementsFromAPI,
+              xbox_last_updated_at: new Date().toISOString(),
+            };
+            
+            // Preserve last_trophy_earned_at if it exists (will be updated later after processing achievements)
+            if (existingUserGame && existingUserGame.last_trophy_earned_at) {
+              userGameData.last_trophy_earned_at = existingUserGame.last_trophy_earned_at;
+            }
+            
             await supabase
               .from('user_games')
-              .upsert({
-                user_id: userId,
-                game_title_id: gameTitle.id,
-                platform_id: platform.id,
-                total_trophies: totalAchievementsFromAPI,
-                earned_trophies: title.achievement.currentAchievements,
-                completion_percent: title.achievement.progressPercentage,
-                xbox_current_gamerscore: title.achievement.currentGamerscore,
-                xbox_max_gamerscore: title.achievement.totalGamerscore,
-                xbox_achievements_earned: title.achievement.currentAchievements,
-                xbox_total_achievements: totalAchievementsFromAPI,
-                xbox_last_updated_at: new Date().toISOString(),
-              }, {
+              .upsert(userGameData, {
                 onConflict: 'user_id,game_title_id,platform_id',
               });
 
