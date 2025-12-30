@@ -36,6 +36,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         setState(() {
           _selectedType = LeaderboardType.values[_tabController.index];
         });
+        // Refresh on tab change for fresh data
+        ref.invalidate(leaderboardProvider(_selectedType));
       }
     });
   }

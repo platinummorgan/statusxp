@@ -24,6 +24,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoadingProfile = true;
   Map<String, dynamic>? _profile;
+  bool _showOnLeaderboard = true;
 
   @override
   void initState() {
@@ -48,12 +49,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (userId != null) {
         final data = await supabase
             .from('profiles')
-            .select('psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, steam_id, steam_api_key, steam_display_name, preferred_display_platform, last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at')
+            .select('psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, steam_id, steam_api_key, steam_display_name, preferred_display_platform, last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at, show_on_leaderboard')
             .eq('id', userId)
             .single();
         
         setState(() {
           _profile = data;
+          _showOnLeaderboard = data['show_on_leaderboard'] ?? true;
           _isLoadingProfile = false;
         });
       }
@@ -742,6 +744,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: const Text('Terms of Service'),
                   trailing: const Icon(Icons.open_in_new, size: 16),
                   onTap: () => _openUrl('https://raw.githubusercontent.com/platinummorgan/statusxp/refs/heads/main/TERMS_OF_SERVICE.md'),
+                ),
+
+                const Divider(height: 1),
+
+                // Leaderboard Privacy Toggle
+                SwitchListTile(
+                  secondary: const Icon(Icons.leaderboard),
+                  title: const Text('Show on Leaderboards'),
+                  subtitle: const Text('Allow your profile to appear on public leaderboards'),
+                  value: _showOnLeaderboard,
+                  onChanged: _isLoadingProfile ? null : (value) async {
+                    setState(() => _showOnLeaderboard = value);
+                    
+                    try {
+                      final supabase = Supabase.instance.client;
+                      final userId = supabase.auth.currentUser?.id;
+                      
+                      if (userId != null) {
+                        await supabase
+                            .from('profiles')
+                            .update({'show_on_leaderboard': value})
+                            .eq('id', userId);
+                        
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(value 
+                                  ? 'You will now appear on leaderboards' 
+                                  : 'You are now hidden from leaderboards'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      // Revert on error
+                      setState(() => _showOnLeaderboard = !value);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to update setting: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
 
                 const Divider(height: 1),

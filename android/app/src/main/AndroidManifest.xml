@@ -36,6 +36,14 @@
                       android:pathPrefix="/auth/reset-password"/>
             </intent-filter>
             
+            <!-- Custom scheme deep links for password reset -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="com.platovalabs.statusxp"/>
+            </intent-filter>
+            
             <!-- Deep link for OAuth callbacks -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>

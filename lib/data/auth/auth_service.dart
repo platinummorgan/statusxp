@@ -143,7 +143,7 @@ class AuthService {
       if (currentUser != null) {
         // User is logged in - LINK Google to existing account
         try {
-          await _client.auth.linkIdentity(OAuthProvider.google, idToken: idToken, accessToken: accessToken);
+          await _client.auth.linkIdentity(OAuthProvider.google);
           // Return current session after linking
           return AuthResponse(
             user: currentUser,
@@ -200,7 +200,7 @@ class AuthService {
       if (currentUser != null) {
         // User is logged in - LINK Apple to existing account
         try {
-          await _client.auth.linkIdentity(OAuthProvider.apple, idToken: idToken, nonce: rawNonce);
+          await _client.auth.linkIdentity(OAuthProvider.apple);
           // Return current session after linking
           return AuthResponse(
             user: currentUser,

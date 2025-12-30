@@ -258,8 +258,8 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                               _PlatformStat(
                                 label: 'XBOX',
                                 games: dashboardStats.xboxStats.gamesCount,
-                                achievements: dashboardStats.xboxStats.achievementsUnlocked,
-                                achievementLabel: 'ACHV',
+                                achievements: dashboardStats.xboxStats.gamerscore,
+                                achievementLabel: 'GAMER',
                                 color: CyberpunkTheme.neonGreen,
                               ),
                               _PlatformStat(

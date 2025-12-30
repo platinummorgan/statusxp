@@ -27,9 +27,11 @@ class LeaderboardRepository {
               xbox_gamertag,
               xbox_avatar_url,
               steam_display_name,
-              steam_avatar_url
+              steam_avatar_url,
+              show_on_leaderboard
             )
           ''')
+          .eq('profiles.show_on_leaderboard', true)
           .order('total_statusxp', ascending: false)
           .limit(limit);
 
@@ -88,21 +90,29 @@ class LeaderboardRepository {
   /// Fetch Platinum trophy leaderboard (PSN only)
   Future<List<LeaderboardEntry>> getPlatinumLeaderboard({int limit = 100}) async {
     try {
-      final response = await _client.rpc(
-        'get_platinum_leaderboard',
-        params: {'limit_count': limit},
-      );
+      // Query from pre-computed cache table (fast!)
+      final response = await _client
+          .from('psn_leaderboard_cache')
+          .select('user_id, display_name, avatar_url, platinum_count, total_games')
+          .order('platinum_count', ascending: false)
+          .order('total_games', ascending: false)
+          .limit(limit);
 
-      if (response == null || (response as List).isEmpty) {
-        // Fallback to direct query if RPC doesn't exist
-        return _getPlatinumLeaderboardFallback(limit: limit);
+      if ((response as List).isEmpty) {
+        return [];
       }
 
-      return (response)
-          .map((row) => LeaderboardEntry.fromJson(row as Map<String, dynamic>))
-          .toList();
+      return response.map((row) {
+        return LeaderboardEntry.fromJson({
+          'user_id': row['user_id'],
+          'display_name': row['display_name'],
+          'avatar_url': row['avatar_url'],
+          'score': row['platinum_count'],
+          'games_count': row['total_games'],
+        });
+      }).toList();
     } catch (e) {
-      // Fallback to direct query
+      // Fallback to RPC function if cache doesn't exist yet
       return _getPlatinumLeaderboardFallback(limit: limit);
     }
   }
@@ -113,11 +123,12 @@ class LeaderboardRepository {
         .from('user_achievements')
         .select('''
           user_id,
-          profiles!inner(psn_online_id, psn_avatar_url),
+          profiles!inner(psn_online_id, psn_avatar_url, show_on_leaderboard),
           achievements!inner(game_title_id, platform, psn_trophy_type)
         ''')
         .eq('achievements.platform', 'psn')
-        .eq('achievements.psn_trophy_type', 'platinum');
+        .eq('achievements.psn_trophy_type', 'platinum')
+        .eq('profiles.show_on_leaderboard', true);
 
     if ((response as List).isEmpty) {
       return [];
@@ -182,14 +193,44 @@ class LeaderboardRepository {
   /// Fetch Xbox achievement leaderboard
   Future<List<LeaderboardEntry>> getXboxLeaderboard({int limit = 100}) async {
     try {
+      // Query from pre-computed cache table (fast!)
+      final response = await _client
+          .from('xbox_leaderboard_cache')
+          .select('user_id, display_name, avatar_url, achievement_count, total_games')
+          .order('achievement_count', ascending: false)
+          .order('total_games', ascending: false)
+          .limit(limit);
+
+      if ((response as List).isEmpty) {
+        return [];
+      }
+
+      return response.map((row) {
+        return LeaderboardEntry.fromJson({
+          'user_id': row['user_id'],
+          'display_name': row['display_name'],
+          'avatar_url': row['avatar_url'],
+          'score': row['achievement_count'],
+          'games_count': row['total_games'],
+        });
+      }).toList();
+    } catch (e) {
+      // Fallback to complex query if cache doesn't exist yet
+      return _getXboxLeaderboardFallback(limit: limit);
+    }
+  }
+
+  Future<List<LeaderboardEntry>> _getXboxLeaderboardFallback({int limit = 100}) async {
+    try {
       final response = await _client
           .from('user_achievements')
           .select('''
             user_id,
-            profiles!inner(xbox_gamertag, xbox_avatar_url),
+            profiles!inner(xbox_gamertag, xbox_avatar_url, show_on_leaderboard),
             achievements!inner(game_title_id, platform)
           ''')
-          .eq('achievements.platform', 'xbox');
+          .eq('achievements.platform', 'xbox')
+          .eq('profiles.show_on_leaderboard', true);
 
       if ((response as List).isEmpty) {
         return [];
@@ -244,14 +285,44 @@ class LeaderboardRepository {
   /// Fetch Steam achievement leaderboard
   Future<List<LeaderboardEntry>> getSteamLeaderboard({int limit = 100}) async {
     try {
+      // Query from pre-computed cache table (fast!)
+      final response = await _client
+          .from('steam_leaderboard_cache')
+          .select('user_id, display_name, avatar_url, achievement_count, total_games')
+          .order('achievement_count', ascending: false)
+          .order('total_games', ascending: false)
+          .limit(limit);
+
+      if ((response as List).isEmpty) {
+        return [];
+      }
+
+      return response.map((row) {
+        return LeaderboardEntry.fromJson({
+          'user_id': row['user_id'],
+          'display_name': row['display_name'],
+          'avatar_url': row['avatar_url'],
+          'score': row['achievement_count'],
+          'games_count': row['total_games'],
+        });
+      }).toList();
+    } catch (e) {
+      // Fallback to complex query if cache doesn't exist yet
+      return _getSteamLeaderboardFallback(limit: limit);
+    }
+  }
+
+  Future<List<LeaderboardEntry>> _getSteamLeaderboardFallback({int limit = 100}) async {
+    try {
       final response = await _client
           .from('user_achievements')
           .select('''
             user_id,
-            profiles!inner(steam_display_name, steam_avatar_url),
+            profiles!inner(steam_display_name, steam_avatar_url, show_on_leaderboard),
             achievements!inner(game_title_id, platform)
           ''')
-          .eq('achievements.platform', 'steam');
+          .eq('achievements.platform', 'steam')
+          .eq('profiles.show_on_leaderboard', true);
 
       if ((response as List).isEmpty) {
         return [];
