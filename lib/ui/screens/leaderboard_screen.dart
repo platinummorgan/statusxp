@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/repositories/leaderboard_repository.dart';
 import 'package:statusxp/domain/leaderboard_entry.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/flex_room_screen.dart';
 
@@ -458,8 +459,3 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     }
   }
 }
-
-/// Provider for current user ID (to highlight their entry)
-final currentUserIdProvider = Provider<String?>((ref) {
-  return Supabase.instance.client.auth.currentUser?.id;
-});

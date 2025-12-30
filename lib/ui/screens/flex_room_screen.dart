@@ -2,18 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/flex_room_data.dart';
 import 'package:statusxp/data/repositories/flex_room_repository.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/widgets/achievement_picker_modal.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/ui/widgets/title_selector_modal.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-/// Get current authenticated user ID
-final currentUserIdProvider = Provider<String>((ref) {
-  final user = Supabase.instance.client.auth.currentUser;
-  return user?.id ?? '';
-});
-
 /// Flex Room - Cross-platform curated museum of gaming achievements
 /// User's hand-picked showcase across PS / Xbox / Steam
 class FlexRoomScreen extends ConsumerStatefulWidget {
@@ -55,7 +49,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
 
   Future<void> _loadUserProfile() async {
     final currentUserId = ref.read(currentUserIdProvider);
-    final userId = widget.viewerId ?? currentUserId; // View someone else's profile or your own
+    final userId = widget.viewerId ?? currentUserId ?? ''; // View someone else's profile or your own
     final supabase = Supabase.instance.client;
     
     try {
@@ -108,8 +102,8 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUserId = ref.watch(currentUserIdProvider);
-    final userId = widget.viewerId ?? currentUserId; // View someone else's room or your own
-    final isOwner = userId == currentUserId; // Only owner can edit
+    final userId = widget.viewerId ?? currentUserId ?? ''; // View someone else's room or your own
+    final isOwner = userId == currentUserId && currentUserId != null; // Only owner can edit
     final flexRoomAsyncValue = ref.watch(flexRoomDataProvider(userId));
 
     return Scaffold(
@@ -350,6 +344,8 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           InkWell(
             onTap: isOwner ? () async {
               final userId = ref.read(currentUserIdProvider);
+              if (userId == null) return;
+              
               final newTitle = await showModalBottomSheet<String>(
                 context: context,
                 isScrollControlled: true,
@@ -700,6 +696,8 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               // Get smart suggestions for this category
               final repository = ref.read(flexRoomRepositoryProvider);
               final userId = ref.read(currentUserIdProvider);
+              if (userId == null) return;
+              
               final suggestions =
                   await repository.getSmartSuggestions(userId, categoryId);
 
@@ -931,6 +929,8 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               // Get smart suggestions for this category
               final repository = ref.read(flexRoomRepositoryProvider);
               final userId = ref.read(currentUserIdProvider);
+              if (userId == null) return;
+              
               final suggestions =
                   await repository.getSmartSuggestions(userId, categoryId);
 
