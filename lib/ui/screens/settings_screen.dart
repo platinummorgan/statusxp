@@ -330,6 +330,137 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    // First confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account?'),
+        content: const Text(
+          'This will permanently delete your account and ALL your data:\n\n'
+          '• Your profile and gaming identity\n'
+          '• All achievements and trophies\n'
+          '• Game library and stats\n'
+          '• Flex room and display case\n'
+          '• Premium status and purchases\n\n'
+          'This action CANNOT be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Second confirmation dialog (extra safety)
+    final finalConfirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Are you absolutely sure?'),
+        content: const Text(
+          'Enter "DELETE" below to confirm account deletion.\n\n'
+          'This action is permanent and cannot be reversed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              // Show text input dialog
+              final input = await showDialog<String>(
+                context: context,
+                builder: (context) {
+                  final controller = TextEditingController();
+                  return AlertDialog(
+                    title: const Text('Type DELETE'),
+                    content: TextField(
+                      controller: controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Type DELETE here',
+                      ),
+                      autofocus: true,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, controller.text),
+                        style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                        child: const Text('Confirm'),
+                      ),
+                    ],
+                  );
+                },
+              );
+              
+              if (input == 'DELETE') {
+                Navigator.pop(context, true);
+              } else {
+                Navigator.pop(context, false);
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete Forever'),
+          ),
+        ],
+      ),
+    );
+
+    if (finalConfirm != true) return;
+
+    // Show loading dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Deleting account...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.deleteAccount();
+      
+      // Success - navigate to sign in (auth gate will handle this)
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        context.go('/');
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete account: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final psnSyncStatus = ref.watch(psnSyncStatusProvider);
@@ -623,6 +754,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     style: TextStyle(color: Colors.red),
                   ),
                   onTap: _signOut,
+                ),
+                
+                const Divider(height: 1),
+
+                // Delete Account
+                ListTile(
+                  leading: const Icon(Icons.delete_forever, color: Colors.red),
+                  title: const Text(
+                    'Delete Account',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  subtitle: const Text(
+                    'Permanently delete your account and all data',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: _deleteAccount,
                 ),
               ],
             ),

@@ -75,6 +75,34 @@ class AuthService {
     );
   }
   
+  /// Delete the current user's account and all associated data.
+  /// 
+  /// This will permanently delete:
+  /// - User authentication account
+  /// - Profile and all gaming data
+  /// - Game achievements and trophies
+  /// - Premium subscriptions and purchases
+  /// - AI credits and usage history
+  /// 
+  /// This action cannot be undone.
+  /// Throws [AuthException] if deletion fails.
+  Future<void> deleteAccount() async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const AuthException('No user logged in');
+    }
+    
+    // Call edge function to delete all user data from database
+    final response = await _client.functions.invoke('delete-account');
+    
+    if (response.status != 200) {
+      throw AuthException(response.data?['error'] ?? 'Failed to delete account data');
+    }
+    
+    // Sign out after deletion
+    await _client.auth.signOut();
+  }
+  
   /// Sign out the current user.
   /// 
   /// Clears the session and revokes the refresh token.
