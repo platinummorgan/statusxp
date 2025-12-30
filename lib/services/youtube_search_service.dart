@@ -13,7 +13,6 @@ class YouTubeSearchService {
   }) async {
     final apiKey = dotenv.env['YOUTUBE_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
-      print('YOUTUBE_API_KEY not found in .env file');
       return null;
     }
 
@@ -42,10 +41,8 @@ class YouTubeSearchService {
           return 'https://www.youtube.com/watch?v=$videoId';
         }
       } else {
-        print('YouTube API error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('Error searching YouTube: $e');
       return null;
     }
 

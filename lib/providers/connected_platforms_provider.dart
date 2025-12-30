@@ -38,7 +38,6 @@ final connectedPlatformsProvider = FutureProvider.autoDispose<Set<String>>((ref)
 
     return platforms;
   } catch (e) {
-    print('Error fetching connected platforms: $e');
     return {};
   }
 });

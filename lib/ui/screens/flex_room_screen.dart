@@ -8,9 +8,10 @@ import 'package:statusxp/ui/widgets/title_selector_modal.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Hardcoded user ID for testing - TODO: Get from auth
+/// Get current authenticated user ID
 final currentUserIdProvider = Provider<String>((ref) {
-  return '84b60ad6-cb2c-484f-8953-bf814551fd7a'; // Test user
+  final user = Supabase.instance.client.auth.currentUser;
+  return user?.id ?? '';
 });
 
 /// Flex Room - Cross-platform curated museum of gaming achievements
@@ -58,43 +59,32 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
     final supabase = Supabase.instance.client;
     
     try {
-      debugPrint('🔍 Loading profile for user: $userId');
-      
       final profile = await supabase
           .from('profiles')
           .select('psn_online_id, psn_avatar_url, psn_is_plus, steam_display_name, steam_avatar_url, xbox_gamertag, xbox_avatar_url, preferred_display_platform')
           .eq('id', userId)
           .single();
-
-      debugPrint('📦 Profile data: $profile');
-
       if (mounted) {
         final preferredPlatform = profile['preferred_display_platform'] as String? ?? 'psn';
-        debugPrint('🎮 Preferred platform: $preferredPlatform');
-        
         setState(() {
           // Use preferred platform for display
           switch (preferredPlatform) {
             case 'steam':
               _username = profile['steam_display_name'] as String? ?? 'Player';
               _avatarUrl = profile['steam_avatar_url'] as String?;
-              debugPrint('🎮 Steam - Username: $_username, Avatar: $_avatarUrl');
               break;
             case 'xbox':
               _username = profile['xbox_gamertag'] as String? ?? 'Player';
               _avatarUrl = profile['xbox_avatar_url'] as String?;
-              debugPrint('🎮 Xbox - Username: $_username, Avatar: $_avatarUrl');
               break;
             case 'psn':
             default:
               _username = profile['psn_online_id'] as String? ?? 'Player';
               _avatarUrl = profile['psn_avatar_url'] as String?;
               _isPsPlus = profile['psn_is_plus'] as bool? ?? false;
-              debugPrint('🎮 PSN - Username: $_username, Avatar: $_avatarUrl, Plus: $_isPsPlus');
           }
         });
       } else {
-        debugPrint('❌ Profile is null or widget not mounted');
       }
       
       // Load selected title
@@ -103,22 +93,15 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           .select('achievement_id, custom_title, meta_achievements!inner(default_title, icon_emoji)')
           .eq('user_id', userId)
           .maybeSingle();
-      
-      debugPrint('🏆 Title data: $titleData');
-      
       if (titleData != null && mounted) {
         setState(() {
           _selectedTitle = titleData['custom_title'] as String? ?? 
               (titleData['meta_achievements']?['default_title'] as String?) ?? 
               'Completionist';
           _achievementIcon = titleData['meta_achievements']?['icon_emoji'] as String?;
-          debugPrint('✨ Selected title: $_selectedTitle');
-          debugPrint('🎨 Achievement icon: $_achievementIcon');
         });
       }
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error loading user profile: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (e) {
     }
   }
 

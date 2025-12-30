@@ -99,7 +99,6 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
         data: (status) async {
           // Only log if status actually changed
           if (lastStatus?.status != status.status || lastStatus?.progress != status.progress) {
-            print('Poll: status=${status.status}, progress=${status.progress}%');
             lastStatus = status;
           }
           
@@ -111,7 +110,6 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
               await xboxService.startSync();
               print('startSync() completed successfully');
             } catch (e) {
-              print('ERROR continuing sync: $e');
               // Don't stop polling - keep trying
             }
             return;
@@ -119,7 +117,6 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
 
           // Check if sync completed or failed
           if (status.status == 'completed' || status.status == 'success') {
-            print('Sync completed!');
             if (mounted) {
               setState(() {
                 _isSyncing = false;
@@ -147,14 +144,12 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                   );
                 }
               } catch (e) {
-                print('Error checking achievements: $e');
               }
             }
             return;
           }
 
           if (status.status == 'error') {
-            print('Sync error: ${status.error}');
             if (mounted) {
               setState(() {
                 _isSyncing = false;
@@ -165,10 +160,8 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
           }
         },
         loading: () async {
-          print('Poll: loading...');
         },
         error: (error, stack) async {
-          print('Poll ERROR: $error');
           if (mounted) {
             setState(() {
               _isSyncing = false;
@@ -240,7 +233,6 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
         ),
         data: (status) {
           final isSyncing = status.status == 'syncing' || status.status == 'pending' || _isSyncing;
-          final isSyncDisabled = _rateLimitStatus != null && !_rateLimitStatus!.canSync;
           
           // Build rate limit message
           String? rateLimitMessage;

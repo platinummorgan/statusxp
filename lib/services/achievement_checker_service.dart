@@ -13,31 +13,21 @@ class AchievementCheckerService {
     final newlyUnlocked = <String>[];
 
     try {
-      debugPrint('🔍 Starting achievement check for user: $userId');
-      
       // Get user's current stats
       final stats = await _getUserStats(userId);
-      debugPrint('📊 Stats loaded: $stats');
-      
       // Get already unlocked achievements
       final unlockedIds = await _getUnlockedAchievementIds(userId);
-      debugPrint('🔓 Already unlocked: ${unlockedIds.length} achievements');
-
       // Check each category
       final rarityUnlocked = await _checkRarityAchievements(userId, stats, unlockedIds);
-      debugPrint('💎 Rarity check: ${rarityUnlocked.length} new achievements');
       newlyUnlocked.addAll(rarityUnlocked);
       
       final volumeUnlocked = await _checkVolumeAchievements(userId, stats, unlockedIds);
-      debugPrint('📈 Volume check: ${volumeUnlocked.length} new achievements');
       newlyUnlocked.addAll(volumeUnlocked);
       
       final platformUnlocked = await _checkPlatformAchievements(userId, stats, unlockedIds);
-      debugPrint('🎮 Platform check: ${platformUnlocked.length} new achievements');
       newlyUnlocked.addAll(platformUnlocked);
       
       final metaUnlocked = await _checkMetaAchievements(userId, stats, unlockedIds);
-      debugPrint('⚙️ Meta check: ${metaUnlocked.length} new achievements');
       newlyUnlocked.addAll(metaUnlocked);
       
       // TODO: Uncomment after running add_achievement_schema.sql migration
@@ -51,19 +41,12 @@ class AchievementCheckerService {
       // newlyUnlocked.addAll(varietyUnlocked);
       
       final timeUnlocked = await _checkTimeAchievements(userId, stats, unlockedIds);
-      debugPrint('⏰ Time check: ${timeUnlocked.length} new achievements');
       newlyUnlocked.addAll(timeUnlocked);
       
       final streakUnlocked = await _checkStreakAchievements(userId, stats, unlockedIds);
-      debugPrint('🔥 Streak check: ${streakUnlocked.length} new achievements');
       newlyUnlocked.addAll(streakUnlocked);
-      
-      debugPrint('✅ Total newly unlocked: ${newlyUnlocked.length}');
-      
       return newlyUnlocked;
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error checking achievements: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (e) {
       return [];
     }
   }  Future<Map<String, dynamic>> _getUserStats(String userId) async {
@@ -561,155 +544,6 @@ class AchievementCheckerService {
     return newlyUnlocked;
   }
 
-  Future<List<String>> _checkCompletionAchievements(
-    String userId,
-    Map<String, dynamic> stats,
-    Set<String> unlocked,
-  ) async {
-    final newlyUnlocked = <String>[];
-
-    // Big Comeback - game went from <10% → ≥50%
-    if (!unlocked.contains('big_comeback')) {
-      final comeback = await _client.rpc('check_big_comeback', params: {
-        'p_user_id': userId,
-      });
-      
-      if (comeback == true) {
-        await _unlockAchievement(userId, 'big_comeback');
-        newlyUnlocked.add('big_comeback');
-      }
-    }
-
-    // Closer - game went from <50% → 100%
-    if (!unlocked.contains('closer')) {
-      final closer = await _client.rpc('check_closer', params: {
-        'p_user_id': userId,
-      });
-      
-      if (closer == true) {
-        await _unlockAchievement(userId, 'closer');
-        newlyUnlocked.add('closer');
-      }
-    }
-
-    // Glow Up - overall average completion increased by 5+ percentage points
-    if (!unlocked.contains('glow_up')) {
-      final glowUp = await _client.rpc('check_glow_up', params: {
-        'p_user_id': userId,
-      });
-      
-      if (glowUp == true) {
-        await _unlockAchievement(userId, 'glow_up');
-        newlyUnlocked.add('glow_up');
-      }
-    }
-    
-    // So Close It Hurts - have a game with all but 1 trophy
-    final almostComplete = await _client
-        .from('user_games')
-        .select('id, total_trophies, earned_trophies')
-        .eq('user_id', userId)
-        .filter('total_trophies', 'gt', 1);
-    
-    final hasAlmostComplete = almostComplete.any((game) => 
-      game['total_trophies'] - game['earned_trophies'] == 1
-    );
-    
-    if (!unlocked.contains('so_close_it_hurts') && hasAlmostComplete) {
-      await _unlockAchievement(userId, 'so_close_it_hurts');
-      newlyUnlocked.add('so_close_it_hurts');
-    }
-
-    // Note: janitor_duty requires tracking bronze trophy cleanup specifically
-
-    return newlyUnlocked;
-  }
-
-  Future<List<String>> _checkVarietyAchievements(
-    String userId,
-    Map<String, dynamic> stats,
-    Set<String> unlocked,
-  ) async {
-    final newlyUnlocked = <String>[];
-
-    final totalGames = stats['totalGames'] as int;
-    
-    // Library Card - 100 unique games
-    if (!unlocked.contains('library_card') && totalGames >= 100) {
-      await _unlockAchievement(userId, 'library_card');
-      newlyUnlocked.add('library_card');
-    }
-
-    // Game Hopper - 5 different games in one day
-    final gamesByDay = await _client.rpc('check_game_hopper', params: {
-      'p_user_id': userId,
-    });
-    
-    if (!unlocked.contains('game_hopper') && gamesByDay == true) {
-      await _unlockAchievement(userId, 'game_hopper');
-      newlyUnlocked.add('game_hopper');
-    }
-
-    // Multi-Class Nerd - platinum/100% in 3 games of different genres
-    if (!unlocked.contains('multi_class_nerd')) {
-      final genreDiversity = await _client.rpc('check_genre_diversity', params: {
-        'p_user_id': userId,
-        'p_required_count': 3,
-      });
-      
-      if (genreDiversity == true) {
-        await _unlockAchievement(userId, 'multi_class_nerd');
-        newlyUnlocked.add('multi_class_nerd');
-      }
-    }
-
-    // Fearless - complete at least one horror game
-    if (!unlocked.contains('fearless')) {
-      final hasHorror = await _client
-          .from('user_games')
-          .select('id, game_titles!inner(genres)')
-          .eq('user_id', userId)
-          .gte('completion_percent', 100)
-          .limit(1);
-      
-      final completedHorror = hasHorror.any((game) {
-        final gameData = game['game_titles'] as Map<String, dynamic>?;
-        final genres = gameData?['genres'] as List<dynamic>?;
-        return genres?.any((g) => g.toString().toLowerCase().contains('horror')) ?? false;
-      });
-      
-      if (completedHorror) {
-        await _unlockAchievement(userId, 'fearless');
-        newlyUnlocked.add('fearless');
-      }
-    }
-
-    // Big Brain Energy - complete at least one puzzle game
-    if (!unlocked.contains('big_brain_energy')) {
-      final hasPuzzle = await _client
-          .from('user_games')
-          .select('id, game_titles!inner(genres)')
-          .eq('user_id', userId)
-          .gte('completion_percent', 100)
-          .limit(1);
-      
-      final completedPuzzle = hasPuzzle.any((game) {
-        final gameData = game['game_titles'] as Map<String, dynamic>?;
-        final genres = gameData?['genres'] as List<dynamic>?;
-        return genres?.any((g) => 
-          g.toString().toLowerCase().contains('puzzle') ||
-          g.toString().toLowerCase().contains('strategy')
-        ) ?? false;
-      });
-      
-      if (completedPuzzle) {
-        await _unlockAchievement(userId, 'big_brain_energy');
-        newlyUnlocked.add('big_brain_energy');
-      }
-    }
-
-    return newlyUnlocked;
-  }
 
   Future<List<String>> _checkTimeAchievements(
     String userId,
@@ -888,9 +722,7 @@ class AchievementCheckerService {
         'achievement_id': achievementId,
         'unlocked_at': DateTime.now().toIso8601String(),
       });
-      print('🎉 Unlocked achievement: $achievementId');
     } catch (e) {
-      print('Error unlocking achievement $achievementId: $e');
     }
   }
 }

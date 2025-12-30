@@ -159,7 +159,6 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
             try {
               await Supabase.instance.client.functions.invoke('steam-start-sync');
             } catch (e) {
-              print('Error continuing sync: $e');
             }
             continue;
           }
@@ -176,7 +175,6 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
           }
         }
       } catch (e) {
-        print('Error polling sync status: $e');
         // Don't stop polling on connection errors, just retry
         continue;
       }
@@ -226,8 +224,6 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
         ),
       );
     }
-
-    final isSyncDisabled = _rateLimitStatus != null && !_rateLimitStatus!.canSync;
     
     // Build rate limit message
     String? rateLimitMessage;

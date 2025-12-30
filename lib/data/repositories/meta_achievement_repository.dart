@@ -77,7 +77,6 @@ class MetaAchievementRepository {
 
       return achievements;
     } catch (e) {
-      print('Error loading meta-achievements: $e');
       return [];
     }
   }
@@ -98,7 +97,6 @@ class MetaAchievementRepository {
       });
       return true;
     } catch (e) {
-      print('Error selecting title: $e');
       return false;
     }
   }
@@ -113,7 +111,6 @@ class MetaAchievementRepository {
       });
       return true;
     } catch (e) {
-      print('Error unlocking achievement: $e');
       return false;
     }
   }

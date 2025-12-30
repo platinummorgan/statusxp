@@ -48,7 +48,6 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
             // Use JavaScript to get the actual URL (not sanitized)
             final actualUrl = await _controller.runJavaScriptReturningResult('window.location.href');
             final cleanUrl = actualUrl.toString().replaceAll('"', '');
-            print('Actual URL from JavaScript: $cleanUrl');
             _checkForAuthCode(cleanUrl);
           },
           onNavigationRequest: (NavigationRequest request) {
@@ -63,11 +62,6 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
     final uri = Uri.parse(url);
     
     // Debug: Print the URL we're checking
-    print('Xbox OAuth Full URL: $url');
-    print('Host: ${uri.host}, Path: ${uri.path}');
-    print('Query params: ${uri.queryParameters}');
-    print('Fragment: ${uri.fragment}');
-    
     // Check if we're at the redirect URI
     if (uri.host == 'login.live.com' && uri.path.contains('oauth20_desktop.srf')) {
       // Try query parameters first
@@ -77,13 +71,9 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
       if (code == null && uri.fragment.isNotEmpty) {
         final fragmentParams = Uri.splitQueryString(uri.fragment);
         code = fragmentParams['code'];
-        print('Code found in fragment: $code');
       }
       
       final error = uri.queryParameters['error'];
-      
-      print('Found redirect! Code: ${code != null ? "YES" : "NO"}, Error: $error');
-      
       if (error != null) {
         // OAuth error occurred
         Navigator.of(context).pop();
@@ -98,7 +88,6 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
       
       if (code != null) {
         // Successfully got authorization code
-        print('Returning auth code to parent screen');
         Navigator.of(context).pop(code);
       }
     }

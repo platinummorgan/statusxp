@@ -58,9 +58,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
 
       final supabase = Supabase.instance.client;
       final userId = supabase.auth.currentUser!.id;
-
-      print('[GameAchievements] Loading for gameId: ${widget.gameId}, platform: ${widget.platform}');
-
       // Map specific platform codes to generic achievement platform identifiers
       String achievementPlatform;
       if (widget.platform.toUpperCase().startsWith('PS')) {
@@ -72,9 +69,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       } else {
         achievementPlatform = widget.platform.toLowerCase();
       }
-
-      print('[GameAchievements] Mapped to achievement platform: $achievementPlatform');
-
       // Get achievements for this game - check both tables
       PostgrestList achievementsResponse;
       try {
@@ -102,7 +96,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         
         print('[GameAchievements] Found ${(achievementsResponse as List).length} achievements');
       } catch (e) {
-        print('[GameAchievements] achievements table error: $e');
         // If achievements table fails, try trophies table (old PSN format)
         try {
           achievementsResponse = await supabase
@@ -120,7 +113,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           
           print('[GameAchievements] Found ${(achievementsResponse as List).length} trophies');
         } catch (e2) {
-          print('[GameAchievements] trophies table error: $e2');
           throw Exception('Could not load achievements from either table');
         }
       }
@@ -141,7 +133,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
             .eq('achievements.game_title_id', widget.gameId)
             .eq('achievements.platform', achievementPlatform);
       } catch (e) {
-        print('[GameAchievements] user_achievements error: $e');
         // Try user_trophies for PSN
         try {
           userEarnedResponse = await supabase
@@ -154,7 +145,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               .eq('user_id', userId)
               .eq('trophies.game_title_id', widget.gameId);
         } catch (e2) {
-          print('[GameAchievements] user_trophies error: $e2');
           userEarnedResponse = [];
         }
       }
@@ -166,8 +156,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         final date = (ua['earned_at'] ?? ua['unlocked_at']) as String;
         earnedMap[id] = date;
       }
-
-      print('[GameAchievements] Earned map has ${earnedMap.length} entries');
       print('[GameAchievements] First 5 earned IDs: ${earnedMap.keys.take(5).toList()}');
 
       // Merge the data
@@ -199,9 +187,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           'is_earned': earnedAt != null,
         };
       }).toList();
-
-      print('[GameAchievements] Merged ${achievements.length} achievements with user data');
-
       setState(() {
         _achievements = achievements;
         _isLoading = false;
@@ -1324,7 +1309,6 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         });
       }
     } catch (e) {
-      print('Error fetching YouTube link: $e');
       // Continue without YouTube link if it fails
     }
   }
@@ -1342,7 +1326,6 @@ class _AIGuideContentState extends State<_AIGuideContent> {
 
       return response['ai_guide'] as String?;
     } catch (e) {
-      print('Error checking cached guide: $e');
       return null;
     }
   }
@@ -1360,7 +1343,6 @@ class _AIGuideContentState extends State<_AIGuideContent> {
           })
           .eq('id', widget.achievementId!);
     } catch (e) {
-      print('Error saving guide to database: $e');
     }
   }
 
@@ -1566,7 +1548,6 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        print('Could not launch $url');
       }
     }
   }

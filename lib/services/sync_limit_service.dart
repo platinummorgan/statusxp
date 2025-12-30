@@ -62,7 +62,6 @@ class SyncLimitService {
 
       return SyncLimitStatus.fromJson(response as Map<String, dynamic>);
     } catch (e) {
-      print('Error checking sync limit: $e');
       return SyncLimitStatus(
         canSync: false,
         reason: 'Error checking sync status: $e',
@@ -83,7 +82,6 @@ class SyncLimitService {
         'success': success,
       });
     } catch (e) {
-      print('Error recording sync: $e');
     }
   }
 
@@ -102,7 +100,6 @@ class SyncLimitService {
       if (response == null) return false;
       return response['is_premium'] ?? false;
     } catch (e) {
-      print('Error checking premium status: $e');
       return false;
     }
   }
@@ -121,7 +118,6 @@ class SyncLimitService {
 
       return response ?? {};
     } catch (e) {
-      print('Error getting sync stats: $e');
       return {};
     }
   }

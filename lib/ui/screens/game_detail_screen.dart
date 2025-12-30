@@ -110,7 +110,6 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
 
       Navigator.of(context).pop();
     } catch (e) {
-      debugPrint('Error saving game: $e');
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(

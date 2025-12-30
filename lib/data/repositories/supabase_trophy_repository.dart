@@ -50,7 +50,6 @@ class SupabaseTrophyRepository {
         );
       }).toList();
     } catch (e) {
-      print('ERROR fetching trophies: $e');
       rethrow;
     }
   }

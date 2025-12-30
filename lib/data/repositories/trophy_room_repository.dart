@@ -55,7 +55,6 @@ class TrophyRoomRepository {
         };
       }).toList();
     } catch (e) {
-      print('ERROR fetching platinum trophies: $e');
       return [];
     }
   }
@@ -116,7 +115,6 @@ class TrophyRoomRepository {
         };
       }).toList();
     } catch (e) {
-      print('ERROR fetching ultra-rare trophies: $e');
       return [];
     }
   }
@@ -159,7 +157,6 @@ class TrophyRoomRepository {
         };
       }).toList();
     } catch (e) {
-      print('ERROR fetching recent trophies: $e');
       return [];
     }
   }

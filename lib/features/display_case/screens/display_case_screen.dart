@@ -41,42 +41,7 @@ class _DisplayCaseScreenState extends ConsumerState<DisplayCaseScreen> {
     }
   }
 
-  void _updateItemLocally(DisplayCaseItem oldItem, int newShelf, int newPosition) {
-    if (_cachedItems == null) return;
-    
-    setState(() {
-      // Find and update the item
-      final index = _cachedItems!.indexWhere((item) => item.id == oldItem.id);
-      if (index != -1) {
-        _cachedItems![index] = oldItem.copyWith(
-          shelfNumber: newShelf,
-          positionInShelf: newPosition,
-        );
-      }
-    });
-  }
 
-  void _swapItemsLocally(DisplayCaseItem item1, DisplayCaseItem item2) {
-    if (_cachedItems == null) return;
-    
-    setState(() {
-      final index1 = _cachedItems!.indexWhere((item) => item.id == item1.id);
-      final index2 = _cachedItems!.indexWhere((item) => item.id == item2.id);
-      
-      if (index1 != -1 && index2 != -1) {
-        // Swap positions
-        _cachedItems![index1] = item1.copyWith(
-          shelfNumber: item2.shelfNumber,
-          positionInShelf: item2.positionInShelf,
-        );
-        
-        _cachedItems![index2] = item2.copyWith(
-          shelfNumber: item1.shelfNumber,
-          positionInShelf: item1.positionInShelf,
-        );
-      }
-    });
-  }
 
   void _removeItemLocally(String itemId) {
     if (_cachedItems == null) return;

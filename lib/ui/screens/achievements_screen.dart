@@ -112,7 +112,6 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
       }
     } catch (e) {
       // Silently fail on auto-check - user can still manually refresh
-      debugPrint('Achievement auto-check failed: $e');
     }
   }
 
@@ -132,7 +131,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const userId = '84b60ad6-cb2c-484f-8953-bf814551fd7a'; // TODO: Get from auth
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
     final achievementsAsync = ref.watch(allAchievementsProvider(userId));
 
     return Scaffold(

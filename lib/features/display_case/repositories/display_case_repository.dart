@@ -58,7 +58,6 @@ class DisplayCaseRepository {
         });
       }).toList();
     } catch (e) {
-      print('ERROR fetching display case items: $e');
       return [];
     }
   }  /// Add a new trophy to the display case
@@ -127,7 +126,6 @@ class DisplayCaseRepository {
         'game_image_url': gameTitle['cover_url'],
       });
     } catch (e) {
-      print('ERROR adding display case item: $e');
       return null;
     }
   }
@@ -149,7 +147,6 @@ class DisplayCaseRepository {
       
       return true;
     } catch (e) {
-      print('ERROR updating item position: $e');
       return false;
     }
   }
@@ -194,7 +191,6 @@ class DisplayCaseRepository {
       
       return true;
     } catch (e) {
-      print('ERROR swapping items: $e');
       return false;
     }
   }
@@ -209,7 +205,6 @@ class DisplayCaseRepository {
       
       return true;
     } catch (e) {
-      print('ERROR removing display case item: $e');
       return false;
     }
   }
@@ -275,7 +270,6 @@ class DisplayCaseRepository {
         };
       }).toList();
     } catch (e) {
-      print('ERROR fetching available trophies: $e');
       return [];
     }
   }
@@ -336,7 +330,6 @@ class DisplayCaseRepository {
         'game_image_url': gameTitle['cover_url'],
       });
     } catch (e) {
-      print('ERROR fetching rarest $tier trophy: $e');
       return null;
     }
   }

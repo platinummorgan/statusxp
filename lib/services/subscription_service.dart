@@ -66,7 +66,6 @@ class SubscriptionService {
     _isAvailable = await _iap.isAvailable();
     
     if (!_isAvailable) {
-      debugPrint('In-App Purchase not available on this device');
       return;
     }
 
@@ -99,12 +98,10 @@ class SubscriptionService {
       final ProductDetailsResponse response = await _iap.queryProductDetails(productIds);
       
       if (response.error != null) {
-        debugPrint('Error loading products: ${response.error}');
         return;
       }
       
       if (response.productDetails.isEmpty) {
-        debugPrint('No products found. Make sure product IDs are configured in store console.');
         return;
       }
       
@@ -116,7 +113,6 @@ class SubscriptionService {
       
       debugPrint('Loaded ${_products.length} subscription(s) and ${_aiPackProducts.length} AI pack(s)');
     } catch (e) {
-      debugPrint('Error querying products: $e');
     }
   }
 
@@ -139,7 +135,6 @@ class SubscriptionService {
         }
         
         if (purchase.status == PurchaseStatus.error) {
-          debugPrint('Purchase error: ${purchase.error}');
         }
         
         // Mark purchase as complete
@@ -162,13 +157,11 @@ class SubscriptionService {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
-        debugPrint('User not authenticated');
         return false;
       }
 
       final packDetails = getAIPackDetails(purchase.productID);
       if (packDetails == null) {
-        debugPrint('Unknown AI pack product: ${purchase.productID}');
         return false;
       }
 
@@ -195,14 +188,11 @@ class SubscriptionService {
       final success = result['success'] ?? false;
       
       if (success) {
-        debugPrint('AI credits granted: ${packDetails['credits']} credits');
       } else {
-        debugPrint('Failed to grant AI credits');
       }
       
       return success;
     } catch (e) {
-      debugPrint('Error granting AI credits: $e');
       return false;
     }
   }
@@ -212,16 +202,13 @@ class SubscriptionService {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
-        debugPrint('User not authenticated');
         return false;
       }
 
       String? transactionId;
-      String? platform;
       
       if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
         transactionId = purchase.billingClientPurchase.orderId;
-        platform = 'google_play';
       } else if (Platform.isIOS && purchase is AppStorePurchaseDetails) {
         transactionId = purchase.skPaymentTransaction.transactionIdentifier;
         platform = 'app_store';
@@ -235,11 +222,8 @@ class SubscriptionService {
         'subscription_id': transactionId,
         'updated_at': DateTime.now().toIso8601String(),
       });
-
-      debugPrint('Premium subscription activated for user $userId');
       return true;
     } catch (e) {
-      debugPrint('Error activating subscription: $e');
       return false;
     }
   }
@@ -247,14 +231,12 @@ class SubscriptionService {
   /// Purchase a subscription
   Future<bool> purchaseSubscription(ProductDetails product) async {
     if (!_isAvailable) {
-      debugPrint('IAP not available');
       return false;
     }
 
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
-        debugPrint('User must be logged in to purchase');
         return false;
       }
 
@@ -269,7 +251,6 @@ class SubscriptionService {
       
       return success;
     } catch (e) {
-      debugPrint('Error purchasing subscription: $e');
       _purchasePending = false;
       return false;
     }
@@ -311,7 +292,6 @@ class SubscriptionService {
 
       return response?['is_premium'] == true;
     } catch (e) {
-      debugPrint('Error checking premium status: $e');
       return false;
     }
   }
@@ -325,7 +305,6 @@ class SubscriptionService {
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
-          debugPrint('Could not launch Google Play subscriptions');
         }
       } else if (Platform.isIOS) {
         // Open App Store subscriptions page
@@ -333,11 +312,9 @@ class SubscriptionService {
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
-          debugPrint('Could not launch App Store subscriptions');
         }
       }
     } catch (e) {
-      debugPrint('Error opening subscription management: $e');
     }
   }
 
@@ -362,14 +339,12 @@ class SubscriptionService {
   /// Purchase an AI credit pack (consumable)
   Future<bool> purchaseAIPack(ProductDetails product) async {
     if (!_isAvailable) {
-      debugPrint('IAP not available');
       return false;
     }
 
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
-        debugPrint('User must be logged in to purchase');
         return false;
       }
 
@@ -384,7 +359,6 @@ class SubscriptionService {
       
       return success;
     } catch (e) {
-      debugPrint('Error purchasing AI pack: $e');
       _purchasePending = false;
       return false;
     }

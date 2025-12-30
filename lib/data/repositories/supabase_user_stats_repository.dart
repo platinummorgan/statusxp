@@ -15,8 +15,6 @@ class SupabaseUserStatsRepository {
   /// Calculates stats from user_games table using PSN's earnedTrophies summary data.
   Future<UserStats> getUserStats(String userId) async {
     try {
-      print('DEBUG: Fetching stats for user: $userId');
-      
       // Get all games to calculate stats
       final gamesResponse = await _client
           .from('user_games')
@@ -41,10 +39,6 @@ class SupabaseUserStatsRepository {
       }
       
       final totalTrophies = bronzeCount + silverCount + goldCount + platinumCount;
-      
-      print('DEBUG: Calculated stats - Games: $totalGames, Platinums: $totalPlatinums, Trophies: $totalTrophies');
-      print('DEBUG: Trophy breakdown - Bronze: $bronzeCount, Silver: $silverCount, Gold: $goldCount, Platinum: $platinumCount');
-      
       // Get username from profiles
       final profileResponse = await _client
           .from('profiles')
@@ -73,9 +67,7 @@ class SupabaseUserStatsRepository {
         rarestTrophyName: 'None',
         rarestTrophyRarity: 0.0,
       );
-    } catch (e, stackTrace) {
-      print('ERROR fetching stats: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       rethrow;
     }
   }

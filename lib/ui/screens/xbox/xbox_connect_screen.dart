@@ -121,8 +121,6 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
-            
-            // Error message
             if (_error != null)
               Container(
                 padding: const EdgeInsets.all(16),

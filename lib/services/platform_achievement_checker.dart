@@ -13,8 +13,6 @@ class PlatformAchievementChecker {
     final newlyUnlocked = <String>[];
 
     try {
-      debugPrint('🔍 Checking platform achievements for user: $userId');
-      
       // Get user's stats
       final stats = await _getUserStats(userId);
       
@@ -40,11 +38,8 @@ class PlatformAchievementChecker {
       if ((stats['psn_total'] ?? 0) > 0 && (stats['xbox_total'] ?? 0) > 0 && (stats['steam_total'] ?? 0) > 0) {
         newlyUnlocked.addAll(await _checkCrossPlatformAchievements(userId, stats, unlocked));
       }
-      
-      debugPrint('✅ Unlocked ${newlyUnlocked.length} new achievements');
       return newlyUnlocked;
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error checking achievements: $e\n$stackTrace');
+    } catch (e) {
       return [];
     }
   }
@@ -427,7 +422,5 @@ class PlatformAchievementChecker {
       'achievement_id': achievementId,
       'unlocked_at': DateTime.now().toIso8601String(),
     }, onConflict: 'user_id,achievement_id');
-    
-    debugPrint('🏆 Unlocked: $achievementId');
   }
 }

@@ -81,7 +81,6 @@ class LeaderboardRepository {
 
       return entries;
     } catch (e) {
-      print('[LeaderboardRepository] Error fetching StatusXP leaderboard: $e');
       rethrow;
     }
   }
@@ -103,7 +102,6 @@ class LeaderboardRepository {
           .map((row) => LeaderboardEntry.fromJson(row as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      print('[LeaderboardRepository] Error fetching platinum leaderboard: $e');
       // Fallback to direct query
       return _getPlatinumLeaderboardFallback(limit: limit);
     }
@@ -239,7 +237,6 @@ class LeaderboardRepository {
 
       return entries.take(limit).toList();
     } catch (e) {
-      print('[LeaderboardRepository] Error fetching Xbox leaderboard: $e');
       rethrow;
     }
   }
@@ -302,7 +299,6 @@ class LeaderboardRepository {
 
       return entries.take(limit).toList();
     } catch (e) {
-      print('[LeaderboardRepository] Error fetching Steam leaderboard: $e');
       rethrow;
     }
   }

@@ -69,7 +69,6 @@ class FlexRoomRepository {
         iconUrl: achievement['icon_url'],
       );
     } catch (e) {
-      print('Error building flex tile: $e');
       return null;
     }
   }
@@ -150,7 +149,6 @@ class FlexRoomRepository {
         recentFlexes: recentFlexes,
       );
     } catch (e) {
-      print('Error fetching flex room data: $e');
       return null;
     }
   }
@@ -174,17 +172,9 @@ class FlexRoomRepository {
         'sweatiest_platinum_id': data.sweattiestPlatinum?.achievementId,
         'superlatives': superlativesJson,
       };
-
-      print('Saving flex room data:');
-      print('User ID: ${data.userId}');
-      print('Superlatives: $superlativesJson');
-      print('Payload: $payload');
-
       await _client.from('flex_room_data').upsert(payload);
-      print('Flex room data saved successfully');
       return true;
     } catch (e) {
-      print('Error updating flex room data: $e');
       return false;
     }
   }
@@ -218,7 +208,6 @@ class FlexRoomRepository {
 
       return await _buildFlexTile(response);
     } catch (e) {
-      print('Error fetching achievement tile: $e');
       return null;
     }
   }
@@ -276,7 +265,6 @@ class FlexRoomRepository {
         iconUrl: response['icon_url'],
       );
     } catch (e) {
-      print('Error fetching rarest achievement: $e');
       return null;
     }
   }
@@ -321,7 +309,6 @@ class FlexRoomRepository {
 
       return await _buildFlexTile(achievementResponse);
     } catch (e) {
-      print('Error fetching most time-sunk game: $e');
       return null;
     }
   }
@@ -379,7 +366,6 @@ class FlexRoomRepository {
         iconUrl: response['icon_url'],
       );
     } catch (e) {
-      print('Error fetching sweatiest platinum: $e');
       return null;
     }
   }
@@ -455,7 +441,6 @@ class FlexRoomRepository {
 
       return recentFlexes;
     } catch (e) {
-      print('Error fetching recent notable achievements: $e');
       return [];
     }
   }
@@ -490,7 +475,6 @@ class FlexRoomRepository {
           return await _getSuggestionsByRarityAndXP(userId, maxRarity: 10.0);
       }
     } catch (e) {
-      print('Error getting smart suggestions: $e');
       return [];
     }
   }
@@ -566,7 +550,6 @@ class FlexRoomRepository {
 
       return suggestions;
     } catch (e) {
-      print('Error fetching suggestions by rarity: $e');
       return [];
     }
   }
@@ -579,7 +562,6 @@ class FlexRoomRepository {
       // This requires a custom RPC function - for now return rarity-based
       return await _getSuggestionsByRarityAndXP(userId, maxRarity: 10.0);
     } catch (e) {
-      print('Error fetching suggestions by achievement count: $e');
       return [];
     }
   }
@@ -632,7 +614,6 @@ class FlexRoomRepository {
 
       return achievements;
     } catch (e) {
-      print('Error fetching all achievements: $e');
       return [];
     }
   }
@@ -644,8 +625,6 @@ class FlexRoomRepository {
     String? searchQuery,
   }) async {
     try {
-      print('🎮 Getting games for platform: $platform, user: $userId');
-      
       // Use exact same query as unified_games_repository
       final response = await _client
           .from('user_games')
@@ -666,9 +645,6 @@ class FlexRoomRepository {
           .eq('user_id', userId);
 
       final List<dynamic> data = response as List;
-      
-      print('📊 Total user_games rows: ${data.length}');
-      
       if (data.isEmpty) {
         return [];
       }
@@ -679,9 +655,6 @@ class FlexRoomRepository {
       for (final row in data) {
         final platformData = row['platforms'] as Map<String, dynamic>?;
         final platformCode = (platformData?['code'] as String? ?? '').toLowerCase();
-        
-        print('🔍 Checking game - platformCode: $platformCode, requested: $platform');
-        
         // Check if this matches the requested platform
         bool matchesPlatform = false;
         switch (platform.toLowerCase()) {
@@ -696,9 +669,6 @@ class FlexRoomRepository {
             matchesPlatform = platformCode == 'steam';
             break;
         }
-        
-        print('✅ Match: $matchesPlatform');
-        
         if (!matchesPlatform) continue;
         
         final gameTitle = row['game_titles'] as Map<String, dynamic>?;
@@ -730,9 +700,6 @@ class FlexRoomRepository {
           };
         }
       }
-
-      print('🎯 Final game count: ${gamesMap.length}');
-
       // Convert to list and sort by game name
       final games = gamesMap.values.toList();
       games.sort((a, b) => 
@@ -740,7 +707,6 @@ class FlexRoomRepository {
 
       return games;
     } catch (e) {
-      print('❌ Error fetching games for platform: $e');
       return [];
     }
   }
@@ -753,8 +719,6 @@ class FlexRoomRepository {
     String? searchQuery,
   }) async {
     try {
-      print('🎯 Getting achievements for game: $gameId, platform: $platform');
-      
       // Map platform codes to achievement platform identifiers (same as GameAchievementsScreen)
       String achievementPlatform;
       if (platform.toUpperCase().startsWith('PS') || platform.toLowerCase() == 'psn' || platform.toLowerCase() == 'playstation') {
@@ -766,11 +730,7 @@ class FlexRoomRepository {
       } else {
         achievementPlatform = platform.toLowerCase();
       }
-      
-      print('🔧 Mapped to achievement platform: $achievementPlatform');
-
       if (gameId == null) {
-        print('❌ No gameId provided');
         return [];
       }
 
@@ -865,12 +825,8 @@ class FlexRoomRepository {
 
         achievements.add(tile);
       }
-
-      print('✅ Returning ${achievements.length} earned achievements');
-      
       return achievements;
     } catch (e) {
-      print('❌ Error fetching achievements for game: $e');
       return [];
     }
   }

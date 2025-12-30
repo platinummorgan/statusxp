@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/repositories/leaderboard_repository.dart';
 import 'package:statusxp/domain/leaderboard_entry.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -458,6 +459,5 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
 /// Provider for current user ID (to highlight their entry)
 final currentUserIdProvider = Provider<String?>((ref) {
-  // TODO: Get from auth provider
-  return '84b60ad6-cb2c-484f-8953-bf814551fd7a';
+  return Supabase.instance.client.auth.currentUser?.id;
 });

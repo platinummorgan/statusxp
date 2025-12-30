@@ -115,29 +115,21 @@ class PSNService {
 
   /// Stop current sync (keeps progress)
   Future<void> stopSync() async {
-    print('PSN stopSync: Starting...');
     final userId = _client.auth.currentUser?.id;
-    print('PSN stopSync: userId = $userId');
     
     if (userId == null) {
       throw Exception('Not authenticated');
     }
 
-    print('PSN stopSync: Calling edge function psn-stop-sync...');
     final response = await _client.functions.invoke(
       'psn-stop-sync',
       body: {'userId': userId},
     );
-    
-    print('PSN stopSync: Response status = ${response.status}');
-    print('PSN stopSync: Response data = ${response.data}');
 
     if (response.status != 200) {
       final error = response.data?['error'] ?? 'Failed to stop sync';
       throw Exception(error);
     }
-    
-    print('PSN stopSync: Completed successfully');
   }
 
   /// Get current sync status

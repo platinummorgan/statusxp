@@ -74,7 +74,6 @@ class AICreditService {
 
       return AICreditStatus.fromJson(response as Map<String, dynamic>);
     } catch (e) {
-      print('Error checking AI credits: $e');
       return AICreditStatus(
         canUse: false,
         source: 'none',
@@ -100,7 +99,6 @@ class AICreditService {
 
       return AICreditStatus.fromJson(response as Map<String, dynamic>);
     } catch (e) {
-      print('Error consuming AI credit: $e');
       rethrow;
     }
   }
@@ -132,7 +130,6 @@ class AICreditService {
       final result = response as Map<String, dynamic>;
       return result['success'] ?? false;
     } catch (e) {
-      print('Error adding pack credits: $e');
       return false;
     }
   }

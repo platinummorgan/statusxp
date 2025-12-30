@@ -53,10 +53,6 @@ class UnifiedGamesRepository {
         final title = gameTitle['name'] as String?;
         if (title == null) continue;
         
-        // Debug: Check what platform data we're getting
-        final platformData = row['platforms'] as Map<String, dynamic>?;
-        print('DEBUG Repository: Game="$title", platform_data=$platformData');
-        
         if (!gamesByTitle.containsKey(title)) {
           gamesByTitle[title] = [];
         }
@@ -139,7 +135,6 @@ class UnifiedGamesRepository {
 
     return unifiedGames;
     } catch (e) {
-      print('Error fetching unified games: $e');
       rethrow;
     }
   }

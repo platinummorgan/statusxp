@@ -652,11 +652,6 @@ class UnifiedGamesListScreen extends ConsumerWidget {
   }
 
   void _navigateToAchievements(BuildContext context, UnifiedGame game, PlatformGameData platform) {
-    print('[UnifiedGamesList] Navigating to achievements:');
-    print('  Game: ${game.title}');
-    print('  GameId from platform: ${platform.gameId}');
-    print('  Platform: ${platform.platform}');
-    
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => GameAchievementsScreen(

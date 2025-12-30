@@ -17,8 +17,6 @@ class SupabaseGameRepository {
   /// Returns empty list if user has no games.
   Future<List<Game>> getGamesForUser(String userId) async {
     try {
-      print('DEBUG: Fetching games for user: $userId');
-      
       final response = await _client
           .from('user_games')
           .select('''
@@ -51,9 +49,6 @@ class SupabaseGameRepository {
       final gameTitleIds = (response as List)
           .map((row) => row['game_title_id'] as int)
           .toList();
-      
-      print('DEBUG: Fetching platinum rarity for ${gameTitleIds.length} games');
-      
       final Map<int, double> platinumRarityMap = {};
       
       if (gameTitleIds.isNotEmpty) {
@@ -70,11 +65,8 @@ class SupabaseGameRepository {
           final rarity = row['rarity_global'] as num?;
           if (rarity != null) {
             platinumRarityMap[gameTitleId] = rarity.toDouble();
-            print('DEBUG: Game title $gameTitleId has platinum rarity: $rarity');
           }
         }
-        
-        print('DEBUG: Platinum rarity map has ${platinumRarityMap.length} entries');
       }
 
       final games = (response as List).map((row) {
@@ -86,7 +78,6 @@ class SupabaseGameRepository {
         final platinumRarity = platinumRarityMap[gameTitleId];
         
         if (platinumRarity != null) {
-          print('DEBUG: ${gameTitle['name']} has platinum rarity: $platinumRarity');
         }
         
         // Use last_trophy_earned_at from database, fallback to last_played_at
@@ -117,9 +108,7 @@ class SupabaseGameRepository {
       }).toList();
 
       return games;
-    } catch (e, stackTrace) {
-      print('ERROR fetching games: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       rethrow; // Don't swallow the error
     }
   }

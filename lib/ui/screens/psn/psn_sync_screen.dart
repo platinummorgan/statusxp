@@ -89,7 +89,6 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
               final psnService = ref.read(psnServiceProvider);
               await psnService.startSync(forceResync: false);
             } catch (e) {
-              print('Error continuing sync: $e');
             }
             return;
           }
@@ -123,7 +122,6 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                   );
                 }
               } catch (e) {
-                print('Error checking achievements: $e');
               }
             }
             return;
@@ -163,11 +161,8 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
     }
     
     try {
-      print('DEBUG: Starting PSN stop sync...');
       final psnService = ref.read(psnServiceProvider);
       await psnService.stopSync();
-      print('DEBUG: PSN stop sync completed');
-
       if (mounted) {
         setState(() {
           _isSyncing = false;
@@ -180,7 +175,6 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
         );
       }
     } catch (e) {
-      print('ERROR: PSN stop sync failed: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to stop sync: ${e.toString()}';
@@ -236,8 +230,6 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
           }
 
           final isSyncing = status.isSyncing || status.isPending || _isSyncing;
-
-          final isSyncDisabled = _rateLimitStatus != null && !_rateLimitStatus!.canSync;
           
           // Build rate limit message
           String? rateLimitMessage;
