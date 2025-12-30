@@ -438,7 +438,7 @@ export async function syncPSNAchievements(
             if (userTrophy?.earned) {
               // VALIDATION: Prevent phantom platinums
               // Don't create platinum user_achievement if user_games.has_platinum = false
-              if (trophyMeta.trophyType === 'platinum' && !userGame.has_platinum) {
+              if (trophyMeta.trophyType === 'platinum' && !userGameData.has_platinum) {
                 console.log(
                   `⚠️ [VALIDATION BLOCKED] Preventing phantom platinum for ${game.trophyTitleName}: user_games.has_platinum = false`
                 );
