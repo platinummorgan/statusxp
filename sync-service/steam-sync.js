@@ -252,7 +252,27 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
         }
         
-        const needsProcessing = isNewGame || countsChanged || needRarityRefresh;
+        // BUG FIX: Check if achievements were never processed (earned_trophies > 0 but no user_achievements)
+        // This happens if initial sync failed to process achievements
+        let missingAchievements = false;
+        if (!isNewGame && !countsChanged && !needRarityRefresh && existingUserGame?.earned_trophies > 0) {
+          const { count } = await supabase
+            .from('user_achievements')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .in('achievement_id', supabase
+              .from('achievements')
+              .select('id')
+              .eq('game_title_id', gameTitle.id)
+              .eq('platform', 'steam')
+            );
+          missingAchievements = count === 0;
+          if (missingAchievements) {
+            console.log(`🔄 MISSING ACHIEVEMENTS: ${game.name} shows ${unlockedCount} earned but 0 synced - reprocessing`);
+          }
+        }
+        
+        const needsProcessing = isNewGame || countsChanged || needRarityRefresh || missingAchievements;
         
         if (!needsProcessing) {
           console.log(`⏭️  Skip ${game.name} - no changes`);
