@@ -1,0 +1,3 @@
+New: Password reset functionality! Tap "Forgot Password?" on the sign-in screen to receive a password reset email.
+
+Bug fixes and improvements.
