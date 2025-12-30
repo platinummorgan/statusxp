@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
+import 'package:statusxp/ui/screens/auth/forgot_password_screen.dart';
 import 'dart:io' show Platform;
 
 /// Sign in and sign up screen for Supabase email/password authentication.
@@ -197,6 +198,29 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     validator: _validatePassword,
                     enabled: !_isLoading,
                   ),
+                  
+                  // Forgot Password Link (only show in login mode)
+                  if (_isLoginMode) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _isLoading ? null : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ForgotPasswordScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Forgot Password?',
+                          style: TextStyle(color: accentPrimary),
+                        ),
+                      ),
+                    ),
+                  ],
+                  
                   const SizedBox(height: 24),
                   
                   // Submit Button
