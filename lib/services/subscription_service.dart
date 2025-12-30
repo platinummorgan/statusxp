@@ -211,7 +211,6 @@ class SubscriptionService {
         transactionId = purchase.billingClientPurchase.orderId;
       } else if (Platform.isIOS && purchase is AppStorePurchaseDetails) {
         transactionId = purchase.skPaymentTransaction.transactionIdentifier;
-        platform = 'app_store';
       }
 
       // Update premium status in Supabase
