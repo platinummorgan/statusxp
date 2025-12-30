@@ -49,6 +49,32 @@ class AuthService {
     );
   }
   
+  /// Send a password reset email to the user.
+  /// 
+  /// The user will receive an email with a link to reset their password.
+  /// The link will redirect to the app using the deep link configured in Supabase.
+  /// Throws [AuthException] if the email sending fails.
+  Future<void> resetPassword({
+    required String email,
+  }) async {
+    await _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: 'com.platovalabs.statusxp://reset-password',
+    );
+  }
+  
+  /// Update the user's password.
+  /// 
+  /// This should be called after the user follows the password reset link.
+  /// Throws [AuthException] if the password update fails.
+  Future<UserResponse> updatePassword({
+    required String newPassword,
+  }) async {
+    return await _client.auth.updateUser(
+      UserAttributes(password: newPassword),
+    );
+  }
+  
   /// Sign out the current user.
   /// 
   /// Clears the session and revokes the refresh token.
