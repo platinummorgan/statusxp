@@ -405,9 +405,26 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const needsRarityUpdate = !rarityCheckGame?.rarity_last_updated_at || 
                                       new Date(rarityCheckGame.rarity_last_updated_at) < thirtyDaysAgo;
 
+            // Check if any achievements for this game have NULL rarity
+            let hasNullRarity = false;
+            if (!needsRarityUpdate) {
+              const { data: nullCheck } = await supabase
+                .from('achievements')
+                .select('id')
+                .eq('game_title_id', gameTitle.id)
+                .eq('platform', 'xbox')
+                .is('rarity_global', null)
+                .limit(1)
+                .maybeSingle();
+              hasNullRarity = !!nullCheck;
+            }
+
             // Fetch rarity data from OpenXBL (only if needed to save API calls)
             let openXBLRarityMap = new Map();
-            if (needsRarityUpdate) {
+            if (needsRarityUpdate || hasNullRarity) {
+              if (hasNullRarity && !needsRarityUpdate) {
+                console.log(`[OPENXBL] Forcing rarity fetch - has NULL rarity despite recent sync`);
+              }
               try {
                 const openXBLKey = process.env.OPENXBL_API_KEY;
                 if (openXBLKey) {
