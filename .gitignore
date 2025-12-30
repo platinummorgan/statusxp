@@ -54,3 +54,4 @@ key.properties
 
 # Debug and test files
 /debug/
+*.txt

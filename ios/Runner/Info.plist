@@ -47,5 +47,16 @@
 	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save your gaming achievement posters to share with friends</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.395832690159-snjk36er87mnvh21bkk10f6lu6i9abaq</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
