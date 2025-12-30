@@ -172,7 +172,17 @@ final dashboardStatsProvider = FutureProvider<DashboardStats?>((ref) async {
     return null;
   }
   
-  return repository.getDashboardStats(userId);
+  try {
+    return await repository.getDashboardStats(userId);
+  } catch (e) {
+    // Silently return null on network errors to prevent error dialogs
+    if (e.toString().contains('SocketException') || 
+        e.toString().contains('Failed host lookup') ||
+        e.toString().contains('AuthRetryableFetchException')) {
+      return null;
+    }
+    rethrow;
+  }
 });
 
 /// FutureProvider for loading Trophy Room data for the current user.

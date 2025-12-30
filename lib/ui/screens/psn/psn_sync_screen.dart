@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
 import 'package:statusxp/services/sync_limit_service.dart';
-import 'package:statusxp/ui/screens/achievements_screen.dart';
 
 /// Screen for managing PSN sync
 class PSNSyncScreen extends ConsumerStatefulWidget {

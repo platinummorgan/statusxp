@@ -38,24 +38,19 @@ class SupabaseDashboardRepository {
     );
   }
 
-  /// Gets total StatusXP by summing statusxp_effective from user_games
+  /// Gets total StatusXP from leaderboard_cache (same source as leaderboard)
   Future<double> _getStatusXPTotal(String userId) async {
     final response = await _client
-        .from('user_games')
-        .select('statusxp_effective')
-        .eq('user_id', userId);
+        .from('leaderboard_cache')
+        .select('total_statusxp')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if ((response as List).isEmpty) {
+    if (response == null) {
       return 0.0;
     }
 
-    // Sum all statusxp_effective values
-    double total = 0.0;
-    for (final game in response) {
-      total += ((game['statusxp_effective'] as num?)?.toDouble() ?? 0.0);
-    }
-
-    return total;
+    return ((response['total_statusxp'] as num?)?.toDouble() ?? 0.0);
   }
 
   /// Gets platform-specific stats
@@ -71,10 +66,10 @@ class SupabaseDashboardRepository {
     final achievementsCount = achievementsResponse.count;
 
     // Get game count for platform by joining with platforms table
-    // Map platform codes: psn -> PS3,PS4,PS5,PSVITA
+    // Map platform codes: psn -> PS3,PS4,PS5,PSVITA,PSVR,PSVR2
     List<String> platformCodes;
     if (platform == 'psn') {
-      platformCodes = ['PS3', 'PS4', 'PS5', 'PSVITA'];
+      platformCodes = ['PS3', 'PS4', 'PS5', 'PSVITA', 'PSVR', 'PSVR2'];
     } else if (platform == 'xbox') {
       platformCodes = ['XBOX360', 'XBOXONE', 'XBOXSERIESX'];
     } else {

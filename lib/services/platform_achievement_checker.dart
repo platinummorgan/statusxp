@@ -22,22 +22,22 @@ class PlatformAchievementChecker {
       final unlocked = await _getUnlockedAchievementIds(userId);
       
       // Check PSN achievements
-      if (stats['psn_total'] > 0) {
+      if ((stats['psn_total'] ?? 0) > 0) {
         newlyUnlocked.addAll(await _checkPSNAchievements(userId, stats, unlocked));
       }
       
       // Check Xbox achievements
-      if (stats['xbox_total'] > 0) {
+      if ((stats['xbox_total'] ?? 0) > 0) {
         newlyUnlocked.addAll(await _checkXboxAchievements(userId, stats, unlocked));
       }
       
       // Check Steam achievements
-      if (stats['steam_total'] > 0) {
+      if ((stats['steam_total'] ?? 0) > 0) {
         newlyUnlocked.addAll(await _checkSteamAchievements(userId, stats, unlocked));
       }
       
       // Check cross-platform achievements (requires all 3)
-      if (stats['psn_total'] > 0 && stats['xbox_total'] > 0 && stats['steam_total'] > 0) {
+      if ((stats['psn_total'] ?? 0) > 0 && (stats['xbox_total'] ?? 0) > 0 && (stats['steam_total'] ?? 0) > 0) {
         newlyUnlocked.addAll(await _checkCrossPlatformAchievements(userId, stats, unlocked));
       }
       
@@ -94,7 +94,7 @@ class PlatformAchievementChecker {
     });
     
     final xboxComplete = (completionData as Map?)? ['xbox_complete'] ?? 0;
-    final steamPerfect = (completionData as Map?)?['steam_perfect'] ?? 0;
+    final steamPerfect = (completionData)?['steam_perfect'] ?? 0;
     
     stats['psn_total'] = psnTotal;
     stats['psn_bronze'] = psnBronze;

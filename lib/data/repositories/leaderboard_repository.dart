@@ -12,13 +12,13 @@ class LeaderboardRepository {
   /// Fetch StatusXP leaderboard (all platforms combined)
   Future<List<LeaderboardEntry>> getStatusXPLeaderboard({int limit = 100}) async {
     try {
-      // Get all user_games data with profiles
+      // Use materialized view for fast leaderboard queries
       final response = await _client
-          .from('user_games')
+          .from('leaderboard_cache')
           .select('''
             user_id,
-            game_title_id,
-            statusxp_effective,
+            total_statusxp,
+            total_game_entries,
             profiles!inner(
               display_name,
               preferred_display_platform,
@@ -29,76 +29,57 @@ class LeaderboardRepository {
               steam_display_name,
               steam_avatar_url
             )
-          ''');
+          ''')
+          .order('total_statusxp', ascending: false)
+          .limit(limit);
 
       if ((response as List).isEmpty) {
         return [];
       }
 
-      // Group by user_id and aggregate
-      final Map<String, Map<String, dynamic>> userMap = {};
+      // Convert directly from cached totals (no grouping needed!)
+      final entries = <LeaderboardEntry>[];
       
       for (final row in response) {
         final userId = row['user_id'] as String;
-        final gameId = row['game_title_id'] as int;
-        final statusxp = ((row['statusxp_effective'] as num?)?.toDouble() ?? 0.0).toInt();
+        final statusxp = ((row['total_statusxp'] as num?)?.toDouble() ?? 0.0).toInt();
+        final gameCount = (row['total_game_entries'] as int?) ?? 0;
         final profile = row['profiles'] as Map<String, dynamic>?;
 
-        if (userMap.containsKey(userId)) {
-          // Add statusxp
-          userMap[userId]!['score'] = (userMap[userId]!['score'] as int) + statusxp;
-          // Track unique games (count ALL games, even if statusxp is 0)
-          final games = userMap[userId]!['games'] as Set<int>;
-          games.add(gameId);
+        // Get display name based on user's chosen platform
+        final displayPlatform = profile?['preferred_display_platform'] as String?;
+        String displayName;
+        String? avatarUrl;
+
+        if (displayPlatform == 'psn') {
+          displayName = profile?['psn_online_id'] as String? ?? profile?['display_name'] as String? ?? 'Unknown';
+          avatarUrl = profile?['psn_avatar_url'] as String?;
+        } else if (displayPlatform == 'xbox') {
+          displayName = profile?['xbox_gamertag'] as String? ?? profile?['display_name'] as String? ?? 'Unknown';
+          avatarUrl = profile?['xbox_avatar_url'] as String?;
+        } else if (displayPlatform == 'steam') {
+          displayName = profile?['steam_display_name'] as String? ?? profile?['display_name'] as String? ?? 'Unknown';
+          avatarUrl = profile?['steam_avatar_url'] as String?;
         } else {
-          // Get display name based on user's chosen platform
-          final displayPlatform = profile?['preferred_display_platform'] as String?;
-          String displayName;
-          String? avatarUrl;
-
-          if (displayPlatform == 'psn') {
-            displayName = profile?['psn_online_id'] as String? ?? profile?['display_name'] as String? ?? 'Unknown';
-            avatarUrl = profile?['psn_avatar_url'] as String?;
-          } else if (displayPlatform == 'xbox') {
-            displayName = profile?['xbox_gamertag'] as String? ?? profile?['display_name'] as String? ?? 'Unknown';
-            avatarUrl = profile?['xbox_avatar_url'] as String?;
-          } else if (displayPlatform == 'steam') {
-            displayName = profile?['steam_display_name'] as String? ?? profile?['display_name'] as String? ?? 'Unknown';
-            avatarUrl = profile?['steam_avatar_url'] as String?;
-          } else {
-            // Fallback
-            displayName = profile?['display_name'] as String? ??
-                profile?['psn_online_id'] as String? ??
-                profile?['xbox_gamertag'] as String? ??
-                profile?['steam_display_name'] as String? ??
-                'Unknown';
-            avatarUrl = profile?['psn_avatar_url'] as String? ?? profile?['xbox_avatar_url'] as String? ?? profile?['steam_avatar_url'] as String?;
-          }
-
-          userMap[userId] = {
-            'user_id': userId,
-            'display_name': displayName,
-            'avatar_url': avatarUrl,
-            'score': statusxp,
-            'games': {gameId},
-          };
+          // Fallback
+          displayName = profile?['display_name'] as String? ??
+              profile?['psn_online_id'] as String? ??
+              profile?['xbox_gamertag'] as String? ??
+              profile?['steam_display_name'] as String? ??
+              'Unknown';
+          avatarUrl = profile?['psn_avatar_url'] as String? ?? profile?['xbox_avatar_url'] as String? ?? profile?['steam_avatar_url'] as String?;
         }
+
+        entries.add(LeaderboardEntry.fromJson({
+          'user_id': userId,
+          'display_name': displayName,
+          'avatar_url': avatarUrl,
+          'score': statusxp,
+          'games_count': gameCount,
+        }));
       }
 
-      // Convert to entries with correct games count
-      final entries = userMap.entries.map((entry) {
-        final data = entry.value;
-        return LeaderboardEntry.fromJson({
-          'user_id': entry.key,
-          'display_name': data['display_name'],
-          'avatar_url': data['avatar_url'],
-          'score': data['score'],
-          'games_count': (data['games'] as Set).length,
-        });
-      }).toList()
-        ..sort((a, b) => b.score.compareTo(a.score));
-
-      return entries.take(limit).toList();
+      return entries;
     } catch (e) {
       print('[LeaderboardRepository] Error fetching StatusXP leaderboard: $e');
       rethrow;
