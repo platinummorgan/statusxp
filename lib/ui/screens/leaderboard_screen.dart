@@ -428,6 +428,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       case LeaderboardType.platinums:
         return 'Platinums';
       case LeaderboardType.xboxAchievements:
+        return 'Gamerscore';
       case LeaderboardType.steamAchievements:
         return 'Achievements';
     }

@@ -16,12 +16,15 @@ class AuthService {
   
   // Hardcoded Google Web Client ID (for backend/Supabase) - this is not sensitive and needs to be in the app
   // On Android: Use serverClientId for OAuth flow
-  // On iOS: Don't use serverClientId - it causes crashes. iOS uses the client ID from Info.plist
+  // On iOS: Use clientId with the iOS OAuth client ID
   static const String _googleClientId = '395832690159-snjk36er87mnvh21bkk10f6lu6i9abaq.apps.googleusercontent.com';
+  static const String _googleiOSClientId = '395832690159-psp0hu5uggjc7u2lmfhnmim016j2lhq2.apps.googleusercontent.com';
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
-          // Only use serverClientId on Android - iOS doesn't support it
+          // On Android: use serverClientId for backend OAuth
+          // On iOS: use clientId for iOS OAuth client
+          clientId: Platform.isIOS ? _googleiOSClientId : null,
           serverClientId: Platform.isAndroid ? _googleClientId : null,
         );
   

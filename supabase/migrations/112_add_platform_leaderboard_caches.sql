@@ -89,16 +89,16 @@ BEGIN
     p.id,
     p.xbox_gamertag,
     p.xbox_avatar_url,
-    COUNT(DISTINCT ua.id) as achievement_count,
-    COUNT(DISTINCT a.game_title_id) as total_games,
+    COALESCE(SUM(ug.xbox_current_gamerscore), 0) as gamerscore,
+    COUNT(DISTINCT ug.game_title_id) as total_games,
     NOW()
   FROM profiles p
-  INNER JOIN user_achievements ua ON ua.user_id = p.id
-  INNER JOIN achievements a ON a.id = ua.achievement_id AND a.platform = 'xbox'
+  LEFT JOIN user_games ug ON ug.user_id = p.id
+  LEFT JOIN platforms pl ON pl.id = ug.platform_id AND pl.code IN ('XBOX360', 'XBOXONE', 'XBOXSERIESX')
   WHERE p.show_on_leaderboard = true
     AND p.xbox_xuid IS NOT NULL
   GROUP BY p.id, p.xbox_gamertag, p.xbox_avatar_url
-  HAVING COUNT(DISTINCT ua.id) > 0;
+  HAVING COALESCE(SUM(ug.xbox_current_gamerscore), 0) > 0;
 END;
 $$ LANGUAGE plpgsql;
 
