@@ -135,7 +135,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         await supabase
           .from('profiles')
           .update({ 
-            steam_sync_status: 'idle',
+            steam_sync_status: 'stopped',
             steam_sync_progress: 0 
           })
           .eq('id', userId);

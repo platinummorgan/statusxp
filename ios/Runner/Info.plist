@@ -54,7 +54,15 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.395832690159-snjk36er87mnvh21bkk10f6lu6i9abaq</string>
+				<string>com.googleusercontent.apps.395832690159-psp0hu5uggjc7u2lmfhnmim016j2lhq2</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.supabase.ksriqcmumjkemtfjuedm</string>
 			</array>
 		</dict>
 	</array>

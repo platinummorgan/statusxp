@@ -239,7 +239,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
         await supabase
           .from('profiles')
           .update({ 
-            xbox_sync_status: 'idle',
+            xbox_sync_status: 'stopped',
             xbox_sync_progress: 0 
           })
           .eq('id', userId);

@@ -358,14 +358,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     
     try {
       final authService = ref.read(authServiceProvider);
+      final currentUser = authService.currentUser;
+      
       await authService.signInWithGoogle();
+      
+      // Show success message if we linked an account
+      if (currentUser != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Google account linked successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
       // AuthGate will handle navigation automatically
     } on AuthException catch (e) {
       if (mounted) {
+        // Show user-friendly error message
+        String errorMessage = e.message;
+        if (e.message.contains('already linked')) {
+          errorMessage = 'This Google account is already linked to another StatusXP account. Please sign in with that account first, or use a different sign-in method.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -391,14 +411,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     
     try {
       final authService = ref.read(authServiceProvider);
+      final currentUser = authService.currentUser;
+      
       await authService.signInWithApple();
+      
+      // Show success message if we linked an account
+      if (currentUser != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Apple ID linked successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
       // AuthGate will handle navigation automatically
     } on AuthException catch (e) {
       if (mounted) {
+        // Show user-friendly error message
+        String errorMessage = e.message;
+        if (e.message.contains('already linked')) {
+          errorMessage = 'This Apple ID is already linked to another StatusXP account. Please sign in with that account first, or use a different sign-in method.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.message),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }

@@ -74,6 +74,9 @@ dependencies:
   # HTTP client for API requests
   http: ^1.1.0
   
+  # Cryptographic functions for secure hashing
+  crypto: ^3.0.3
+  
   # URL launcher for opening YouTube links
   url_launcher: ^6.2.1
   

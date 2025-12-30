@@ -159,7 +159,7 @@ export async function syncPSNAchievements(
         await supabase
           .from('profiles')
           .update({ 
-            psn_sync_status: 'idle',
+            psn_sync_status: 'stopped',
             psn_sync_progress: 0 
           })
           .eq('id', userId);
