@@ -32,7 +32,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https"
-                      android:host="platovalabs.com"
+                      android:host="statusxp.com"
                       android:pathPrefix="/auth/reset-password"/>
             </intent-filter>
             
@@ -41,7 +41,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="com.platovalabs.statusxp"/>
+                <data android:scheme="com.statusxp.statusxp"/>
             </intent-filter>
             
             <!-- Deep link for OAuth callbacks -->
@@ -49,7 +49,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="com.platovalabs.statusxp"
+                <data android:scheme="com.statusxp.statusxp"
                       android:host="login-callback"/>
             </intent-filter>
         </activity>
