@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'dart:io' show Platform;
+import 'dart:async';
 import 'dart:math';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -24,10 +25,10 @@ class AuthService {
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
-          // On Android: use serverClientId with Android OAuth client
-          // On iOS: use clientId for iOS OAuth client
+          // iOS needs explicit clientId, Android doesn't
           clientId: Platform.isIOS ? _googleiOSClientId : null,
-          serverClientId: Platform.isAndroid ? _googleAndroidClientId : null,
+          // Use web client as serverClientId so tokens work with Supabase
+          serverClientId: _googleWebClientId,
         );
   
   /// Sign up a new user with email and password.
@@ -41,7 +42,7 @@ class AuthService {
     return await _client.auth.signUp(
       email: email,
       password: password,
-      emailRedirectTo: 'com.platovalabs.statusxp://login-callback',
+      emailRedirectTo: 'com.statusxp.statusxp://login-callback',
     );
   }
   
@@ -69,7 +70,7 @@ class AuthService {
   }) async {
     await _client.auth.resetPasswordForEmail(
       email,
-      redirectTo: 'com.platovalabs.statusxp://reset-password',
+      redirectTo: 'com.statusxp.statusxp://reset-password',
     );
   }
   
@@ -128,6 +129,9 @@ class AuthService {
   /// Throws [AuthException] if sign in fails or is cancelled.
   Future<AuthResponse> signInWithGoogle() async {
     try {
+      if (Platform.isIOS || Platform.isMacOS) {
+        return await _signInWithGoogleOAuth();
+      }
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -138,21 +142,24 @@ class AuthService {
       final String? idToken = googleAuth.idToken;
       final String? accessToken = googleAuth.accessToken;
       
-      if (idToken == null) {
-        throw const AuthException('Failed to get Google ID token');
+      if (idToken == null || accessToken == null) {
+        throw const AuthException('Failed to get Google tokens');
       }
+      
+      final idTokenClaims = _extractClaimsFromIdToken(idToken);
+      final idTokenNonce = idTokenClaims['nonce'] as String?;
       
       // Check if user is already authenticated
       final currentUser = _client.auth.currentUser;
       
       if (currentUser != null) {
-        // User is logged in - LINK Google to existing account
+        // User is logged in - LINK Google to existing account using ID/access tokens
         try {
-          await _client.auth.linkIdentity(OAuthProvider.google);
-          // Return current session after linking
-          return AuthResponse(
-            user: currentUser,
-            session: _client.auth.currentSession,
+          return await _client.auth.linkIdentityWithIdToken(
+            provider: OAuthProvider.google,
+            idToken: idToken,
+            accessToken: accessToken,
+            nonce: idTokenNonce,
           );
         } catch (e) {
           // If linking fails (e.g., Google account already linked to another user),
@@ -162,12 +169,11 @@ class AuthService {
       }
       
       // User not logged in - sign in with Google (may create new account)
-      // iOS: Don't send accessToken (causes nonce conflict)
-      // Android: Must send accessToken (required for auth)
       return await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        accessToken: Platform.isIOS ? null : accessToken,
+        accessToken: accessToken,
+        nonce: idTokenNonce,
       );
     } catch (e) {
       rethrow;
@@ -201,17 +207,19 @@ class AuthService {
         throw const AuthException('Failed to get Apple ID token');
       }
       
+      final idTokenNonce = _extractNonceFromIdToken(idToken);
+      final supabaseNonce = idTokenNonce == null ? null : rawNonce;
+      
       // Check if user is already authenticated
       final currentUser = _client.auth.currentUser;
       
       if (currentUser != null) {
-        // User is logged in - LINK Apple to existing account
+        // User is logged in - LINK Apple to existing account using ID token + nonce
         try {
-          await _client.auth.linkIdentity(OAuthProvider.apple);
-          // Return current session after linking
-          return AuthResponse(
-            user: currentUser,
-            session: _client.auth.currentSession,
+          return await _client.auth.linkIdentityWithIdToken(
+            provider: OAuthProvider.apple,
+            idToken: idToken,
+            nonce: supabaseNonce,
           );
         } catch (e) {
           // If linking fails (e.g., Apple account already linked to another user),
@@ -224,7 +232,7 @@ class AuthService {
       return await _client.auth.signInWithIdToken(
         provider: OAuthProvider.apple,
         idToken: idToken,
-        nonce: rawNonce,
+        nonce: supabaseNonce,
       );
     } catch (e) {
       rethrow;
@@ -243,6 +251,90 @@ class AuthService {
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
     return digest.toString();
+  }
+  
+  /// Extracts JWT claims from an id_token, if present.
+  Map<String, dynamic> _extractClaimsFromIdToken(String idToken) {
+    try {
+      final parts = idToken.split('.');
+      if (parts.length < 2) {
+        return <String, dynamic>{};
+      }
+      final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final data = jsonDecode(payload);
+      return data is Map<String, dynamic> ? data : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
+  
+  /// Extract the nonce from an ID token.
+  String? _extractNonceFromIdToken(String idToken) {
+    try {
+      final claims = _extractClaimsFromIdToken(idToken);
+      return claims['nonce'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<AuthResponse> _signInWithGoogleOAuth() async {
+    final currentUser = _client.auth.currentUser;
+    const redirectTo = 'com.statusxp.statusxp://login-callback';
+    
+    if (currentUser != null) {
+      // Link Google via Supabase OAuth flow to avoid token nonce issues on iOS.
+      try {
+        await _client.auth.linkIdentity(
+          OAuthProvider.google,
+          redirectTo: redirectTo,
+        );
+        return AuthResponse(
+          user: currentUser,
+          session: _client.auth.currentSession,
+        );
+      } catch (e) {
+        throw AuthException(
+          'This Google account is already linked to another account. Please sign in with that account first.',
+        );
+      }
+    }
+    
+    final completer = Completer<AuthResponse>();
+    late final StreamSubscription<AuthState> sub;
+    sub = _client.auth.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.signedIn && data.session != null) {
+        sub.cancel();
+        completer.complete(
+          AuthResponse(
+            user: data.session!.user,
+            session: data.session,
+          ),
+        );
+      }
+    });
+    
+    try {
+      final launched = await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: redirectTo,
+      );
+      if (!launched) {
+        await sub.cancel();
+        throw const AuthException('Google Sign-In was cancelled');
+      }
+    } catch (e) {
+      await sub.cancel();
+      rethrow;
+    }
+    
+    return completer.future.timeout(
+      const Duration(seconds: 60),
+      onTimeout: () {
+        sub.cancel();
+        throw const AuthException('Google Sign-In timed out');
+      },
+    );
   }
   
   /// Check if Sign in with Apple is available on this platform.

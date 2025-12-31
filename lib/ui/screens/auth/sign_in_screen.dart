@@ -355,9 +355,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   /// Handle Google Sign-In
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
-    
+    final authService = ref.read(authServiceProvider);
     try {
-      final authService = ref.read(authServiceProvider);
       final currentUser = authService.currentUser;
       
       await authService.signInWithGoogle();
@@ -380,7 +379,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         if (e.message.contains('already linked')) {
           errorMessage = 'This Google account is already linked to another StatusXP account. Please sign in with that account first, or use a different sign-in method.';
         }
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
