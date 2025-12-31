@@ -14,18 +14,20 @@ class AuthService {
   final SupabaseClient _client;
   final GoogleSignIn _googleSignIn;
   
-  // Hardcoded Google Web Client ID (for backend/Supabase) - this is not sensitive and needs to be in the app
-  // On Android: Use serverClientId for OAuth flow
-  // On iOS: Use clientId with the iOS OAuth client ID
-  static const String _googleClientId = '395832690159-snjk36er87mnvh21bkk10f6lu6i9abaq.apps.googleusercontent.com';
+  // Hardcoded Google OAuth Client IDs - these are not sensitive and need to be in the app
+  // Web client for backend/Supabase
+  // Android client for Android OAuth flow
+  // iOS client for iOS OAuth flow
+  static const String _googleWebClientId = '395832690159-snjk36er87mnvh21bkk10f6lu6i9abaq.apps.googleusercontent.com';
+  static const String _googleAndroidClientId = '395832690159-d33nisbrsnug842tp3ssvfklq3qlvr0d.apps.googleusercontent.com';
   static const String _googleiOSClientId = '395832690159-psp0hu5uggjc7u2lmfhnmim016j2lhq2.apps.googleusercontent.com';
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
-          // On Android: use serverClientId for backend OAuth
+          // On Android: use serverClientId with Android OAuth client
           // On iOS: use clientId for iOS OAuth client
           clientId: Platform.isIOS ? _googleiOSClientId : null,
-          serverClientId: Platform.isAndroid ? _googleClientId : null,
+          serverClientId: Platform.isAndroid ? _googleAndroidClientId : null,
         );
   
   /// Sign up a new user with email and password.
@@ -160,9 +162,12 @@ class AuthService {
       }
       
       // User not logged in - sign in with Google (may create new account)
+      // iOS: Don't send accessToken (causes nonce conflict)
+      // Android: Must send accessToken (required for auth)
       return await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
+        accessToken: Platform.isIOS ? null : accessToken,
       );
     } catch (e) {
       rethrow;
