@@ -163,7 +163,6 @@ class AuthService {
       return await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        accessToken: accessToken,
       );
     } catch (e) {
       rethrow;
