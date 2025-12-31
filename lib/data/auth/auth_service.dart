@@ -25,10 +25,10 @@ class AuthService {
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
-          // iOS needs explicit clientId, Android doesn't
+          // On Android: use serverClientId with Android OAuth client
+          // On iOS: use clientId for iOS OAuth client
           clientId: Platform.isIOS ? _googleiOSClientId : null,
-          // Use web client as serverClientId so tokens work with Supabase
-          serverClientId: _googleWebClientId,
+          serverClientId: Platform.isAndroid ? _googleAndroidClientId : null,
         );
   
   /// Sign up a new user with email and password.
