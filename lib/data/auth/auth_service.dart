@@ -19,16 +19,17 @@ class AuthService {
   // Web client for backend/Supabase
   // Android client for Android OAuth flow
   // iOS client for iOS OAuth flow
-  static const String _googleWebClientId = '395832690159-snjk36er87mnvh21bkk10f6lu6i9abaq.apps.googleusercontent.com';
-  static const String _googleAndroidClientId = '395832690159-d33nisbrsnug842tp3ssvfklq3qlvr0d.apps.googleusercontent.com';
+  static const String _googleWebClientId = '395832690159-arutlclucst0mb9b3tctgn1m71i52q1v.apps.googleusercontent.com';
+  static const String _googleAndroidClientId = '395832690159-fe24vs3m6udhe15ufm2m3jnn0k1pdrap.apps.googleusercontent.com';
   static const String _googleiOSClientId = '395832690159-psp0hu5uggjc7u2lmfhnmim016j2lhq2.apps.googleusercontent.com';
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
-          // On Android: use serverClientId with Android OAuth client
-          // On iOS: use clientId for iOS OAuth client
+          // iOS needs explicit clientId
           clientId: Platform.isIOS ? _googleiOSClientId : null,
-          serverClientId: Platform.isAndroid ? _googleAndroidClientId : null,
+          // Use Web client for serverClientId - Supabase needs to verify with Web client secret
+          // Android OAuth client is auto-discovered by package name + SHA-1
+          serverClientId: _googleWebClientId,
         );
   
   /// Sign up a new user with email and password.
