@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
