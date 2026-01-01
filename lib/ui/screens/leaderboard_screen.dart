@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/repositories/leaderboard_repository.dart';
 import 'package:statusxp/domain/leaderboard_entry.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
@@ -358,11 +357,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _getSubtitle(entry, type),
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: 12,
+                      Flexible(
+                        child: Text(
+                          _getSubtitle(entry, type),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       Row(

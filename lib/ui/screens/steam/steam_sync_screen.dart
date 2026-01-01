@@ -205,14 +205,26 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Steam Sync')),
+        appBar: AppBar(
+          title: const Text('Steam Sync'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_steamId == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Steam Sync')),
+        appBar: AppBar(
+          title: const Text('Steam Sync'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+        ),
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(24.0),
@@ -236,7 +248,13 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Steam Sync')),
+      appBar: AppBar(
+        title: const Text('Steam Sync'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: Column(
         children: [
           if (rateLimitMessage != null)
@@ -279,10 +297,16 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
                   onSyncPressed: _startSync,
                   onStopPressed: _stopSync,
                   syncDescription: const [
+                    '� IMPORTANT - Privacy Settings:',
+                    'Your Steam profile MUST be set to PUBLIC during sync.',
+                    'Go to: Profile → Edit Profile → Privacy Settings',
+                    'Set "Game details" to Public',
+                    '(You can change it back to Private after sync finishes)',
+                    '',
                     '💻 How to Sync Steam:',
                     '',
                     '1. Get your Steam ID and API Key from Settings',
-                    '2. Make sure your Steam profile is set to Public',
+                    '2. Make sure your Steam profile is set to Public (see above)',
                     '3. Tap "Start Sync" button above',
                     '4. Sync begins immediately (no browser login needed)',
                     '',
@@ -291,8 +315,6 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
                     '• Achievement unlock dates and progress',
                     '• Global achievement percentages from Steam',
                     '• Processes 5 games at a time (you can stop/resume anytime)',
-                    '',
-                    '⚠️ Note: Your Steam profile must be Public for sync to work',
                   ],
 
             ),

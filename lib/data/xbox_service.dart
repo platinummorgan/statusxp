@@ -118,19 +118,28 @@ class XboxService {
       );
     }
 
-    // Refresh session to ensure valid token
+    // Refresh session to ensure valid token with network error handling
     try {
       await _client.auth.refreshSession();
     } catch (e) {
-      // If refresh fails, return error status
-      return XboxSyncStatus(
-        isLinked: false,
-        status: 'error',
-        progress: 0,
-        error: 'Session expired. Please sign in again.',
-        lastSyncAt: null,
-        latestLog: null,
-      );
+      // Only fail on auth errors, not network errors
+      final errorStr = e.toString();
+      if (errorStr.contains('SocketException') || 
+          errorStr.contains('Failed host lookup') ||
+          errorStr.contains('ClientException')) {
+        // Network error - continue without refresh (token might still be valid)
+        print('Network error during session refresh, continuing: $e');
+      } else {
+        // Auth error - user needs to sign in again
+        return XboxSyncStatus(
+          isLinked: false,
+          status: 'error',
+          progress: 0,
+          error: 'Session expired. Please sign in again.',
+          lastSyncAt: null,
+          latestLog: null,
+        );
+      }
     }
 
     final response = await _client.functions.invoke('xbox-sync-status');

@@ -194,6 +194,10 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('PlayStation Network Sync'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: syncStatusAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

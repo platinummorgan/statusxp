@@ -237,6 +237,16 @@ A: Xbox achievement sync can have delays. Force a sync and wait 10-15 minutes fo
 
 **Steam**
 
+**Q: "403 Forbidden" errors during Steam sync.**
+
+A: This means your Steam profile privacy settings are blocking access. To fix:
+1. Go to your Steam profile
+2. Click "Edit Profile" → "Privacy Settings"
+3. Set "Game details" to **Public** (not Friends Only or Private)
+4. Also set "My profile" to **Public**
+5. Re-run the sync in StatusXP
+6. After sync completes, you can change your privacy settings back if desired
+
 **Q: "Invalid Steam ID" error.**
 
 A: You can use either:
@@ -244,6 +254,10 @@ A: You can use either:
 - Your custom URL (found in profile URL: `/id/[CUSTOMURL]`)
 
 Make sure your Steam profile is set to Public, not Friends Only or Private.
+
+**Q: What do I enter for "Domain Name" when getting a Steam API key?**
+
+A: The "Domain Name" field on steamcommunity.com/dev/apikey is just a label - you can enter anything you want (e.g., "StatusXP", "MyApp", or even "localhost"). It doesn't affect functionality and is only for your reference.
 
 **Q: Steam games missing.**
 

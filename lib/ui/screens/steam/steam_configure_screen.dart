@@ -174,6 +174,44 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
 
               const SizedBox(height: 32),
 
+              // Privacy Warning Card
+              Card(
+                color: Colors.orange[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.privacy_tip, color: Colors.orange, size: 28),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Privacy Settings Required',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.orange,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Your Steam profile must be set to PUBLIC during sync or you\'ll get errors. Go to Profile → Edit Profile → Privacy Settings and set "Game details" to Public. You can change it back to Private after sync completes.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.orange[900],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
               // Instructions Card
               Card(
                 color: Colors.blue[50],
@@ -206,8 +244,9 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
                       _buildInstructionStep(
                         '2. Get your API Key',
                         '• Visit: steamcommunity.com/dev/apikey\n'
-                        '• Register for an API key\n'
-                        '• Copy the 32-character key',
+                        '• For "Domain Name", enter anything (e.g., "StatusXP")\n'
+                        '• This is just a label - it doesn\'t matter what you enter\n'
+                        '• Register and copy the 32-character key',
                       ),
                       const SizedBox(height: 12),
                       const Text(
