@@ -196,14 +196,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           continue;
         }
         
-        // Search for existing game_title by name (case-insensitive)
+        // Search for existing game_title by steam_app_id (unique identifier)
         let gameTitle = null;
         const trimmedName = game.name.trim();
         const { data: existingGame } = await supabase
           .from('game_titles')
-          .select('id, name, cover_url')
-          .ilike('name', trimmedName)
-          .limit(1)
+          .select('id, name, cover_url, metadata')
+          .contains('metadata', { steam_app_id: game.appid })
           .maybeSingle();
         
         if (existingGame) {

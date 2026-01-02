@@ -303,14 +303,13 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               continue;
             }
             
-            // Search for existing game_title by name (case-insensitive)
+            // Search for existing game_title by xbox_title_id (unique identifier)
             let gameTitle = null;
             const trimmedName = title.name.trim();
             const { data: existingGame } = await supabase
               .from('game_titles')
-              .select('id, name, cover_url')
-              .ilike('name', trimmedName)
-              .limit(1)
+              .select('id, name, cover_url, metadata')
+              .contains('metadata', { xbox_title_id: title.titleId })
               .maybeSingle();
             
             if (existingGame) {
