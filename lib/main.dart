@@ -13,6 +13,17 @@ import 'package:app_links/app_links.dart';
 // Global auth refresh service
 late final AuthRefreshService authRefreshService;
 
+// App lifecycle observer to refresh session when app resumes
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Proactively refresh session when app resumes from background
+      authRefreshService.refreshIfNeededOnResume();
+    }
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -52,6 +63,9 @@ void main() async {
 
   // Initialize subscription service
   await SubscriptionService().initialize();
+
+  // Add lifecycle observer to refresh session when app resumes
+  WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
 
   runApp(const ProviderScope(child: StatusXPApp()));
 }

@@ -213,4 +213,90 @@ class SupabaseGameRepository {
       rethrow;
     }
   }
+
+  /// Fetch ALL games from the catalog (not just user's games)
+  /// 
+  /// Returns all game titles. Gets platform info from achievements.
+  /// Useful for browsing/searching the full game database.
+  Future<List<Map<String, dynamic>>> getAllGames({
+    String? searchQuery,
+    String? platformFilter,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    try {
+      // Use RPC function for efficient server-side query
+      final response = await _client.rpc('get_games_with_platforms', params: {
+        'search_query': searchQuery,
+        'platform_filter': platformFilter,
+        'result_limit': limit,
+        'result_offset': offset,
+      });
+
+      final games = (response as List).map((game) {
+        final platforms = (game['platforms'] as List?)?.cast<String>() ?? [];
+        
+        // Determine primary platform for display
+        String? primaryPlatform;
+        if (platforms.isNotEmpty) {
+          if (platformFilter != null && platforms.contains(platformFilter)) {
+            primaryPlatform = platformFilter;
+          } else if (platforms.contains('steam')) {
+            primaryPlatform = 'steam';
+          } else if (platforms.contains('xbox')) {
+            primaryPlatform = 'xbox';
+          } else {
+            primaryPlatform = 'psn';
+          }
+        }
+
+        return {
+          'id': game['id'],
+          'name': game['name'],
+          'cover_url': game['cover_url'],
+          'platforms': primaryPlatform != null 
+              ? {'code': primaryPlatform, 'name': primaryPlatform}
+              : null,
+          'all_platforms': platforms,
+        };
+      }).toList();
+
+      return games.cast<Map<String, dynamic>>();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get total count of games in catalog
+  Future<int> getTotalGamesCount({
+    String? searchQuery,
+    String? platformFilter,
+  }) async {
+    try {
+      dynamic query = _client
+          .from('game_titles')
+          .select('*');
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        query = query.ilike('name', '%$searchQuery%');
+      }
+
+      if (platformFilter != null && platformFilter.isNotEmpty) {
+        final platformResponse = await _client
+            .from('platforms')
+            .select('id')
+            .eq('code', platformFilter)
+            .maybeSingle();
+        
+        if (platformResponse != null) {
+          query = query.eq('platform_id', platformResponse['id']);
+        }
+      }
+
+      final response = await query;
+      return (response as List).length;
+    } catch (e) {
+      return 0;
+    }
+  }
 }

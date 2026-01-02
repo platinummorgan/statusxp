@@ -24,6 +24,13 @@ class AuthRefreshService {
     _refreshTimer = null;
   }
   
+  /// Proactively refresh session when app resumes from background
+  /// This prevents "Session expired" errors when returning to the app
+  Future<void> refreshIfNeededOnResume() async {
+    // Use the existing logic but make it public for app resume
+    await _refreshIfNeeded();
+  }
+  
   /// Manually trigger token refresh with error handling
   Future<void> _refreshIfNeeded() async {
     // Prevent concurrent refreshes
@@ -35,13 +42,15 @@ class AuthRefreshService {
       final session = _client.auth.currentSession;
       if (session == null) return;
       
-      // Check if token is about to expire (within 10 minutes)
+      // Check if token is expired or about to expire (within 10 minutes)
       final expiresAt = DateTime.fromMillisecondsSinceEpoch(
         session.expiresAt! * 1000,
       );
       final timeUntilExpiry = expiresAt.difference(DateTime.now());
       
+      // Refresh if expired or expiring soon
       if (timeUntilExpiry.inMinutes < 10) {
+        print('Token expiring in ${timeUntilExpiry.inMinutes} minutes, refreshing...');
         await _refreshWithRetry();
       }
     } catch (e) {

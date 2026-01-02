@@ -5,6 +5,7 @@ import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
 import 'package:statusxp/ui/screens/games_list_screen.dart';
 import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
+import 'package:statusxp/ui/screens/game_browser_screen.dart';
 import 'package:statusxp/ui/screens/leaderboard_screen.dart';
 import 'package:statusxp/ui/screens/flex_room_screen.dart';
 import 'package:statusxp/ui/screens/achievements_screen.dart';
@@ -49,6 +50,23 @@ final GoRouter appRouter = GoRouter(
       path: '/unified-games',
       name: 'unified-games',
       builder: (context, state) => const UnifiedGamesListScreen(),
+    ),
+
+    // Game Browser - Browse ALL games in database (catalog)
+    GoRoute(
+      path: '/games/browse',
+      name: 'game-browser',
+      builder: (context, state) => const GameBrowserScreen(),
+    ),
+
+    // Game detail shortcut - redirects to achievements
+    GoRoute(
+      path: '/game/:gameId',
+      name: 'game-detail',
+      redirect: (context, state) {
+        final gameId = state.pathParameters['gameId'];
+        return '/game/$gameId/achievements';
+      },
     ),
 
     // Game Achievements - View achievements/trophies for a specific game

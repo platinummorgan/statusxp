@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/flex_room_data.dart';
 import 'package:statusxp/data/repositories/flex_room_repository.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/widgets/achievement_picker_modal.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/ui/widgets/title_selector_modal.dart';
@@ -1557,6 +1559,52 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // View Trophy List Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context); // Close dialog
+                      if (tile.gameId != null) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => GameAchievementsScreen(
+                              gameId: tile.gameId!,
+                              gameName: tile.gameName,
+                              platform: tile.platform,
+                              coverUrl: tile.gameCoverUrl,
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.list, size: 20),
+                    label: const Text(
+                      'VIEW TROPHY LIST',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _getPlatformColor(tile.platform),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                    ),
                   ),
                 ),
               ),

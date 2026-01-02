@@ -755,7 +755,10 @@ class FlexRoomRepository {
             game_title_id
           ''')
           .eq('game_title_id', gameId)
-          .eq('platform', achievementPlatform);
+          .eq('platform', achievementPlatform)
+          .order('is_platinum', ascending: false)
+          .order('psn_trophy_type', ascending: true, nullsFirst: false)
+          .order('id', ascending: true);
 
       print('📊 Found ${(achievementsResponse as List).length} achievements');
 

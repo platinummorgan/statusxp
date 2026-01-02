@@ -488,6 +488,17 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
         const SizedBox(height: 12),
 
         _buildActionButton(
+          label: 'Browse All Games',
+          icon: Icons.explore,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            context.push('/games/browse');
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        _buildActionButton(
           label: 'Status Poster',
           icon: Icons.image,
           onTap: () {

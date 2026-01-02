@@ -92,7 +92,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               dlc_name
             ''')
             .eq('game_title_id', widget.gameId)
-            .eq('platform', achievementPlatform);
+            .eq('platform', achievementPlatform)
+            .order('is_platinum', ascending: false)
+            .order('psn_trophy_type', ascending: true, nullsFirst: false)
+            .order('id', ascending: true);
         
         print('[GameAchievements] Found ${(achievementsResponse as List).length} achievements');
       } catch (e) {
