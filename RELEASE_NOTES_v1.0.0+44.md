@@ -5,7 +5,10 @@
 🎮 **Auto-Sync**
 Your achievements now sync automatically every 12 hours when you open the app. No more manual syncing!
 
-🔧 **Major Bug Fixes**
+� **View All Games**
+New "View All Games" button lets you browse your entire game library across all platforms in one place.
+
+�🔧 **Major Bug Fixes**
 • Fixed critical issue where games with similar names (RE4 Original vs Remake, FF VII vs Remake) were merging, causing platinum trophies to disappear
 • Fixed sync getting stuck at certain percentages
 • Fixed app crashes when checking sync status
