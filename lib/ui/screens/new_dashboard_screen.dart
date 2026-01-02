@@ -7,6 +7,7 @@ import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
+import 'package:statusxp/services/auto_sync_service.dart';
 
 /// New Dashboard Screen - Cross-Platform Overview
 ///
@@ -20,6 +21,7 @@ class NewDashboardScreen extends ConsumerStatefulWidget {
 
 class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
   bool _showStatusXPHint = false;
+  bool _isAutoSyncing = false;
 
   @override
   void initState() {
@@ -28,6 +30,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
     // Refresh data when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(dashboardStatsProvider);
+      _checkAndTriggerAutoSync();
     });
   }
 
@@ -55,6 +58,44 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
       setState(() {
         _showStatusXPHint = false;
       });
+    }
+  }
+  
+  /// Check if it's been >12 hours and trigger auto-sync if needed
+  Future<void> _checkAndTriggerAutoSync() async {
+    if (_isAutoSyncing) return; // Already syncing
+    
+    setState(() => _isAutoSyncing = true);
+    
+    try {
+      final psnService = ref.read(psnServiceProvider);
+      final xboxService = ref.read(xboxServiceProvider);
+      final supabase = ref.read(supabaseClientProvider);
+      
+      final autoSyncService = AutoSyncService(supabase, psnService, xboxService);
+      final result = await autoSyncService.checkAndSync();
+      
+      if (result.anySynced && mounted) {
+        // Show subtle notification that sync started
+        final platforms = <String>[];
+        if (result.psnSynced) platforms.add('PSN');
+        if (result.xboxSynced) platforms.add('Xbox');
+        if (result.steamSynced) platforms.add('Steam');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Auto-syncing ${platforms.join(' & ')}...'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: CyberpunkTheme.neonCyan.withOpacity(0.9),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Auto-sync check error: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isAutoSyncing = false);
+      }
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/data/xbox_service.dart';
+import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
 import 'package:statusxp/services/sync_limit_service.dart';
 
@@ -117,6 +118,14 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
 
           // Check if sync completed or failed
           if (status.status == 'completed' || status.status == 'success') {
+            // Update last sync time for auto-sync
+            final autoSyncService = AutoSyncService(
+              supabase: ref.read(supabaseClientProvider),
+              psnService: ref.read(psnServiceProvider),
+              xboxService: ref.read(xboxServiceProvider),
+            );
+            await autoSyncService.updateXboxSyncTime();
+            
             if (mounted) {
               setState(() {
                 _isSyncing = false;

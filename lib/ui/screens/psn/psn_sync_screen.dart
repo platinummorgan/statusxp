@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
 import 'package:statusxp/services/sync_limit_service.dart';
+import 'package:statusxp/services/auto_sync_service.dart';
 
 /// Screen for managing PSN sync
 class PSNSyncScreen extends ConsumerStatefulWidget {
@@ -95,6 +96,17 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
 
           // Check if sync completed or failed
           if (status.status == 'success') {
+            // Update last sync time for auto-sync tracking
+            try {
+              final supabase = ref.read(supabaseClientProvider);
+              final psnService = ref.read(psnServiceProvider);
+              final xboxService = ref.read(xboxServiceProvider);
+              final autoSyncService = AutoSyncService(supabase, psnService, xboxService);
+              await autoSyncService.updatePSNSyncTime();
+            } catch (e) {
+              debugPrint('Failed to update PSN sync time: $e');
+            }
+            
             if (mounted) {
               setState(() {
                 _isSyncing = false;
