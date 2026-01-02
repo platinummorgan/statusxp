@@ -204,19 +204,24 @@ class AutoSyncService {
   /// Update the last sync time in SharedPreferences
   Future<void> _updateLastSyncTime(String prefKey) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(prefKey, DateTime.now().toIso8601String());
+    final timestamp = DateTime.now().toIso8601String();
+    final success = await prefs.setString(prefKey, timestamp);
+    debugPrint('💾 Updating $prefKey to $timestamp (success: $success)');
   }
   
   /// Manually update sync time (call this after manual sync)
   Future<void> updatePSNSyncTime() async {
+    debugPrint('📝 Manually updating PSN sync time');
     await _updateLastSyncTime(_psnLastSyncKey);
   }
   
   Future<void> updateXboxSyncTime() async {
+    debugPrint('📝 Manually updating Xbox sync time');
     await _updateLastSyncTime(_xboxLastSyncKey);
   }
   
   Future<void> updateSteamSyncTime() async {
+    debugPrint('📝 Manually updating Steam sync time');
     await _updateLastSyncTime(_steamLastSyncKey);
   }
   

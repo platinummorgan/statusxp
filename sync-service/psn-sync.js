@@ -463,15 +463,8 @@ export async function syncPSNAchievements(
             if (!achievementRecord) continue;
 
             if (userTrophy?.earned) {
-              // VALIDATION: Prevent phantom platinums
-              // Don't create platinum user_achievement if user_games.has_platinum = false
-              if (trophyMeta.trophyType === 'platinum' && !userGameData.has_platinum) {
-                console.log(
-                  `⚠️ [VALIDATION BLOCKED] Preventing phantom platinum for ${game.trophyTitleName}: user_games.has_platinum = false`
-                );
-                continue;
-              }
-
+              // Trust the individual trophy earned status from PSN API
+              // The summary counts can be inaccurate, so we don't validate against them
               await supabase
                 .from('user_achievements')
                 .upsert(
