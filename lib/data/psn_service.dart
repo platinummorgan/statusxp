@@ -263,7 +263,7 @@ class PSNSyncStatus {
   factory PSNSyncStatus.fromJson(Map<String, dynamic> json) {
     return PSNSyncStatus(
       isLinked: json['isLinked'] as bool,
-      status: json['status'] as String,
+      status: json['status'] as String? ?? 'never_synced',
       progress: json['progress'] as int? ?? 0,
       error: json['error'] as String?,
       lastSyncAt: json['lastSyncAt'] != null
