@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'dart:io' show Platform;
+import 'dart:async';
 import 'dart:math';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
@@ -24,10 +25,10 @@ class AuthService {
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
-          // iOS needs explicit clientId to initialize
+          // iOS needs explicit clientId
           clientId: Platform.isIOS ? _googleiOSClientId : null,
-          // BOTH platforms need serverClientId (web client) so Supabase can verify tokens
-          // This causes a nonce to be added, which we extract and pass to Supabase
+          // Use Web client for serverClientId - Supabase needs to verify with Web client secret
+          // Android OAuth client is auto-discovered by package name + SHA-1
           serverClientId: _googleWebClientId,
         );
   
@@ -129,6 +130,9 @@ class AuthService {
   /// Throws [AuthException] if sign in fails or is cancelled.
   Future<AuthResponse> signInWithGoogle() async {
     try {
+      if (Platform.isIOS || Platform.isMacOS) {
+        return await _signInWithGoogleOAuth();
+      }
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -143,7 +147,6 @@ class AuthService {
         throw const AuthException('Failed to get Google tokens');
       }
       
-      // Extract nonce from ID token - REQUIRED when serverClientId is used
       final idTokenClaims = _extractClaimsFromIdToken(idToken);
       final idTokenNonce = idTokenClaims['nonce'] as String?;
       
@@ -162,7 +165,7 @@ class AuthService {
         } catch (e) {
           // If linking fails (e.g., Google account already linked to another user),
           // throw a more helpful error
-          throw AuthException('This Google account is already linked to another account. Please sign in with that account first.');
+          throw const AuthException('This Google account is already linked to another account. Please sign in with that account first.');
         }
       }
       
@@ -205,6 +208,9 @@ class AuthService {
         throw const AuthException('Failed to get Apple ID token');
       }
       
+      final idTokenNonce = _extractNonceFromIdToken(idToken);
+      final supabaseNonce = idTokenNonce == null ? null : rawNonce;
+      
       // Check if user is already authenticated
       final currentUser = _client.auth.currentUser;
       
@@ -214,12 +220,12 @@ class AuthService {
           return await _client.auth.linkIdentityWithIdToken(
             provider: OAuthProvider.apple,
             idToken: idToken,
-            nonce: rawNonce,
+            nonce: supabaseNonce,
           );
         } catch (e) {
           // If linking fails (e.g., Apple account already linked to another user),
           // throw a more helpful error
-          throw AuthException('This Apple ID is already linked to another account. Please sign in with that account first.');
+          throw const AuthException('This Apple ID is already linked to another account. Please sign in with that account first.');
         }
       }
       
@@ -227,7 +233,7 @@ class AuthService {
       return await _client.auth.signInWithIdToken(
         provider: OAuthProvider.apple,
         idToken: idToken,
-        nonce: rawNonce,
+        nonce: supabaseNonce,
       );
     } catch (e) {
       rethrow;
@@ -271,6 +277,65 @@ class AuthService {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<AuthResponse> _signInWithGoogleOAuth() async {
+    final currentUser = _client.auth.currentUser;
+    const redirectTo = 'com.statusxp.statusxp://login-callback';
+    
+    if (currentUser != null) {
+      // Link Google via Supabase OAuth flow to avoid token nonce issues on iOS.
+      try {
+        await _client.auth.linkIdentity(
+          OAuthProvider.google,
+          redirectTo: redirectTo,
+        );
+        return AuthResponse(
+          user: currentUser,
+          session: _client.auth.currentSession,
+        );
+      } catch (e) {
+        throw const AuthException(
+          'This Google account is already linked to another account. Please sign in with that account first.',
+        );
+      }
+    }
+    
+    final completer = Completer<AuthResponse>();
+    late final StreamSubscription<AuthState> sub;
+    sub = _client.auth.onAuthStateChange.listen((data) {
+      if (data.event == AuthChangeEvent.signedIn && data.session != null) {
+        sub.cancel();
+        completer.complete(
+          AuthResponse(
+            user: data.session!.user,
+            session: data.session,
+          ),
+        );
+      }
+    });
+    
+    try {
+      final launched = await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: redirectTo,
+      );
+      if (!launched) {
+        await sub.cancel();
+        throw const AuthException('Google Sign-In was cancelled');
+      }
+    } catch (e) {
+      await sub.cancel();
+      rethrow;
+    }
+    
+    return completer.future.timeout(
+      const Duration(seconds: 60),
+      onTimeout: () {
+        sub.cancel();
+        throw const AuthException('Google Sign-In timed out');
+      },
+    );
   }
   
   /// Check if Sign in with Apple is available on this platform.

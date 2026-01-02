@@ -36,8 +36,11 @@ class AutoSyncService {
     try {
       // Check PSN
       final psnLinked = await _isPlatformLinked('psn');
+      debugPrint('🔍 PSN linked: $psnLinked');
       if (psnLinked && await _shouldSync(_psnLastSyncKey)) {
         psnSynced = await _triggerPSNSync();
+      } else {
+        debugPrint('⏭️ Skipping PSN sync (linked: $psnLinked, should sync: ${await _shouldSync(_psnLastSyncKey)})');
       }
     } catch (e) {
       debugPrint('Auto-sync PSN error: $e');
@@ -46,14 +49,28 @@ class AutoSyncService {
     try {
       // Check Xbox
       final xboxLinked = await _isPlatformLinked('xbox');
+      debugPrint('🔍 Xbox linked: $xboxLinked');
       if (xboxLinked && await _shouldSync(_xboxLastSyncKey)) {
         xboxSynced = await _triggerXboxSync();
+      } else {
+        debugPrint('⏭️ Skipping Xbox sync (linked: $xboxLinked, should sync: ${await _shouldSync(_xboxLastSyncKey)})');
       }
     } catch (e) {
       debugPrint('Auto-sync Xbox error: $e');
     }
     
-    // TODO: Steam when implemented
+    try {
+      // Check Steam
+      final steamLinked = await _isPlatformLinked('steam');
+      debugPrint('🔍 Steam linked: $steamLinked');
+      if (steamLinked && await _shouldSync(_steamLastSyncKey)) {
+        steamSynced = await _triggerSteamSync();
+      } else {
+        debugPrint('⏭️ Skipping Steam sync (linked: $steamLinked, should sync: ${await _shouldSync(_steamLastSyncKey)})');
+      }
+    } catch (e) {
+      debugPrint('Auto-sync Steam error: $e');
+    }
     
     return AutoSyncResult(
       psnSynced: psnSynced,
@@ -68,15 +85,22 @@ class AutoSyncService {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) return false;
       
+      // Map platform names to correct column names
+      final columnName = platform == 'psn' 
+          ? 'psn_account_id'
+          : platform == 'xbox'
+              ? 'xbox_xuid'
+              : 'steam_id'; // steam
+      
       final response = await _client
           .from('profiles')
-          .select('${platform}_account_id')
+          .select(columnName)
           .eq('id', userId)
           .maybeSingle();
       
       if (response == null) return false;
       
-      final accountId = response['${platform}_account_id'];
+      final accountId = response[columnName];
       return accountId != null && accountId.toString().isNotEmpty;
     } catch (e) {
       debugPrint('Error checking $platform link: $e');
@@ -90,13 +114,18 @@ class AutoSyncService {
       final prefs = await SharedPreferences.getInstance();
       final lastSyncStr = prefs.getString(prefKey);
       
+      debugPrint('📅 Checking $prefKey: $lastSyncStr');
+      
       if (lastSyncStr == null) {
         // Never synced before - trigger sync
+        debugPrint('✅ No previous sync found - should sync');
         return true;
       }
       
       final lastSync = DateTime.parse(lastSyncStr);
       final timeSinceSync = DateTime.now().difference(lastSync);
+      
+      debugPrint('⏰ Time since last sync: ${timeSinceSync.inHours}h ${timeSinceSync.inMinutes % 60}m');
       
       return timeSinceSync >= _autoSyncInterval;
     } catch (e) {
@@ -115,7 +144,7 @@ class AutoSyncService {
         forceResync: false,
       );
       
-      // Update last sync time
+      // Update timestamp immediately so we don't re-trigger on next app open
       await _updateLastSyncTime(_psnLastSyncKey);
       
       debugPrint('✅ PSN auto-sync started successfully');
@@ -140,7 +169,7 @@ class AutoSyncService {
         forceResync: false,
       );
       
-      // Update last sync time
+      // Update timestamp immediately so we don't re-trigger on next app open
       await _updateLastSyncTime(_xboxLastSyncKey);
       
       debugPrint('✅ Xbox auto-sync started successfully');
@@ -150,6 +179,24 @@ class AutoSyncService {
       return false;
     } catch (e) {
       debugPrint('❌ Xbox auto-sync error: $e');
+      return false;
+    }
+  }
+  
+  /// Trigger Steam sync in background
+  Future<bool> _triggerSteamSync() async {
+    try {
+      debugPrint('🔄 Auto-triggering Steam sync...');
+      
+      await _client.functions.invoke('steam-start-sync');
+      
+      // Update timestamp immediately so we don't re-trigger on next app open
+      await _updateLastSyncTime(_steamLastSyncKey);
+      
+      debugPrint('✅ Steam auto-sync started successfully');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Steam auto-sync error: $e');
       return false;
     }
   }

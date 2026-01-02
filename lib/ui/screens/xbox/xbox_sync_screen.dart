@@ -120,9 +120,9 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
           if (status.status == 'completed' || status.status == 'success') {
             // Update last sync time for auto-sync
             final autoSyncService = AutoSyncService(
-              supabase: ref.read(supabaseClientProvider),
-              psnService: ref.read(psnServiceProvider),
-              xboxService: ref.read(xboxServiceProvider),
+              ref.read(supabaseClientProvider),
+              ref.read(psnServiceProvider),
+              ref.read(xboxServiceProvider),
             );
             await autoSyncService.updateXboxSyncTime();
             

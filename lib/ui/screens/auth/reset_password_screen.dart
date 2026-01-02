@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Screen for resetting password after clicking email link
 class ResetPasswordScreen extends ConsumerStatefulWidget {

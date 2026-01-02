@@ -500,7 +500,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onTap: () async {
                     if (_profile?['psn_account_id'] != null) {
                       // Already connected - go to sync screen
-                      context.push('/psn-sync');
+                      await context.push('/psn-sync');
+                      // Reload profile to show updated sync time
+                      _loadProfile();
                     } else {
                       // Not connected - go to connect screen
                       final result = await Navigator.push<bool>(
@@ -577,12 +579,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onTap: () async {
                     if (_profile?['steam_id'] != null) {
                       // Already connected - go to sync screen
-                      Navigator.push(
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const SteamSyncScreen(),
                         ),
                       );
+                      // Reload profile to show updated sync time
+                      _loadProfile();
                     } else {
                       // Not connected - go to configure screen
                       final result = await Navigator.push<bool>(
