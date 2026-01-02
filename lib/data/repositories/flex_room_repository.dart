@@ -173,8 +173,10 @@ class FlexRoomRepository {
         'superlatives': superlativesJson,
       };
       await _client.from('flex_room_data').upsert(payload);
+      print('✅ Flex Room data saved successfully for user: ${data.userId}');
       return true;
     } catch (e) {
+      print('❌ Error saving flex room data: $e');
       return false;
     }
   }

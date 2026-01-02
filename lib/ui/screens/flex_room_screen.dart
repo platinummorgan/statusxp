@@ -138,10 +138,12 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 
                 if (mounted) {
                   if (success) {
+                    // Invalidate so it refetches fresh data on next load
+                    ref.invalidate(flexRoomDataProvider(userId));
+                    
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Flex Room saved!')),
                     );
-                    // Don't invalidate - keep using cached _savedData
                   } else {
                     // Only refresh on error to revert
                     ref.invalidate(flexRoomDataProvider);
