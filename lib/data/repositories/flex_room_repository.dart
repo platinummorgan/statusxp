@@ -45,15 +45,8 @@ class FlexRoomRepository {
       final gameId = achievement['game_title_id'];
       final rarityPercent = achievement['rarity_global']?.toDouble();
       
-      // Fetch game data
-      Map<String, dynamic>? gameData;
-      if (gameId != null) {
-        gameData = await _client
-            .from('game_titles')
-            .select('name, cover_url')
-            .eq('id', gameId)
-            .maybeSingle();
-      }
+      // Extract game data from nested response (no separate query needed)
+      final gameData = achievement['game_titles'] as Map<String, dynamic>?;
 
       return FlexTile(
         achievementId: achievement['id'],
@@ -86,56 +79,91 @@ class FlexRoomRepository {
 
       if (response == null) {
         // No flex room data exists yet, return default empty state
+        // Load all tiles in parallel for speed
+        final results = await Future.wait([
+          _getRarestAchievement(userId),
+          _getMostTimeSunkGame(userId),
+          _getSweattiestPlatinum(userId),
+          _getRecentNotableAchievements(userId),
+        ]);
+        
         return FlexRoomData(
           userId: userId,
           tagline: 'Completionist', // Default tagline
           lastUpdated: DateTime.now(),
           flexOfAllTime: null,
-          rarestFlex: await _getRarestAchievement(userId),
-          mostTimeSunk: await _getMostTimeSunkGame(userId),
-          sweattiestPlatinum: await _getSweattiestPlatinum(userId),
+          rarestFlex: results[0] as FlexTile?,
+          mostTimeSunk: results[1] as FlexTile?,
+          sweattiestPlatinum: results[2] as FlexTile?,
           superlatives: {},
-          recentFlexes: await _getRecentNotableAchievements(userId),
+          recentFlexes: results[3] as List<RecentFlex>,
         );
       }
 
       // Parse stored flex room data
       final data = response;
 
-      // Fetch achievement details for each featured tile
-      final flexOfAllTime = data['flex_of_all_time_id'] != null
-          ? await _getAchievementTile(data['flex_of_all_time_id'], userId)
-          : null;
+      // Build list of all queries to run in parallel
+      final featuredQueries = <Future>[];
+      
+      // Featured tiles queries
+      featuredQueries.add(
+        data['flex_of_all_time_id'] != null
+            ? _getAchievementTile(data['flex_of_all_time_id'], userId)
+            : Future.value(null)
+      );
+      
+      featuredQueries.add(
+        data['rarest_flex_id'] != null
+            ? _getAchievementTile(data['rarest_flex_id'], userId)
+            : _getRarestAchievement(userId)
+      );
+      
+      featuredQueries.add(
+        data['most_time_sunk_id'] != null
+            ? _getAchievementTile(data['most_time_sunk_id'], userId)
+            : _getMostTimeSunkGame(userId)
+      );
+      
+      featuredQueries.add(
+        data['sweatiest_platinum_id'] != null
+            ? _getAchievementTile(data['sweatiest_platinum_id'], userId)
+            : _getSweattiestPlatinum(userId)
+      );
 
-      final rarestFlex = data['rarest_flex_id'] != null
-          ? await _getAchievementTile(data['rarest_flex_id'], userId)
-          : await _getRarestAchievement(userId);
-
-      final mostTimeSunk = data['most_time_sunk_id'] != null
-          ? await _getAchievementTile(data['most_time_sunk_id'], userId)
-          : await _getMostTimeSunkGame(userId);
-
-      final sweattiestPlatinum = data['sweatiest_platinum_id'] != null
-          ? await _getAchievementTile(data['sweatiest_platinum_id'], userId)
-          : await _getSweattiestPlatinum(userId);
-
-      // Parse superlatives from JSONB
-      final superlativesJson =
-          data['superlatives'] as Map<String, dynamic>? ?? {};
-      final superlatives = <String, FlexTile>{};
-
+      // Add superlatives queries
+      final superlativesJson = data['superlatives'] as Map<String, dynamic>? ?? {};
+      final superlativeKeys = <String>[];
+      
       for (final entry in superlativesJson.entries) {
         if (entry.value != null) {
-          final achievementId = entry.value as int;
-          final tile = await _getAchievementTile(achievementId, userId);
-          if (tile != null) {
-            superlatives[entry.key] = tile;
-          }
+          superlativeKeys.add(entry.key);
+          featuredQueries.add(_getAchievementTile(entry.value as int, userId));
         }
       }
 
-      // Fetch recent notable achievements
-      final recentFlexes = await _getRecentNotableAchievements(userId);
+      // Add recent flexes query
+      featuredQueries.add(_getRecentNotableAchievements(userId));
+
+      // Execute all queries in parallel
+      final results = await Future.wait(featuredQueries);
+      
+      // Extract results
+      final flexOfAllTime = results[0] as FlexTile?;
+      final rarestFlex = results[1] as FlexTile?;
+      final mostTimeSunk = results[2] as FlexTile?;
+      final sweattiestPlatinum = results[3] as FlexTile?;
+      
+      // Build superlatives map from remaining results
+      final superlatives = <String, FlexTile>{};
+      for (var i = 0; i < superlativeKeys.length; i++) {
+        final tile = results[4 + i] as FlexTile?;
+        if (tile != null) {
+          superlatives[superlativeKeys[i]] = tile;
+        }
+      }
+      
+      final recentFlexes = results[4 + superlativeKeys.length] as List<RecentFlex>;
 
       return FlexRoomData(
         userId: userId,
@@ -199,7 +227,12 @@ class FlexRoomRepository {
               icon_url,
               rarity_global,
               game_title_id,
-              psn_trophy_type
+              psn_trophy_type,
+              game_titles!inner(
+                id,
+                name,
+                cover_url
+              )
             )
           ''')
           .eq('achievement_id', achievementId)
@@ -229,6 +262,11 @@ class FlexRoomRepository {
             rarity_global,
             game_title_id,
             psn_trophy_type,
+            game_titles!inner(
+              id,
+              name,
+              cover_url
+            ),
             user_achievements!inner(
               id,
               user_id,
@@ -243,12 +281,8 @@ class FlexRoomRepository {
 
       if (response == null) return null;
 
-      // Get game data
-      final gameData = await _client
-          .from('game_titles')
-          .select('name, cover_url')
-          .eq('id', response['game_title_id'])
-          .maybeSingle();
+      // Get game data from nested response (already joined)
+      final gameData = response['game_titles'] as Map<String, dynamic>?;
 
       final userAchievement = (response['user_achievements'] as List).first as Map<String, dynamic>;
       final rarityPercent = response['rarity_global']?.toDouble();
@@ -329,6 +363,11 @@ class FlexRoomRepository {
             rarity_global,
             game_title_id,
             psn_trophy_type,
+            game_titles!inner(
+              id,
+              name,
+              cover_url
+            ),
             user_achievements!inner(
               id,
               user_id,
@@ -345,12 +384,8 @@ class FlexRoomRepository {
 
       if (response == null) return null;
 
-      // Get game data
-      final gameData = await _client
-          .from('game_titles')
-          .select('name, cover_url')
-          .eq('id', response['game_title_id'])
-          .maybeSingle();
+      // Get game data from nested response (already joined)
+      final gameData = response['game_titles'] as Map<String, dynamic>?;
 
       final userAchievement = (response['user_achievements'] as List).first as Map<String, dynamic>;
 
@@ -390,7 +425,12 @@ class FlexRoomRepository {
               icon_url,
               rarity_global,
               game_title_id,
-              psn_trophy_type
+              psn_trophy_type,
+              game_titles!inner(
+                id,
+                name,
+                cover_url
+              )
             )
           ''')
           .eq('user_id', userId)
@@ -413,12 +453,8 @@ class FlexRoomRepository {
         // Stop when we have 5
         if (recentFlexes.length >= 5) break;
         
-        // Fetch game data
-        final gameData = await _client
-            .from('game_titles')
-            .select('name')
-            .eq('id', gameId)
-            .maybeSingle();
+        // Get game data from nested response (already joined)
+        final gameData = achievement['game_titles'] as Map<String, dynamic>?;
 
         // Determine flex type
         String type = 'ultra_rare';
