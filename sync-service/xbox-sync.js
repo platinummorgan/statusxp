@@ -8,6 +8,36 @@ const supabase = createClient(
 const ENV_BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '5', 10);
 const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '1', 10);
 
+// Helper to safely update sync status with retries
+async function updateSyncStatus(userId, updates, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      
+      if (!error) {
+        console.log(`✅ Status updated successfully:`, updates);
+        return true;
+      }
+      
+      console.error(`❌ Attempt ${attempt}/${retries} failed:`, error);
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+      }
+    } catch (err) {
+      console.error(`❌ Attempt ${attempt}/${retries} threw error:`, err.message);
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+  
+  console.error('🚨 CRITICAL: Failed to update sync status after all retries');
+  return false;
+}
+
 function logMemory(label) {
   try {
     const m = process.memoryUsage();
@@ -714,15 +744,16 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       console.error('⚠️ StatusXP calculation failed:', calcError);
     }
 
-    // Mark as completed
-    await supabase
-      .from('profiles')
-      .update({
-        xbox_sync_status: 'success',
-        xbox_sync_progress: 100,
-        last_xbox_sync_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
+    // Mark as completed with retry logic
+    const statusUpdated = await updateSyncStatus(userId, {
+      xbox_sync_status: 'success',
+      xbox_sync_progress: 100,
+      last_xbox_sync_at: new Date().toISOString(),
+    });
+    
+    if (!statusUpdated) {
+      console.error('🚨 WARNING: Sync completed but status update failed! User may see stuck sync.');
+    }
 
     await supabase
       .from('xbox_sync_logs')
@@ -739,13 +770,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
   } catch (error) {
     console.error('Xbox sync failed:', error);
     
-    await supabase
-      .from('profiles')
-      .update({
-        xbox_sync_status: 'error',
-        xbox_sync_error: error.message,
-      })
-      .eq('id', userId);
+    await updateSyncStatus(userId, {
+      xbox_sync_status: 'error',
+      xbox_sync_error: error.message,
+    });
 
     await supabase
       .from('xbox_sync_logs')
