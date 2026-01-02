@@ -72,30 +72,57 @@ export async function syncPSNAchievements(
     
     while (hasMore) {
       console.log(`Fetching titles with offset ${offset}, limit ${limit}`);
-      const titles = await getUserTitles(
-        { accessToken: currentAccessToken },
-        accountId,
-        { limit, offset }
-      );
       
-      const fetchedCount = titles?.trophyTitles?.length ?? 0;
-      console.log(`Fetched ${fetchedCount} titles in this batch`);
-      
-      if (fetchedCount > 0) {
-        allTitles = allTitles.concat(titles.trophyTitles);
-        offset += fetchedCount;
+      try {
+        const titles = await getUserTitles(
+          { accessToken: currentAccessToken },
+          accountId,
+          { limit, offset }
+        );
         
-        // If we got fewer titles than the limit, we've reached the end
-        hasMore = fetchedCount === limit;
-      } else {
-        hasMore = false;
+        // Log the raw API response for debugging
+        console.log('PSN API Response:', JSON.stringify(titles).substring(0, 500));
+        
+        const fetchedCount = titles?.trophyTitles?.length ?? 0;
+        console.log(`Fetched ${fetchedCount} titles in this batch`);
+        
+        if (fetchedCount > 0) {
+          allTitles = allTitles.concat(titles.trophyTitles);
+          offset += fetchedCount;
+          
+          // If we got fewer titles than the limit, we've reached the end
+          hasMore = fetchedCount === limit;
+        } else {
+          // Check if this is an error condition vs actually no games
+          if (offset === 0 && titles && Object.keys(titles).length > 0) {
+            console.error('🚨 PSN API returned response but no trophyTitles array!');
+            console.error('Response keys:', Object.keys(titles));
+          }
+          hasMore = false;
+        }
+      } catch (apiError) {
+        console.error('❌ PSN API call failed:', apiError);
+        throw new Error(`Failed to fetch PSN titles: ${apiError.message}`);
       }
     }
 
     console.log(`Total PSN titles fetched: ${allTitles.length}`);
 
     if (!allTitles || allTitles.length === 0) {
-      console.log('No PSN titles found - marking sync as success with 0 games');
+      console.log('No PSN titles found - checking if this is expected...');
+      
+      // Check if user previously had games - if so, 0 titles is an error
+      const { data: existingGames } = await supabase
+        .from('user_games')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('platform_id', 1); // PSN platform_id
+      
+      if (existingGames && existingGames.length > 0) {
+        throw new Error(`PSN API returned 0 titles but user has ${existingGames.length} existing games. This is likely an API error.`);
+      }
+      
+      console.log('User has no existing games - marking sync as success with 0 games');
       await supabase
         .from('profiles')
         .update({
