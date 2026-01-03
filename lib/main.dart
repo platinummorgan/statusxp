@@ -35,8 +35,7 @@ void main() async {
     anonKey: SupabaseConfig.supabaseAnonKey,
     authOptions: const FlutterAuthClientOptions(
       authFlowType: AuthFlowType.pkce,
-      // Disable auto refresh to prevent DNS errors during navigation
-      autoRefreshToken: false,
+      autoRefreshToken: true,
     ),
     realtimeClientOptions: const RealtimeClientOptions(
       // Add retry logic for realtime connections
