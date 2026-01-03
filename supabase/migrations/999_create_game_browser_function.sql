@@ -5,7 +5,8 @@ CREATE OR REPLACE FUNCTION get_games_with_platforms(
   search_query TEXT DEFAULT NULL,
   platform_filter TEXT DEFAULT NULL,
   result_limit INT DEFAULT 100,
-  result_offset INT DEFAULT 0
+  result_offset INT DEFAULT 0,
+  sort_by TEXT DEFAULT 'name_asc'
 )
 RETURNS TABLE (
   id BIGINT,
@@ -36,7 +37,19 @@ BEGIN
     )
   GROUP BY gt.id, gt.name, gt.cover_url
   HAVING COUNT(a.id) > 0  -- Only games with achievements
-  ORDER BY gt.name
+  ORDER BY
+    CASE 
+      WHEN sort_by = 'name_asc' THEN gt.name
+    END ASC,
+    CASE 
+      WHEN sort_by = 'name_desc' THEN gt.name
+    END DESC,
+    CASE 
+      WHEN sort_by = 'release_asc' THEN gt.release_date
+    END ASC NULLS LAST,
+    CASE 
+      WHEN sort_by = 'release_desc' THEN gt.release_date
+    END DESC NULLS LAST
   LIMIT result_limit
   OFFSET result_offset;
 END;

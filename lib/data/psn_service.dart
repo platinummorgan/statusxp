@@ -74,12 +74,14 @@ class PSNService {
   Future<PSNSyncStartResult> startSync({
     String syncType = 'full',
     bool forceResync = false,
+    bool isAutoSync = false,
   }) async {
     final response = await _client.functions.invoke(
       'psn-start-sync',
       body: {
         'syncType': syncType,
         'forceResync': forceResync,
+        'isAutoSync': isAutoSync,
       },
     );
 
@@ -249,6 +251,7 @@ class PSNSyncStatus {
   final DateTime? lastSyncAt;
   final String? lastSyncText;
   final PSNSyncLog? latestLog;
+  final bool isAutoSync; // Is this an auto-sync (not rate limited)
 
   PSNSyncStatus({
     required this.isLinked,
@@ -258,6 +261,7 @@ class PSNSyncStatus {
     this.lastSyncAt,
     this.lastSyncText,
     this.latestLog,
+    this.isAutoSync = false,
   });
 
   factory PSNSyncStatus.fromJson(Map<String, dynamic> json) {
@@ -273,6 +277,7 @@ class PSNSyncStatus {
       latestLog: json['latestLog'] != null
           ? PSNSyncLog.fromJson(json['latestLog'] as Map<String, dynamic>)
           : null,
+      isAutoSync: json['isAutoSync'] as bool? ?? false,
     );
   }
 

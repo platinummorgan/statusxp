@@ -6,6 +6,12 @@ import 'package:statusxp/data/xbox_service.dart';
 
 /// Service that handles automatic background syncing
 /// Checks last sync time and triggers sync if > 12 hours
+/// 
+/// IMPORTANT: Auto-sync is completely SEPARATE from rate limiting:
+/// - Auto-sync: Runs every 12 hours in background (SharedPreferences)
+/// - Rate limits: Apply only to manual "Sync Now" button presses (user_sync_history table)
+/// - Auto-syncs pass isAutoSync=true flag and don't record in rate limit database
+/// - Users can still manually sync whenever allowed by rate limits
 class AutoSyncService {
   final SupabaseClient _client;
   final PSNService _psnService;
@@ -16,10 +22,33 @@ class AutoSyncService {
   static const String _xboxLastSyncKey = 'last_xbox_sync_time';
   static const String _steamLastSyncKey = 'last_steam_sync_time';
   
+  // Prevent concurrent auto-sync checks (static to work across instances)
+  static bool _isChecking = false;
+  
   AutoSyncService(this._client, this._psnService, this._xboxService);
   
   /// Check and trigger auto-sync for all connected platforms
   Future<AutoSyncResult> checkAndSync() async {
+    // Guard against concurrent checks
+    if (_isChecking) {
+      debugPrint('⚠️ Auto-sync already in progress, skipping...');
+      return AutoSyncResult(
+        psnSynced: false,
+        xboxSynced: false,
+        steamSynced: false,
+      );
+    }
+    
+    _isChecking = true;
+    
+    try {
+      return await _performSync();
+    } finally {
+      _isChecking = false;
+    }
+  }
+  
+  Future<AutoSyncResult> _performSync() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) {
       return AutoSyncResult(
@@ -33,12 +62,18 @@ class AutoSyncService {
     bool xboxSynced = false;
     bool steamSynced = false;
     
+    // Run syncs SEQUENTIALLY to avoid overwhelming the system
+    // Add delays between platform syncs
     try {
-      // Check PSN
+      // Check PSN first
       final psnLinked = await _isPlatformLinked('psn');
       debugPrint('🔍 PSN linked: $psnLinked');
       if (psnLinked && await _shouldSync(_psnLastSyncKey)) {
         psnSynced = await _triggerPSNSync();
+        if (psnSynced) {
+          debugPrint('⏳ Waiting 5 seconds before checking next platform...');
+          await Future.delayed(const Duration(seconds: 5));
+        }
       } else {
         debugPrint('⏭️ Skipping PSN sync (linked: $psnLinked, should sync: ${await _shouldSync(_psnLastSyncKey)})');
       }
@@ -47,11 +82,15 @@ class AutoSyncService {
     }
     
     try {
-      // Check Xbox
+      // Check Xbox second
       final xboxLinked = await _isPlatformLinked('xbox');
       debugPrint('🔍 Xbox linked: $xboxLinked');
       if (xboxLinked && await _shouldSync(_xboxLastSyncKey)) {
         xboxSynced = await _triggerXboxSync();
+        if (xboxSynced) {
+          debugPrint('⏳ Waiting 5 seconds before checking next platform...');
+          await Future.delayed(const Duration(seconds: 5));
+        }
       } else {
         debugPrint('⏭️ Skipping Xbox sync (linked: $xboxLinked, should sync: ${await _shouldSync(_xboxLastSyncKey)})');
       }
@@ -60,7 +99,7 @@ class AutoSyncService {
     }
     
     try {
-      // Check Steam
+      // Check Steam last
       final steamLinked = await _isPlatformLinked('steam');
       debugPrint('🔍 Steam linked: $steamLinked');
       if (steamLinked && await _shouldSync(_steamLastSyncKey)) {
@@ -117,6 +156,38 @@ class AutoSyncService {
       debugPrint('📅 Checking $prefKey: $lastSyncStr');
       
       if (lastSyncStr == null) {
+        // Check database as fallback (in case SharedPreferences was cleared)
+        final userId = _client.auth.currentUser?.id;
+        if (userId != null) {
+          final platform = prefKey.contains('psn') ? 'psn' : 
+                          prefKey.contains('xbox') ? 'xbox' : 'steam';
+          final dbField = platform == 'psn' ? 'last_psn_sync_at' :
+                         platform == 'xbox' ? 'last_xbox_sync_at' : 'last_steam_sync_at';
+          
+          try {
+            final response = await _client
+                .from('profiles')
+                .select(dbField)
+                .eq('id', userId)
+                .maybeSingle();
+            
+            final dbLastSync = response?[dbField] as String?;
+            if (dbLastSync != null) {
+              // Found database timestamp - use it and update SharedPreferences
+              final lastSync = DateTime.parse(dbLastSync);
+              final timeSinceSync = DateTime.now().difference(lastSync);
+              
+              // Update SharedPreferences with DB value
+              await prefs.setString(prefKey, dbLastSync);
+              
+              debugPrint('📊 Found DB timestamp: $dbLastSync (${timeSinceSync.inHours}h ${timeSinceSync.inMinutes % 60}m ago)');
+              return timeSinceSync >= _autoSyncInterval;
+            }
+          } catch (e) {
+            debugPrint('Failed to check DB timestamp: $e');
+          }
+        }
+        
         // Never synced before - trigger sync
         debugPrint('✅ No previous sync found - should sync');
         return true;
@@ -139,13 +210,14 @@ class AutoSyncService {
     try {
       debugPrint('🔄 Auto-triggering PSN sync...');
       
+      // Update timestamp FIRST to prevent retriggers
+      await _updateLastSyncTime(_psnLastSyncKey);
+      
       await _psnService.startSync(
         syncType: 'incremental', // Faster incremental sync for auto-sync
         forceResync: false,
+        isAutoSync: true, // Don't count against rate limits
       );
-      
-      // Update timestamp immediately so we don't re-trigger on next app open
-      await _updateLastSyncTime(_psnLastSyncKey);
       
       debugPrint('✅ PSN auto-sync started successfully');
       return true;
@@ -164,13 +236,14 @@ class AutoSyncService {
     try {
       debugPrint('🔄 Auto-triggering Xbox sync...');
       
+      // Update timestamp FIRST to prevent retriggers
+      await _updateLastSyncTime(_xboxLastSyncKey);
+      
       await _xboxService.startSync(
         syncType: 'incremental',
         forceResync: false,
+        isAutoSync: true, // Don't count against rate limits
       );
-      
-      // Update timestamp immediately so we don't re-trigger on next app open
-      await _updateLastSyncTime(_xboxLastSyncKey);
       
       debugPrint('✅ Xbox auto-sync started successfully');
       return true;
@@ -188,10 +261,12 @@ class AutoSyncService {
     try {
       debugPrint('🔄 Auto-triggering Steam sync...');
       
-      await _client.functions.invoke('steam-start-sync');
-      
-      // Update timestamp immediately so we don't re-trigger on next app open
+      // Update timestamp FIRST to prevent retriggers
       await _updateLastSyncTime(_steamLastSyncKey);
+      
+      await _client.functions.invoke('steam-start-sync', body: {
+        'isAutoSync': true, // Don't count against rate limits
+      });
       
       debugPrint('✅ Steam auto-sync started successfully');
       return true;
@@ -207,6 +282,11 @@ class AutoSyncService {
     final timestamp = DateTime.now().toIso8601String();
     final success = await prefs.setString(prefKey, timestamp);
     debugPrint('💾 Updating $prefKey to $timestamp (success: $success)');
+    
+    // Force commit to disk immediately
+    await prefs.reload();
+    final verified = prefs.getString(prefKey);
+    debugPrint('✅ Verified $prefKey persisted: $verified');
   }
   
   /// Manually update sync time (call this after manual sync)

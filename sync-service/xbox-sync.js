@@ -303,13 +303,13 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               continue;
             }
             
-            // Search for existing game_title by xbox_title_id (unique identifier)
+            // Search for existing game_title by xbox_title_id using dedicated column
             let gameTitle = null;
             const trimmedName = title.name.trim();
             const { data: existingGame } = await supabase
               .from('game_titles')
               .select('id, name, cover_url, metadata')
-              .contains('metadata', { xbox_title_id: title.titleId })
+              .eq('xbox_title_id', title.titleId)
               .maybeSingle();
             
             if (existingGame) {
@@ -322,12 +322,13 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               }
               gameTitle = existingGame;
             } else {
-              // Create new game_title
+              // Create new game_title with xbox_title_id in dedicated column
               const { data: newGame, error: insertError } = await supabase
                 .from('game_titles')
                 .insert({
                   name: trimmedName,
                   cover_url: title.displayImage,
+                  xbox_title_id: title.titleId,
                   metadata: {
                     xbox_title_id: title.titleId,
                   },

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/flex_room_data.dart';
 import 'package:statusxp/data/repositories/flex_room_repository.dart';
 import 'package:statusxp/state/statusxp_providers.dart';

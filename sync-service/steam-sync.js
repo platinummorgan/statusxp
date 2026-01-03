@@ -196,13 +196,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           continue;
         }
         
-        // Search for existing game_title by steam_app_id (unique identifier)
+        // Search for existing game_title by steam_app_id using dedicated column
         let gameTitle = null;
         const trimmedName = game.name.trim();
         const { data: existingGame } = await supabase
           .from('game_titles')
           .select('id, name, cover_url, metadata')
-          .contains('metadata', { steam_app_id: game.appid })
+          .eq('steam_app_id', game.appid)
           .maybeSingle();
         
         if (existingGame) {
@@ -217,12 +217,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           }
           gameTitle = existingGame;
         } else {
-          // Create new game_title
+          // Create new game_title with steam_app_id in dedicated column
           const { data: newGame } = await supabase
             .from('game_titles')
             .insert({
               name: trimmedName,
               cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`,
+              steam_app_id: game.appid,
               metadata: {
                 steam_app_id: game.appid,
                 is_dlc: isDLC,

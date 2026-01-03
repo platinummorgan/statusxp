@@ -218,19 +218,22 @@ class SupabaseGameRepository {
   /// 
   /// Returns all game titles. Gets platform info from achievements.
   /// Useful for browsing/searching the full game database.
+  /// Games are grouped by achievement similarity (>90% match = same game across platforms)
   Future<List<Map<String, dynamic>>> getAllGames({
     String? searchQuery,
     String? platformFilter,
     int limit = 100,
     int offset = 0,
+    String? sortBy = 'name_asc',
   }) async {
     try {
-      // Use RPC function for efficient server-side query
-      final response = await _client.rpc('get_games_with_platforms', params: {
+      // Use pre-computed achievement-matching grouping function for speed
+      final response = await _client.rpc('get_grouped_games_fast', params: {
         'search_query': searchQuery,
         'platform_filter': platformFilter,
         'result_limit': limit,
         'result_offset': offset,
+        'sort_by': sortBy,
       });
 
       final games = (response as List).map((game) {
@@ -251,13 +254,16 @@ class SupabaseGameRepository {
         }
 
         return {
-          'id': game['id'],
+          'id': game['primary_game_id'], // Use primary game ID from group
+          'group_id': game['group_id'],
           'name': game['name'],
           'cover_url': game['cover_url'],
           'platforms': primaryPlatform != null 
               ? {'code': primaryPlatform, 'name': primaryPlatform}
               : null,
           'all_platforms': platforms,
+          'game_title_ids': game['game_title_ids'], // All game_title IDs in group
+          'total_achievements': game['total_achievements'],
         };
       }).toList();
 

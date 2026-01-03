@@ -45,12 +45,14 @@ class XboxService {
   Future<XboxSyncStartResult> startSync({
     String syncType = 'full',
     bool forceResync = false,
+    bool isAutoSync = false,
   }) async {
     final response = await _client.functions.invoke(
       'xbox-start-sync',
       body: {
         'syncType': syncType,
         'forceResync': forceResync,
+        'isAutoSync': isAutoSync,
       },
     );
 
@@ -209,6 +211,7 @@ class XboxSyncStatus {
   final DateTime? lastSyncAt;
   final String? lastSyncText;
   final XboxSyncLog? latestLog;
+  final bool isAutoSync; // Is this an auto-sync (not rate limited)
 
   XboxSyncStatus({
     required this.isLinked,
@@ -218,6 +221,7 @@ class XboxSyncStatus {
     this.lastSyncAt,
     this.lastSyncText,
     this.latestLog,
+    this.isAutoSync = false,
   });
 
   factory XboxSyncStatus.fromJson(Map<String, dynamic> json) {
@@ -233,6 +237,7 @@ class XboxSyncStatus {
       latestLog: json['latestLog'] != null
           ? XboxSyncLog.fromJson(json['latestLog'] as Map<String, dynamic>)
           : null,
+      isAutoSync: json['isAutoSync'] as bool? ?? false,
     );
   }
 

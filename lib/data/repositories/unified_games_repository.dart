@@ -7,35 +7,13 @@ class UnifiedGamesRepository {
 
   UnifiedGamesRepository(this._client);
 
-  /// Fetch all games for a user, grouped by title across platforms
+  /// Fetch all games for a user, grouped by achievement similarity (>90% match)
   Future<List<UnifiedGame>> getUnifiedGames(String userId) async {
     try {
-      // Use the exact same query pattern as supabase_game_repository.dart
-      final response = await _client
-          .from('user_games')
-          .select('''
-            id,
-            game_title_id,
-            total_trophies,
-            earned_trophies,
-            has_platinum,
-            bronze_trophies,
-            silver_trophies,
-            gold_trophies,
-            platinum_trophies,
-            xbox_total_achievements,
-            xbox_achievements_earned,
-            statusxp_effective,
-            last_played_at,
-            last_trophy_earned_at,
-            rarest_earned_achievement_rarity,
-            game_titles!inner(
-              name,
-              cover_url
-            ),
-            platforms(code)
-          ''')
-          .eq('user_id', userId);
+      // Use new achievement-matching grouping function
+      final response = await _client.rpc('get_user_grouped_games', params: {
+        'p_user_id': userId,
+      });
 
       final List<dynamic> data = response as List;
       
@@ -43,97 +21,68 @@ class UnifiedGamesRepository {
         return [];
       }
 
-      // Group games by title
-      final Map<String, List<Map<String, dynamic>>> gamesByTitle = {};
-      
-      for (final row in data) {
-        final gameTitle = row['game_titles'] as Map<String, dynamic>?;
-        if (gameTitle == null) continue;
-        
-        final title = gameTitle['name'] as String?;
-        if (title == null) continue;
-        
-        if (!gamesByTitle.containsKey(title)) {
-          gamesByTitle[title] = [];
-        }
-        
-        gamesByTitle[title]!.add(row as Map<String, dynamic>);
-      }
-
       // Convert to UnifiedGame objects
       final List<UnifiedGame> unifiedGames = [];
       
-      for (final entry in gamesByTitle.entries) {
-        final title = entry.key;
-        final platformGames = entry.value;
+      for (final group in data) {
+        final title = group['name'] as String;
+        final coverUrl = group['cover_url'] as String?;
+        final platformsData = (group['platforms'] as List?)?.cast<Map<String, dynamic>>() ?? [];
         
-        // Get cover URL from first game (they should all be the same title)
-        final gameTitle = platformGames.first['game_titles'] as Map<String, dynamic>;
-        final coverUrl = gameTitle['cover_url'] as String?;
-      
-      // Create PlatformGameData for each platform
-      final List<PlatformGameData> platforms = [];
-      double totalCompletion = 0;
-      
-      for (final game in platformGames) {
-        final platformData = game['platforms'] as Map<String, dynamic>?;
-        final platform = platformData?['code'] as String? ?? 'unknown';
+        // Create PlatformGameData for each platform in the group
+        final List<PlatformGameData> platforms = [];
         
-        // Get trophy counts - use platform-specific fields as fallback for Xbox/Steam
-        int totalTrophies = game['total_trophies'] as int? ?? 0;
-        int earnedTrophies = game['earned_trophies'] as int? ?? 0;
-        
-        // Xbox fallback: use xbox_total_achievements if total_trophies is 0
-        if (totalTrophies == 0 && platform.toUpperCase().contains('XBOX')) {
-          totalTrophies = game['xbox_total_achievements'] as int? ?? 0;
-          earnedTrophies = game['xbox_achievements_earned'] as int? ?? earnedTrophies;
+        for (final platformData in platformsData) {
+          final platform = platformData['code'] as String? ?? 'unknown';
+          final completion = (platformData['completion'] as num?)?.toDouble() ?? 0.0;
+          final statusXP = ((platformData['statusxp'] as num?)?.toDouble() ?? 0.0).toInt();
+          final gameTitleId = (platformData['game_title_id'] as int?)?.toString() ?? '';
+          
+          // Get trophy/achievement counts based on platform
+          final int bronze = (platformData['bronze_trophies'] as int?) ?? 0;
+          final int silver = (platformData['silver_trophies'] as int?) ?? 0;
+          final int gold = (platformData['gold_trophies'] as int?) ?? 0;
+          final int platinum = (platformData['platinum_trophies'] as int?) ?? 0;
+          
+          // All platforms use earned_trophies/total_trophies for display counts
+          // Xbox/Steam also populate xbox_achievements_earned/xbox_total_achievements for compatibility
+          final int earnedCount = (platformData['earned_trophies'] as int?) ?? 
+                                  (platformData['xbox_achievements_earned'] as int?) ?? 0;
+          final int totalCount = (platformData['total_trophies'] as int?) ?? 
+                                 (platformData['xbox_total_achievements'] as int?) ?? 0;
+          
+          platforms.add(PlatformGameData(
+            platform: platform,
+            gameId: gameTitleId,
+            achievementsEarned: earnedCount,
+            achievementsTotal: totalCount,
+            completion: completion,
+            rarestAchievementRarity: null, // Available in detailed view
+            hasPlatinum: platinum > 0,
+            bronzeCount: bronze,
+            silverCount: silver,
+            goldCount: gold,
+            platinumCount: platinum,
+            statusXP: statusXP,
+            lastPlayedAt: null, // Available in group-level data
+            lastTrophyEarnedAt: null,
+          ));
         }
         
-        final completion = totalTrophies > 0 
-            ? (earnedTrophies / totalTrophies) * 100 
+        // Calculate overall completion
+        final overallCompletion = platforms.isNotEmpty
+            ? platforms.map((p) => p.completion).reduce((a, b) => a + b) / platforms.length
             : 0.0;
         
-        totalCompletion += completion;
-        
-        final lastPlayedStr = game['last_played_at'] as String?;
-        final lastPlayedAt = lastPlayedStr != null ? DateTime.tryParse(lastPlayedStr) : null;
-        
-        final lastTrophyStr = game['last_trophy_earned_at'] as String?;
-        final lastTrophyEarnedAt = lastTrophyStr != null ? DateTime.tryParse(lastTrophyStr) : null;
-        
-        final rarestRarity = game['rarest_earned_achievement_rarity'] as num?;
-        
-        platforms.add(PlatformGameData(
-          platform: platform,
-          gameId: (game['game_title_id'] ?? game['id']).toString(),
-          achievementsEarned: earnedTrophies,
-          achievementsTotal: totalTrophies,
-          completion: completion,
-          rarestAchievementRarity: rarestRarity?.toDouble(),
-          hasPlatinum: game['has_platinum'] as bool? ?? false,
-          bronzeCount: game['bronze_trophies'] as int? ?? 0,
-          silverCount: game['silver_trophies'] as int? ?? 0,
-          goldCount: game['gold_trophies'] as int? ?? 0,
-          platinumCount: game['platinum_trophies'] as int? ?? 0,
-          statusXP: ((game['statusxp_effective'] as num?)?.toDouble() ?? 0.0).toInt(),
-          lastPlayedAt: lastPlayedAt,
-          lastTrophyEarnedAt: lastTrophyEarnedAt,
+        unifiedGames.add(UnifiedGame(
+          title: title,
+          coverUrl: coverUrl,
+          platforms: platforms,
+          overallCompletion: overallCompletion,
         ));
       }
-      
-      final overallCompletion = platforms.isNotEmpty 
-          ? totalCompletion / platforms.length 
-          : 0.0;
-      
-      unifiedGames.add(UnifiedGame(
-        title: title,
-        coverUrl: coverUrl,
-        platforms: platforms,
-        overallCompletion: overallCompletion,
-      ));
-    }
 
-    return unifiedGames;
+      return unifiedGames;
     } catch (e) {
       rethrow;
     }

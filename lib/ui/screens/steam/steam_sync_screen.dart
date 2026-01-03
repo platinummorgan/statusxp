@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,12 +26,25 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
   DateTime? _lastSyncAt;
   final SyncLimitService _syncLimitService = SyncLimitService();
   SyncLimitStatus? _rateLimitStatus;
+  Timer? _countdownTimer;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
     _checkRateLimit();
+    // Start periodic countdown timer
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        _checkRateLimit();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkRateLimit() async {
@@ -106,20 +120,11 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
       final supabase = Supabase.instance.client;
       await supabase.functions.invoke('steam-start-sync');
 
-      // Record successful sync start
-      await _syncLimitService.recordSync('steam', success: true);
-      
-      // Refresh rate limit status
-      await _checkRateLimit();
-
       if (mounted) {
         // Poll for status updates
         _pollSyncStatus();
       }
     } catch (e) {
-      // Record failed sync
-      await _syncLimitService.recordSync('steam', success: false);
-      
       if (mounted) {
         setState(() {
           _error = 'Failed to start sync: $e';
@@ -168,8 +173,38 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
           if (newStatus == 'success' || newStatus == 'error') {
             setState(() => _isSyncing = false);
             
-            // Update last sync time for auto-sync tracking
+            // Record MANUAL sync completion in database for rate limiting
+            // (auto-syncs are not recorded to avoid consuming rate limits)
             if (newStatus == 'success') {
+              // Check if this was an auto-sync by looking at profile metadata
+              final userId = supabase.auth.currentUser?.id;
+              bool isAutoSync = false;
+              if (userId != null) {
+                try {
+                  final profileData = await supabase
+                      .from('profiles')
+                      .select('steam_sync_metadata')
+                      .eq('id', userId)
+                      .single();
+                  final metadata = profileData['steam_sync_metadata'] as Map<String, dynamic>?;
+                  isAutoSync = metadata?['isAutoSync'] as bool? ?? false;
+                } catch (e) {
+                  debugPrint('Failed to check if auto-sync: $e');
+                }
+              }
+              
+              if (!isAutoSync) {
+                try {
+                  await _syncLimitService.recordSync('steam', success: true);
+                  debugPrint('✅ Recorded Steam manual sync in database');
+                } catch (e) {
+                  debugPrint('Failed to record Steam sync in database: $e');
+                }
+              } else {
+                debugPrint('⏩ Skipping rate limit record for auto-sync');
+              }
+              
+              // Update last sync time for auto-sync tracking
               try {
                 final supabase = Supabase.instance.client;
                 final autoSyncService = AutoSyncService(
@@ -183,7 +218,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
               }
             }
             
-            await _loadProfile(); // Full reload on completion
+            await _loadProfile(); // Full reload on completion to get fresh timestamp
             
             // Refresh games list and stats to show updated data
             if (newStatus == 'success') {

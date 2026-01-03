@@ -230,11 +230,11 @@ export async function syncPSNAchievements(
           // Find or create game_title using unique PSN npCommunicationId
           const trimmedTitle = title.trophyTitleName.trim();
           
-          // First try to find by PSN npCommunicationId (unique per game/SKU)
+          // First try to find by PSN npCommunicationId using dedicated column
           const { data: existingGameById } = await supabase
             .from('game_titles')
             .select('id, cover_url, metadata')
-            .contains('metadata', { psn_np_communication_id: title.npCommunicationId })
+            .eq('psn_npwr_id', title.npCommunicationId)
             .maybeSingle();
           
           let gameTitle;
@@ -248,12 +248,13 @@ export async function syncPSNAchievements(
             }
             gameTitle = existingGameById;
           } else {
-            // Not found by ID - create new game with npCommunicationId
+            // Not found by ID - create new game with npCommunicationId in dedicated column
             const { data: newGame, error: insertError } = await supabase
               .from('game_titles')
               .insert({
                 name: trimmedTitle,
                 cover_url: title.trophyTitleIconUrl,
+                psn_npwr_id: title.npCommunicationId,
                 metadata: { psn_np_communication_id: title.npCommunicationId },
               })
               .select()

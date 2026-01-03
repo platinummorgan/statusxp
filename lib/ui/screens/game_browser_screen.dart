@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
@@ -25,6 +24,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   final int _limit = 50;
   String? _platformFilter;
   String _searchQuery = '';
+  bool _isGridView = true; // Toggle between grid and list view
+  String _sortBy = 'name_asc'; // Default sort
 
   @override
   void initState() {
@@ -65,6 +66,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
         platformFilter: _platformFilter,
         limit: _limit,
         offset: _offset,
+        sortBy: _sortBy,
       );
 
       if (mounted) {
@@ -97,6 +99,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
         platformFilter: _platformFilter,
         limit: _limit,
         offset: _offset,
+        sortBy: _sortBy,
       );
 
       if (mounted) {
@@ -143,6 +146,74 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort, color: CyberpunkTheme.neonCyan),
+            tooltip: 'Sort',
+            onSelected: (value) {
+              setState(() {
+                _sortBy = value;
+              });
+              _loadGames();
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'name_asc',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sort_by_alpha,
+                      size: 20,
+                      color: _sortBy == 'name_asc' ? CyberpunkTheme.neonCyan : Colors.white70,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'A → Z',
+                      style: TextStyle(
+                        color: _sortBy == 'name_asc' ? CyberpunkTheme.neonCyan : Colors.white,
+                        fontWeight: _sortBy == 'name_asc' ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'name_desc',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.sort_by_alpha,
+                      size: 20,
+                      color: _sortBy == 'name_desc' ? CyberpunkTheme.neonCyan : Colors.white70,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Z → A',
+                      style: TextStyle(
+                        color: _sortBy == 'name_desc' ? CyberpunkTheme.neonCyan : Colors.white,
+                        fontWeight: _sortBy == 'name_desc' ? FontWeight.w700 : FontWeight.normal,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            color: const Color(0xFF1a1f3a),
+            elevation: 8,
+          ),
+          IconButton(
+            icon: Icon(
+              _isGridView ? Icons.view_list : Icons.grid_view,
+              color: CyberpunkTheme.neonCyan,
+            ),
+            onPressed: () {
+              setState(() {
+                _isGridView = !_isGridView;
+              });
+            },
+            tooltip: _isGridView ? 'Switch to List View' : 'Switch to Grid View',
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -156,7 +227,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
               decoration: InputDecoration(
                 hintText: 'Search games...',
                 hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                prefixIcon: Icon(Icons.search, color: CyberpunkTheme.neonCyan),
+                prefixIcon: const Icon(Icons.search, color: CyberpunkTheme.neonCyan),
                 filled: true,
                 fillColor: const Color(0xFF1a1f3a).withOpacity(0.5),
                 border: OutlineInputBorder(
@@ -173,7 +244,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
+                  borderSide: const BorderSide(
                     color: CyberpunkTheme.neonCyan,
                     width: 2,
                   ),
@@ -202,7 +273,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
           const SizedBox(height: 8),
 
-          // Games Grid
+          // Games Grid or List
           Expanded(
             child: _games.isEmpty && !_isLoading
                 ? Center(
@@ -225,29 +296,50 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                       ],
                     ),
                   )
-                : GridView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.7,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: _games.length + (_hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == _games.length) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: CyberpunkTheme.neonCyan,
-                          ),
-                        );
-                      }
+                : _isGridView
+                    ? GridView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.7,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                        itemCount: _games.length + (_hasMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == _games.length) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: CyberpunkTheme.neonCyan,
+                              ),
+                            );
+                          }
 
-                      final game = _games[index];
-                      return _buildGameCard(game);
-                    },
-                  ),
+                          final game = _games[index];
+                          return _buildGameCard(game);
+                        },
+                      )
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _games.length + (_hasMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index == _games.length) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16),
+                                child: CircularProgressIndicator(
+                                  color: CyberpunkTheme.neonCyan,
+                                ),
+                              ),
+                            );
+                          }
+
+                          final game = _games[index];
+                          return _buildGameListItem(game);
+                        },
+                      ),
           ),
         ],
       ),
@@ -348,23 +440,27 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+                  Flexible(
+                    child: Text(
+                      name,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
                   // Show all platforms for multi-platform games
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: allPlatforms.map((platform) {
+                  Flexible(
+                    child: Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: allPlatforms.map((platform) {
                       final platformStr = platform.toString();
                       final isFiltered = _platformFilter != null && 
                                         platformStr.toLowerCase() == _platformFilter!.toLowerCase();
@@ -402,11 +498,165 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                         ),
                       );
                     }).toList(),
+                    ),
                   ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGameListItem(Map<String, dynamic> game) {
+    final name = game['name'] as String? ?? 'Unknown Game';
+    final coverUrl = game['cover_url'] as String?;
+    final gameId = game['id'];
+    final platformData = game['platforms'] as Map<String, dynamic>?;
+    final platformCode = platformData?['code'] as String? ?? '';
+    final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [platformCode];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GestureDetector(
+        onTap: () {
+          if (gameId != null) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => GameAchievementsScreen(
+                  gameId: gameId.toString(),
+                  gameName: name,
+                  platform: _platformFilter ?? platformCode,
+                  coverUrl: coverUrl,
+                ),
+              ),
+            );
+          }
+        },
+        child: Container(
+          height: 100,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1a1f3a).withOpacity(0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _getPlatformColor(_platformFilter ?? platformCode).withOpacity(0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Game Cover
+              ClipRRect(
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+                child: SizedBox(
+                  width: 80,
+                  height: 100,
+                  child: coverUrl != null && coverUrl.isNotEmpty
+                      ? Image.network(
+                          coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xFF0A0E27),
+                            child: Icon(
+                              _getPlatformIcon(platformCode),
+                              size: 32,
+                              color: _getPlatformColor(platformCode).withOpacity(0.5),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          color: const Color(0xFF0A0E27),
+                          child: Icon(
+                            _getPlatformIcon(platformCode),
+                            size: 32,
+                            color: _getPlatformColor(platformCode).withOpacity(0.5),
+                          ),
+                        ),
+                ),
+              ),
+
+              // Game Info
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Show all platforms for multi-platform games
+                      Flexible(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              for (var i = 0; i < allPlatforms.length; i++) ...[
+                                Builder(
+                                  builder: (context) {
+                                    final platformStr = allPlatforms[i].toString();
+                                    final isFiltered = _platformFilter != null && 
+                                                      platformStr.toLowerCase() == _platformFilter!.toLowerCase();
+                                    
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isFiltered 
+                                            ? _getPlatformColor(platformStr).withOpacity(0.2)
+                                            : Colors.transparent,
+                                        border: Border.all(
+                                          color: _getPlatformColor(platformStr).withOpacity(isFiltered ? 1.0 : 0.5),
+                                          width: isFiltered ? 1.5 : 1,
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            _getPlatformIcon(platformStr),
+                                            size: 12,
+                                            color: _getPlatformColor(platformStr),
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            platformStr.toUpperCase(),
+                                            style: TextStyle(
+                                              color: _getPlatformColor(platformStr),
+                                              fontSize: 11,
+                                              fontWeight: isFiltered ? FontWeight.w800 : FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                                if (i < allPlatforms.length - 1) const SizedBox(width: 6),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

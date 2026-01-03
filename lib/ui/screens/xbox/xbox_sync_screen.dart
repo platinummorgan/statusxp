@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,11 +21,24 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
   String? _errorMessage;
   final SyncLimitService _syncLimitService = SyncLimitService();
   SyncLimitStatus? _rateLimitStatus;
+  Timer? _countdownTimer;
 
   @override
   void initState() {
     super.initState();
     _checkRateLimit();
+    // Start periodic countdown timer
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        _checkRateLimit();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkRateLimit() async {
@@ -118,6 +132,20 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
 
           // Check if sync completed or failed
           if (status.status == 'completed' || status.status == 'success') {
+            // Record MANUAL sync in database for rate limiting
+            // (auto-syncs are not recorded to avoid consuming rate limits)
+            if (!status.isAutoSync) {
+              try {
+                final syncLimitService = SyncLimitService();
+                await syncLimitService.recordSync('xbox', success: true);
+                debugPrint('✅ Recorded Xbox manual sync in database');
+              } catch (e) {
+                debugPrint('Failed to record Xbox sync in database: $e');
+              }
+            } else {
+              debugPrint('⏩ Skipping rate limit record for auto-sync');
+            }
+            
             // Update last sync time for auto-sync
             final autoSyncService = AutoSyncService(
               ref.read(supabaseClientProvider),
@@ -130,6 +158,9 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
               setState(() {
                 _isSyncing = false;
               });
+              
+              // Force refresh sync status to get updated last_sync_at timestamp
+              ref.invalidate(xboxSyncStatusProvider);
               
               // Refresh games list and stats to show updated data
               ref.refreshCoreData();
