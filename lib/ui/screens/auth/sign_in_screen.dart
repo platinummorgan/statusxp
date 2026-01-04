@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'package:statusxp/ui/screens/auth/forgot_password_screen.dart';
@@ -22,15 +24,88 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final BiometricAuthService _biometricService = BiometricAuthService();
   
   bool _isLoginMode = true;
   bool _isLoading = false;
+  bool _showBiometricOption = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometricAvailability();
+  }
   
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+  
+  /// Check if biometric sign-in is available
+  Future<void> _checkBiometricAvailability() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSignedInBefore = prefs.getBool('has_signed_in_before') ?? false;
+    final biometricEnabled = await _biometricService.isBiometricEnabled();
+    final biometricAvailable = await _biometricService.isBiometricAvailable();
+    
+    if (mounted) {
+      setState(() {
+        _showBiometricOption = hasSignedInBefore && biometricEnabled && biometricAvailable;
+      });
+    }
+  }
+  
+  /// Sign in with biometric authentication
+  Future<void> _signInWithBiometric() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final result = await _biometricService.authenticate(
+        reason: 'Sign in to StatusXP',
+      );
+      
+      if (result.success) {
+        // Biometric authentication successful - session should still be valid
+        final currentUser = Supabase.instance.client.auth.currentUser;
+        
+        if (currentUser == null) {
+          // Session expired
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Session expired. Please sign in with your email and password.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+        // If user exists, auth gate will handle navigation automatically
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.errorMessage ?? 'Biometric authentication failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
   
   /// Validate email format.
@@ -73,6 +148,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           email: email,
           password: password,
         );
+        
+        // Mark that user has signed in at least once
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('has_signed_in_before', true);
       } else {
         await authService.signUp(
           email: email,
@@ -139,6 +218,79 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),
+                  
+                  // Biometric Sign In Button (only show if available)
+                  if (_showBiometricOption && _isLoginMode) ...[
+                    InkWell(
+                      onTap: _isLoading ? null : _signInWithBiometric,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              accentPrimary.withOpacity(0.1),
+                              accentSecondary.withOpacity(0.1),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: accentPrimary.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.fingerprint,
+                              size: 64,
+                              color: accentPrimary,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Sign in with Biometric',
+                              style: TextStyle(
+                                color: accentPrimary,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            FutureBuilder<String>(
+                              future: _biometricService.getBiometricTypesDescription(),
+                              builder: (context, snapshot) {
+                                return Text(
+                                  'Use ${snapshot.data ?? "biometric"} to sign in',
+                                  style: TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 14,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: textSecondary.withOpacity(0.3))),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'OR',
+                            style: TextStyle(
+                              color: textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: textSecondary.withOpacity(0.3))),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   
                   // Email Field
                   TextFormField(
