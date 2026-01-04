@@ -105,26 +105,13 @@ serve(async (req) => {
       
       return new Response(
         JSON.stringify({
-          requiresConfirmation: true,
-          existingUserId: mergeCheck.existingUserId,
+          error: 'PSN account already registered',
           platform: 'PSN',
           username: userProfile.onlineId,
-          message: `This PSN account (${userProfile.onlineId}) is already connected to another account. Do you want to link it to this account?`,
-          // Store these for the confirmation step
-          credentials: {
-            accountId: profile.accountId,
-            onlineId: userProfile.onlineId,
-            avatarUrl: userProfile.avatarUrls?.find(a => a.size === 'm')?.avatarUrl || userProfile.avatarUrls?.[0]?.avatarUrl || null,
-            isPlus: userProfile.isPlus,
-            npssoToken: npssoToken,
-            accessToken: authorization.accessToken,
-            refreshToken: authorization.refreshToken,
-            expiresIn: authorization.expiresIn,
-            trophyLevel: parseInt(profile.trophyLevel.toString()),
-            trophyTier: profile.trophyTier,
-          },
+          accountId: profile.accountId,
+          message: `This PSN account (Account ID: ${profile.accountId}) is already connected to another account. If this is your account, please contact support for assistance.`,
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
       );
     }
     

@@ -38,7 +38,7 @@ export async function checkForExistingPlatformAccount(
       query = supabase
         .from('profiles')
         .select('id')
-        .eq('xbox_gamertag', platformUsername)
+        .eq('xbox_xuid', platformUsername)
         .neq('id', currentUserId)
         .single();
       break;

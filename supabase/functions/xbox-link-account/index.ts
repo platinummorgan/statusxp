@@ -233,7 +233,7 @@ serve(async (req) => {
       supabase,
       user.id,
       'xbox',
-      xboxAuth.gamertag
+      xboxAuth.xuid  // Use XUID instead of gamertag - this is the unique identifier
     );
 
     if (mergeCheck.shouldMerge && mergeCheck.existingUserId) {
@@ -241,21 +241,13 @@ serve(async (req) => {
       
       return new Response(
         JSON.stringify({
-          requiresConfirmation: true,
-          existingUserId: mergeCheck.existingUserId,
+          error: 'Xbox account already registered',
           platform: 'Xbox',
           username: xboxAuth.gamertag,
-          message: `This Xbox account (${xboxAuth.gamertag}) is already connected to another account. Do you want to link it to this account?`,
-          credentials: {
-            xuid: xboxAuth.xuid,
-            gamertag: xboxAuth.gamertag,
-            userHash: xboxAuth.userHash,
-            accessToken: xboxAuth.accessToken,
-            refreshToken: xboxAuth.refreshToken,
-            expiresIn: xboxAuth.expiresIn,
-          },
+          xuid: xboxAuth.xuid,
+          message: `This Xbox account (XUID: ${xboxAuth.xuid}) is already connected to another account. If this is your account, please contact support for assistance.`,
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
       );
     }
     

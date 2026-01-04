@@ -36,8 +36,32 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
         throw Exception('Not authenticated');
       }
 
+      final steamId = _steamIdController.text.trim();
+      
+      // Check if this Steam ID is already linked to a different account
+      final existingProfile = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('steam_id', steamId)
+          .maybeSingle();
+      
+      if (existingProfile != null && existingProfile['id'] != userId) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'This Steam account (Steam ID: $steamId) is already connected to another account. If this is your account, please contact support for assistance.'
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        return;
+      }
+
       await supabase.from('profiles').update({
-        'steam_id': _steamIdController.text.trim(),
+        'steam_id': steamId,
         'steam_api_key': _apiKeyController.text.trim(),
       }).eq('id', userId);
 
