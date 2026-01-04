@@ -712,10 +712,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             onChanged: (value) async {
                               if (value) {
                                 // Test biometric auth before enabling
-                                final authenticated = await _biometricService.authenticate(
+                                final result = await _biometricService.authenticate(
                                   reason: 'Verify your identity to enable biometric lock',
                                 );
-                                if (authenticated) {
+                                if (result.success) {
                                   await _biometricService.setBiometricEnabled(true);
                                   if (mounted) {
                                     setState(() {});
@@ -729,9 +729,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 } else {
                                   if (mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Authentication failed'),
+                                      SnackBar(
+                                        content: Text(result.errorMessage ?? 'Authentication failed'),
                                         backgroundColor: Colors.red,
+                                        duration: const Duration(seconds: 5),
                                       ),
                                     );
                                   }

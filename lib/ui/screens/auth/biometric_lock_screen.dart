@@ -38,15 +38,15 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
     });
 
     try {
-      final authenticated = await _biometricService.authenticate(
+      final result = await _biometricService.authenticate(
         reason: 'Unlock StatusXP',
       );
 
-      if (authenticated) {
+      if (result.success) {
         widget.onAuthenticated();
       } else {
         setState(() {
-          _errorMessage = 'Authentication failed. Please try again.';
+          _errorMessage = result.errorMessage ?? 'Authentication failed. Please try again.';
         });
       }
     } catch (e) {
