@@ -74,7 +74,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // App icon/logo
-                Icon(
+                const Icon(
                   Icons.shield_outlined,
                   size: 120,
                   color: accentPrimary,
@@ -82,7 +82,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                 const SizedBox(height: 32),
                 
                 // Title
-                Text(
+                const Text(
                   'StatusXP is Locked',
                   style: TextStyle(
                     fontSize: 28,
@@ -93,7 +93,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                 const SizedBox(height: 16),
                 
                 // Description
-                Text(
+                const Text(
                   'Use your fingerprint or face to unlock',
                   textAlign: TextAlign.center,
                   style: TextStyle(
@@ -118,7 +118,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                           width: 2,
                         ),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.fingerprint,
                         size: 64,
                         color: accentPrimary,
@@ -128,7 +128,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                 
                 // Loading indicator
                 if (_isAuthenticating)
-                  CircularProgressIndicator(
+                  const CircularProgressIndicator(
                     color: accentPrimary,
                   ),
                 

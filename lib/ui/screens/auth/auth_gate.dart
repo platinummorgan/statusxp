@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
+import 'package:statusxp/ui/screens/auth/biometric_lock_screen.dart';
 import 'package:statusxp/ui/screens/auth/sign_in_screen.dart';
 import 'package:statusxp/ui/screens/onboarding_screen.dart';
 
