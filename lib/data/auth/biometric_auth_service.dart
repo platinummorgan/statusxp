@@ -1,6 +1,7 @@
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/services.dart';
 
 /// Result of a biometric authentication attempt
@@ -13,10 +14,19 @@ class BiometricAuthResult {
 
 /// Service for managing biometric authentication (fingerprint, Face ID, etc.)
 /// 
-/// Provides secure local authentication using device biometrics to unlock the app.
+/// Provides secure local authentication using device biometrics to sign in.
+/// Stores encrypted credentials in secure storage for full authentication.
 class BiometricAuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+  );
+  
   static const String _biometricEnabledKey = 'biometric_auth_enabled';
+  static const String _storedEmailKey = 'biometric_stored_email';
+  static const String _storedPasswordKey = 'biometric_stored_password';
   
   /// Check if the device supports biometric authentication
   Future<bool> isBiometricAvailable() async {
@@ -140,5 +150,35 @@ class BiometricAuthService {
     }).toList();
     
     return descriptions.join(', ');
+  }
+  
+  /// Store credentials securely for biometric authentication
+  /// Should be called after successful email/password sign-in
+  Future<void> storeCredentials(String email, String password) async {
+    await _secureStorage.write(key: _storedEmailKey, value: email);
+    await _secureStorage.write(key: _storedPasswordKey, value: password);
+  }
+  
+  /// Retrieve stored credentials (only after biometric auth succeeds)
+  Future<Map<String, String>?> getStoredCredentials() async {
+    final email = await _secureStorage.read(key: _storedEmailKey);
+    final password = await _secureStorage.read(key: _storedPasswordKey);
+    
+    if (email != null && password != null) {
+      return {'email': email, 'password': password};
+    }
+    return null;
+  }
+  
+  /// Check if credentials are stored
+  Future<bool> hasStoredCredentials() async {
+    final email = await _secureStorage.read(key: _storedEmailKey);
+    return email != null;
+  }
+  
+  /// Clear stored credentials (on sign out or disable biometric)
+  Future<void> clearStoredCredentials() async {
+    await _secureStorage.delete(key: _storedEmailKey);
+    await _secureStorage.delete(key: _storedPasswordKey);
   }
 }

@@ -711,17 +711,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             value: isEnabled,
                             onChanged: (value) async {
                               if (value) {
+                                // Need to prompt for credentials to store
+                                final credentials = await _showCredentialDialog();
+                                if (credentials == null) return;
+                                
                                 // Test biometric auth before enabling
                                 final result = await _biometricService.authenticate(
-                                  reason: 'Verify your identity to enable biometric lock',
+                                  reason: 'Verify your identity to enable biometric sign-in',
                                 );
                                 if (result.success) {
+                                  // Store credentials securely
+                                  await _biometricService.storeCredentials(
+                                    credentials['email']!,
+                                    credentials['password']!,
+                                  );
                                   await _biometricService.setBiometricEnabled(true);
                                   if (mounted) {
                                     setState(() {});
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Biometric lock enabled'),
+                                        content: Text('Biometric sign-in enabled'),
                                         backgroundColor: Colors.green,
                                       ),
                                     );
@@ -738,12 +747,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   }
                                 }
                               } else {
+                                // Clear stored credentials when disabling
+                                await _biometricService.clearStoredCredentials();
                                 await _biometricService.setBiometricEnabled(false);
                                 if (mounted) {
                                   setState(() {});
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Biometric lock disabled'),
+                                      content: Text('Biometric sign-in disabled'),
                                     ),
                                   );
                                 }
@@ -1175,6 +1186,79 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ),
       ],
+    );
+  }
+  
+  /// Show dialog to get credentials for biometric storage
+  Future<Map<String, String>?> _showCredentialDialog() async {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    
+    return showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Enable Biometric Sign-In'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Enter your credentials to enable secure biometric sign-in.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: passwordController,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(context, {
+                  'email': emailController.text.trim(),
+                  'password': passwordController.text,
+                });
+              }
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
     );
   }
 }

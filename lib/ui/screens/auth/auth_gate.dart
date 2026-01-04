@@ -74,17 +74,12 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
   }
 
   Widget _buildMainAppOrLock() {
-    // Only show biometric lock if:
-    // 1. User is already authenticated
-    // 2. Biometric is enabled
-    // 3. App is returning from background (not unlocked yet)
-    // This prevents showing lock screen on initial sign-in
-    
-    if (!_isAuthenticated) {
-      // Not authenticated - don't show lock screen, show sign-in instead
+    // If user is already authenticated, show main app
+    if (_isAuthenticated) {
       return const StatusXPMainApp();
     }
     
+    // Not authenticated - check if we should show biometric prompt first
     return FutureBuilder<bool>(
       future: _biometricService.isBiometricEnabled(),
       builder: (context, snapshot) {
@@ -98,14 +93,19 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
 
         final biometricEnabled = snapshot.data!;
         
-        // Only lock if user is authenticated AND biometric is enabled AND not yet unlocked
+        // Show biometric lock if enabled and not unlocked yet
         if (biometricEnabled && !_isBiometricUnlocked) {
           return BiometricLockScreen(
             onAuthenticated: _onBiometricAuthenticated,
+            onCancel: () {
+              setState(() {
+                _isBiometricUnlocked = true; // Skip biometric, go to sign-in
+              });
+            },
           );
         }
 
-        // Otherwise show the main app
+        // Otherwise show the main app (which will show sign-in if not authenticated)
         return const StatusXPMainApp();
       },
     );

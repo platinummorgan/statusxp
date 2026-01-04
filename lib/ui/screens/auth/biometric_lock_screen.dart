@@ -5,10 +5,12 @@ import 'package:statusxp/theme/colors.dart';
 /// Screen that appears when biometric authentication is required to unlock the app
 class BiometricLockScreen extends StatefulWidget {
   final VoidCallback onAuthenticated;
+  final VoidCallback? onCancel;
   
   const BiometricLockScreen({
     super.key,
     required this.onAuthenticated,
+    this.onCancel,
   });
 
   @override
@@ -178,6 +180,21 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                       foregroundColor: accentPrimary,
                     ),
                   ),
+                  
+                // Cancel button - navigate to sign-in screen
+                if (widget.onCancel != null) ...[
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: widget.onCancel,
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
