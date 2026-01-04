@@ -711,73 +711,92 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             value: isEnabled,
                             onChanged: (value) async {
                               if (value) {
-                                // Check user's sign-in method
-                                final user = Supabase.instance.client.auth.currentUser;
-                                final isOAuthUser = user?.appMetadata['provider'] != null && 
-                                                   user?.appMetadata['provider'] != 'email';
+                                // Ask user for credentials first
+                                final credentials = await _showCredentialDialog();
                                 
-                                if (isOAuthUser) {
-                                  // OAuth user (Google/Apple) - just enable biometric lock
-                                  final result = await _biometricService.authenticate(
-                                    reason: 'Verify your identity to enable biometric lock',
-                                  );
-                                  if (result.success) {
-                                    await _biometricService.setBiometricEnabled(true);
-                                    if (mounted) {
-                                      setState(() {});
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Biometric lock enabled (session-based)'),
-                                          backgroundColor: Colors.green,
+                                if (credentials == null) {
+                                  // User cancelled - offer session-based lock instead (for OAuth users)
+                                  if (mounted) {
+                                    final useSessionLock = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Enable Biometric Lock?'),
+                                        content: const Text(
+                                          'Would you like to enable session-based biometric lock instead?\n\n'
+                                          'This will require your biometric to unlock the app when you return, '
+                                          'but won\'t automatically sign you in if your session expires.'
                                         ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, true),
+                                            child: const Text('Enable Lock'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    
+                                    if (useSessionLock == true) {
+                                      // Enable session-based lock without credentials
+                                      final result = await _biometricService.authenticate(
+                                        reason: 'Verify your identity to enable biometric lock',
                                       );
-                                    }
-                                  } else {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(result.errorMessage ?? 'Authentication failed'),
-                                          backgroundColor: Colors.red,
-                                          duration: const Duration(seconds: 5),
-                                        ),
-                                      );
+                                      if (result.success && mounted) {
+                                        await _biometricService.setBiometricEnabled(true);
+                                        setState(() {});
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Biometric lock enabled (session-based)'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      } else if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(result.errorMessage ?? 'Authentication failed'),
+                                            backgroundColor: Colors.red,
+                                            duration: const Duration(seconds: 5),
+                                          ),
+                                        );
+                                      }
                                     }
                                   }
-                                } else {
-                                  // Email/password user - store credentials for full auth
-                                  final credentials = await _showCredentialDialog();
-                                  if (credentials == null) return;
-                                  
-                                  // Test biometric auth before enabling
-                                  final result = await _biometricService.authenticate(
-                                    reason: 'Verify your identity to enable biometric sign-in',
+                                  return;
+                                }
+                                
+                                // User provided credentials - email/password user
+                                // Test biometric auth before enabling
+                                final result = await _biometricService.authenticate(
+                                  reason: 'Verify your identity to enable biometric sign-in',
+                                );
+                                if (result.success) {
+                                  // Store credentials securely
+                                  await _biometricService.storeCredentials(
+                                    credentials['email']!,
+                                    credentials['password']!,
                                   );
-                                  if (result.success) {
-                                    // Store credentials securely
-                                    await _biometricService.storeCredentials(
-                                      credentials['email']!,
-                                      credentials['password']!,
+                                  await _biometricService.setBiometricEnabled(true);
+                                  if (mounted) {
+                                    setState(() {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Biometric sign-in enabled (full authentication)'),
+                                        backgroundColor: Colors.green,
+                                      ),
                                     );
-                                    await _biometricService.setBiometricEnabled(true);
-                                    if (mounted) {
-                                      setState(() {});
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('Biometric sign-in enabled (full authentication)'),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
-                                    }
-                                  } else {
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(result.errorMessage ?? 'Authentication failed'),
-                                          backgroundColor: Colors.red,
-                                          duration: const Duration(seconds: 5),
-                                        ),
-                                      );
-                                    }
+                                  }
+                                } else {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(result.errorMessage ?? 'Authentication failed'),
+                                        backgroundColor: Colors.red,
+                                        duration: const Duration(seconds: 5),
+                                      ),
+                                    );
                                   }
                                 }
                               } else {
