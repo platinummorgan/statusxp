@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/screens/psn/psn_connect_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
@@ -25,6 +26,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoadingProfile = true;
   Map<String, dynamic>? _profile;
   bool _showOnLeaderboard = true;
+  final BiometricAuthService _biometricService = BiometricAuthService();
 
   @override
   void initState() {
@@ -674,8 +676,88 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 _buildPreferredPlatformTile(),
 
                 const Divider(height: 1),
+                
+                // Biometric Authentication (FOURTH)
+                FutureBuilder<bool>(
+                  future: _biometricService.isBiometricAvailable(),
+                  builder: (context, snapshot) {
+                    final isAvailable = snapshot.data ?? false;
+                    if (!isAvailable) {
+                      return const SizedBox.shrink();
+                    }
+                    
+                    return FutureBuilder<bool>(
+                      future: _biometricService.isBiometricEnabled(),
+                      builder: (context, enabledSnapshot) {
+                        final isEnabled = enabledSnapshot.data ?? false;
+                        
+                        return ListTile(
+                          leading: Icon(
+                            Icons.fingerprint,
+                            color: isEnabled ? accentSuccess : null,
+                          ),
+                          title: const Text('Biometric Lock'),
+                          subtitle: FutureBuilder<String>(
+                            future: _biometricService.getBiometricTypesDescription(),
+                            builder: (context, typeSnapshot) {
+                              final types = typeSnapshot.data ?? 'Loading...';
+                              return Text(isEnabled 
+                                ? 'Enabled ($types)' 
+                                : 'Require $types to unlock app'
+                              );
+                            },
+                          ),
+                          trailing: Switch(
+                            value: isEnabled,
+                            onChanged: (value) async {
+                              if (value) {
+                                // Test biometric auth before enabling
+                                final authenticated = await _biometricService.authenticate(
+                                  reason: 'Verify your identity to enable biometric lock',
+                                );
+                                if (authenticated) {
+                                  await _biometricService.setBiometricEnabled(true);
+                                  if (mounted) {
+                                    setState(() {});
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Biometric lock enabled'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                } else {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Authentication failed'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                }
+                              } else {
+                                await _biometricService.setBiometricEnabled(false);
+                                if (mounted) {
+                                  setState(() {});
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Biometric lock disabled'),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
 
-                // Contact Support (FOURTH)
+                const Divider(height: 1),
+
+                // Contact Support (FIFTH)
                 ListTile(
                   leading: const Icon(Icons.email_outlined),
                   title: const Text('Contact Support'),

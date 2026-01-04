@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:statusxp/data/auth/auth_service.dart';
+import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/data/psn_service.dart';
 import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/data/repositories/supabase_game_repository.dart';
@@ -28,6 +29,11 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 final authServiceProvider = Provider<AuthService>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return AuthService(client);
+});
+
+/// Provider for the BiometricAuthService instance.
+final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) {
+  return BiometricAuthService();
 });
 
 /// StreamProvider for authentication state changes.

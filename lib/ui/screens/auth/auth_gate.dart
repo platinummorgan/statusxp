@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
 import 'package:statusxp/ui/screens/auth/sign_in_screen.dart';
@@ -10,7 +11,7 @@ import 'package:statusxp/ui/screens/onboarding_screen.dart';
 /// Authentication gate that controls access to the main app.
 /// 
 /// Shows the onboarding screen on first launch, sign-in screen when no user is authenticated,
-/// and the main app when a user is logged in.
+/// biometric lock screen when biometrics are enabled, and the main app when unlocked.
 class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
@@ -18,16 +19,35 @@ class AuthGate extends ConsumerStatefulWidget {
   ConsumerState<AuthGate> createState() => _AuthGateState();
 }
 
-class _AuthGateState extends ConsumerState<AuthGate> {
+class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver {
   bool _needsOnboarding = false;
   bool _checkingOnboarding = true;
   bool _isAuthenticated = false;
+  bool _isBiometricUnlocked = false;
+  final BiometricAuthService _biometricService = BiometricAuthService();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkOnboardingStatus();
     _checkInitialAuthStatus();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-lock the app when it goes to background
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      setState(() {
+        _isBiometricUnlocked = false;
+      });
+    }
   }
 
   Future<void> _checkOnboardingStatus() async {
@@ -44,6 +64,40 @@ class _AuthGateState extends ConsumerState<AuthGate> {
     setState(() {
       _isAuthenticated = user != null;
     });
+  }
+
+  void _onBiometricAuthenticated() {
+    setState(() {
+      _isBiometricUnlocked = true;
+    });
+  }
+
+  Widget _buildMainAppOrLock() {
+    // Check if biometric auth is enabled and user needs to unlock
+    return FutureBuilder<bool>(
+      future: _biometricService.isBiometricEnabled(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        final biometricEnabled = snapshot.data!;
+        
+        // If biometric is enabled and not yet unlocked, show lock screen
+        if (biometricEnabled && !_isBiometricUnlocked) {
+          return BiometricLockScreen(
+            onAuthenticated: _onBiometricAuthenticated,
+          );
+        }
+
+        // Otherwise show the main app
+        return const StatusXPMainApp();
+      },
+    );
   }
 
   @override
@@ -86,13 +140,13 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         
         // Show app if user exists, regardless of the event type
         if (user != null) {
-          return const StatusXPMainApp();
+          return _buildMainAppOrLock();
         }
         
         // No user and not a sign out event - check cached state
         if (_isAuthenticated) {
           // We were authenticated before, keep showing the app
-          return const StatusXPMainApp();
+          return _buildMainAppOrLock();
         }
         
         // Initial state with no user
@@ -103,7 +157,7 @@ class _AuthGateState extends ConsumerState<AuthGate> {
         // This prevents flashing to loading screen during token refresh
         final currentUser = Supabase.instance.client.auth.currentUser;
         if (currentUser != null) {
-          return const StatusXPMainApp();
+          return _buildMainAppOrLock();
         }
         return const Scaffold(
           body: Center(

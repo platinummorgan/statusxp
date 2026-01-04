@@ -88,6 +88,9 @@ dependencies:
   
   # In-App Purchases for Premium Subscription
   in_app_purchase: ^3.2.0
+  
+  # Local biometric authentication (fingerprint, Face ID, etc.)
+  local_auth: ^2.3.0
 
 dev_dependencies:
   flutter_test:

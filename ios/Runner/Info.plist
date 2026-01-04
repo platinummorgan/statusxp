@@ -47,6 +47,8 @@
 	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Save your gaming achievement posters to share with friends</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to securely unlock StatusXP</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
