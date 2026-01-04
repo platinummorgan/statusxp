@@ -711,39 +711,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             value: isEnabled,
                             onChanged: (value) async {
                               if (value) {
-                                // Need to prompt for credentials to store
-                                final credentials = await _showCredentialDialog();
-                                if (credentials == null) return;
+                                // Check user's sign-in method
+                                final user = Supabase.instance.client.auth.currentUser;
+                                final isOAuthUser = user?.appMetadata['provider'] != null && 
+                                                   user?.appMetadata['provider'] != 'email';
                                 
-                                // Test biometric auth before enabling
-                                final result = await _biometricService.authenticate(
-                                  reason: 'Verify your identity to enable biometric sign-in',
-                                );
-                                if (result.success) {
-                                  // Store credentials securely
-                                  await _biometricService.storeCredentials(
-                                    credentials['email']!,
-                                    credentials['password']!,
+                                if (isOAuthUser) {
+                                  // OAuth user (Google/Apple) - just enable biometric lock
+                                  final result = await _biometricService.authenticate(
+                                    reason: 'Verify your identity to enable biometric lock',
                                   );
-                                  await _biometricService.setBiometricEnabled(true);
-                                  if (mounted) {
-                                    setState(() {});
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Biometric sign-in enabled'),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                    );
+                                  if (result.success) {
+                                    await _biometricService.setBiometricEnabled(true);
+                                    if (mounted) {
+                                      setState(() {});
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Biometric lock enabled (session-based)'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(result.errorMessage ?? 'Authentication failed'),
+                                          backgroundColor: Colors.red,
+                                          duration: const Duration(seconds: 5),
+                                        ),
+                                      );
+                                    }
                                   }
                                 } else {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(result.errorMessage ?? 'Authentication failed'),
-                                        backgroundColor: Colors.red,
-                                        duration: const Duration(seconds: 5),
-                                      ),
+                                  // Email/password user - store credentials for full auth
+                                  final credentials = await _showCredentialDialog();
+                                  if (credentials == null) return;
+                                  
+                                  // Test biometric auth before enabling
+                                  final result = await _biometricService.authenticate(
+                                    reason: 'Verify your identity to enable biometric sign-in',
+                                  );
+                                  if (result.success) {
+                                    // Store credentials securely
+                                    await _biometricService.storeCredentials(
+                                      credentials['email']!,
+                                      credentials['password']!,
                                     );
+                                    await _biometricService.setBiometricEnabled(true);
+                                    if (mounted) {
+                                      setState(() {});
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Biometric sign-in enabled (full authentication)'),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  } else {
+                                    if (mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(result.errorMessage ?? 'Authentication failed'),
+                                          backgroundColor: Colors.red,
+                                          duration: const Duration(seconds: 5),
+                                        ),
+                                      );
+                                    }
                                   }
                                 }
                               } else {
@@ -754,7 +788,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   setState(() {});
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text('Biometric sign-in disabled'),
+                                      content: Text('Biometric disabled'),
                                     ),
                                   );
                                 }

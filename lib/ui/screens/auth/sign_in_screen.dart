@@ -37,8 +37,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final biometricEnabled = await _biometricService.isBiometricEnabled();
     final biometricAvailable = await _biometricService.isBiometricAvailable();
     
-    // Check if we have stored credentials
+    // Check if we have stored credentials (email/password users)
     final hasStoredCredentials = await _biometricService.hasStoredCredentials();
+    
+    // Check if there's an active session (OAuth users)
+    final hasSession = Supabase.instance.client.auth.currentSession != null;
     
     if (mounted) {
       setState(() {
@@ -46,11 +49,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         // 1. User has signed in before
         // 2. Biometric is enabled in settings
         // 3. Device supports biometric
-        // 4. We have stored credentials to use
+        // 4. Either has stored credentials (email/password) OR has active session (OAuth)
         _showBiometricOption = hasSignedInBefore && 
                                 biometricEnabled && 
                                 biometricAvailable && 
-                                hasStoredCredentials;
+                                (hasStoredCredentials || hasSession);
       });
     }
   }
@@ -77,31 +80,48 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         return;
       }
       
-      // Biometric successful - retrieve stored credentials
+      // Biometric successful - check if we have stored credentials
       final credentials = await _biometricService.getStoredCredentials();
       
-      if (credentials == null) {
-        // No stored credentials - shouldn't happen but handle it
+      if (credentials != null) {
+        // Email/password user - sign in with stored credentials
+        final authService = ref.read(authServiceProvider);
+        await authService.signInWithPassword(
+          email: credentials['email']!,
+          password: credentials['password']!,
+        );
+        // Success! Auth gate will handle navigation
+      } else {
+        // OAuth user - check if session exists and is valid
+        final currentUser = Supabase.instance.client.auth.currentUser;
+        
+        if (currentUser != null) {
+          // Session exists - just unlock, auth gate will navigate
+          return;
+        }
+        
+        // Try to refresh session
+        try {
+          final response = await Supabase.instance.client.auth.refreshSession();
+          if (response.session != null && response.user != null) {
+            // Refresh successful! Auth gate will navigate
+            return;
+          }
+        } catch (e) {
+          // Refresh failed
+        }
+        
+        // Session expired and couldn't refresh
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('No stored credentials found. Please sign in with email or Google.'),
+              content: Text('Session expired. Please sign in with Google or Apple again.'),
               backgroundColor: Colors.orange,
             ),
           );
           await _checkBiometricAvailability(); // Refresh button visibility
         }
-        return;
       }
-      
-      // Sign in with stored credentials
-      final authService = ref.read(authServiceProvider);
-      await authService.signInWithPassword(
-        email: credentials['email']!,
-        password: credentials['password']!,
-      );
-      
-      // Success! Auth gate will handle navigation
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -314,7 +334,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 
                 // Continue with Google
                 _buildOptionButton(
-                  icon: Icons.g_mobiledata,
+                  imagePath: 'assets/images/google_logo.png',
                   label: 'Continue with Google',
                   backgroundColor: Colors.white,
                   borderColor: Colors.grey.shade300,
@@ -360,7 +380,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
   
   Widget _buildOptionButton({
-    required IconData icon,
+    IconData? icon,
+    String? imagePath,
     required String label,
     Gradient? gradient,
     Color? backgroundColor,
@@ -391,11 +412,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 28,
-              color: textColor ?? Colors.white,
-            ),
+            if (imagePath != null)
+              Image.asset(
+                imagePath,
+                width: 28,
+                height: 28,
+              )
+            else if (icon != null)
+              Icon(
+                icon,
+                size: 28,
+                color: textColor ?? Colors.white,
+              ),
             const SizedBox(width: 12),
             Text(
               label,
