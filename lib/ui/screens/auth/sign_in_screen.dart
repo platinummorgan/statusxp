@@ -5,8 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
+import 'dart:io' show Platform;
 
-/// Modern sign in screen with 3 prominent options:
+/// Modern sign in screen with multiple sign-in options:
 /// - Continue with Biometric (if available)
 /// - Continue with Google
 /// - Continue with Login (email/password)
@@ -181,6 +182,61 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
+  /// Sign in with Apple
+  Future<void> _signInWithApple() async {
+    setState(() => _isLoading = true);
+    final authService = ref.read(authServiceProvider);
+    try {
+      final currentUser = authService.currentUser;
+      
+      await authService.signInWithApple();
+      
+      // Mark that user has signed in at least once
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('has_signed_in_before', true);
+      
+      // Show success message if we linked an account
+      if (currentUser != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Apple account linked successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+      // AuthGate will handle navigation automatically
+    } on AuthException catch (e) {
+      if (mounted) {
+        // Show user-friendly error message
+        String errorMessage = e.message;
+        if (e.message.contains('already linked')) {
+          errorMessage = 'This Apple ID is already linked to another StatusXP account. Please sign in with that account first, or use a different sign-in method.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Apple Sign-In failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,6 +322,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   onTap: _isLoading ? null : _signInWithGoogle,
                 ),
                 const SizedBox(height: 16),
+                
+                // Continue with Apple (iOS/macOS only)
+                if (Platform.isIOS || Platform.isMacOS) ...[
+                  _buildOptionButton(
+                    icon: Icons.apple,
+                    label: 'Continue with Apple',
+                    backgroundColor: Colors.black,
+                    textColor: Colors.white,
+                    onTap: _isLoading ? null : _signInWithApple,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 
                 // Continue with Login (Email/Password)
                 _buildOptionButton(
