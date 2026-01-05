@@ -32,28 +32,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   /// Check if biometric sign-in is available
   Future<void> _checkBiometricAvailability() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hasSignedInBefore = prefs.getBool('has_signed_in_before') ?? false;
-    final biometricEnabled = await _biometricService.isBiometricEnabled();
     final biometricAvailable = await _biometricService.isBiometricAvailable();
-    
-    // Check if we have stored credentials (email/password users)
-    final hasStoredCredentials = await _biometricService.hasStoredCredentials();
-    
-    // Check if there's an active session (OAuth users)
-    final hasSession = Supabase.instance.client.auth.currentSession != null;
     
     if (mounted) {
       setState(() {
-        // Show biometric option if:
-        // 1. User has signed in before
-        // 2. Biometric is enabled in settings
-        // 3. Device supports biometric
-        // 4. Either has stored credentials (email/password) OR has active session (OAuth)
-        _showBiometricOption = hasSignedInBefore && 
-                                biometricEnabled && 
-                                biometricAvailable && 
-                                (hasStoredCredentials || hasSession);
+        // Always show biometric button if device supports it - never hide it
+        _showBiometricOption = biometricAvailable;
       });
     }
   }
@@ -63,7 +47,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Authenticate with biometric first
+      // Check if biometric is actually enabled
+      final isEnabled = await _biometricService.isBiometricEnabled();
+      
+      if (!isEnabled) {
+        // Biometric not set up yet
+        if (mounted) {
+          setState(() => _isLoading = false);
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Biometric Not Set Up'),
+              content: const Text(
+                'Please sign in first using Google, Apple, or Email/Password.\n\n'
+                'Then go to Settings and enable biometric authentication.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+      
+      // Authenticate with biometric
       final result = await _biometricService.authenticate(
         reason: 'Sign in to StatusXP',
       );
@@ -100,26 +111,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           return;
         }
         
-        // Try to refresh session
-        try {
-          final response = await Supabase.instance.client.auth.refreshSession();
-          if (response.session != null && response.user != null) {
-            // Refresh successful! Auth gate will navigate
-            return;
-          }
-        } catch (e) {
-          // Refresh failed
-        }
-        
-        // Session expired and couldn't refresh
+        // No active session - need to sign in with OAuth again
+        // Show friendly message guiding them to use Google/Apple button
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Session expired. Please sign in with Google or Apple again.'),
-              backgroundColor: Colors.orange,
+              content: Text('Please sign in with Google or Apple'),
+              backgroundColor: Colors.blue,
+              duration: Duration(seconds: 2),
             ),
           );
-          await _checkBiometricAvailability(); // Refresh button visibility
         }
       }
     } on AuthException catch (e) {
