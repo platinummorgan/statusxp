@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
@@ -115,7 +116,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               // Session restored! Update stored session with fresh one
               final newSession = Supabase.instance.client.auth.currentSession;
               if (newSession != null) {
-                await _biometricService.storeSession(newSession.persistSessionString);
+                final sessionJson = jsonEncode({
+                  'access_token': newSession.accessToken,
+                  'refresh_token': newSession.refreshToken,
+                  'expires_in': newSession.expiresIn,
+                  'expires_at': newSession.expiresAt,
+                  'token_type': newSession.tokenType,
+                });
+                await _biometricService.storeSession(sessionJson);
               }
               // Auth gate will handle navigation
               return;

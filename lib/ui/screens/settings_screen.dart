@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
@@ -783,9 +784,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   // OAuth - store session data for full re-authentication
                                   final session = Supabase.instance.client.auth.currentSession;
                                   if (session != null) {
-                                    // Store session as JSON persistedSession string
-                                    final sessionString = session.persistSessionString;
-                                    await _biometricService.storeSession(sessionString);
+                                    // Store session as JSON string
+                                    final sessionJson = jsonEncode({
+                                      'access_token': session.accessToken,
+                                      'refresh_token': session.refreshToken,
+                                      'expires_in': session.expiresIn,
+                                      'expires_at': session.expiresAt,
+                                      'token_type': session.tokenType,
+                                    });
+                                    await _biometricService.storeSession(sessionJson);
                                   }
                                   await _biometricService.setBiometricEnabled(true);
                                   
