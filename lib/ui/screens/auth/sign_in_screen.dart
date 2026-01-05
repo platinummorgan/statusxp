@@ -116,14 +116,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               // Session restored! Update stored session with fresh one
               final newSession = Supabase.instance.client.auth.currentSession;
               if (newSession != null) {
-                final sessionJson = jsonEncode({
-                  'access_token': newSession.accessToken,
-                  'refresh_token': newSession.refreshToken,
-                  'expires_in': newSession.expiresIn,
-                  'expires_at': newSession.expiresAt,
-                  'token_type': newSession.tokenType,
-                });
-                await _biometricService.storeSession(sessionJson);
+                await _biometricService.storeSession(jsonEncode(newSession.toJson()));
               }
               // Auth gate will handle navigation
               return;

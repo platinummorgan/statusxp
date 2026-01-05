@@ -781,17 +781,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     );
                                   }
                                 } else {
-                                  // OAuth - store session data for full re-authentication
+                                  // OAuth - store complete session data for full re-authentication
                                   final session = Supabase.instance.client.auth.currentSession;
                                   if (session != null) {
-                                    // Store session as JSON string
-                                    final sessionJson = jsonEncode({
-                                      'access_token': session.accessToken,
-                                      'refresh_token': session.refreshToken,
-                                      'expires_in': session.expiresIn,
-                                      'expires_at': session.expiresAt,
-                                      'token_type': session.tokenType,
-                                    });
+                                    // Store complete session as JSON (must include user object for recoverSession)
+                                    final sessionJson = jsonEncode(session.toJson());
                                     await _biometricService.storeSession(sessionJson);
                                   }
                                   await _biometricService.setBiometricEnabled(true);
