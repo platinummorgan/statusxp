@@ -103,7 +103,33 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         );
         // Success! Auth gate will handle navigation
       } else {
-        // OAuth user - check if session exists and is valid
+        // OAuth user - try to restore session with refresh token
+        final refreshToken = await _biometricService.getStoredRefreshToken();
+        
+        if (refreshToken != null) {
+          // Have refresh token - restore session
+          try {
+            final response = await Supabase.instance.client.auth.setSession(refreshToken);
+            if (response.session != null && response.user != null) {
+              // Session restored! Auth gate will navigate
+              return;
+            }
+          } catch (e) {
+            // Refresh token invalid or expired
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Session expired. Please sign in with Google or Apple again.'),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
+            return;
+          }
+        }
+        
+        // Check if session exists and is valid (user just closed app, didn't sign out)
         final currentUser = Supabase.instance.client.auth.currentUser;
         
         if (currentUser != null) {
@@ -111,8 +137,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           return;
         }
         
-        // No active session - need to sign in with OAuth again
-        // Show friendly message guiding them to use Google/Apple button
+        // No stored refresh token and no active session
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

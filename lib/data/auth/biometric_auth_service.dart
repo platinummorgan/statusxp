@@ -27,6 +27,7 @@ class BiometricAuthService {
   static const String _biometricEnabledKey = 'biometric_auth_enabled';
   static const String _storedEmailKey = 'biometric_stored_email';
   static const String _storedPasswordKey = 'biometric_stored_password';
+  static const String _storedRefreshTokenKey = 'biometric_stored_refresh_token';
   
   /// Check if the device supports biometric authentication
   Future<bool> isBiometricAvailable() async {
@@ -180,5 +181,23 @@ class BiometricAuthService {
   Future<void> clearStoredCredentials() async {
     await _secureStorage.delete(key: _storedEmailKey);
     await _secureStorage.delete(key: _storedPasswordKey);
+    await _secureStorage.delete(key: _storedRefreshTokenKey);
+  }
+  
+  /// Store OAuth refresh token securely for biometric authentication
+  /// Should be called after successful OAuth sign-in (Google/Apple)
+  Future<void> storeRefreshToken(String refreshToken) async {
+    await _secureStorage.write(key: _storedRefreshTokenKey, value: refreshToken);
+  }
+  
+  /// Retrieve stored OAuth refresh token (only after biometric auth succeeds)
+  Future<String?> getStoredRefreshToken() async {
+    return await _secureStorage.read(key: _storedRefreshTokenKey);
+  }
+  
+  /// Check if refresh token is stored
+  Future<bool> hasStoredRefreshToken() async {
+    final token = await _secureStorage.read(key: _storedRefreshTokenKey);
+    return token != null;
   }
 }

@@ -780,14 +780,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     );
                                   }
                                 } else {
-                                  // OAuth - just enable session lock
+                                  // OAuth - store refresh token for full re-authentication
+                                  final session = Supabase.instance.client.auth.currentSession;
+                                  if (session?.refreshToken != null) {
+                                    await _biometricService.storeRefreshToken(session!.refreshToken!);
+                                  }
                                   await _biometricService.setBiometricEnabled(true);
                                   
                                   if (mounted) {
                                     setState(() {});
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('✅ Biometric lock enabled\nYou can now use your fingerprint/face to unlock the app'),
+                                        content: Text('✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in'),
                                         backgroundColor: Colors.green,
                                         duration: Duration(seconds: 3),
                                       ),
