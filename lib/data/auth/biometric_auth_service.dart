@@ -27,7 +27,7 @@ class BiometricAuthService {
   static const String _biometricEnabledKey = 'biometric_auth_enabled';
   static const String _storedEmailKey = 'biometric_stored_email';
   static const String _storedPasswordKey = 'biometric_stored_password';
-  static const String _storedRefreshTokenKey = 'biometric_stored_refresh_token';
+  static const String _storedSessionKey = 'biometric_stored_session';
   
   /// Check if the device supports biometric authentication
   Future<bool> isBiometricAvailable() async {
@@ -181,23 +181,23 @@ class BiometricAuthService {
   Future<void> clearStoredCredentials() async {
     await _secureStorage.delete(key: _storedEmailKey);
     await _secureStorage.delete(key: _storedPasswordKey);
-    await _secureStorage.delete(key: _storedRefreshTokenKey);
+    await _secureStorage.delete(key: _storedSessionKey);
   }
   
-  /// Store OAuth refresh token securely for biometric authentication
+  /// Store OAuth session data securely for biometric authentication
   /// Should be called after successful OAuth sign-in (Google/Apple)
-  Future<void> storeRefreshToken(String refreshToken) async {
-    await _secureStorage.write(key: _storedRefreshTokenKey, value: refreshToken);
+  Future<void> storeSession(String sessionJson) async {
+    await _secureStorage.write(key: _storedSessionKey, value: sessionJson);
   }
   
-  /// Retrieve stored OAuth refresh token (only after biometric auth succeeds)
-  Future<String?> getStoredRefreshToken() async {
-    return await _secureStorage.read(key: _storedRefreshTokenKey);
+  /// Retrieve stored OAuth session data (only after biometric auth succeeds)
+  Future<String?> getStoredSession() async {
+    return await _secureStorage.read(key: _storedSessionKey);
   }
   
-  /// Check if refresh token is stored
-  Future<bool> hasStoredRefreshToken() async {
-    final token = await _secureStorage.read(key: _storedRefreshTokenKey);
-    return token != null;
+  /// Check if session is stored
+  Future<bool> hasStoredSession() async {
+    final session = await _secureStorage.read(key: _storedSessionKey);
+    return session != null;
   }
 }

@@ -103,20 +103,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         );
         // Success! Auth gate will handle navigation
       } else {
-        // OAuth user - try to restore session with refresh token
-        final refreshToken = await _biometricService.getStoredRefreshToken();
+        // OAuth user - try to restore session with stored session data
+        final sessionString = await _biometricService.getStoredSession();
         
-        if (refreshToken != null) {
-          // Have refresh token - restore session using refreshSession
+        if (sessionString != null) {
+          // Have stored session - restore it
           try {
-            await Supabase.instance.client.auth.recoverSession(refreshToken);
+            await Supabase.instance.client.auth.recoverSession(sessionString);
             final user = Supabase.instance.client.auth.currentUser;
             if (user != null) {
-              // Session restored! Auth gate will navigate
+              // Session restored! Update stored session with fresh one
+              final newSession = Supabase.instance.client.auth.currentSession;
+              if (newSession != null) {
+                await _biometricService.storeSession(newSession.persistSessionString);
+              }
+              // Auth gate will handle navigation
               return;
             }
           } catch (e) {
-            // Refresh token invalid or expired - clear it
+            // Session invalid or expired - clear it
             await _biometricService.clearStoredCredentials();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
