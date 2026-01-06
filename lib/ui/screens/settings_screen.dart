@@ -297,9 +297,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _signOut() async {
-    ref.read(biometricLockRequestedProvider.notifier).state = true;
-    if (mounted) {
-      context.go('/');
+    try {
+      // Actually sign out from Supabase
+      final authService = ref.read(authServiceProvider);
+      await authService.signOut();
+      
+      // Reset biometric lock state
+      ref.read(biometricLockRequestedProvider.notifier).state = false;
+      
+      // Navigate to sign in screen
+      if (mounted) {
+        context.go('/');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error signing out: $e')),
+        );
+      }
     }
   }
 
