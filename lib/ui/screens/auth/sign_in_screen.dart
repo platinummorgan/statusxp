@@ -382,7 +382,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         // Show user-friendly error message
         String errorMessage = e.message;
         if (e.message.contains('already linked')) {
-          errorMessage = 'This Apple ID is already linked to another StatusXP account. Please sign in with that account first, or use a different sign-in method.';
+          errorMessage = 'This Apple ID is already linked to your account. Please sign in with your email first, then you can use Apple Sign-In.';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
