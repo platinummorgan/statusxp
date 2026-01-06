@@ -57,10 +57,11 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
 
         // Calculate percentile
         if (_globalRank != null) {
-          final totalUsers = await supabase
+          final totalUsersResponse = await supabase
               .from('leaderboard_global_cache')
-              .select('user_id', const FetchOptions(count: CountOption.exact));
-          final total = totalUsers.count;
+              .select('user_id')
+              .count(CountOption.exact);
+          final total = totalUsersResponse.count;
           if (total > 0) {
             _percentile = ((_globalRank! / total) * 100);
             if (mounted) setState(() {});
