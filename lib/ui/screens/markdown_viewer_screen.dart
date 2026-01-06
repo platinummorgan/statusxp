@@ -97,12 +97,12 @@ class _MarkdownViewerScreenState extends State<MarkdownViewerScreen> {
                   color: accentPrimary,
                   decoration: TextDecoration.underline,
                 ),
-                code: TextStyle(
+                code: const TextStyle(
                   backgroundColor: surfaceLight,
                   color: accentPrimary,
                   fontFamily: 'monospace',
                 ),
-                blockquote: TextStyle(
+                blockquote: const TextStyle(
                   color: textSecondary,
                   fontStyle: FontStyle.italic,
                   backgroundColor: surfaceLight,

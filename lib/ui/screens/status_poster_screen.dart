@@ -10,6 +10,9 @@ import 'package:screenshot/screenshot.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Status Poster Screen
 /// 
@@ -24,6 +27,52 @@ class StatusPosterScreen extends ConsumerStatefulWidget {
 
 class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
   final ScreenshotController _screenshotController = ScreenshotController();
+  int? _globalRank;
+  double? _percentile;
+  bool _isLoadingRank = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGlobalRank();
+  }
+
+  Future<void> _loadGlobalRank() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final response = await supabase
+          .from('leaderboard_global_cache')
+          .select('rank')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (response != null && mounted) {
+        setState(() {
+          _globalRank = response['rank'] as int?;
+          _isLoadingRank = false;
+        });
+
+        // Calculate percentile
+        if (_globalRank != null) {
+          final totalUsers = await supabase
+              .from('leaderboard_global_cache')
+              .select('user_id', const FetchOptions(count: CountOption.exact));
+          final total = totalUsers.count;
+          if (total > 0) {
+            _percentile = ((_globalRank! / total) * 100);
+            if (mounted) setState(() {});
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingRank = false);
+      }
+    }
+  }
 
   Future<void> _sharePoster() async {
     HapticFeedback.lightImpact();
@@ -216,7 +265,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                                   _formatNumber(dashboardStats.totalStatusXP.toInt()),
                                   style: theme.textTheme.displayLarge?.copyWith(
                                     color: CyberpunkTheme.neonPurple,
-                                    fontSize: 56,
+                                    fontSize: 67,
                                     fontWeight: FontWeight.w900,
                                     height: 0.9,
                                     letterSpacing: -1,
@@ -272,7 +321,104 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                             ],
                           ),
 
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 24),
+
+                          // Rank & Percentile badges
+                          if (_globalRank != null || _percentile != null)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (_globalRank != null) ...[                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
+                                          CyberpunkTheme.neonCyan.withValues(alpha: 0.05),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.5),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.emoji_events,
+                                          size: 16,
+                                          color: CyberpunkTheme.neonCyan,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'RANK #${_formatNumber(_globalRank!)}',
+                                          style: theme.textTheme.labelMedium?.copyWith(
+                                            color: CyberpunkTheme.neonCyan,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 1.5,
+                                            shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.neonCyan),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (_percentile != null) const SizedBox(width: 12),
+                                ],
+                                if (_percentile != null && _percentile! <= 25)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          CyberpunkTheme.goldNeon.withValues(alpha: 0.2),
+                                          CyberpunkTheme.goldNeon.withValues(alpha: 0.05),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: CyberpunkTheme.goldNeon.withValues(alpha: 0.5),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'TOP ${_percentile!.toStringAsFixed(0)}%',
+                                      style: theme.textTheme.labelMedium?.copyWith(
+                                        color: CyberpunkTheme.goldNeon,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.5,
+                                        shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.goldNeon),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          if (_globalRank != null || _percentile != null)
+                            const SizedBox(height: 16),
+
+                          // Call to action
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: CyberpunkTheme.neonPink.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              '⚡ BEAT MY SCORE',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: CyberpunkTheme.neonPink,
+                                letterSpacing: 2.5,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
 
                           // Neon divider
                           Container(
@@ -443,9 +589,9 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
 
                           const SizedBox(height: 20),
 
-                          // Footer with Google Play watermark
+                          // Footer with QR code and info
                           Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             decoration: BoxDecoration(
                               border: Border(
                                 top: BorderSide(
@@ -454,38 +600,71 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                                 ),
                               ),
                             ),
-                            child: Column(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Text(
-                                  'STATUSXP',
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    color: CyberpunkTheme.neonCyan,
-                                    letterSpacing: 3,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 13,
-                                    shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.neonCyan, blurRadius: 8),
+                                // Left: App info and timestamp
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'STATUSXP',
+                                        style: theme.textTheme.labelLarge?.copyWith(
+                                          color: CyberpunkTheme.neonCyan,
+                                          letterSpacing: 3,
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 14,
+                                          shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.neonCyan, blurRadius: 8),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Cross-Platform Gaming Tracker',
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          color: Colors.white.withValues(alpha: 0.6),
+                                          fontSize: 9,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Updated ${DateFormat('MMM d, yyyy').format(DateTime.now())}',
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          color: CyberpunkTheme.neonCyan.withValues(alpha: 0.5),
+                                          fontSize: 8,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.shop,
-                                      size: 12,
-                                      color: CyberpunkTheme.neonCyan.withValues(alpha: 0.6),
+                                // Right: QR Code
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
+                                      width: 2,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Get it on Google Play',
-                                      style: theme.textTheme.labelSmall?.copyWith(
-                                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.6),
-                                        letterSpacing: 1,
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                  ),
+                                  child: QrImageView(
+                                    data: 'https://play.google.com/store/apps/details?id=com.statusxp.statusxp',
+                                    version: QrVersions.auto,
+                                    size: 80,
+                                    backgroundColor: Colors.white,
+                                    eyeStyle: const QrEyeStyle(
+                                      eyeShape: QrEyeShape.square,
+                                      color: Colors.black,
                                     ),
-                                  ],
+                                    dataModuleStyle: const QrDataModuleStyle(
+                                      dataModuleShape: QrDataModuleShape.square,
+                                      color: Colors.black,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
