@@ -223,28 +223,6 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          
-                          // Header with glow
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
-                                width: 1,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              'STATUSXP',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                letterSpacing: 3,
-                                color: CyberpunkTheme.neonCyan,
-                                fontWeight: FontWeight.w600,
-                                shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.neonCyan),
-                              ),
-                            ),
-                          ),
                           const SizedBox(height: 20),
                           
                           // Username with massive glow
