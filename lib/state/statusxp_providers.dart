@@ -36,6 +36,18 @@ final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) {
   return BiometricAuthService();
 });
 
+/// StateProvider for requesting a local biometric lock.
+/// 
+/// Used to trigger a lock screen without signing out.
+final biometricLockRequestedProvider = StateProvider<bool>((ref) {
+  return false;
+});
+
+/// StateProvider for granting a one-time biometric unlock after sign-in.
+final biometricUnlockGrantedProvider = StateProvider<bool>((ref) {
+  return false;
+});
+
 /// StreamProvider for authentication state changes.
 /// 
 /// Emits whenever the user signs in, signs out, or the token refreshes.

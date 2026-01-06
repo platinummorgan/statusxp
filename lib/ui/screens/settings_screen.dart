@@ -297,41 +297,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _signOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out?'),
-        content: const Text('Are you sure you want to sign out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Sign Out'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      await Supabase.instance.client.auth.signOut();
-      if (mounted) {
-        context.go('/');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to sign out: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    ref.read(biometricLockRequestedProvider.notifier).state = true;
+    if (mounted) {
+      context.go('/');
     }
   }
 
@@ -786,6 +754,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   if (session != null) {
                                     // Store complete session as JSON (must include user object for recoverSession)
                                     final sessionJson = jsonEncode(session.toJson());
+                                    print('Storing session: ${sessionJson.substring(0, 100)}...');
                                     await _biometricService.storeSession(sessionJson);
                                   }
                                   await _biometricService.setBiometricEnabled(true);
@@ -948,11 +917,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const Divider(height: 1),
 
-                // Sign Out
+                // Log Out (local lock)
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
                   title: const Text(
-                    'Sign Out',
+                    'Log Out',
                     style: TextStyle(color: Colors.red),
                   ),
                   onTap: _signOut,

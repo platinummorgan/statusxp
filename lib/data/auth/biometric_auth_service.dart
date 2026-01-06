@@ -183,6 +183,11 @@ class BiometricAuthService {
     await _secureStorage.delete(key: _storedPasswordKey);
     await _secureStorage.delete(key: _storedSessionKey);
   }
+
+  /// Clear only the stored OAuth session data
+  Future<void> clearStoredSession() async {
+    await _secureStorage.delete(key: _storedSessionKey);
+  }
   
   /// Store OAuth session data securely for biometric authentication
   /// Should be called after successful OAuth sign-in (Google/Apple)

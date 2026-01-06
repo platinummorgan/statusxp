@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:statusxp/config/supabase_config.dart';
+import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/theme/theme.dart';
 import 'package:statusxp/ui/screens/auth/auth_gate.dart';
 import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
@@ -12,6 +15,17 @@ import 'package:app_links/app_links.dart';
 
 // Global auth refresh service
 late final AuthRefreshService authRefreshService;
+final BiometricAuthService _biometricAuthService = BiometricAuthService();
+
+Future<void> _syncBiometricSessionIfNeeded(Session session) async {
+  final biometricEnabled = await _biometricAuthService.isBiometricEnabled();
+  if (!biometricEnabled) return;
+
+  final hasCredentials = await _biometricAuthService.hasStoredCredentials();
+  if (hasCredentials) return;
+
+  await _biometricAuthService.storeSession(jsonEncode(session.toJson()));
+}
 
 // App lifecycle observer to refresh session when app resumes
 class _AppLifecycleObserver extends WidgetsBindingObserver {
@@ -55,6 +69,7 @@ void main() async {
   Supabase.instance.client.auth.onAuthStateChange.listen((data) {
     if (data.session != null) {
       authRefreshService.startPeriodicRefresh();
+      _syncBiometricSessionIfNeeded(data.session!);
     } else {
       authRefreshService.stopPeriodicRefresh();
     }

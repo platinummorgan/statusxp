@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/theme/colors.dart';
+import 'package:statusxp/ui/screens/markdown_viewer_screen.dart';
 
 /// Premium Subscription Screen
 /// 
@@ -333,7 +334,15 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
+          const Text(
+            'Auto-Renewable Monthly Subscription',
+            style: TextStyle(
+              fontSize: 12,
+              color: textSecondary,
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,12 +369,14 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           const Text(
-            'Cancel anytime',
+            'Subscription automatically renews monthly.\nCancel anytime from your account settings.',
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: textSecondary,
+              height: 1.4,
             ),
           ),
         ],
@@ -420,13 +431,62 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
   }
 
   Widget _buildFooter() {
-    return const Text(
-      'Subscription renews automatically unless cancelled.\n'
-      'Managed through your Google Play or App Store account.',
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: 11,
-        color: textMuted,
+    return Column(
+      children: [
+        const Text(
+          'Subscription renews automatically unless cancelled.\n'
+          'Managed through your Google Play or App Store account.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            color: textMuted,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 16,
+          children: [
+            _buildLinkButton(
+              'Terms of Use',
+              'TERMS_OF_SERVICE.md',
+            ),
+            const Text(
+              '•',
+              style: TextStyle(color: textMuted),
+            ),
+            _buildLinkButton(
+              'Privacy Policy',
+              'PRIVACY.md',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLinkButton(String label, String assetPath) {
+    return InkWell(
+      onTap: () => _openDocument(label, assetPath),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: accentPrimary,
+          fontSize: 12,
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    );
+  }
+
+  void _openDocument(String title, String assetPath) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MarkdownViewerScreen(
+          title: title,
+          assetPath: assetPath,
+        ),
       ),
     );
   }

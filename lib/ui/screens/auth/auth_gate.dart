@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
-import 'package:statusxp/ui/screens/auth/biometric_lock_screen.dart';
 import 'package:statusxp/ui/screens/auth/sign_in_screen.dart';
 import 'package:statusxp/ui/screens/onboarding_screen.dart';
 
@@ -26,6 +25,7 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
   bool _isAuthenticated = false;
   bool _isBiometricUnlocked = false;
   final BiometricAuthService _biometricService = BiometricAuthService();
+  DateTime? _lastPausedTime;
 
   @override
   void initState() {
@@ -43,11 +43,21 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Re-lock the app when it goes to background
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
-      setState(() {
-        _isBiometricUnlocked = false;
-      });
+    // Only lock when app actually goes to background, not when just switching apps
+    if (state == AppLifecycleState.paused) {
+      // Record when app went to background
+      _lastPausedTime = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      // When returning to app, only lock if it's been in background for more than 1 minute
+      if (_lastPausedTime != null) {
+        final duration = DateTime.now().difference(_lastPausedTime!);
+        if (duration.inMinutes >= 1) {
+          setState(() {
+            _isBiometricUnlocked = false;
+          });
+        }
+      }
+      _lastPausedTime = null;
     }
   }
 
@@ -67,19 +77,21 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
     });
   }
 
-  void _onBiometricAuthenticated() {
-    setState(() {
-      _isBiometricUnlocked = true;
-    });
-  }
-
   Widget _buildMainAppOrLock() {
-    // If user is already authenticated, show main app
-    if (_isAuthenticated) {
-      return const StatusXPMainApp();
+    final lockRequested = ref.watch(biometricLockRequestedProvider);
+    final unlockGranted = ref.watch(biometricUnlockGrantedProvider);
+
+    if (unlockGranted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(biometricUnlockGrantedProvider.notifier).state = false;
+        if (mounted) {
+          setState(() {
+            _isBiometricUnlocked = true;
+          });
+        }
+      });
     }
     
-    // Not authenticated - check if we should show biometric prompt first
     return FutureBuilder<bool>(
       future: _biometricService.isBiometricEnabled(),
       builder: (context, snapshot) {
@@ -91,22 +103,26 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
           );
         }
 
-        final biometricEnabled = snapshot.data!;
-        
-        // Show biometric lock if enabled and not unlocked yet
-        if (biometricEnabled && !_isBiometricUnlocked) {
-          return BiometricLockScreen(
-            onAuthenticated: _onBiometricAuthenticated,
-            onCancel: () {
-              setState(() {
-                _isBiometricUnlocked = true; // Skip biometric, go to sign-in
-              });
-            },
+        final biometricEnabled = snapshot.data ?? false;
+
+        if (_isAuthenticated && lockRequested) {
+          return const SignInScreen();
+        }
+
+        if (biometricEnabled && _isAuthenticated && !_isBiometricUnlocked) {
+          return const SignInScreen(
+            autoPromptBiometric: true,
           );
         }
 
-        // Otherwise show the main app (which will show sign-in if not authenticated)
-        return const StatusXPMainApp();
+        if (_isAuthenticated) {
+          return const StatusXPMainApp();
+        }
+
+        // Not authenticated - show sign-in (biometric sign-in handled there)
+        return SignInScreen(
+          autoPromptBiometric: biometricEnabled,
+        );
       },
     );
   }

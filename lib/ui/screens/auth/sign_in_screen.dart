@@ -13,22 +13,47 @@ import 'dart:io' show Platform;
 /// - Continue with Google
 /// - Continue with Login (email/password)
 class SignInScreen extends ConsumerStatefulWidget {
-  const SignInScreen({super.key});
+  final bool autoPromptBiometric;
+
+  const SignInScreen({
+    super.key,
+    this.autoPromptBiometric = false,
+  });
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends ConsumerState<SignInScreen> {
+class _SignInScreenState extends ConsumerState<SignInScreen>
+    with WidgetsBindingObserver {
   final BiometricAuthService _biometricService = BiometricAuthService();
   
   bool _isLoading = false;
   bool _showBiometricOption = false;
+  bool _hasAutoPrompted = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkBiometricAvailability();
+    _maybeAutoPromptBiometric();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _maybeAutoPromptBiometric();
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _hasAutoPrompted = false;
+    }
   }
 
   /// Check if biometric sign-in is available
@@ -41,6 +66,40 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         _showBiometricOption = biometricAvailable;
       });
     }
+  }
+
+  void _maybeAutoPromptBiometric() {
+    if (!widget.autoPromptBiometric || _hasAutoPrompted) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _hasAutoPrompted || _isLoading) return;
+      final lifecycleState = WidgetsBinding.instance.lifecycleState;
+      if (lifecycleState != null &&
+          lifecycleState != AppLifecycleState.resumed) {
+        return;
+      }
+
+      final isEnabled = await _biometricService.isBiometricEnabled();
+      if (!isEnabled) return;
+
+      final hasStoredCredentials = await _biometricService.hasStoredCredentials();
+      final hasStoredSession = await _biometricService.hasStoredSession();
+      final hasActiveSession =
+          Supabase.instance.client.auth.currentSession != null;
+      if (!hasStoredCredentials && !hasStoredSession && !hasActiveSession) {
+        return;
+      }
+
+      final currentState = WidgetsBinding.instance.lifecycleState;
+      if (currentState != null &&
+          currentState != AppLifecycleState.resumed) {
+        _hasAutoPrompted = false;
+        return;
+      }
+
+      _hasAutoPrompted = true;
+      await _signInWithBiometric();
+    });
   }
 
   /// Sign in with biometric authentication
@@ -102,14 +161,24 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           email: credentials['email']!,
           password: credentials['password']!,
         );
+        _clearLocalLock();
         // Success! Auth gate will handle navigation
       } else {
-        // OAuth user - try to restore session with stored session data
+        // OAuth user - if a valid session already exists, just unlock
+        final currentSession = Supabase.instance.client.auth.currentSession;
+        if (currentSession != null) {
+          await _refreshBiometricSessionIfNeeded();
+          _clearLocalLock();
+          return;
+        }
+
+        // No active session - try to restore session from stored data
         final sessionString = await _biometricService.getStoredSession();
-        
         if (sessionString != null) {
-          // Have stored session - restore it
           try {
+            // Debug: print what we're trying to recover
+            print('Attempting to recover session from: ${sessionString.substring(0, 100)}...');
+            
             await Supabase.instance.client.auth.recoverSession(sessionString);
             final user = Supabase.instance.client.auth.currentUser;
             if (user != null) {
@@ -118,31 +187,28 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               if (newSession != null) {
                 await _biometricService.storeSession(jsonEncode(newSession.toJson()));
               }
+              if (!await _refreshBiometricSessionIfNeeded()) {
+                return;
+              }
+              _clearLocalLock();
               // Auth gate will handle navigation
               return;
             }
           } catch (e) {
-            // Session invalid or expired - clear it
-            await _biometricService.clearStoredCredentials();
+            // Session invalid or expired - clear it and show detailed error
+            print('Session recovery failed: $e');
+            await _biometricService.clearStoredSession();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Session expired. Please sign in with Google or Apple again.'),
+                SnackBar(
+                  content: Text('Session expired: ${e.toString()}'),
                   backgroundColor: Colors.orange,
-                  duration: Duration(seconds: 3),
+                  duration: const Duration(seconds: 3),
                 ),
               );
             }
             return;
           }
-        }
-        
-        // Check if session exists and is valid (user just closed app, didn't sign out)
-        final currentUser = Supabase.instance.client.auth.currentUser;
-        
-        if (currentUser != null) {
-          // Session exists - just unlock, auth gate will navigate
-          return;
         }
         
         // No stored refresh token and no active session
@@ -181,6 +247,55 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
+  void _clearLocalLock() {
+    ref.read(biometricLockRequestedProvider.notifier).state = false;
+    ref.read(biometricUnlockGrantedProvider.notifier).state = true;
+  }
+
+  Future<bool> _refreshBiometricSessionIfNeeded() async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      return false;
+    }
+
+    final expiresAt = session.expiresAt;
+    if (expiresAt == null) {
+      return true;
+    }
+
+    final expiry = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    final shouldRefresh = expiry.isBefore(
+      DateTime.now().add(const Duration(minutes: 2)),
+    );
+    if (!shouldRefresh) {
+      return true;
+    }
+
+    try {
+      final refreshed = await Supabase.instance.client.auth.refreshSession();
+      final refreshedSession =
+          refreshed.session ?? Supabase.instance.client.auth.currentSession;
+      if (refreshedSession != null) {
+        await _biometricService.storeSession(jsonEncode(refreshedSession.toJson()));
+      }
+      return refreshedSession != null;
+    } on AuthException catch (e) {
+      await _biometricService.clearStoredSession();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Session expired. Please sign in again to continue. ($e)',
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
   /// Sign in with Google
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
@@ -189,6 +304,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       final currentUser = authService.currentUser;
       
       await authService.signInWithGoogle();
+      _clearLocalLock();
       
       // Mark that user has signed in at least once
       final prefs = await SharedPreferences.getInstance();
@@ -244,6 +360,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       final currentUser = authService.currentUser;
       
       await authService.signInWithApple();
+      _clearLocalLock();
       
       // Mark that user has signed in at least once
       final prefs = await SharedPreferences.getInstance();
@@ -501,6 +618,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         email: email,
         password: password,
       );
+      _clearLocalLock();
       
       // Mark that user has signed in at least once
       final prefs = await SharedPreferences.getInstance();
@@ -556,6 +674,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         email: email,
         password: password,
       );
+      _clearLocalLock();
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
