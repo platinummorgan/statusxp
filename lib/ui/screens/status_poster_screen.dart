@@ -198,6 +198,33 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // App Icon
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: CyberpunkTheme.neonCyan.withValues(alpha: 0.4),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
+                                  blurRadius: 20,
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: Image.asset(
+                                'assets/images/app_icon.png',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          
                           // Header with glow
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -209,7 +236,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              'STATUS//XP',
+                              'STATUSXP',
                               style: theme.textTheme.labelSmall?.copyWith(
                                 letterSpacing: 3,
                                 color: CyberpunkTheme.neonCyan,
