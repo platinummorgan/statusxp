@@ -156,7 +156,7 @@ export async function syncPSNAchievements(
     console.log('Loading all user_games for comparison...');
     const { data: allUserGames } = await supabase
       .from('user_games')
-      .select('game_title_id, platform_id, earned_trophies, total_trophies, completion_percent, last_rarity_sync')
+      .select('game_title_id, platform_id, earned_trophies, total_trophies, completion_percent, last_rarity_sync, sync_failed')
       .eq('user_id', userId);
     
     const userGamesMap = new Map();
@@ -241,10 +241,14 @@ export async function syncPSNAchievements(
           if (existingGameById) {
             // Found by npCommunicationId - this is the exact game
             if (!existingGameById.cover_url && title.trophyTitleIconUrl) {
-              await supabase
+              const { error: updateError } = await supabase
                 .from('game_titles')
                 .update({ cover_url: title.trophyTitleIconUrl })
                 .eq('id', existingGameById.id);
+              
+              if (updateError) {
+                console.error('❌ Failed to update game_title cover:', title.trophyTitleName, 'Error:', updateError);
+              }
             }
             gameTitle = existingGameById;
           } else {
@@ -293,16 +297,17 @@ export async function syncPSNAchievements(
           const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
           const isNewGame = !existingUserGame;
           const earnedChanged = existingUserGame && existingUserGame.earned_trophies !== apiEarnedTrophies;
+          const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
           
           // Check if rarity is stale (>30 days old)
           let needRarityRefresh = false;
-          if (!isNewGame && !earnedChanged && existingUserGame) {
+          if (!isNewGame && !earnedChanged && !syncFailed && existingUserGame) {
             const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
             const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
             needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
           }
           
-          const needTrophies = isNewGame || earnedChanged || needRarityRefresh;
+          const needTrophies = isNewGame || earnedChanged || needRarityRefresh || syncFailed;
 
           if (!needTrophies) {
             console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
@@ -314,6 +319,10 @@ export async function syncPSNAchievements(
           
           if (needRarityRefresh) {
             console.log(`🔄 RARITY REFRESH: ${title.trophyTitleName} (>30 days since last rarity sync)`);
+          }
+          
+          if (syncFailed) {
+            console.log(`🔄 RETRY FAILED SYNC: ${title.trophyTitleName} (previous sync failed)`);
           }
 
           console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${title.trophyTitleName} (earned: ${apiEarnedTrophies})`);
@@ -334,6 +343,8 @@ export async function syncPSNAchievements(
               platinum_trophies: earned.platinum || 0,
               has_platinum: (earned.platinum || 0) > 0,
               last_played_at: title.lastUpdatedDateTime,
+              sync_failed: false,
+              sync_error: null,
             };
             
             if (existingUserGame && existingUserGame.last_trophy_earned_at) {
@@ -409,6 +420,9 @@ export async function syncPSNAchievements(
             platinum_trophies: earned.platinum || 0,
             has_platinum: (earned.platinum || 0) > 0,
             last_played_at: title.lastUpdatedDateTime,
+            sync_failed: false,
+            sync_error: null,
+            last_sync_attempt: new Date().toISOString(),
           };
           
           // Preserve last_trophy_earned_at if it exists (will be updated later after processing trophies)
