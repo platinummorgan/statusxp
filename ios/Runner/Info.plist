@@ -67,6 +67,14 @@
 				<string>com.supabase.ksriqcmumjkemtfjuedm</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.statusxp.statusxp</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>
