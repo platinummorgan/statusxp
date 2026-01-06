@@ -242,7 +242,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     // Load existing user_games to enable cheap diff
     const { data: existingUserGames } = await supabase
       .from('user_games')
-      .select('game_title_id, platform_id, xbox_total_achievements, xbox_achievements_earned, last_rarity_sync')
+      .select('game_title_id, platform_id, xbox_total_achievements, xbox_achievements_earned, last_rarity_sync, sync_failed')
       .eq('user_id', userId);
     
     const userGamesMap = new Map();
@@ -315,10 +315,14 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             if (existingGame) {
               // Update cover if we don't have one
               if (!existingGame.cover_url && title.displayImage) {
-                await supabase
+                const { error: updateError } = await supabase
                   .from('game_titles')
                   .update({ cover_url: title.displayImage })
                   .eq('id', existingGame.id);
+                
+                if (updateError) {
+                  console.error('❌ Failed to update game_title cover:', title.name, 'Error:', updateError);
+                }
               }
               gameTitle = existingGame;
             } else {
@@ -354,16 +358,17 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const countsChanged = existingUserGame && 
               (existingUserGame.xbox_total_achievements !== apiTotalAchievements || 
                existingUserGame.xbox_achievements_earned !== apiEarnedAchievements);
+            const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
             
             // Check if rarity is stale (>30 days old)
             let needRarityRefresh = false;
-            if (!isNewGame && !countsChanged && existingUserGame) {
+            if (!isNewGame && !countsChanged && !syncFailed && existingUserGame) {
               const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
               const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
               needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
             }
             
-            const needsProcessing = isNewGame || countsChanged || needRarityRefresh;
+            const needsProcessing = isNewGame || countsChanged || needRarityRefresh || syncFailed;
             
             if (!needsProcessing) {
               console.log(`⏭️  Skip ${title.name} - no changes`);
@@ -375,6 +380,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             if (needRarityRefresh) {
               console.log(`🔄 RARITY REFRESH: ${title.name} (>30 days since last rarity sync)`);
+            }
+            
+            if (syncFailed) {
+              console.log(`🔄 RETRY FAILED SYNC: ${title.name} (previous sync failed)`);
             }
 
             // Log the achievement data from Xbox API
@@ -501,6 +510,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               xbox_achievements_earned: title.achievement.currentAchievements,
               xbox_total_achievements: totalAchievementsFromAPI,
               xbox_last_updated_at: new Date().toISOString(),
+              sync_failed: false,
+              sync_error: null,
+              last_sync_attempt: new Date().toISOString(),
             };
             
             // Preserve last_trophy_earned_at if it exists (will be updated later after processing achievements)
@@ -614,6 +626,23 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             await new Promise((r) => setTimeout(r, 25));
           } catch (error) {
             console.error(`Error processing title ${title.name}:`, error);
+            
+            // Mark sync as failed for this game
+            try {
+              await supabase
+                .from('user_games')
+                .update({
+                  sync_failed: true,
+                  sync_error: (error.message || String(error)).substring(0, 255),
+                  last_sync_attempt: new Date().toISOString(),
+                })
+                .eq('user_id', userId)
+                .eq('game_title_id', gameTitle?.id)
+                .eq('platform_id', platform?.id);
+            } catch (updateErr) {
+              console.error('Failed to mark sync_failed:', updateErr);
+            }
+            
             // Continue with next game
           }
         }
