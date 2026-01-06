@@ -105,7 +105,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     // Load existing user_games to enable cheap diff
     const { data: existingUserGames } = await supabase
       .from('user_games')
-      .select('game_title_id, platform_id, total_trophies, earned_trophies, last_rarity_sync')
+      .select('game_title_id, platform_id, total_trophies, earned_trophies, last_rarity_sync, sync_failed')
       .eq('user_id', userId);
     
     const userGamesMap = new Map();
@@ -208,12 +208,16 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         if (existingGame) {
           // Update cover if we don't have one
           if (!existingGame.cover_url) {
-            await supabase
+            const { error: updateError } = await supabase
               .from('game_titles')
               .update({ 
                 cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
               })
               .eq('id', existingGame.id);
+            
+            if (updateError) {
+              console.error('❌ Failed to update game_title cover:', game.name, 'Error:', updateError);
+            }
           }
           gameTitle = existingGame;
         } else {
@@ -243,10 +247,11 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         const isNewGame = !existingUserGame;
         const countsChanged = existingUserGame && 
           (existingUserGame.total_trophies !== totalCount || existingUserGame.earned_trophies !== unlockedCount);
+        const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
         
         // Check if rarity is stale (>30 days old)
         let needRarityRefresh = false;
-        if (!isNewGame && !countsChanged && existingUserGame) {
+        if (!isNewGame && !countsChanged && !syncFailed && existingUserGame) {
           const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
           const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
           needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
@@ -272,9 +277,11 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           }
         }
         
-        const needsProcessing = isNewGame || countsChanged || needRarityRefresh || missingAchievements;
-        
-        if (!needsProcessing) {
+        const needsProcessing = isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed;
+                if (syncFailed) {
+          console.log(`🔄 RETRY FAILED SYNC: ${game.name} (previous sync failed)`);
+        }
+                if (!needsProcessing) {
           console.log(`⏭️  Skip ${game.name} - no changes`);
           processedGames++;
           const progressPercent = Math.floor((processedGames / ownedGames.length) * 100);
@@ -331,6 +338,9 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             earned_trophies: unlockedCount,
             completion_percent: progress,
             last_trophy_earned_at: lastTrophyEarnedAt ? lastTrophyEarnedAt.toISOString() : null,
+            sync_failed: false,
+            sync_error: null,
+            last_sync_attempt: new Date().toISOString(),
           }, {
             onConflict: 'user_id,game_title_id,platform_id',
           });
@@ -406,6 +416,23 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         await new Promise((r) => setTimeout(r, 25));
         } catch (error) {
           console.error(`Error processing game ${game.name}:`, error);
+          
+          // Mark sync as failed for this game
+          try {
+            await supabase
+              .from('user_games')
+              .update({
+                sync_failed: true,
+                sync_error: (error.message || String(error)).substring(0, 255),
+                last_sync_attempt: new Date().toISOString(),
+              })
+              .eq('user_id', userId)
+              .eq('game_title_id', gameTitle?.id)
+              .eq('platform_id', platform?.id);
+          } catch (updateErr) {
+            console.error('Failed to mark sync_failed:', updateErr);
+          }
+          
           // Continue with next game
         }
       }
