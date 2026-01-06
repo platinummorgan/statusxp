@@ -318,34 +318,32 @@ export async function syncPSNAchievements(
 
           console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${title.trophyTitleName} (earned: ${apiEarnedTrophies})`);
 
-          // Update or insert user_games snapshot
-          const userGameData = {
-            user_id: userId,
-            game_title_id: gameTitle.id,
-            platform_id: platform.id,
-            completion_percent: apiProgress,
-            total_trophies: apiTotalTrophies,
-            earned_trophies: apiEarnedTrophies,
-            last_rarity_sync: new Date().toISOString(),
-            bronze_trophies: earned.bronze || 0,
-            silver_trophies: earned.silver || 0,
-            gold_trophies: earned.gold || 0,
-            platinum_trophies: earned.platinum || 0,
-            has_platinum: (earned.platinum || 0) > 0,
-            last_played_at: title.lastUpdatedDateTime,
-          };
-          
-          // Preserve last_trophy_earned_at if it exists (will be updated later after processing trophies)
-          if (existingUserGame && existingUserGame.last_trophy_earned_at) {
-            userGameData.last_trophy_earned_at = existingUserGame.last_trophy_earned_at;
-          }
-          
-          await supabase
-            .from('user_games')
-            .upsert(userGameData, { onConflict: 'user_id,game_title_id,platform_id' });
-
           if (!needTrophies) {
-            // No changes + trophies complete → skip heavy call
+            // No changes detected - update user_games and skip trophy fetch
+            const userGameData = {
+              user_id: userId,
+              game_title_id: gameTitle.id,
+              platform_id: platform.id,
+              completion_percent: apiProgress,
+              total_trophies: apiTotalTrophies,
+              earned_trophies: apiEarnedTrophies,
+              last_rarity_sync: new Date().toISOString(),
+              bronze_trophies: earned.bronze || 0,
+              silver_trophies: earned.silver || 0,
+              gold_trophies: earned.gold || 0,
+              platinum_trophies: earned.platinum || 0,
+              has_platinum: (earned.platinum || 0) > 0,
+              last_played_at: title.lastUpdatedDateTime,
+            };
+            
+            if (existingUserGame && existingUserGame.last_trophy_earned_at) {
+              userGameData.last_trophy_earned_at = existingUserGame.last_trophy_earned_at;
+            }
+            
+            await supabase
+              .from('user_games')
+              .upsert(userGameData, { onConflict: 'user_id,game_title_id,platform_id' });
+
             processedGames++;
             const progress = Math.floor(
               (processedGames / gamesWithTrophies.length) * 100
@@ -384,6 +382,7 @@ export async function syncPSNAchievements(
           );
 
           if (!trophyMetadata?.trophies || trophyMetadata.trophies.length === 0) {
+            console.error(`❌ Failed to fetch trophies for ${title.trophyTitleName} - skipping user_games update to prevent data inconsistency`);
             processedGames++;
             const progress = Math.floor(
               (processedGames / gamesWithTrophies.length) * 100
@@ -394,6 +393,32 @@ export async function syncPSNAchievements(
               .eq('id', userId);
             return;
           }
+
+          // Now that we successfully fetched trophy data, update user_games
+          const userGameData = {
+            user_id: userId,
+            game_title_id: gameTitle.id,
+            platform_id: platform.id,
+            completion_percent: apiProgress,
+            total_trophies: apiTotalTrophies,
+            earned_trophies: apiEarnedTrophies,
+            last_rarity_sync: new Date().toISOString(),
+            bronze_trophies: earned.bronze || 0,
+            silver_trophies: earned.silver || 0,
+            gold_trophies: earned.gold || 0,
+            platinum_trophies: earned.platinum || 0,
+            has_platinum: (earned.platinum || 0) > 0,
+            last_played_at: title.lastUpdatedDateTime,
+          };
+          
+          // Preserve last_trophy_earned_at if it exists (will be updated later after processing trophies)
+          if (existingUserGame && existingUserGame.last_trophy_earned_at) {
+            userGameData.last_trophy_earned_at = existingUserGame.last_trophy_earned_at;
+          }
+          
+          await supabase
+            .from('user_games')
+            .upsert(userGameData, { onConflict: 'user_id,game_title_id,platform_id' });
 
           // Create a map of user trophy data by trophyId for easy lookup
           const userTrophyMap = new Map();
@@ -513,7 +538,24 @@ export async function syncPSNAchievements(
           );
           await new Promise((r) => setTimeout(r, 25));
         } catch (error) {
-          console.error(`Error processing title ${title.trophyTitleName}:`, error);
+          console.error(`❌ Error processing title ${title.trophyTitleName}:`, error);
+          
+          // If trophy fetch/processing failed, mark the game with sync_failed flag
+          // This prevents data inconsistency where user_games says has_platinum but no achievements exist
+          try {
+            await supabase
+              .from('user_games')
+              .update({
+                sync_failed: true,
+                sync_error: error.message?.substring(0, 255),
+                last_sync_attempt: new Date().toISOString(),
+              })
+              .eq('user_id', userId)
+              .eq('game_title_id', gameTitle?.id)
+              .eq('platform_id', platform?.id);
+          } catch (updateError) {
+            console.error('Failed to mark game as sync_failed:', updateError);
+          }
         }
       };
 
