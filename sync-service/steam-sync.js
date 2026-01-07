@@ -167,6 +167,14 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${apiKey}&appid=${game.appid}`
         );
         console.log('Schema fetch status:', schemaResponse.status);
+        
+        // Check if response is JSON before parsing
+        const contentType = schemaResponse.headers.get('content-type');
+        if (!schemaResponse.ok || !contentType?.includes('application/json')) {
+          console.log(`⚠️ Schema fetch failed for ${game.appid} (status ${schemaResponse.status}, type ${contentType}) - skipping game`);
+          continue;
+        }
+        
         const schemaData = await schemaResponse.json();
         const achievements = schemaData.game?.availableGameStats?.achievements || [];
 
@@ -177,6 +185,14 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${apiKey}&steamid=${steamId}&appid=${game.appid}`
         );
         console.log('Player achievements fetch status:', playerAchievementsResponse.status);
+        
+        // Check player achievements response is JSON
+        const playerContentType = playerAchievementsResponse.headers.get('content-type');
+        if (!playerAchievementsResponse.ok || !playerContentType?.includes('application/json')) {
+          console.log(`⚠️ Player achievements fetch failed for ${game.appid} (status ${playerAchievementsResponse.status}) - skipping game`);
+          continue;
+        }
+        
         const playerAchievementsData = await playerAchievementsResponse.json();
         const playerAchievements = playerAchievementsData.playerstats?.achievements || [];
 
