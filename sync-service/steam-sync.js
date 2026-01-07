@@ -57,6 +57,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         console.log('[STEAM NAME SAVE] Save result:', saveResult.error || 'OK');
       } else {
         console.log('[STEAM NAME FETCH] ❌ FAILED - Player not found in response');
+        console.log('[STEAM NAME FETCH] ❌ Invalid Steam ID:', steamId);
+        throw new Error(`Invalid Steam ID - player not found: ${steamId}`);
       }
     } catch (e) {
       console.error('[STEAM NAME FETCH] ❌ EXCEPTION:', e.message, e.stack);
