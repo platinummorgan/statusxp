@@ -30,6 +30,11 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       const playerResponse = await fetch(playerUrl);
       
       console.log('[STEAM NAME FETCH] Response status:', playerResponse.status);
+      const contentType = playerResponse.headers.get('content-type');
+      if (!playerResponse.ok || !contentType?.includes('application/json')) {
+        console.log(`[STEAM NAME FETCH] ❌ Invalid response (status ${playerResponse.status}, type ${contentType})`);
+        throw new Error(`Steam API returned non-JSON response`);
+      }
       const playerData = await playerResponse.json();
       console.log('[STEAM NAME FETCH] Response data:', JSON.stringify(playerData));
       const player = playerData.response?.players?.[0];
@@ -72,6 +77,10 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     const gamesResponse = await fetch(
       `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1`
     );
+    const gamesContentType = gamesResponse.headers.get('content-type');
+    if (!gamesResponse.ok || !gamesContentType?.includes('application/json')) {
+      throw new Error(`Steam API returned non-JSON response for owned games (status ${gamesResponse.status})`);
+    }
     const gamesData = await gamesResponse.json();
     const ownedGames = gamesData.response?.games || [];
 
@@ -154,7 +163,16 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         const appDetailsResponse = await fetch(
           `https://store.steampowered.com/api/appdetails?appids=${game.appid}`
         );
-        const appDetailsData = await appDetailsResponse.json();
+        const appDetailsContentType = appDetailsResponse.headers.get('content-type');
+        if (!appDetailsResponse.ok || !appDetailsContentType?.includes('application/json')) {
+          console.log(`⚠️ App details fetch failed for ${game.appid} (status ${appDetailsResponse.status}) - treating as base game`);
+          const appDetailsData = { [game.appid]: { data: { type: 'game' } } };
+        } else {
+          var appDetailsData = await appDetailsResponse.json();
+        }
+        if (!appDetailsData) {
+          const appDetailsData = { [game.appid]: { data: { type: 'game' } } };
+        }
         const appDetails = appDetailsData?.[game.appid]?.data;
         const isDLC = appDetails?.type === 'dlc';
         const dlcName = isDLC ? appDetails?.name : null;
@@ -325,7 +343,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             `https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid=${game.appid}&format=json`
           );
 
-          if (globalResponse.ok) {
+          const globalContentType = globalResponse.headers.get('content-type');
+          if (globalResponse.ok && globalContentType?.includes('application/json')) {
             const globalData = await globalResponse.json();
             if (globalData.achievementpercentages?.achievements) {
               for (const ach of globalData.achievementpercentages.achievements) {
