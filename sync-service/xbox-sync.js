@@ -334,16 +334,22 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             console.log(`Processing game: ${title.name} (${title.titleId})`);
             
             // Get or create Xbox One platform
-            const { data: platform} = await supabase
+            const { data: platform, error: platformError } = await supabase
               .from('platforms')
               .select('id')
               .eq('code', 'XBOXONE')
               .single();
             
-            if (!platform) {
-              console.error('XBOXONE platform not found in database!');
+            if (platformError || !platform) {
+              console.error(
+                '❌ Platform query failed for XBOXONE:',
+                platformError?.message || 'Platform not found'
+              );
+              console.error(`   Skipping game: ${title.name}`);
               continue;
             }
+
+            console.log(`✅ Platform resolved: XBOXONE → ID ${platform.id}`);
             
             // Search for existing game_title by xbox_title_id using dedicated column
             let gameTitle = null;

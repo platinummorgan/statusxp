@@ -277,18 +277,24 @@ export async function syncPSNAchievements(
             else if (psnPlatform.includes('VITA')) platformCode = 'PSVITA';
           }
 
-          const { data: platform } = await supabase
+          console.log(`📱 Platform detected: ${title.trophyTitlePlatform} → ${platformCode}`);
+
+          const { data: platform, error: platformError } = await supabase
             .from('platforms')
             .select('id')
             .eq('code', platformCode)
             .single();
 
-          if (!platform) {
+          if (platformError || !platform) {
             console.error(
-              `❌ Platform not found for code ${platformCode} (PSN: ${title.trophyTitlePlatform}), skipping game: ${title.trophyTitleName}`
+              `❌ Platform query failed for code ${platformCode} (PSN: ${title.trophyTitlePlatform}):`,
+              platformError?.message || 'Platform not found'
             );
+            console.error(`   Skipping game: ${title.trophyTitleName}`);
             return;
           }
+
+          console.log(`✅ Platform resolved: ${platformCode} → ID ${platform.id}`);
 
           // Find or create game_title using unique PSN npCommunicationId
           const trimmedTitle = title.trophyTitleName.trim();

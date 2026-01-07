@@ -185,16 +185,22 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         const totalCount = achievements.length;
 
         // Get or create Steam platform
-        const { data: platform } = await supabase
+        const { data: platform, error: platformError } = await supabase
           .from('platforms')
           .select('id')
           .eq('code', 'Steam')
           .single();
         
-        if (!platform) {
-          console.error('Steam platform not found in database!');
+        if (platformError || !platform) {
+          console.error(
+            '❌ Platform query failed for Steam:',
+            platformError?.message || 'Platform not found'
+          );
+          console.error(`   Skipping game: ${game.name}`);
           continue;
         }
+
+        console.log(`✅ Platform resolved: Steam → ID ${platform.id}`);
         
         // Search for existing game_title by steam_app_id using dedicated column
         let gameTitle = null;
