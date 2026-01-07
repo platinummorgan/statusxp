@@ -765,6 +765,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   }
                                 } else {
                                   // OAuth - store complete session data for full re-authentication
+                                  // First, refresh the session to ensure it's fresh and valid
+                                  try {
+                                    await Supabase.instance.client.auth.refreshSession();
+                                  } catch (e) {
+                                    print('Warning: Could not refresh session before storing: $e');
+                                  }
+                                  
                                   final session = Supabase.instance.client.auth.currentSession;
                                   if (session != null) {
                                     // Store complete session as JSON (must include user object for recoverSession)
