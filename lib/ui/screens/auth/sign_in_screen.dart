@@ -177,22 +177,30 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         if (sessionString != null) {
           try {
             // Debug: print what we're trying to recover
-            print('Attempting to recover session from: ${sessionString.substring(0, 100)}...');
+            print('🔐 Attempting to recover session from: ${sessionString.substring(0, 100)}...');
             
             await Supabase.instance.client.auth.recoverSession(sessionString);
+            print('🔐 Session recovered, checking user...');
             final user = Supabase.instance.client.auth.currentUser;
+            print('🔐 Current user after recovery: ${user?.id}');
             if (user != null) {
               // Session restored! Update stored session with fresh one
               final newSession = Supabase.instance.client.auth.currentSession;
+              print('🔐 New session exists: ${newSession != null}');
               if (newSession != null) {
                 await _biometricService.storeSession(jsonEncode(newSession.toJson()));
+                print('🔐 Stored updated session');
               }
-              if (!await _refreshBiometricSessionIfNeeded()) {
-                return;
-              }
+              // Try to refresh if needed, but don't block navigation if it fails
+              print('🔐 Attempting session refresh...');
+              final refreshed = await _refreshBiometricSessionIfNeeded();
+              print('🔐 Refresh result: $refreshed');
               _clearLocalLock();
+              print('🔐 Cleared lock, navigation should proceed');
               // Auth gate will handle navigation
               return;
+            } else {
+              print('🔐 No user after recovery - session invalid');
             }
           } catch (e) {
             // Session invalid or expired - clear it and show detailed error
