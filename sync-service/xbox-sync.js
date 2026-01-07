@@ -616,14 +616,34 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 achievementUpsert.rarity_last_updated_at = new Date().toISOString();
               }
               
-              // Upsert achievement with rarity data
-              const { data: achievementRecord } = await supabase
+              // Check if achievement exists
+              const { data: existing } = await supabase
                 .from('achievements')
-                .upsert(achievementUpsert, {
-                  onConflict: 'game_title_id,platform,platform_achievement_id',
-                })
-                .select()
-                .single();
+                .select('id')
+                .eq('game_title_id', title.gameTitleId)
+                .eq('platform', 'xbox')
+                .eq('platform_achievement_id', achievement.id)
+                .maybeSingle();
+
+              let achievementRecord;
+              if (existing) {
+                // Update existing
+                const { data } = await supabase
+                  .from('achievements')
+                  .update(achievementUpsert)
+                  .eq('id', existing.id)
+                  .select()
+                  .single();
+                achievementRecord = data;
+              } else {
+                // Insert new
+                const { data } = await supabase
+                  .from('achievements')
+                  .insert(achievementUpsert)
+                  .select()
+                  .single();
+                achievementRecord = data;
+              }
 
               if (!achievementRecord) continue;
 

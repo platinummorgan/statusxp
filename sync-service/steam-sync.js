@@ -352,30 +352,58 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           const rarityPercent = globalStats[achievement.name] || 0;
 
           // Upsert achievement with rarity data
-          const { data: achievementRecord, error: achError } = await supabase
-            .from('achievements')
-            .upsert({
-              game_title_id: gameTitle.id,
-              platform: 'steam',
-              platform_version: 'STEAM',
-              platform_achievement_id: achievement.name,
-              name: achievement.displayName || achievement.name,
-              description: achievement.description || '',
-              icon_url: achievement.icon || '',
-              steam_hidden: achievement.hidden === 1,
-              rarity_global: rarityPercent,
-              is_platinum: false, // Steam doesn't have platinums
-              is_dlc: isDLC,
-              dlc_name: dlcName,
-            }, {
-              onConflict: 'game_title_id,platform,platform_achievement_id',
-            })
-            .select()
-            .single();
+          const achievementData = {
+            game_title_id: gameTitle.id,
+            platform: 'steam',
+            platform_version: 'STEAM',
+            platform_achievement_id: achievement.name,
+            name: achievement.displayName || achievement.name,
+            description: achievement.description || '',
+            icon_url: achievement.icon || '',
+            steam_hidden: achievement.hidden === 1,
+            rarity_global: rarityPercent,
+            is_platinum: false, // Steam doesn't have platinums
+            is_dlc: isDLC,
+            dlc_name: dlcName,
+          };
 
-          if (achError) {
-            console.error(`❌ Failed to upsert achievement ${achievement.name}:`, achError.message);
-            continue;
+          // Check if achievement exists
+          const { data: existing } = await supabase
+            .from('achievements')
+            .select('id')
+            .eq('game_title_id', gameTitle.id)
+            .eq('platform', 'steam')
+            .eq('platform_achievement_id', achievement.name)
+            .maybeSingle();
+
+          let achievementRecord;
+          if (existing) {
+            // Update existing achievement
+            const { data, error: achError } = await supabase
+              .from('achievements')
+              .update(achievementData)
+              .eq('id', existing.id)
+              .select()
+              .single();
+
+            if (achError) {
+              console.error(`❌ Failed to update achievement ${achievement.name}:`, achError.message);
+              continue;
+            }
+            achievementRecord = data;
+          } else {
+            // Insert new achievement
+            const { data, error: achError } = await supabase
+              .from('achievements')
+              .insert(achievementData)
+              .select()
+              .single();
+
+            if (achError) {
+              console.error(`❌ Failed to insert achievement ${achievement.name}:`, achError.message);
+              continue;
+            }
+            achievementRecord = data;
           }
 
           if (!achievementRecord) continue;

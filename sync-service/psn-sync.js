@@ -549,30 +549,50 @@ export async function syncPSNAchievements(
               }
             }
 
-            const { data: achievementRecord } = await supabase
+            const achievementData = {
+              game_title_id: gameTitle.id,
+              platform: 'psn',
+              platform_version: platformCode, // PS3, PS4, PS5, PSVITA
+              platform_achievement_id: trophyMeta.trophyId.toString(),
+              name: trophyMeta.trophyName,
+              description: trophyMeta.trophyDetail,
+              icon_url: trophyMeta.trophyIconUrl,
+              psn_trophy_type: trophyMeta.trophyType,
+              rarity_global: rarityPercent,
+              is_platinum: trophyMeta.trophyType === 'platinum',
+              include_in_score: trophyMeta.trophyType !== 'platinum',
+              is_dlc: isDLC,
+              dlc_name: dlcName,
+            };
+
+            // Check if achievement exists
+            const { data: existing } = await supabase
               .from('achievements')
-              .upsert(
-                {
-                  game_title_id: gameTitle.id,
-                  platform: 'psn',
-                  platform_version: platformCode, // PS3, PS4, PS5, PSVITA
-                  platform_achievement_id: trophyMeta.trophyId.toString(),
-                  name: trophyMeta.trophyName,
-                  description: trophyMeta.trophyDetail,
-                  icon_url: trophyMeta.trophyIconUrl,
-                  psn_trophy_type: trophyMeta.trophyType,
-                  rarity_global: rarityPercent,
-                  is_platinum: trophyMeta.trophyType === 'platinum',
-                  include_in_score: trophyMeta.trophyType !== 'platinum',
-                  is_dlc: isDLC,
-                  dlc_name: dlcName,
-                },
-                {
-                  onConflict: 'game_title_id,platform,platform_achievement_id',
-                }
-              )
-              .select()
-              .single();
+              .select('id')
+              .eq('game_title_id', gameTitle.id)
+              .eq('platform', 'psn')
+              .eq('platform_achievement_id', trophyMeta.trophyId.toString())
+              .maybeSingle();
+
+            let achievementRecord;
+            if (existing) {
+              // Update existing
+              const { data } = await supabase
+                .from('achievements')
+                .update(achievementData)
+                .eq('id', existing.id)
+                .select()
+                .single();
+              achievementRecord = data;
+            } else {
+              // Insert new
+              const { data } = await supabase
+                .from('achievements')
+                .insert(achievementData)
+                .select()
+                .single();
+              achievementRecord = data;
+            }
 
             if (!achievementRecord) continue;
 
