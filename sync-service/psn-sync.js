@@ -241,6 +241,12 @@ export async function syncPSNAchievements(
           if (existingGameById) {
             // Found by npCommunicationId - this is the exact game
             if (!existingGameById.cover_url && title.trophyTitleIconUrl) {
+              console.log('Attempting to update PSN game_title:', { 
+                name: title.trophyTitleName, 
+                id: existingGameById.id, 
+                npwr: title.npCommunicationId,
+                hasId: !!existingGameById.id 
+              });
               const { error: updateError } = await supabase
                 .from('game_titles')
                 .update({ cover_url: title.trophyTitleIconUrl })
@@ -248,6 +254,7 @@ export async function syncPSNAchievements(
               
               if (updateError) {
                 console.error('❌ Failed to update game_title cover:', title.trophyTitleName, 'Error:', updateError);
+                console.error('  - Game ID was:', existingGameById.id);
               }
             }
             gameTitle = existingGameById;

@@ -315,6 +315,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             if (existingGame) {
               // Update cover if we don't have one
               if (!existingGame.cover_url && title.displayImage) {
+                console.log('Attempting to update game_title:', { 
+                  name: title.name, 
+                  id: existingGame.id, 
+                  titleId: title.titleId,
+                  hasId: !!existingGame.id 
+                });
                 const { error: updateError } = await supabase
                   .from('game_titles')
                   .update({ cover_url: title.displayImage })
@@ -322,6 +328,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 
                 if (updateError) {
                   console.error('❌ Failed to update game_title cover:', title.name, 'Error:', updateError);
+                  console.error('  - Game ID was:', existingGame.id);
                 }
               }
               gameTitle = existingGame;

@@ -192,29 +192,43 @@ class AuthService {
     }
   }
   
-  /// Sign in with Apple using OAuth.
+  /// Sign in with Apple using native Sign In with Apple.
   /// 
   /// If user is already authenticated, this will LINK Apple to their existing account.
   /// If user is not authenticated, this will create a new account or sign in.
-  /// Uses Supabase's OAuth flow which properly handles linked identities.
+  /// Uses native Sign In with Apple API for better reliability.
   /// Throws [AuthException] if sign in fails or is cancelled.
   /// Only available on iOS 13+ and macOS 10.15+.
   Future<AuthResponse> signInWithApple() async {
     try {
+      // Generate nonce for security
+      final rawNonce = _generateNonce();
+      final hashedNonce = _sha256ofString(rawNonce);
+      
+      // Request Apple Sign In
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+      
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw const AuthException('Apple Sign-In failed - no identity token received');
+      }
+      
       // Check if user is already authenticated
       final currentUser = _client.auth.currentUser;
-      const redirectTo = 'com.statusxp.statusxp://login-callback';
       
       if (currentUser != null) {
-        // User is logged in - LINK Apple via Supabase OAuth flow
+        // User is logged in - LINK Apple to existing account
         try {
-          await _client.auth.linkIdentity(
-            OAuthProvider.apple,
-            redirectTo: redirectTo,
-          );
-          return AuthResponse(
-            user: currentUser,
-            session: _client.auth.currentSession,
+          return await _client.auth.linkIdentityWithIdToken(
+            provider: OAuthProvider.apple,
+            idToken: idToken,
+            nonce: rawNonce,
           );
         } catch (e) {
           throw const AuthException(
@@ -223,42 +237,17 @@ class AuthService {
         }
       }
       
-      // User not logged in - use Supabase OAuth flow (handles linked identities correctly)
-      final completer = Completer<AuthResponse>();
-      late final StreamSubscription<AuthState> sub;
-      sub = _client.auth.onAuthStateChange.listen((data) {
-        if (data.event == AuthChangeEvent.signedIn && data.session != null) {
-          sub.cancel();
-          completer.complete(
-            AuthResponse(
-              user: data.session!.user,
-              session: data.session,
-            ),
-          );
-        }
-      });
-      
-      try {
-        final launched = await _client.auth.signInWithOAuth(
-          OAuthProvider.apple,
-          redirectTo: redirectTo,
-        );
-        if (!launched) {
-          await sub.cancel();
-          throw const AuthException('Apple Sign-In was cancelled');
-        }
-      } catch (e) {
-        await sub.cancel();
-        rethrow;
-      }
-      
-      return completer.future.timeout(
-        const Duration(seconds: 60),
-        onTimeout: () {
-          sub.cancel();
-          throw const AuthException('Apple Sign-In timed out');
-        },
+      // User not logged in - sign in with Apple
+      return await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.apple,
+        idToken: idToken,
+        nonce: rawNonce,
       );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) {
+        throw const AuthException('Apple Sign-In was cancelled');
+      }
+      throw AuthException('Apple Sign-In failed: ${e.message}');
     } catch (e) {
       rethrow;
     }
