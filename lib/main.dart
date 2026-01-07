@@ -24,6 +24,10 @@ Future<void> _syncBiometricSessionIfNeeded(Session session) async {
   final hasCredentials = await _biometricAuthService.hasStoredCredentials();
   if (hasCredentials) return;
 
+  // Only update if we don't already have a session stored
+  final hasStoredSession = await _biometricAuthService.hasStoredSession();
+  if (hasStoredSession) return;
+
   await _biometricAuthService.storeSession(jsonEncode(session.toJson()));
 }
 

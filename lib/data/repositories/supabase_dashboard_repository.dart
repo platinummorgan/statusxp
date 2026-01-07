@@ -159,6 +159,26 @@ class SupabaseDashboardRepository {
     } else if (profile['psn_online_id'] != null) {
       // Fallback to PSN if preferred platform not available
       displayName = profile['psn_online_id'] as String;
+    } else if (profile['steam_display_name'] != null) {
+      // Fallback to Steam if PSN not available
+      displayName = profile['steam_display_name'] as String;
+    } else if (profile['xbox_gamertag'] != null) {
+      // Fallback to Xbox if others not available
+      displayName = profile['xbox_gamertag'] as String;
+    }
+    
+    // If still "Player" (all names are NULL), try to use email
+    if (displayName == 'Player') {
+      try {
+        final user = _client.auth.currentUser;
+        final email = user?.email;
+        if (email != null && email.isNotEmpty) {
+          // Use first part of email before @
+          displayName = email.split('@').first;
+        }
+      } catch (e) {
+        // Ignore error, keep "Player" as fallback
+      }
     }
 
     // Get avatar URL based on preferred platform

@@ -171,6 +171,43 @@ async function refreshXboxToken(refreshToken, userId) {
 export async function syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId, options = {}) {
   console.log(`Starting Xbox sync for user ${userId}, syncLogId=${syncLogId}`);
   
+  // CRITICAL: Validate profile exists before starting sync
+  const { data: profileValidation, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, xbox_xuid')
+    .eq('id', userId)
+    .maybeSingle();
+  
+  if (profileError) {
+    const errorMsg = `Profile lookup failed: ${profileError.message}`;
+    console.error('🚨 FATAL:', errorMsg);
+    await supabase
+      .from('xbox_sync_logs')
+      .update({ 
+        status: 'failed', 
+        error_message: errorMsg,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', syncLogId);
+    throw new Error(errorMsg);
+  }
+  
+  if (!profileValidation) {
+    const errorMsg = `Profile not found for user ${userId}. User may have been deleted or has corrupted data.`;
+    console.error('🚨 FATAL:', errorMsg);
+    await supabase
+      .from('xbox_sync_logs')
+      .update({ 
+        status: 'failed', 
+        error_message: errorMsg,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', syncLogId);
+    throw new Error(errorMsg);
+  }
+
+  console.log(`✅ Profile validated for user ${userId}`);
+  
   try {
     // Refresh token first
     const refreshed = await refreshXboxToken(refreshToken, userId);
@@ -258,11 +295,16 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     // NOTE: BATCH_SIZE configurable via env var
     for (let i = 0; i < gamesWithProgress.length; i += BATCH_SIZE) {
       // Check if sync was cancelled
-      const { data: profileCheck } = await supabase
+      const { data: profileCheck, error: profileCheckError } = await supabase
         .from('profiles')
         .select('xbox_sync_status')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
+      
+      if (profileCheckError) {
+        console.error('❌ Profile check failed:', profileCheckError);
+        throw new Error(`Profile lookup failed: ${profileCheckError.message}`);
+      }
       
       if (profileCheck?.xbox_sync_status === 'cancelling') {
         console.log('Xbox sync cancelled by user');
@@ -808,7 +850,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     
     await updateSyncStatus(userId, {
       xbox_sync_status: 'error',
-      xbox_sync_error: error.message,
+      xbox_sync_progress: 0,
+      xbox_sync_error: error.message?.substring(0, 500) || 'Unknown error',
     });
 
     await supabase

@@ -24,6 +24,36 @@ function logMemory(label) {
   }
 }
 
+// Helper to safely update sync status with retries
+async function updateSyncStatus(userId, updates, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      
+      if (!error) {
+        console.log(`✅ Status updated successfully:`, updates);
+        return true;
+      }
+      
+      console.error(`❌ Attempt ${attempt}/${retries} failed:`, error);
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    } catch (err) {
+      console.error(`❌ Attempt ${attempt}/${retries} threw error:`, err.message);
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+  
+  console.error('🚨 CRITICAL: Failed to update sync status after all retries');
+  return false;
+}
+
 // Cheap diff check: DB snapshot vs API snapshot
 export async function syncPSNAchievements(
   userId,
@@ -34,6 +64,43 @@ export async function syncPSNAchievements(
   options = {}
 ) {
   console.log(`Starting PSN sync for user ${userId}`);
+
+  // CRITICAL: Validate profile exists before starting sync
+  const { data: profileValidation, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, psn_account_id')
+    .eq('id', userId)
+    .maybeSingle();
+  
+  if (profileError) {
+    const errorMsg = `Profile lookup failed: ${profileError.message}`;
+    console.error('🚨 FATAL:', errorMsg);
+    await supabase
+      .from('psn_sync_logs')
+      .update({ 
+        status: 'failed', 
+        error_message: errorMsg,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', syncLogId);
+    throw new Error(errorMsg);
+  }
+  
+  if (!profileValidation) {
+    const errorMsg = `Profile not found for user ${userId}. User may have been deleted or has corrupted data.`;
+    console.error('🚨 FATAL:', errorMsg);
+    await supabase
+      .from('psn_sync_logs')
+      .update({ 
+        status: 'failed', 
+        error_message: errorMsg,
+        completed_at: new Date().toISOString()
+      })
+      .eq('id', syncLogId);
+    throw new Error(errorMsg);
+  }
+
+  console.log(`✅ Profile validated for user ${userId}`);
 
   const psnModule = await import('psn-api');
   const psnApi = psnModule.default ?? psnModule;
@@ -46,15 +113,12 @@ export async function syncPSNAchievements(
     const currentAccessToken = authTokens.accessToken;
     console.log('PSN access token refreshed successfully');
 
-    await supabase
-      .from('profiles')
-      .update({
-        psn_access_token: authTokens.accessToken,
-        psn_refresh_token: authTokens.refreshToken,
-        psn_sync_status: 'syncing',
-        psn_sync_progress: 0,
-      })
-      .eq('id', userId);
+    await updateSyncStatus(userId, {
+      psn_access_token: authTokens.accessToken,
+      psn_refresh_token: authTokens.refreshToken,
+      psn_sync_status: 'syncing',
+      psn_sync_progress: 0,
+    });
 
     await supabase
       .from('psn_sync_logs')
@@ -123,14 +187,11 @@ export async function syncPSNAchievements(
       }
       
       console.log('User has no existing games - marking sync as success with 0 games');
-      await supabase
-        .from('profiles')
-        .update({
-          psn_sync_status: 'success',
-          psn_sync_progress: 100,
-          last_psn_sync_at: new Date().toISOString(),
-        })
-        .eq('id', userId);
+      await updateSyncStatus(userId, {
+        psn_sync_status: 'success',
+        psn_sync_progress: 100,
+        last_psn_sync_at: new Date().toISOString(),
+      });
 
       await supabase
         .from('psn_sync_logs')
@@ -175,21 +236,23 @@ export async function syncPSNAchievements(
 
     for (let i = 0; i < gamesWithTrophies.length; i += BATCH_SIZE) {
       // Check if sync was cancelled
-      const { data: profileCheck } = await supabase
+      const { data: profileCheck, error: profileCheckError } = await supabase
         .from('profiles')
         .select('psn_sync_status')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
+      
+      if (profileCheckError) {
+        console.error('❌ Profile check failed:', profileCheckError);
+        throw new Error(`Profile lookup failed: ${profileCheckError.message}`);
+      }
       
       if (profileCheck?.psn_sync_status === 'cancelling') {
         console.log('PSN sync cancelled by user');
-        await supabase
-          .from('profiles')
-          .update({ 
-            psn_sync_status: 'stopped',
-            psn_sync_progress: 0 
-          })
-          .eq('id', userId);
+        await updateSyncStatus(userId, { 
+          psn_sync_status: 'stopped',
+          psn_sync_progress: 0 
+        });
         
         await supabase
           .from('psn_sync_logs')
@@ -606,14 +669,15 @@ export async function syncPSNAchievements(
       console.error('⚠️ StatusXP calculation failed:', calcError);
     }
 
-    await supabase
-      .from('profiles')
-      .update({
-        psn_sync_status: 'success',
-        psn_sync_progress: 100,
-        last_psn_sync_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
+    const statusUpdated = await updateSyncStatus(userId, {
+      psn_sync_status: 'success',
+      psn_sync_progress: 100,
+      last_psn_sync_at: new Date().toISOString(),
+    });
+    
+    if (!statusUpdated) {
+      console.error('🚨 WARNING: Sync completed but status update failed! User may see stuck sync.');
+    }
 
     await supabase
       .from('psn_sync_logs')
@@ -631,13 +695,11 @@ export async function syncPSNAchievements(
   } catch (error) {
     console.error('PSN sync failed:', error);
 
-    await supabase
-      .from('profiles')
-      .update({
-        psn_sync_status: 'error',
-        psn_sync_error: error.message,
-      })
-      .eq('id', userId);
+    await updateSyncStatus(userId, {
+      psn_sync_status: 'error',
+      psn_sync_progress: 0,
+      psn_sync_error: error.message?.substring(0, 500) || 'Unknown error',
+    });
 
     await supabase
       .from('psn_sync_logs')

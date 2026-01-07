@@ -176,27 +176,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         final sessionString = await _biometricService.getStoredSession();
         if (sessionString != null) {
           try {
-            // Debug: print what we're trying to recover
-            print('🔐 Attempting to recover session from: ${sessionString.substring(0, 100)}...');
-            
             await Supabase.instance.client.auth.recoverSession(sessionString);
-            print('🔐 Session recovered, checking user...');
             final user = Supabase.instance.client.auth.currentUser;
-            print('🔐 Current user after recovery: ${user?.id}');
             if (user != null) {
-              // Session restored! Update stored session with fresh one
-              final newSession = Supabase.instance.client.auth.currentSession;
-              print('🔐 New session exists: ${newSession != null}');
-              if (newSession != null) {
-                await _biometricService.storeSession(jsonEncode(newSession.toJson()));
-                print('🔐 Stored updated session');
-              }
-              // Try to refresh if needed, but don't block navigation if it fails
-              print('🔐 Attempting session refresh...');
-              final refreshed = await _refreshBiometricSessionIfNeeded();
-              print('🔐 Refresh result: $refreshed');
+              // Session restored successfully
               _clearLocalLock();
-              print('🔐 Cleared lock, navigation should proceed');
               // Auth gate will handle navigation
               return;
             } else {
@@ -391,6 +375,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         String errorMessage = e.message;
         if (e.message.contains('already linked')) {
           errorMessage = 'This Apple ID is already linked to your account. Please sign in with your email first, then you can use Apple Sign-In.';
+        } else if (e.message.contains('PlatformException') || e.message.contains('Error while launching')) {
+          errorMessage = 'Apple Sign-In configuration error. Please try signing in with email or Google instead.';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -402,9 +388,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Apple Sign-In failed: $e';
+        if (e.toString().contains('PlatformException') || e.toString().contains('Error while launching')) {
+          errorMessage = 'Apple Sign-In is not properly configured on this device. Please use email or Google sign-in instead.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Apple Sign-In failed: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
           ),
         );

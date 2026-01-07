@@ -765,18 +765,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   }
                                 } else {
                                   // OAuth - store complete session data for full re-authentication
-                                  // First, refresh the session to ensure it's fresh and valid
-                                  try {
-                                    await Supabase.instance.client.auth.refreshSession();
-                                  } catch (e) {
-                                    print('Warning: Could not refresh session before storing: $e');
-                                  }
-                                  
+                                  // Don't refresh - just store current session to avoid auth state changes
                                   final session = Supabase.instance.client.auth.currentSession;
                                   if (session != null) {
                                     // Store complete session as JSON (must include user object for recoverSession)
                                     final sessionJson = jsonEncode(session.toJson());
-                                    print('Storing session: ${sessionJson.substring(0, 100)}...');
                                     await _biometricService.storeSession(sessionJson);
                                   }
                                   await _biometricService.setBiometricEnabled(true);
