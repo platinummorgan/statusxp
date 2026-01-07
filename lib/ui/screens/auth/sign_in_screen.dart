@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
+import 'package:statusxp/data/auth/auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'dart:io' show Platform;
@@ -83,10 +83,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       if (!isEnabled) return;
 
       final hasStoredCredentials = await _biometricService.hasStoredCredentials();
-      final hasStoredSession = await _biometricService.hasStoredSession();
+      final hasStoredToken = await _biometricService.hasStoredRefreshToken();
       final hasActiveSession =
           Supabase.instance.client.auth.currentSession != null;
-      if (!hasStoredCredentials && !hasStoredSession && !hasActiveSession) {
+      if (!hasStoredCredentials && !hasStoredToken && !hasActiveSession) {
         return;
       }
 
@@ -172,24 +172,33 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
           return;
         }
 
-        // No active session - try to restore session from stored data
-        final sessionString = await _biometricService.getStoredSession();
-        if (sessionString != null) {
+        // No active session - try to restore session from stored refresh token
+        final storedToken = await _biometricService.getRefreshToken();
+        if (storedToken != null && !storedToken.isExpired) {
           try {
-            await Supabase.instance.client.auth.recoverSession(sessionString);
-            final user = Supabase.instance.client.auth.currentUser;
-            if (user != null) {
-              // Session restored successfully
+            final authService = AuthService(Supabase.instance.client);
+            final restored = await authService.restoreSessionFromRefreshToken(storedToken.refreshToken);
+            if (restored) {
+              // Update stored token with new one from refreshed session
+              final newToken = authService.refreshToken;
+              final newExpiry = authService.refreshTokenExpiry;
+              if (newToken != null && newExpiry != null) {
+                await _biometricService.storeRefreshToken(
+                  refreshToken: newToken,
+                  userId: authService.currentUser!.id,
+                  expiresAt: newExpiry,
+                );
+              }
               _clearLocalLock();
               // Auth gate will handle navigation
               return;
             } else {
-              print('🔐 No user after recovery - session invalid');
+              print('🔐 Token invalid - session could not be restored');
             }
           } catch (e) {
-            // Session invalid or expired - clear it and show detailed error
-            print('Session recovery failed: $e');
-            await _biometricService.clearStoredSession();
+            // Token invalid or expired - clear it and show detailed error
+            print('Token refresh failed: $e');
+            await _biometricService.clearRefreshToken();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -267,12 +276,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       final refreshed = await Supabase.instance.client.auth.refreshSession();
       final refreshedSession =
           refreshed.session ?? Supabase.instance.client.auth.currentSession;
-      if (refreshedSession != null) {
-        await _biometricService.storeSession(jsonEncode(refreshedSession.toJson()));
+      if (refreshedSession != null && refreshedSession.refreshToken != null) {
+        // Store the new refresh token
+        final expiresAt = DateTime.fromMillisecondsSinceEpoch(refreshedSession.expiresAt! * 1000);
+        await _biometricService.storeRefreshToken(
+          refreshToken: refreshedSession.refreshToken!,
+          userId: refreshedSession.user.id,
+          expiresAt: expiresAt,
+        );
       }
       return refreshedSession != null;
     } on AuthException catch (e) {
-      await _biometricService.clearStoredSession();
+      await _biometricService.clearRefreshToken();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

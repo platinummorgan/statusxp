@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
@@ -296,25 +295,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Future<void> _signOut() async {
-    try {
-      // Actually sign out from Supabase
-      final authService = ref.read(authServiceProvider);
-      await authService.signOut();
-      
-      // Reset biometric lock state
-      ref.read(biometricLockRequestedProvider.notifier).state = false;
-      
-      // Navigate to sign in screen
-      if (mounted) {
-        context.go('/');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error signing out: $e')),
-        );
-      }
+  Future<void> _lockApp() async {
+    ref.read(biometricUnlockGrantedProvider.notifier).state = false;
+    ref.read(biometricLockRequestedProvider.notifier).state = true;
+    
+    if (mounted) {
+      context.go('/');
     }
   }
 
@@ -764,13 +750,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     );
                                   }
                                 } else {
-                                  // OAuth - store complete session data for full re-authentication
-                                  // Don't refresh - just store current session to avoid auth state changes
+                                  // OAuth - store refresh token for secure re-authentication
                                   final session = Supabase.instance.client.auth.currentSession;
-                                  if (session != null) {
-                                    // Store complete session as JSON (must include user object for recoverSession)
-                                    final sessionJson = jsonEncode(session.toJson());
-                                    await _biometricService.storeSession(sessionJson);
+                                  if (session != null && session.refreshToken != null) {
+                                    final expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+                                    await _biometricService.storeRefreshToken(
+                                      refreshToken: session.refreshToken!,
+                                      userId: session.user.id,
+                                      expiresAt: expiresAt,
+                                    );
                                   }
                                   await _biometricService.setBiometricEnabled(true);
                                   
@@ -934,12 +922,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 // Log Out (local lock)
                 ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
+                  leading: const Icon(Icons.lock_outline, color: Colors.orange),
                   title: const Text(
                     'Log Out',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(color: Colors.orange),
                   ),
-                  onTap: _signOut,
+                  subtitle: const Text('Lock the app - use biometrics to get back in'),
+                  onTap: _lockApp,
                 ),
                 
                 const Divider(height: 1),

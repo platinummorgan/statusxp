@@ -26,9 +26,16 @@ class AuthRefreshService {
   
   /// Proactively refresh session when app resumes from background
   /// This prevents "Session expired" errors when returning to the app
+  /// Returns Future<void> that never throws - all errors are caught internally
   Future<void> refreshIfNeededOnResume() async {
-    // Use the existing logic but make it public for app resume
-    await _refreshIfNeeded();
+    try {
+      // Add a connectivity check delay when called on resume
+      await Future.delayed(const Duration(milliseconds: 500));
+      await _refreshIfNeeded();
+    } catch (e) {
+      // Never throw - silently handle all errors
+      print('Session refresh on resume failed (will retry automatically): $e');
+    }
   }
   
   /// Manually trigger token refresh with error handling

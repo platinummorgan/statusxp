@@ -6,12 +6,17 @@ import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
 import 'package:statusxp/ui/screens/auth/sign_in_screen.dart';
+import 'package:statusxp/ui/screens/auth/biometric_login_screen.dart';
 import 'package:statusxp/ui/screens/onboarding_screen.dart';
 
 /// Authentication gate that controls access to the main app.
 /// 
-/// Shows the onboarding screen on first launch, sign-in screen when no user is authenticated,
-/// biometric lock screen when biometrics are enabled, and the main app when unlocked.
+/// Flow:
+/// 1. Check if onboarding is needed (first launch)
+/// 2. Check if user has biometric auth enabled with valid refresh token
+/// 3. If yes, show BiometricLoginScreen for instant unlock
+/// 4. If no, check if user is authenticated
+/// 5. Show appropriate screen based on auth state
 class AuthGate extends ConsumerStatefulWidget {
   const AuthGate({super.key});
 
@@ -24,6 +29,8 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
   bool _checkingOnboarding = true;
   bool _isAuthenticated = false;
   bool _isBiometricUnlocked = false;
+  bool _hasBiometricToken = false;
+  bool _checkingBiometric = true;
   final BiometricAuthService _biometricService = BiometricAuthService();
   DateTime? _lastPausedTime;
 
@@ -33,6 +40,7 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     _checkOnboardingStatus();
     _checkInitialAuthStatus();
+    _checkBiometricToken();
   }
 
   @override
@@ -76,6 +84,17 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
       _isAuthenticated = user != null;
     });
   }
+  
+  /// Check if user has a valid biometric refresh token stored
+  Future<void> _checkBiometricToken() async {
+    final hasToken = await _biometricService.hasStoredRefreshToken();
+    final isExpired = await _biometricService.isRefreshTokenExpired();
+    
+    setState(() {
+      _hasBiometricToken = hasToken && !isExpired;
+      _checkingBiometric = false;
+    });
+  }
 
   Widget _buildMainAppOrLock() {
     final lockRequested = ref.watch(biometricLockRequestedProvider);
@@ -106,7 +125,9 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
         final biometricEnabled = snapshot.data ?? false;
 
         if (_isAuthenticated && lockRequested) {
-          return const SignInScreen();
+          return SignInScreen(
+            autoPromptBiometric: biometricEnabled,
+          );
         }
 
         if (biometricEnabled && _isAuthenticated && !_isBiometricUnlocked) {
@@ -129,7 +150,8 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
 
   @override
   Widget build(BuildContext context) {
-    if (_checkingOnboarding) {
+    // Still checking initial state
+    if (_checkingOnboarding || _checkingBiometric) {
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
@@ -137,8 +159,14 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
       );
     }
 
+    // First time user - show onboarding
     if (_needsOnboarding) {
       return const OnboardingScreen();
+    }
+
+    // User has biometric token and is not authenticated yet - show biometric login
+    if (_hasBiometricToken && !_isAuthenticated) {
+      return const BiometricLoginScreen();
     }
 
     final authStateAsync = ref.watch(authStateProvider);
@@ -176,7 +204,7 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
           return _buildMainAppOrLock();
         }
         
-        // Initial state with no user
+        // Initial state with no user - show sign-in
         return const SignInScreen();
       },
       loading: () {

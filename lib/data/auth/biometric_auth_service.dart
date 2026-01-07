@@ -1,8 +1,8 @@
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/services.dart';
+import 'package:statusxp/data/auth/secure_token_storage.dart';
 
 /// Result of a biometric authentication attempt
 class BiometricAuthResult {
@@ -14,20 +14,28 @@ class BiometricAuthResult {
 
 /// Service for managing biometric authentication (fingerprint, Face ID, etc.)
 /// 
-/// Provides secure local authentication using device biometrics to sign in.
-/// Stores encrypted credentials in secure storage for full authentication.
+/// Uses refresh tokens stored in OS-level secure storage (Keystore/Keychain)
+/// to enable biometric re-authentication without storing passwords.
+/// 
+/// Flow:
+/// 1. User signs in with email/password or OAuth
+/// 2. Refresh token is stored in secure storage (encrypted by OS)
+/// 3. On app restart, user can unlock with biometrics
+/// 4. Refresh token is retrieved and exchanged for new access token
+/// 5. User is signed in without entering credentials
 class BiometricAuthService {
   final LocalAuthentication _localAuth = LocalAuthentication();
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage(
+  final SecureTokenStorage _tokenStorage = SecureTokenStorage();
+  
+  // Legacy support - for backward compatibility with old password-based flow
+  final FlutterSecureStorage _legacyStorage = const FlutterSecureStorage(
     aOptions: AndroidOptions(
       encryptedSharedPreferences: true,
     ),
   );
   
-  static const String _biometricEnabledKey = 'biometric_auth_enabled';
   static const String _storedEmailKey = 'biometric_stored_email';
   static const String _storedPasswordKey = 'biometric_stored_password';
-  static const String _storedSessionKey = 'biometric_stored_session';
   
   /// Check if the device supports biometric authentication
   Future<bool> isBiometricAvailable() async {
@@ -51,14 +59,14 @@ class BiometricAuthService {
   
   /// Check if biometric authentication is currently enabled by the user
   Future<bool> isBiometricEnabled() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_biometricEnabledKey) ?? false;
+    return await _tokenStorage.isBiometricEnabled();
   }
   
   /// Enable or disable biometric authentication
+  /// 
+  /// When disabled, clears all stored tokens for security.
   Future<void> setBiometricEnabled(bool enabled) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_biometricEnabledKey, enabled);
+    await _tokenStorage.setBiometricEnabled(enabled);
   }
   
   /// Authenticate using biometrics with detailed error reporting
@@ -153,17 +161,72 @@ class BiometricAuthService {
     return descriptions.join(', ');
   }
   
-  /// Store credentials securely for biometric authentication
-  /// Should be called after successful email/password sign-in
-  Future<void> storeCredentials(String email, String password) async {
-    await _secureStorage.write(key: _storedEmailKey, value: email);
-    await _secureStorage.write(key: _storedPasswordKey, value: password);
+  /// Store refresh token for biometric authentication (RECOMMENDED)
+  /// 
+  /// Should be called after successful authentication to enable biometric login.
+  /// Uses refresh token flow for better security (no password storage).
+  /// 
+  /// The refresh token is encrypted by the OS and bound to this device.
+  Future<void> storeRefreshToken({
+    required String refreshToken,
+    required String userId,
+    required DateTime expiresAt,
+  }) async {
+    await _tokenStorage.storeRefreshToken(
+      refreshToken: refreshToken,
+      userId: userId,
+      expiresAt: expiresAt,
+    );
+    await _tokenStorage.setBiometricEnabled(true);
   }
   
-  /// Retrieve stored credentials (only after biometric auth succeeds)
+  /// Retrieve stored refresh token (only after biometric auth succeeds)
+  /// 
+  /// Returns the stored refresh token data, or null if not available.
+  /// This should only be called after successful biometric authentication.
+  Future<StoredToken?> getRefreshToken() async {
+    return await _tokenStorage.getRefreshToken();
+  }
+  
+  /// Check if a refresh token is stored
+  Future<bool> hasStoredRefreshToken() async {
+    return await _tokenStorage.hasRefreshToken();
+  }
+  
+  /// Check if the stored refresh token is expired
+  Future<bool> isRefreshTokenExpired() async {
+    return await _tokenStorage.isTokenExpired();
+  }
+  
+  /// Clear stored refresh token
+  /// 
+  /// Should be called on sign out or when disabling biometric authentication.
+  Future<void> clearRefreshToken() async {
+    await _tokenStorage.clearRefreshToken();
+  }
+  
+  // ============================================================================
+  // LEGACY METHODS - For backward compatibility with password-based flow
+  // These should be deprecated in favor of refresh token flow
+  // ============================================================================
+  
+  /// Store credentials securely for biometric authentication (LEGACY)
+  /// 
+  /// ⚠️ DEPRECATED: Use storeRefreshToken() instead for better security.
+  /// Storing passwords is less secure than using refresh tokens.
+  @Deprecated('Use storeRefreshToken() instead')
+  Future<void> storeCredentials(String email, String password) async {
+    await _legacyStorage.write(key: _storedEmailKey, value: email);
+    await _legacyStorage.write(key: _storedPasswordKey, value: password);
+  }
+  
+  /// Retrieve stored credentials (only after biometric auth succeeds) (LEGACY)
+  /// 
+  /// ⚠️ DEPRECATED: Use getRefreshToken() instead.
+  @Deprecated('Use getRefreshToken() instead')
   Future<Map<String, String>?> getStoredCredentials() async {
-    final email = await _secureStorage.read(key: _storedEmailKey);
-    final password = await _secureStorage.read(key: _storedPasswordKey);
+    final email = await _legacyStorage.read(key: _storedEmailKey);
+    final password = await _legacyStorage.read(key: _storedPasswordKey);
     
     if (email != null && password != null) {
       return {'email': email, 'password': password};
@@ -171,38 +234,20 @@ class BiometricAuthService {
     return null;
   }
   
-  /// Check if credentials are stored
+  /// Check if credentials are stored (LEGACY)
+  /// 
+  /// ⚠️ DEPRECATED: Use hasStoredRefreshToken() instead.
+  @Deprecated('Use hasStoredRefreshToken() instead')
   Future<bool> hasStoredCredentials() async {
-    final email = await _secureStorage.read(key: _storedEmailKey);
+    final email = await _legacyStorage.read(key: _storedEmailKey);
     return email != null;
   }
   
-  /// Clear stored credentials (on sign out or disable biometric)
+  /// Clear stored credentials (LEGACY)
+  @Deprecated('Use clearRefreshToken() instead')
   Future<void> clearStoredCredentials() async {
-    await _secureStorage.delete(key: _storedEmailKey);
-    await _secureStorage.delete(key: _storedPasswordKey);
-    await _secureStorage.delete(key: _storedSessionKey);
-  }
-
-  /// Clear only the stored OAuth session data
-  Future<void> clearStoredSession() async {
-    await _secureStorage.delete(key: _storedSessionKey);
-  }
-  
-  /// Store OAuth session data securely for biometric authentication
-  /// Should be called after successful OAuth sign-in (Google/Apple)
-  Future<void> storeSession(String sessionJson) async {
-    await _secureStorage.write(key: _storedSessionKey, value: sessionJson);
-  }
-  
-  /// Retrieve stored OAuth session data (only after biometric auth succeeds)
-  Future<String?> getStoredSession() async {
-    return await _secureStorage.read(key: _storedSessionKey);
-  }
-  
-  /// Check if session is stored
-  Future<bool> hasStoredSession() async {
-    final session = await _secureStorage.read(key: _storedSessionKey);
-    return session != null;
+    await _legacyStorage.delete(key: _storedEmailKey);
+    await _legacyStorage.delete(key: _storedPasswordKey);
+    await clearRefreshToken();
   }
 }

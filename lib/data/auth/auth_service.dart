@@ -117,8 +117,11 @@ class AuthService {
   
   /// Sign out the current user.
   /// 
-  /// Clears the session and revokes the refresh token.
+  /// Clears the session and revokes the refresh token on the server.
+  /// This ensures that any stored refresh token becomes invalid and cannot be
+  /// used to restore the session via biometric authentication.
   Future<void> signOut() async {
+    // Supabase's signOut() automatically invalidates the refresh token on the server
     await _client.auth.signOut();
   }
   
@@ -372,4 +375,66 @@ class AuthService {
   /// Emits an [AuthState] whenever the user signs in, signs out, or the token refreshes.
   /// Use this to reactively update UI based on authentication status.
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
+  
+  /// Get the current session's refresh token
+  /// 
+  /// Returns the refresh token if there is an active session, null otherwise.
+  /// This refresh token should be stored securely (encrypted by OS) for biometric re-authentication.
+  String? get refreshToken => _client.auth.currentSession?.refreshToken;
+  
+  /// Get the current session's expiry time
+  /// 
+  /// Returns when the refresh token expires, requiring full re-authentication.
+  /// Typically refresh tokens last 30-90 days.
+  DateTime? get refreshTokenExpiry {
+    final expiresAt = _client.auth.currentSession?.expiresAt;
+    if (expiresAt == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+  }
+  
+  /// Exchange a stored refresh token for a new access token
+  /// 
+  /// This should be called after successful biometric authentication to restore
+  /// the user's session without requiring username/password.
+  /// 
+  /// Returns true if the session was successfully restored, false if the refresh
+  /// token is invalid or expired.
+  /// 
+  /// Throws [AuthException] if the refresh operation fails due to network or other errors.
+  Future<bool> restoreSessionFromRefreshToken(String refreshToken) async {
+    try {
+      // Supabase's setSession will automatically refresh if the refresh token is valid
+      final response = await _client.auth.setSession(refreshToken);
+      
+      if (response.session == null) {
+        // Refresh token was invalid or expired
+        return false;
+      }
+      
+      return true;
+    } on AuthException catch (e) {
+      // Invalid or expired refresh token
+      if (e.message.contains('refresh_token') || 
+          e.message.contains('Invalid') ||
+          e.message.contains('expired')) {
+        return false;
+      }
+      // Other auth errors should be rethrown
+      rethrow;
+    } catch (e) {
+      // Network or other errors
+      rethrow;
+    }
+  }
+  
+  /// Sign out and invalidate the refresh token on the server
+  /// 
+  /// This ensures that any stored refresh token becomes invalid and cannot be
+  /// used to restore the session via biometric authentication.
+  /// 
+  /// This is the recommended way to sign out when using biometric authentication.
+  Future<void> signOutAndInvalidateToken() async {
+    // Supabase's signOut() automatically invalidates the refresh token on the server
+    await _client.auth.signOut();
+  }
 }

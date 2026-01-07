@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -21,14 +19,21 @@ Future<void> _syncBiometricSessionIfNeeded(Session session) async {
   final biometricEnabled = await _biometricAuthService.isBiometricEnabled();
   if (!biometricEnabled) return;
 
-  final hasCredentials = await _biometricAuthService.hasStoredCredentials();
-  if (hasCredentials) return;
+  // With refresh token flow, we don't need to sync session anymore
+  // The refresh token is stored once and automatically refreshed
+  final hasToken = await _biometricAuthService.hasStoredRefreshToken();
+  if (hasToken) return;
 
-  // Only update if we don't already have a session stored
-  final hasStoredSession = await _biometricAuthService.hasStoredSession();
-  if (hasStoredSession) return;
-
-  await _biometricAuthService.storeSession(jsonEncode(session.toJson()));
+  // Store refresh token if biometric is enabled but no token stored
+  final refreshToken = session.refreshToken;
+  if (refreshToken != null && session.expiresAt != null) {
+    final expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+    await _biometricAuthService.storeRefreshToken(
+      refreshToken: refreshToken,
+      userId: session.user.id,
+      expiresAt: expiresAt,
+    );
+  }
 }
 
 // App lifecycle observer to refresh session when app resumes
@@ -36,8 +41,15 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Proactively refresh session when app resumes from background
-      authRefreshService.refreshIfNeededOnResume();
+      // Add a small delay to let the network reconnect before refreshing
+      Future.delayed(const Duration(seconds: 1), () {
+        // Proactively refresh session when app resumes from background
+        // This is wrapped in try-catch to prevent DNS errors from crashing the app
+        authRefreshService.refreshIfNeededOnResume().catchError((error) {
+          // Silently ignore network errors on resume
+          print('Token refresh on resume failed (will retry later): $error');
+        });
+      });
     }
   }
 }
