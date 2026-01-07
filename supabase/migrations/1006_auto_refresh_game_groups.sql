@@ -18,7 +18,7 @@ RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  UPDATE game_groups_refresh_queue SET needs_refresh = true;
+  UPDATE game_groups_refresh_queue SET needs_refresh = true WHERE id = 1;
   RETURN NEW;
 END;
 $$;
