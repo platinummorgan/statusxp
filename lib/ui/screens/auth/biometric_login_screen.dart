@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
-import 'package:statusxp/data/auth/auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

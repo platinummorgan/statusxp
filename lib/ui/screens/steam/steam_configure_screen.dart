@@ -260,24 +260,44 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
                       const SizedBox(height: 12),
                       _buildInstructionStep(
                         '1. Get your Steam ID',
-                        '• Go to your Steam profile\n'
+                        '• Go to your Steam profile in a WEB BROWSER (not the app)\n'
                         '• Look at the URL: steamcommunity.com/profiles/[YOUR_ID]\n'
-                        '• Copy the 17-digit number',
+                        '• Copy the 17-digit number (starts with "7656")\n'
+                        '• Example: 76561198025758586',
                       ),
                       const SizedBox(height: 12),
                       _buildInstructionStep(
                         '2. Get your API Key',
+                        '• IMPORTANT: Must use a WEB BROWSER (not the Steam app)\n'
                         '• Visit: steamcommunity.com/dev/apikey\n'
+                        '• You MUST have Steam Guard 2FA enabled (Steam requires this)\n'
                         '• For "Domain Name", enter anything (e.g., "StatusXP")\n'
-                        '• This is just a label - it doesn\'t matter what you enter\n'
-                        '• Register and copy the 32-character key',
+                        '• This is just a label - it doesn\'t affect anything\n'
+                        '• Click Register and copy the 32-character key',
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        'Note: You need Steam Guard Mobile Authenticator enabled to get an API key.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.yellow[100],
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.orange.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning_amber, color: Colors.orange[800], size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Steam requires 2FA (Mobile Authenticator) to generate API keys. This is a Steam requirement, not ours.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.orange[900],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

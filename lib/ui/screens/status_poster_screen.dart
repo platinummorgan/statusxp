@@ -352,7 +352,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.emoji_events,
                                           size: 16,
                                           color: CyberpunkTheme.neonCyan,

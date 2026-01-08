@@ -82,13 +82,18 @@ void main() async {
   }
   
   // Listen for auth state changes to start/stop refresh service
+  // ONLY listen for signedIn/signedOut events, not token refreshes
   Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-    if (data.session != null) {
+    final event = data.event;
+    
+    // Only restart refresh timer on actual sign in/out, not on token refresh
+    if (event == AuthChangeEvent.signedIn) {
       authRefreshService.startPeriodicRefresh();
       _syncBiometricSessionIfNeeded(data.session!);
-    } else {
+    } else if (event == AuthChangeEvent.signedOut) {
       authRefreshService.stopPeriodicRefresh();
     }
+    // Ignore tokenRefreshed events to prevent loop
   });
 
   // Initialize subscription service

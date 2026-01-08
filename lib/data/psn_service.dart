@@ -150,30 +150,9 @@ class PSNService {
       );
     }
     
-    // Try to refresh session with network error handling
-    try {
-      await _client.auth.refreshSession();
-    } catch (e) {
-      // Only fail on auth errors, not network errors
-      final errorStr = e.toString();
-      if (errorStr.contains('SocketException') || 
-          errorStr.contains('Failed host lookup') ||
-          errorStr.contains('ClientException')) {
-        // Network error - continue without refresh (token might still be valid)
-        print('Network error during session refresh, continuing: $e');
-      } else {
-        // Auth error - user needs to sign in again
-        return PSNSyncStatus(
-          isLinked: false,
-          status: 'error',
-          progress: 0,
-          error: 'Session expired. Please sign in again.',
-          lastSyncAt: null,
-          latestLog: null,
-        );
-      }
-    }
-
+    // Don't refresh session here - it's handled by AuthRefreshService
+    // Polling this every 2-10 seconds causes refresh spam
+    
     final response = await _client.functions.invoke('psn-sync-status');
 
     if (response.status != 200) {
