@@ -650,21 +650,25 @@ export async function syncPSNAchievements(
         } catch (error) {
           console.error(`❌ Error processing title ${title.trophyTitleName}:`, error);
           
-          // If trophy fetch/processing failed, mark the game with sync_failed flag
+          // If trophy fetch/processing failed, mark the game with sync_failed flag if we have gameTitle/platform
           // This prevents data inconsistency where user_games says has_platinum but no achievements exist
-          try {
-            await supabase
-              .from('user_games')
-              .update({
-                sync_failed: true,
-                sync_error: error.message?.substring(0, 255),
-                last_sync_attempt: new Date().toISOString(),
-              })
-              .eq('user_id', userId)
-              .eq('game_title_id', gameTitle?.id)
-              .eq('platform_id', platform?.id);
-          } catch (updateError) {
-            console.error('Failed to mark game as sync_failed:', updateError);
+          if (gameTitle?.id && platform?.id) {
+            try {
+              await supabase
+                .from('user_games')
+                .update({
+                  sync_failed: true,
+                  sync_error: error.message?.substring(0, 255),
+                  last_sync_attempt: new Date().toISOString(),
+                })
+                .eq('user_id', userId)
+                .eq('game_title_id', gameTitle.id)
+                .eq('platform_id', platform.id);
+            } catch (updateError) {
+              console.error('Failed to mark game as sync_failed:', updateError);
+            }
+          } else {
+            console.log(`⚠️ Skipping sync_failed update - game not yet in database (${title.trophyTitleName})`);
           }
         }
       };
