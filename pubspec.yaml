@@ -98,6 +98,9 @@ dependencies:
   # Markdown renderer for displaying legal documents
   flutter_markdown: ^0.7.4
   
+  # Package info for version number
+  package_info_plus: ^8.0.0
+  
   # QR code generator for shareable posters
   qr_flutter: ^4.1.0
 
