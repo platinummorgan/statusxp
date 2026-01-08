@@ -13,6 +13,7 @@ import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 /// Settings Screen - Platform connections and app configuration
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -27,11 +28,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Map<String, dynamic>? _profile;
   bool _showOnLeaderboard = true;
   final BiometricAuthService _biometricService = BiometricAuthService();
+  String _appVersion = '...';
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = packageInfo.version;
+    });
   }
 
   @override
@@ -834,12 +844,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ListTile(
                   leading: const Icon(Icons.info_outline),
                   title: const Text('About StatusXP'),
-                  subtitle: const Text('Version 1.0.0'),
+                  subtitle: Text('Version $_appVersion'),
                   onTap: () {
                     showAboutDialog(
                       context: context,
                       applicationName: 'StatusXP',
-                      applicationVersion: '1.0.0',
+                      applicationVersion: _appVersion,
                       applicationLegalese: '© 2025 StatusXP\n\nThe ultimate cross-platform achievement tracker',
                       children: [
                         const SizedBox(height: 16),
