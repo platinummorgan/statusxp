@@ -235,6 +235,28 @@ export async function syncPSNAchievements(
     console.log(`Using BATCH_SIZE=${BATCH_SIZE}, MAX_CONCURRENT=${MAX_CONCURRENT}`);
 
     for (let i = 0; i < gamesWithTrophies.length; i += BATCH_SIZE) {
+      // Refresh token every 100 games to prevent expiration on large libraries
+      if (i > 0 && i % 100 === 0) {
+        console.log('🔄 Refreshing PSN access token after 100 games...');
+        try {
+          const authTokens = await exchangeRefreshTokenForAuthTokens(refreshToken);
+          currentAccessToken = authTokens.accessToken;
+          refreshToken = authTokens.refreshToken;
+          console.log('✅ PSN access token refreshed successfully');
+          
+          await supabase
+            .from('profiles')
+            .update({
+              psn_access_token: authTokens.accessToken,
+              psn_refresh_token: authTokens.refreshToken,
+            })
+            .eq('id', userId);
+        } catch (refreshError) {
+          console.error('❌ Failed to refresh token:', refreshError);
+          throw new Error('Token refresh failed during sync');
+        }
+      }
+      
       // Check if sync was cancelled
       const { data: profileCheck, error: profileCheckError } = await supabase
         .from('profiles')
@@ -266,6 +288,9 @@ export async function syncPSNAchievements(
       logMemory(`Before processing PSN batch ${i / BATCH_SIZE + 1}`);
 
       const processTitle = async (title) => {
+        let gameTitle;
+        let platform;
+        
         try {
           // Map PSN platform codes to our platform codes
           let platformCode = 'PS5';
@@ -279,13 +304,15 @@ export async function syncPSNAchievements(
 
           console.log(`📱 Platform detected: ${title.trophyTitlePlatform} → ${platformCode}`);
 
-          const { data: platform, error: platformError } = await supabase
+          const { data: platformData, error: platformError } = await supabase
             .from('platforms')
             .select('id')
             .eq('code', platformCode)
             .single();
+          
+          platform = platformData;
 
-          if (platformError || !platform) {
+          if (platformError || !platformData) {
             console.error(
               `❌ Platform query failed for code ${platformCode} (PSN: ${title.trophyTitlePlatform}):`,
               platformError?.message || 'Platform not found'
@@ -294,7 +321,7 @@ export async function syncPSNAchievements(
             return;
           }
 
-          console.log(`✅ Platform resolved: ${platformCode} → ID ${platform.id}`);
+          console.log(`✅ Platform resolved: ${platformCode} → ID ${platformData.id}`);
 
           // Find or create game_title using unique PSN npCommunicationId
           const trimmedTitle = title.trophyTitleName.trim();
@@ -306,7 +333,6 @@ export async function syncPSNAchievements(
             .eq('psn_npwr_id', title.npCommunicationId)
             .maybeSingle();
           
-          let gameTitle;
           if (existingGameById) {
             // Found by npCommunicationId - this is the exact game
             if (!existingGameById.cover_url && title.trophyTitleIconUrl) {
