@@ -6,8 +6,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const ENV_BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '5', 10);
-const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '1', 10);
+const ENV_BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '20', 10);
+const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '3', 10);
 
 function logMemory(label) {
   try {
@@ -646,7 +646,7 @@ export async function syncPSNAchievements(
           console.log(
             `Processed ${processedGames}/${gamesWithTrophies.length} games (${progress}%)`
           );
-          await new Promise((r) => setTimeout(r, 25));
+          await new Promise((r) => setTimeout(r, 10));
         } catch (error) {
           console.error(`❌ Error processing title ${title.trophyTitleName}:`, error);
           

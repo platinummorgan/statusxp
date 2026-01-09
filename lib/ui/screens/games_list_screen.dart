@@ -75,9 +75,10 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
           final bProgress = b.totalTrophies > 0 ? (b.earnedTrophies / b.totalTrophies) : 0;
           return bProgress.compareTo(aProgress);
         case GameSortOption.rarity:
-          // Games without rarity (platinumRarity == null) go to the bottom
-          final aRarity = a.platinumRarity ?? double.infinity;
-          final bRarity = b.platinumRarity ?? double.infinity;
+          // Sort by rarest earned trophy (lower percentage = rarer)
+          // Games with 0% (no trophies earned) go to the bottom
+          final aRarity = a.earnedTrophies > 0 ? a.rarityPercent : double.infinity;
+          final bRarity = b.earnedTrophies > 0 ? b.rarityPercent : double.infinity;
           return aRarity.compareTo(bRarity);
         case GameSortOption.lastPlayed:
           // Sort by updatedAt (most recent first)
@@ -89,11 +90,11 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
           }
           return bTime.compareTo(aTime);
         case GameSortOption.platinumEarned:
-          // Platinumed games first
-          if (a.hasPlatinum != b.hasPlatinum) {
-            return a.hasPlatinum ? -1 : 1;
+          // Platinumed games first (check if earned, not if available)
+          if (a.platinumTrophies != b.platinumTrophies) {
+            return b.platinumTrophies.compareTo(a.platinumTrophies);
           }
-          // If both have platinum or both don't, sort by name
+          // If both earned platinum or both didn't, sort by name
           return a.name.compareTo(b.name);
       }
     });
