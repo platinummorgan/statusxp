@@ -110,7 +110,8 @@ export async function syncPSNAchievements(
   try {
     console.log('Refreshing PSN access token...');
     const authTokens = await exchangeRefreshTokenForAuthTokens(refreshToken);
-    const currentAccessToken = authTokens.accessToken;
+    let currentAccessToken = authTokens.accessToken;
+    let currentRefreshToken = authTokens.refreshToken;
     console.log('PSN access token refreshed successfully');
 
     await updateSyncStatus(userId, {
@@ -239,9 +240,9 @@ export async function syncPSNAchievements(
       if (i > 0 && i % 100 === 0) {
         console.log('🔄 Refreshing PSN access token after 100 games...');
         try {
-          const authTokens = await exchangeRefreshTokenForAuthTokens(refreshToken);
+          const authTokens = await exchangeRefreshTokenForAuthTokens(currentRefreshToken);
           currentAccessToken = authTokens.accessToken;
-          refreshToken = authTokens.refreshToken;
+          currentRefreshToken = authTokens.refreshToken;
           console.log('✅ PSN access token refreshed successfully');
           
           await supabase
