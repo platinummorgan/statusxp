@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -507,17 +508,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                 ),
                 const SizedBox(height: 16),
                 
-                // Continue with Apple (iOS/macOS only)
-                if (Platform.isIOS || Platform.isMacOS) ...[
-                  _buildOptionButton(
-                    icon: Icons.apple,
-                    label: 'Continue with Apple',
-                    backgroundColor: Colors.black,
-                    textColor: Colors.white,
-                    onTap: _isLoading ? null : _signInWithApple,
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                // Continue with Apple (works on web via JS, iOS/macOS natively)
+                _buildOptionButton(
+                  icon: Icons.apple,
+                  label: 'Continue with Apple',
+                  backgroundColor: Colors.black,
+                  textColor: Colors.white,
+                  onTap: _isLoading ? null : _signInWithApple,
+                ),
+                const SizedBox(height: 16),
                 
                 // Continue with Login (Email/Password)
                 _buildOptionButton(

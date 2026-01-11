@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/theme/colors.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:html' as html;
 
 /// Enhanced onboarding screen with interactive features and animations
 /// 
@@ -59,8 +61,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 
   Future<void> _completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_complete', true);
+    // On web, use cookie so it survives logout; on mobile use SharedPreferences
+    if (kIsWeb) {
+      html.document.cookie = 'onboarding_complete=true; max-age=31536000; path=/; SameSite=Strict';
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_complete', true);
+    }
     
     if (mounted) {
       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);

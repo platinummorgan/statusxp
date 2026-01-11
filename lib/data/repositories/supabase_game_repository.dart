@@ -36,7 +36,8 @@ class SupabaseGameRepository {
             last_trophy_earned_at,
             game_titles!inner(
               name, 
-              cover_url
+              cover_url,
+              proxied_cover_url
             ),
             platforms(code)
           ''')
@@ -98,7 +99,7 @@ class SupabaseGameRepository {
           hasPlatinum: row['has_platinum'] as bool? ?? false,
           rarityPercent: (row['completion_percent'] as num?)?.toDouble() ?? 0.0,
           platinumRarity: platinumRarity,
-          cover: gameTitle['cover_url'] as String? ?? '',
+          cover: (gameTitle['proxied_cover_url'] ?? gameTitle['cover_url']) as String? ?? '',
           bronzeTrophies: row['bronze_trophies'] as int? ?? 0,
           silverTrophies: row['silver_trophies'] as int? ?? 0,
           goldTrophies: row['gold_trophies'] as int? ?? 0,
@@ -257,7 +258,7 @@ class SupabaseGameRepository {
           'id': game['primary_game_id'], // Use primary game ID from group
           'group_id': game['group_id'],
           'name': game['name'],
-          'cover_url': game['cover_url'],
+          'cover_url': game['proxied_cover_url'] ?? game['cover_url'],
           'platforms': primaryPlatform != null 
               ? {'code': primaryPlatform, 'name': primaryPlatform}
               : null,

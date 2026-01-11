@@ -26,7 +26,7 @@ class UnifiedGamesRepository {
       
       for (final group in data) {
         final title = group['name'] as String;
-        final coverUrl = group['cover_url'] as String?;
+        final coverUrl = (group['proxied_cover_url'] ?? group['cover_url']) as String?;
         final platformsData = (group['platforms'] as List?)?.cast<Map<String, dynamic>>() ?? [];
         
         // Create PlatformGameData for each platform in the group

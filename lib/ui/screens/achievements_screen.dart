@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/meta_achievement.dart';
 import 'package:statusxp/data/repositories/meta_achievement_repository.dart';
 import 'package:statusxp/services/achievement_checker_service.dart';
@@ -140,6 +141,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
         title: const Text('Achievements', style: TextStyle(color: Colors.white)),
         backgroundColor: const Color(0xFF0A0E27),
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+        ),
       ),
       body: achievementsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

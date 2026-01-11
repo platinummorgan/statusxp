@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/data/repositories/leaderboard_repository.dart';
 import 'package:statusxp/domain/leaderboard_entry.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
@@ -60,6 +61,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         centerTitle: true,
         backgroundColor: const Color(0xFF0A0E27),
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(

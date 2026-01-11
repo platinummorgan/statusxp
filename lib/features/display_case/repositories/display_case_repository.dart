@@ -30,7 +30,8 @@ class DisplayCaseRepository {
               game_title_id,
               game_titles!inner(
                 name,
-                cover_url
+                cover_url,
+                proxied_cover_url
               )
             )
           ''')
@@ -54,7 +55,7 @@ class DisplayCaseRepository {
           'tier': trophy['tier'],
           'rarity': trophy['rarity_global'],
           'icon_url': trophy['icon_url'],
-          'game_image_url': gameTitle['cover_url'],
+          'game_image_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
         });
       }).toList();
     } catch (e) {
@@ -102,7 +103,8 @@ class DisplayCaseRepository {
               icon_url,
               game_titles!inner(
                 name,
-                cover_url
+                cover_url,
+                proxied_cover_url
               )
             )
           ''')
@@ -123,7 +125,7 @@ class DisplayCaseRepository {
         'tier': trophy['tier'],
         'rarity': trophy['rarity_global'],
         'icon_url': trophy['icon_url'],
-        'game_image_url': gameTitle['cover_url'],
+        'game_image_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
       });
     } catch (e) {
       return null;
@@ -247,7 +249,8 @@ class DisplayCaseRepository {
               game_title_id,
               game_titles!inner(
                 name,
-                cover_url
+                cover_url,
+                proxied_cover_url
               )
             )
           ''')
@@ -265,7 +268,7 @@ class DisplayCaseRepository {
           'tier': trophy['tier'],
           'rarity': trophy['rarity_global'],
           'icon_url': trophy['icon_url'],
-          'game_image_url': gameTitle['cover_url'],
+          'game_image_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
           'earned_at': row['earned_at'],
         };
       }).toList();
@@ -300,7 +303,8 @@ class DisplayCaseRepository {
             game_title_id,
             game_titles!inner(
               name,
-              cover_url
+              cover_url,
+              proxied_cover_url
             )
           ''')
           .eq('tier', tier)
@@ -327,7 +331,7 @@ class DisplayCaseRepository {
         'tier': response['tier'],
         'rarity': response['rarity_global'],
         'icon_url': response['icon_url'],
-        'game_image_url': gameTitle['cover_url'],
+        'game_image_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
       });
     } catch (e) {
       return null;

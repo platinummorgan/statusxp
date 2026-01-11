@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
@@ -11,7 +12,14 @@ class YouTubeSearchService {
     required String gameTitle,
     required String achievementName,
   }) async {
-    final apiKey = dotenv.env['YOUTUBE_API_KEY'];
+    String? apiKey;
+    if (kIsWeb) {
+      // On web, API key would come from Vercel environment variables
+      apiKey = const String.fromEnvironment('YOUTUBE_API_KEY', defaultValue: '');
+    } else {
+      apiKey = dotenv.env['YOUTUBE_API_KEY'];
+    }
+    
     if (apiKey == null || apiKey.isEmpty) {
       return null;
     }

@@ -4,10 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
-import 'package:statusxp/ui/navigation/app_router.dart';
 import 'package:statusxp/ui/screens/auth/sign_in_screen.dart';
 import 'package:statusxp/ui/screens/auth/biometric_login_screen.dart';
 import 'package:statusxp/ui/screens/onboarding_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:html' as html;
 
 /// Authentication gate that controls access to the main app.
 /// 
@@ -18,7 +19,12 @@ import 'package:statusxp/ui/screens/onboarding_screen.dart';
 /// 4. If no, check if user is authenticated
 /// 5. Show appropriate screen based on auth state
 class AuthGate extends ConsumerStatefulWidget {
-  const AuthGate({super.key});
+  final Widget child;
+
+  const AuthGate({
+    super.key,
+    required this.child,
+  });
 
   @override
   ConsumerState<AuthGate> createState() => _AuthGateState();
@@ -70,8 +76,17 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
   }
 
   Future<void> _checkOnboardingStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+    bool onboardingComplete = false;
+    
+    // On web, check cookie; on mobile check SharedPreferences
+    if (kIsWeb) {
+      final cookies = html.document.cookie?.split(';') ?? [];
+      onboardingComplete = cookies.any((cookie) => cookie.trim().startsWith('onboarding_complete=true'));
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+    }
+    
     setState(() {
       _needsOnboarding = !onboardingComplete;
       _checkingOnboarding = false;
@@ -137,7 +152,7 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
         }
 
         if (_isAuthenticated) {
-          return const StatusXPMainApp();
+          return widget.child;
         }
 
         // Not authenticated - show sign-in (biometric sign-in handled there)
@@ -241,20 +256,6 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Main app shell that wraps the router after authentication.
-class StatusXPMainApp extends StatelessWidget {
-  const StatusXPMainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // Use the existing router configuration
-    return MaterialApp.router(
-      routerConfig: appRouter,
-      debugShowCheckedModeBanner: false,
     );
   }
 }

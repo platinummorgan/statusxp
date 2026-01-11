@@ -27,7 +27,8 @@ class TrophyRoomRepository {
               icon_url,
               game_titles!inner(
                 name,
-                cover_url
+                cover_url,
+                proxied_cover_url
               )
             )
           ''')
@@ -48,7 +49,7 @@ class TrophyRoomRepository {
           'trophy_id': trophy['id'],
           'trophy_name': trophy['name'],
           'game_name': gameTitle['name'],
-          'cover_url': gameTitle['cover_url'],
+          'cover_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
           'rarity': (trophy['rarity_global'] as num?)?.toDouble() ?? 100.0,
           'earned_at': row['earned_at'],
           'icon_url': trophy['icon_url'],

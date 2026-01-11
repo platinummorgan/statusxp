@@ -1,23 +1,10 @@
-import 'package:dart_openai/dart_openai.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:statusxp/config/supabase_config.dart';
 
 class AchievementGuideService {
-  static bool _initialized = false;
-
-  /// Initialize OpenAI with API key from environment
-  static void initialize() {
-    if (_initialized) return;
-    
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      throw Exception('OPENAI_API_KEY not found in .env file');
-    }
-    
-    OpenAI.apiKey = apiKey;
-    _initialized = true;
-  }
-
-  /// Generate an achievement guide using OpenAI
+  /// Generate an achievement guide using Supabase Edge Function
   /// Returns a stream of text chunks as they're generated
   Stream<String> generateGuide({
     required String gameTitle,
@@ -25,78 +12,55 @@ class AchievementGuideService {
     required String achievementDescription,
     String? platform,
   }) async* {
-    initialize();
+    final supabase = Supabase.instance.client;
+    final functionUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/generate-achievement-guide';
+    final accessToken = supabase.auth.currentSession?.accessToken;
 
-    final prompt = _buildPrompt(
-      gameTitle: gameTitle,
-      achievementName: achievementName,
-      achievementDescription: achievementDescription,
-      platform: platform,
-    );
+    if (accessToken == null) {
+      throw Exception('User not authenticated');
+    }
 
-    final stream = OpenAI.instance.chat.createStream(
-      model: 'gpt-4o-mini', // Using mini for cost efficiency
-      messages: [
-        OpenAIChatCompletionChoiceMessageModel(
-          role: OpenAIChatMessageRole.system,
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              'You are a helpful gaming assistant that provides concise, actionable guides for unlocking achievements and trophies. Keep responses under 200 words.',
-            ),
-          ],
-        ),
-        OpenAIChatCompletionChoiceMessageModel(
-          role: OpenAIChatMessageRole.user,
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(prompt),
-          ],
-        ),
-      ],
-      temperature: 0.7,
-      maxTokens: 300,
-    );
+    final request = http.Request('POST', Uri.parse(functionUrl))
+      ..headers.addAll({
+        'Authorization': 'Bearer $accessToken',
+        'Content-Type': 'application/json',
+        'apikey': SupabaseConfig.supabaseAnonKey,
+      })
+      ..body = jsonEncode({
+        'gameTitle': gameTitle,
+        'achievementName': achievementName,
+        'achievementDescription': achievementDescription,
+        'platform': platform,
+      });
 
-    await for (final event in stream) {
-      final content = event.choices.first.delta.content;
-      if (content != null && content.isNotEmpty) {
-        for (final item in content) {
-          final text = item?.text;
-          if (text != null) {
-            yield text;
+    final response = await request.send();
+
+    if (response.statusCode != 200) {
+      final body = await response.stream.bytesToString();
+      throw Exception('Failed to generate guide: $body');
+    }
+
+    // Parse SSE stream from OpenAI
+    await for (final chunk in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+      if (chunk.isEmpty || chunk.startsWith(':')) continue;
+      
+      if (chunk.startsWith('data: ')) {
+        final data = chunk.substring(6);
+        if (data == '[DONE]') break;
+        
+        try {
+          final json = jsonDecode(data);
+          final delta = json['choices']?[0]?['delta'];
+          final content = delta?['content'];
+          
+          if (content != null && content is String) {
+            yield content;
           }
+        } catch (e) {
+          // Skip malformed chunks
+          continue;
         }
       }
     }
-  }
-
-  /// Build the prompt for OpenAI
-  String _buildPrompt({
-    required String gameTitle,
-    required String achievementName,
-    required String achievementDescription,
-    String? platform,
-  }) {
-    final platformText = platform != null ? ' ($platform)' : '';
-    
-    return '''
-Game: $gameTitle$platformText
-Trophy/Achievement: $achievementName
-Requirements: $achievementDescription
-
-Respond EXACTLY in this format with these sections:
-
-Obtainable?
-[State if it's still obtainable, if it's missable, requires DLC, or has any restrictions]
-
-Method:
-[Provide clear, numbered steps on how to unlock this]
-[Be specific with locations, button combinations, requirements]
-[Mention if it's unmissable or story-related]
-
-YouTube reference:
-[Provide a YouTube URL for a video guide if possible, or state "No specific video guide found"]
-
-Keep it concise and actionable. No fluff.
-''';
   }
 }

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/config/supabase_config.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/theme/theme.dart';
-import 'package:statusxp/ui/screens/auth/auth_gate.dart';
-import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
+import 'package:statusxp/ui/navigation/app_router.dart';
 import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/services/auth_refresh_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
+import 'dart:html' as html;
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 // Global auth refresh service
 late final AuthRefreshService authRefreshService;
@@ -57,8 +60,28 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: '.env');
+  // Use path-based URL strategy for web (no #)
+  if (kIsWeb) {
+    // Ensure imperative navigation (push) updates the browser URL.
+    GoRouter.optionURLReflectsImperativeAPIs = true;
+    usePathUrlStrategy();
+  }
+
+  // Load environment variables (only on native platforms)
+  // Web uses compile-time constants from SupabaseConfig
+  try {
+    if (!kIsWeb) {
+      await dotenv.load(fileName: '.env');
+    }
+  } catch (e) {
+    print('Error loading .env: $e');
+  }
+
+  // On web, clear any leftover Supabase sessions from previous logouts
+  if (kIsWeb) {
+    print('=== STARTUP CHECK ===');
+    print('LocalStorage keys before init: ${html.window.localStorage.length}');
+  }
 
   await Supabase.initialize(
     url: SupabaseConfig.supabaseUrl,
@@ -72,6 +95,11 @@ void main() async {
       eventsPerSecond: 2,
     ),
   );
+  
+  // On web, clear logout flag if user is now signed in
+  if (kIsWeb && Supabase.instance.client.auth.currentSession != null) {
+    html.window.localStorage.remove('statusxp_logged_out');
+  }
 
   // Initialize manual auth refresh service with better error handling
   authRefreshService = AuthRefreshService(Supabase.instance.client);
@@ -96,8 +124,10 @@ void main() async {
     // Ignore tokenRefreshed events to prevent loop
   });
 
-  // Initialize subscription service
-  await SubscriptionService().initialize();
+  // Initialize subscription service (mobile only - web doesn't support in-app purchases)
+  if (!kIsWeb) {
+    await SubscriptionService().initialize();
+  }
 
   // Add lifecycle observer to refresh session when app resumes
   WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
@@ -113,13 +143,37 @@ class StatusXPApp extends ConsumerStatefulWidget {
 }
 
 class _StatusXPAppState extends ConsumerState<StatusXPApp> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
   late AppLinks _appLinks;
 
   @override
   void initState() {
     super.initState();
-    _initDeepLinks();
+    // On web, handle OAuth callback from URL
+    if (kIsWeb) {
+      _handleWebAuthCallback();
+    } else {
+      // On mobile, init deep links
+      _initDeepLinks();
+    }
+  }
+  
+  Future<void> _handleWebAuthCallback() async {
+    try {
+      // Check if URL has OAuth callback parameters
+      final uri = Uri.base;
+      if (uri.fragment.isNotEmpty || uri.queryParameters.containsKey('code')) {
+        try {
+          // Let Supabase handle the OAuth callback automatically
+          await Supabase.instance.client.auth.getSessionFromUrl(uri);
+        } finally {
+          // Strip auth parameters so refreshes don't re-trigger the callback.
+          final cleanUri = uri.replace(query: '', fragment: '');
+          html.window.history.replaceState(null, '', cleanUri.toString());
+        }
+      }
+    } catch (e) {
+      print('Error handling OAuth callback: $e');
+    }
   }
 
   Future<void> _initDeepLinks() async {
@@ -159,12 +213,7 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
         // Immediately show reset password screen
         if (mounted) {
           await Future.delayed(const Duration(milliseconds: 300));
-          _navigatorKey.currentState?.pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const ResetPasswordScreen(),
-            ),
-            (route) => false, // Clear all previous routes
-          );
+          appRouter.go('/reset-password');
         }
       } catch (e, stackTrace) {
         print('Error handling password reset: $e');
@@ -175,12 +224,11 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: _navigatorKey,
+    return MaterialApp.router(
       title: 'StatusXP',
       debugShowCheckedModeBanner: false,
       theme: statusXPTheme,
-      home: const AuthGate(),
+      routerConfig: appRouter,
     );
   }
 }

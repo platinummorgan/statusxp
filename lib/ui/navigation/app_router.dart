@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:statusxp/ui/screens/auth/auth_gate.dart';
+import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
 import 'package:statusxp/ui/screens/dashboard_screen.dart';
 import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
 import 'package:statusxp/ui/screens/games_list_screen.dart';
@@ -14,6 +17,7 @@ import 'package:statusxp/ui/screens/xbox/xbox_sync_screen.dart';
 import 'package:statusxp/ui/screens/status_poster_screen.dart';
 import 'package:statusxp/ui/screens/trophy_room_screen.dart';
 import 'package:statusxp/ui/screens/settings_screen.dart';
+import 'package:statusxp/ui/screens/landing_page_screen.dart';
 import 'package:statusxp/features/display_case/screens/display_case_screen.dart';
 
 /// StatusXP App Router Configuration
@@ -22,133 +26,152 @@ import 'package:statusxp/features/display_case/screens/display_case_screen.dart'
 /// Supports deep linking and browser back/forward navigation.
 
 final GoRouter appRouter = GoRouter(
-  initialLocation: '/',
+  debugLogDiagnostics: kDebugMode,
   routes: [
-    // Dashboard - Home screen (NEW cross-platform version)
+    // Landing Page - Public marketing page
     GoRoute(
-      path: '/',
-      name: 'dashboard',
-      builder: (context, state) => const NewDashboardScreen(),
+      path: '/landing',
+      name: 'landing',
+      builder: (context, state) => const LandingPageScreen(),
     ),
 
-    // Old Dashboard - Legacy single-platform view
+    // Password Reset - Deep link entry point
     GoRoute(
-      path: '/dashboard-legacy',
-      name: 'dashboard-legacy',
-      builder: (context, state) => const DashboardScreen(),
+      path: '/reset-password',
+      name: 'reset-password',
+      builder: (context, state) => const ResetPasswordScreen(),
     ),
 
-    // Games List - View all tracked games
-    GoRoute(
-      path: '/games',
-      name: 'games',
-      builder: (context, state) => const GamesListScreen(),
-    ),
+    ShellRoute(
+      builder: (context, state, child) => AuthGate(child: child),
+      routes: [
+        // Dashboard - Home screen (NEW cross-platform version)
+        GoRoute(
+          path: '/',
+          name: 'dashboard',
+          builder: (context, state) => const NewDashboardScreen(),
+        ),
 
-    // Unified Games List - Cross-platform game view with filters
-    GoRoute(
-      path: '/unified-games',
-      name: 'unified-games',
-      builder: (context, state) => const UnifiedGamesListScreen(),
-    ),
+        // Old Dashboard - Legacy single-platform view
+        GoRoute(
+          path: '/dashboard-legacy',
+          name: 'dashboard-legacy',
+          builder: (context, state) => const DashboardScreen(),
+        ),
 
-    // Game Browser - Browse ALL games in database (catalog)
-    GoRoute(
-      path: '/games/browse',
-      name: 'game-browser',
-      builder: (context, state) => const GameBrowserScreen(),
-    ),
+        // Games List - View all tracked games
+        GoRoute(
+          path: '/games',
+          name: 'games',
+          builder: (context, state) => const GamesListScreen(),
+        ),
 
-    // Game detail shortcut - redirects to achievements
-    GoRoute(
-      path: '/game/:gameId',
-      name: 'game-detail',
-      redirect: (context, state) {
-        final gameId = state.pathParameters['gameId'];
-        return '/game/$gameId/achievements';
-      },
-    ),
+        // Unified Games List - Cross-platform game view with filters
+        GoRoute(
+          path: '/unified-games',
+          name: 'unified-games',
+          builder: (context, state) => const UnifiedGamesListScreen(),
+        ),
 
-    // Game Achievements - View achievements/trophies for a specific game
-    GoRoute(
-      path: '/game/:gameId/achievements',
-      name: 'game-achievements',
-      builder: (context, state) {
-        final gameId = state.pathParameters['gameId']!;
-        final gameName = state.uri.queryParameters['name'] ?? 'Game';
-        final platform = state.uri.queryParameters['platform'] ?? 'unknown';
-        final coverUrl = state.uri.queryParameters['cover'];
-        
-        return GameAchievementsScreen(
-          gameId: gameId,
-          gameName: gameName,
-          platform: platform,
-          coverUrl: coverUrl,
-        );
-      },
-    ),
+        // Game Browser - Browse ALL games in database (catalog)
+        GoRoute(
+          path: '/games/browse',
+          name: 'game-browser',
+          builder: (context, state) => const GameBrowserScreen(),
+        ),
 
-    // Status Poster - Shareable achievement card
-    GoRoute(
-      path: '/poster',
-      name: 'poster',
-      builder: (context, state) => const StatusPosterScreen(),
-    ),
+        // Game detail shortcut - redirects to achievements
+        GoRoute(
+          path: '/game/:gameId',
+          name: 'game-detail',
+          redirect: (context, state) {
+            final gameId = state.pathParameters['gameId'];
+            return '/game/$gameId/achievements';
+          },
+        ),
 
-    // PSN Sync - PlayStation Network integration
-    GoRoute(
-      path: '/psn-sync',
-      name: 'psn-sync',
-      builder: (context, state) => const PSNSyncScreen(),
-    ),
+        // Game Achievements - View achievements/trophies for a specific game
+        GoRoute(
+          path: '/game/:gameId/achievements',
+          name: 'game-achievements',
+          builder: (context, state) {
+            final gameId = state.pathParameters['gameId']!;
+            final gameName = state.uri.queryParameters['name'] ?? 'Game';
+            final platform = state.uri.queryParameters['platform'] ?? 'unknown';
+            final coverUrl = state.uri.queryParameters['cover'];
+            
+            return GameAchievementsScreen(
+              gameId: gameId,
+              gameName: gameName,
+              platform: platform,
+              coverUrl: coverUrl,
+            );
+          },
+        ),
 
-    // Xbox Sync - Xbox Live integration
-    GoRoute(
-      path: '/xbox-sync',
-      name: 'xbox-sync',
-      builder: (context, state) => const XboxSyncScreen(),
-    ),
+        // Status Poster - Shareable achievement card
+        GoRoute(
+          path: '/poster',
+          name: 'poster',
+          builder: (context, state) => const StatusPosterScreen(),
+        ),
 
-    // Trophy Room - Achievement showcase
-    GoRoute(
-      path: '/trophy-room',
-      name: 'trophy-room',
-      builder: (context, state) => const TrophyRoomScreen(),
-    ),
+        // PSN Sync - PlayStation Network integration
+        GoRoute(
+          path: '/psn-sync',
+          name: 'psn-sync',
+          builder: (context, state) => const PSNSyncScreen(),
+        ),
 
-    // Display Case - Trophy showcase and achievements display
-    GoRoute(
-      path: '/display-case',
-      name: 'display-case',
-      builder: (context, state) => const DisplayCaseScreen(),
-    ),
+        // Xbox Sync - Xbox Live integration
+        GoRoute(
+          path: '/xbox-sync',
+          name: 'xbox-sync',
+          builder: (context, state) => const XboxSyncScreen(),
+        ),
 
-    // Flex Room - Cross-platform achievement showcase
-    GoRoute(
-      path: '/flex-room',
-      name: 'flex-room',
-      builder: (context, state) => const FlexRoomScreen(),
-    ),
+        // Trophy Room - Achievement showcase
+        GoRoute(
+          path: '/trophy-room',
+          name: 'trophy-room',
+          builder: (context, state) => const TrophyRoomScreen(),
+        ),
 
-    // Achievements - View all meta-achievements and progress
-    GoRoute(
-      path: '/achievements',
-      name: 'achievements',
-      builder: (context, state) => const AchievementsScreen(),
-    ),
+        // Display Case - Trophy showcase and achievements display
+        GoRoute(
+          path: '/display-case',
+          name: 'display-case',
+          builder: (context, state) => const DisplayCaseScreen(),
+        ),
 
-    // Leaderboards - Global rankings
-    GoRoute(
-      path: '/leaderboards',
-      name: 'leaderboards',
-      builder: (context, state) => const LeaderboardScreen(),
-    ),
+        // Flex Room - Cross-platform achievement showcase
+        GoRoute(
+          path: '/flex-room',
+          name: 'flex-room',
+          builder: (context, state) => const FlexRoomScreen(),
+        ),
 
-    // Settings - Platform connections and app configuration
-    GoRoute(
-      path: '/settings',
-      name: 'settings',
-      builder: (context, state) => const SettingsScreen(),
+        // Achievements - View all meta-achievements and progress
+        GoRoute(
+          path: '/achievements',
+          name: 'achievements',
+          builder: (context, state) => const AchievementsScreen(),
+        ),
+
+        // Leaderboards - Global rankings
+        GoRoute(
+          path: '/leaderboards',
+          name: 'leaderboards',
+          builder: (context, state) => const LeaderboardScreen(),
+        ),
+
+        // Settings - Platform connections and app configuration
+        GoRoute(
+          path: '/settings',
+          name: 'settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+      ],
     ),
 
     // TODO: Future nested routes

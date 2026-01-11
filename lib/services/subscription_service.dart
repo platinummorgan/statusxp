@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
@@ -165,6 +166,9 @@ class SubscriptionService {
         return false;
       }
 
+      // Web doesn't support in-app purchases
+      if (kIsWeb) return false;
+
       String? platform;
       if (Platform.isAndroid) {
         platform = 'google_play';
@@ -206,6 +210,9 @@ class SubscriptionService {
       }
 
       String? transactionId;
+      
+      // Web doesn't support purchase completion
+      if (kIsWeb) return false;
       
       if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
         transactionId = purchase.billingClientPurchase.orderId;
@@ -298,6 +305,12 @@ class SubscriptionService {
   /// Cancel subscription (redirects to store management)
   Future<void> manageSubscription() async {
     try {
+      // Web doesn't have platform-specific subscription management
+      if (kIsWeb) {
+        // Could open a web URL for subscription management
+        return;
+      }
+      
       if (Platform.isAndroid) {
         // Open Google Play subscriptions page
         final uri = Uri.parse('https://play.google.com/store/account/subscriptions');

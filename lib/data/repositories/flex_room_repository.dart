@@ -53,7 +53,7 @@ class FlexRoomRepository {
         achievementName: achievement['name'],
         gameName: gameData?['name'] ?? 'Unknown Game',
         gameId: gameId?.toString(),
-        gameCoverUrl: gameData?['cover_url'],
+        gameCoverUrl: gameData?['proxied_cover_url'] ?? gameData?['cover_url'],
         platform: achievement['platform'],
         rarityPercent: rarityPercent,
         rarityBand: _getRarityBand(rarityPercent),
@@ -231,7 +231,8 @@ class FlexRoomRepository {
               game_titles!inner(
                 id,
                 name,
-                cover_url
+                cover_url,
+                proxied_cover_url
               )
             )
           ''')
@@ -563,7 +564,7 @@ class FlexRoomRepository {
         // Get game data
         final gameData = await _client
             .from('game_titles')
-            .select('name, cover_url')
+            .select('name, cover_url, proxied_cover_url')
             .eq('id', achievementData['game_title_id'])
             .maybeSingle();
 
@@ -575,7 +576,7 @@ class FlexRoomRepository {
             achievementName: achievementData['name'],
             gameName: gameData?['name'] ?? 'Unknown Game',
             gameId: achievementData['game_title_id']?.toString(),
-            gameCoverUrl: gameData?['cover_url'],
+            gameCoverUrl: gameData?['proxied_cover_url'] ?? gameData?['cover_url'],
             platform: achievementData['platform'],
             rarityPercent: achievementData['rarity_global']?.toDouble(),
             rarityBand: _getRarityBand(achievementData['rarity_global']?.toDouble()),
@@ -825,12 +826,12 @@ class FlexRoomRepository {
       // Get game details for cover image
       final gameResponse = await _client
           .from('game_titles')
-          .select('name, cover_url')
+          .select('name, cover_url, proxied_cover_url')
           .eq('id', gameId)
           .single();
 
       final gameName = gameResponse['name'] as String;
-      final gameCoverUrl = gameResponse['cover_url'] as String?;
+      final gameCoverUrl = (gameResponse['proxied_cover_url'] ?? gameResponse['cover_url']) as String?;
 
       final achievements = <FlexTile>[];
 

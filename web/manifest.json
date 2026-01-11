@@ -1,11 +1,11 @@
 {
-    "name": "statusxp",
-    "short_name": "statusxp",
+    "name": "StatusXP - Gaming Achievement Tracker",
+    "short_name": "StatusXP",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0A0E27",
+    "theme_color": "#00FFAA",
+    "description": "Track achievements across PlayStation, Xbox, and Steam. Your gaming identity, leveled up.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

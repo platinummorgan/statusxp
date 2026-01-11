@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
@@ -24,7 +25,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   final int _limit = 50;
   String? _platformFilter;
   String _searchQuery = '';
-  bool _isGridView = true; // Toggle between grid and list view
+  bool _isGridView = false; // Toggle between grid and list view - default to list
   String _sortBy = 'name_asc'; // Default sort
 
   @override
@@ -144,7 +145,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
         actions: [
           PopupMenuButton<String>(
@@ -374,7 +375,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
   Widget _buildGameCard(Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
-    final coverUrl = game['cover_url'] as String?;
+    final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
     final gameId = game['id'];
     final platformData = game['platforms'] as Map<String, dynamic>?;
     final platformCode = platformData?['code'] as String? ?? '';
@@ -511,7 +512,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
   Widget _buildGameListItem(Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
-    final coverUrl = game['cover_url'] as String?;
+    final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
     final gameId = game['id'];
     final platformData = game['platforms'] as Map<String, dynamic>?;
     final platformCode = platformData?['code'] as String? ?? '';

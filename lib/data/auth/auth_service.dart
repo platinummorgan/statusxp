@@ -3,9 +3,11 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'dart:io' show Platform;
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'dart:html' as html;
 
 /// Service for managing Supabase authentication.
 /// 
@@ -25,8 +27,8 @@ class AuthService {
   
   AuthService(this._client) 
       : _googleSignIn = GoogleSignIn(
-          // iOS needs explicit clientId
-          clientId: Platform.isIOS ? _googleiOSClientId : null,
+          // iOS needs explicit clientId (web/Android use null)
+          clientId: (!kIsWeb && Platform.isIOS) ? _googleiOSClientId : null,
           // Use Web client for serverClientId - Supabase needs to verify with Web client secret
           // Android OAuth client is auto-discovered by package name + SHA-1
           serverClientId: _googleWebClientId,
@@ -121,8 +123,20 @@ class AuthService {
   /// This ensures that any stored refresh token becomes invalid and cannot be
   /// used to restore the session via biometric authentication.
   Future<void> signOut() async {
+    print('=== LOGOUT CALLED ===');
+    
     // Supabase's signOut() automatically invalidates the refresh token on the server
-    await _client.auth.signOut();
+    await _client.auth.signOut(scope: SignOutScope.global);
+    
+    print('Supabase signOut completed');
+    
+    // On web, nuclear option: clear ALL localStorage after signOut
+    if (kIsWeb) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      html.window.localStorage.clear();
+      html.window.sessionStorage.clear();
+      print('ALL storage cleared on web');
+    }
   }
   
   /// Sign in with Google using OAuth.
@@ -133,9 +147,29 @@ class AuthService {
   /// Throws [AuthException] if sign in fails or is cancelled.
   Future<AuthResponse> signInWithGoogle() async {
     try {
+      // On web, use Supabase OAuth redirect flow (native plugin doesn't work)
+      if (kIsWeb) {
+        // Keep redirect on the current origin so the PKCE verifier matches localStorage.
+        final redirectUrl = html.window.location.origin;
+        final success = await _client.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: redirectUrl,
+          authScreenLaunchMode: LaunchMode.platformDefault,
+        );
+        if (!success) {
+          throw const AuthException('Google Sign-In failed to start');
+        }
+        // On web, OAuth opens a redirect - return empty response
+        // The actual session will be established after redirect
+        return AuthResponse();
+      }
+      
+      // On iOS/macOS, use dedicated OAuth flow
       if (Platform.isIOS || Platform.isMacOS) {
         return await _signInWithGoogleOAuth();
       }
+      
+      // On Android, use GoogleSignIn plugin for native flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       
       if (googleUser == null) {
@@ -356,9 +390,11 @@ class AuthService {
   
   /// Check if Sign in with Apple is available on this platform.
   /// 
-  /// Returns true on iOS 13+ and macOS 10.15+, false otherwise.
+  /// Returns true on iOS 13+, macOS 10.15+, and web (uses JavaScript).
   Future<bool> get isAppleSignInAvailable async {
     try {
+      // Apple Sign-In works on web via JavaScript SDK
+      if (kIsWeb) return true;
       return Platform.isIOS || Platform.isMacOS;
     } catch (e) {
       return false;

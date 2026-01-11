@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -305,6 +306,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _signOut() async {
+    HapticFeedback.lightImpact();
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signOut();
+      ref.read(biometricLockRequestedProvider.notifier).state = false;
+      ref.read(biometricUnlockGrantedProvider.notifier).state = false;
+      if (mounted) {
+        context.go('/');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to sign out: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _lockApp() async {
     ref.read(biometricUnlockGrantedProvider.notifier).state = false;
     ref.read(biometricLockRequestedProvider.notifier).state = true;
@@ -453,6 +476,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+        ),
       ),
       body: _isLoadingProfile
           ? const Center(child: CircularProgressIndicator())
@@ -930,16 +957,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const Divider(height: 1),
 
-                // Log Out (local lock)
-                ListTile(
-                  leading: const Icon(Icons.lock_outline, color: Colors.orange),
-                  title: const Text(
-                    'Log Out',
-                    style: TextStyle(color: Colors.orange),
+                // Log Out / Lock App
+                if (kIsWeb)
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.orange),
+                    title: const Text(
+                      'Log Out',
+                      style: TextStyle(color: Colors.orange),
+                    ),
+                    subtitle: const Text('Sign out of this browser'),
+                    onTap: _signOut,
+                  )
+                else
+                  ListTile(
+                    leading: const Icon(Icons.lock_outline, color: Colors.orange),
+                    title: const Text(
+                      'Log Out',
+                      style: TextStyle(color: Colors.orange),
+                    ),
+                    subtitle: const Text('Lock the app - use biometrics to get back in'),
+                    onTap: _lockApp,
                   ),
-                  subtitle: const Text('Lock the app - use biometrics to get back in'),
-                  onTap: _lockApp,
-                ),
                 
                 const Divider(height: 1),
 

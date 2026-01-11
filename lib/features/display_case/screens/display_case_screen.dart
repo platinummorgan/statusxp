@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/features/display_case/models/display_case_item.dart';
 import 'package:statusxp/features/display_case/themes/playstation_theme.dart';
 import 'package:statusxp/features/display_case/widgets/trophy_frame.dart';
@@ -72,7 +73,7 @@ class _DisplayCaseScreenState extends ConsumerState<DisplayCaseScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
       ),
       body: Container(

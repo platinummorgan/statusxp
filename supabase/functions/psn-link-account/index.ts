@@ -16,6 +16,7 @@ import {
   checkForExistingPlatformAccount,
   mergeUserAccounts,
 } from '../_shared/account-merge.ts';
+import { uploadExternalAvatar } from '../_shared/avatar-storage.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -119,13 +120,33 @@ serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + (authorization.expiresIn || 3600));
 
+    // Download and upload PSN avatar to Supabase Storage to avoid CORS issues
+    const externalAvatarUrl = userProfile.avatarUrls?.find(a => a.size === 'm')?.avatarUrl || userProfile.avatarUrls?.[0]?.avatarUrl;
+    let avatarUrl = externalAvatarUrl || null;
+    
+    if (externalAvatarUrl) {
+      console.log('Proxying PSN avatar through Supabase Storage...');
+      // Use service role client for storage operations
+      const serviceSupabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      const proxiedUrl = await uploadExternalAvatar(serviceSupabase, externalAvatarUrl, user.id, 'psn');
+      if (proxiedUrl) {
+        avatarUrl = proxiedUrl;
+        console.log('Successfully proxied PSN avatar:', proxiedUrl);
+      } else {
+        console.warn('Failed to proxy PSN avatar, using external URL');
+      }
+    }
+
     // Update user profile with PSN credentials
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
         psn_account_id: profile.accountId,
         psn_online_id: userProfile.onlineId,
-        psn_avatar_url: userProfile.avatarUrls?.find(a => a.size === 'm')?.avatarUrl || userProfile.avatarUrls?.[0]?.avatarUrl || null,
+        psn_avatar_url: avatarUrl,
         psn_is_plus: userProfile.isPlus,
         psn_npsso_token: npssoToken, // In production, this should be encrypted
         psn_access_token: authorization.accessToken,
