@@ -20,6 +20,7 @@ import 'package:statusxp/domain/trophy_room_data.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/domain/user_stats.dart';
 import 'package:statusxp/domain/user_stats_calculator.dart';
+import 'package:statusxp/utils/statusxp_logger.dart';
 
 /// Provider for the Supabase client instance.
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {

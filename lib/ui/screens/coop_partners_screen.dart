@@ -8,17 +8,18 @@ import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/offer_help_dialog.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:statusxp/utils/statusxp_logger.dart';
 
 // State provider for selected platform filter
 final selectedPlatformProvider = StateProvider<String?>((ref) {
-  print('[PROVIDER CREATED] selectedPlatformProvider at ${DateTime.now().toIso8601String()}');
+  statusxpLog('[PROVIDER CREATED] selectedPlatformProvider at ${DateTime.now().toIso8601String()}');
   return null;
 });
 
 // Provider for open requests filtered by platform
 final openRequestsProvider =
     FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  print('[PROVIDER RUN] openRequestsProvider at ${DateTime.now().toIso8601String()}');
+  statusxpLog('[PROVIDER RUN] openRequestsProvider at ${DateTime.now().toIso8601String()}');
   final platform = ref.watch(selectedPlatformProvider);
   final service = ref.read(trophyHelpServiceProvider);
   return service.getOpenRequests(platform: platform);
@@ -30,8 +31,8 @@ final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
     final results = await service.getMyRequests();
     return results;
   } catch (e, stack) {
-    print('Error in myRequestsProvider: $e');
-    print('Stack: $stack');
+    statusxpLog('Error in myRequestsProvider: $e');
+    statusxpLog('Stack: $stack');
     return [];
   }
 });
