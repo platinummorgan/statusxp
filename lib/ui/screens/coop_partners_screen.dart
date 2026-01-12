@@ -15,13 +15,27 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
 // Provider for open requests filtered by platform
 final openRequestsProvider =
     FutureProvider.family<List<TrophyHelpRequest>, String?>((ref, platform) async {
-  final service = ref.read(trophyHelpServiceProvider);
-  return service.getOpenRequests(platform: platform);
+  try {
+    final service = ref.read(trophyHelpServiceProvider);
+    final results = await service.getOpenRequests(platform: platform);
+    return results;
+  } catch (e, stack) {
+    print('Error in openRequestsProvider: $e');
+    print('Stack: $stack');
+    return [];
+  }
 });
 
 final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  final service = ref.read(trophyHelpServiceProvider);
-  return service.getMyRequests();
+  try {
+    final service = ref.read(trophyHelpServiceProvider);
+    final results = await service.getMyRequests();
+    return results;
+  } catch (e, stack) {
+    print('Error in myRequestsProvider: $e');
+    print('Stack: $stack');
+    return [];
+  }
 });
 
 class CoopPartnersScreen extends ConsumerStatefulWidget {
