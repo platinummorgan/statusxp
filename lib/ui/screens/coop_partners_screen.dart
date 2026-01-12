@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,11 +14,22 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
 });
 
 // State provider for selected platform filter
-final selectedPlatformProvider = StateProvider.autoDispose<String?>((ref) => null);
+final selectedPlatformProvider = StateProvider.autoDispose<String?>((ref) {
+  print('selectedPlatformProvider CREATED ${DateTime.now()}');
+  ref.onDispose(() => print('selectedPlatformProvider DISPOSED ${DateTime.now()}'));
+  return null;
+});
 
 // Provider for open requests filtered by platform
 final openRequestsProvider =
     FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
+  print('openRequestsProvider RUN ${DateTime.now()}');
+  ref.onDispose(() => print('openRequestsProvider DISPOSED ${DateTime.now()}'));
+  
+  // Keep alive for 30 seconds to prevent constant disposal/recreation
+  final link = ref.keepAlive();
+  Timer(const Duration(seconds: 30), link.close);
+  
   try {
     final platform = ref.watch(selectedPlatformProvider);
     final service = ref.read(trophyHelpServiceProvider);
@@ -31,6 +43,12 @@ final openRequestsProvider =
 });
 
 final myRequestsProvider = FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
+  print('myRequestsProvider RUN ${DateTime.now()}');
+  ref.onDispose(() => print('myRequestsProvider DISPOSED ${DateTime.now()}'));
+  
+  // Keep alive for 30 seconds
+  final link = ref.keepAlive();
+  Timer(const Duration(seconds: 30), link.close);
   try {
     final service = ref.read(trophyHelpServiceProvider);
     final results = await service.getMyRequests();
@@ -108,8 +126,8 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   Widget build(BuildContext context) {
     super.build(context); // Must call super for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
-    final requestsAsync = ref.watch(openRequestsProvider);
-    // Use read here - no need to watch since openRequestsProvider already watches it
+    finWatch (not read) so UI updates when selection changes
+    final selectedPlatform = ref.watchch since openRequestsProvider already watches it
     final selectedPlatform = ref.read(selectedPlatformProvider);
 
     return Column(
