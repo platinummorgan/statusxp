@@ -80,7 +80,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               id,
               name,
               description,
-              icon_url,
+              icon_url: COALESCE(proxied_icon_url, icon_url),
               rarity_global,
               rarity_band,
               base_status_xp,
@@ -108,7 +108,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 id,
                 name,
                 description,
-                icon_url,
+                icon_url: COALESCE(proxied_icon_url, icon_url),
                 rarity_global,
                 tier,
                 hidden

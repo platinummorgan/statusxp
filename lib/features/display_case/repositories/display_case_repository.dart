@@ -26,7 +26,7 @@ class DisplayCaseRepository {
               name,
               tier,
               rarity_global,
-              icon_url,
+              icon_url: COALESCE(proxied_icon_url, icon_url),
               game_title_id,
               game_titles!inner(
                 name,
@@ -100,7 +100,7 @@ class DisplayCaseRepository {
               name,
               tier,
               rarity_global,
-              icon_url,
+              icon_url: COALESCE(proxied_icon_url, icon_url),
               game_titles!inner(
                 name,
                 cover_url,
@@ -245,7 +245,7 @@ class DisplayCaseRepository {
               name,
               tier,
               rarity_global,
-              icon_url,
+              icon_url: COALESCE(proxied_icon_url, icon_url),
               game_title_id,
               game_titles!inner(
                 name,
