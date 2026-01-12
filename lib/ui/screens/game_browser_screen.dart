@@ -347,6 +347,131 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
     );
   }
 
+  void _showPlatformSelectionDialog(BuildContext context, Map<String, dynamic> game) {
+    final name = game['name'] as String? ?? 'Unknown Game';
+    final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [];
+    final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
+    final gameId = game['id'];
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          backgroundColor: const Color(0xFF0A0E27),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: CyberpunkTheme.neonCyan, width: 2),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Select Platform',
+                  style: TextStyle(
+                    color: CyberpunkTheme.neonCyan,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 20),
+                ...allPlatforms.map((platformCode) {
+                  Color platformColor;
+                  IconData platformIcon;
+                  String platformLabel;
+
+                  final code = platformCode.toString().toLowerCase();
+                  if (code.contains('ps') || code == 'playstation') {
+                    platformColor = const Color(0xFF0070CC);
+                    platformIcon = Icons.sports_esports;
+                    platformLabel = 'PlayStation';
+                  } else if (code.contains('xbox')) {
+                    platformColor = const Color(0xFF107C10);
+                    platformIcon = Icons.videogame_asset;
+                    platformLabel = 'Xbox';
+                  } else if (code.contains('steam')) {
+                    platformColor = const Color(0xFF1B2838);
+                    platformIcon = Icons.store;
+                    platformLabel = 'Steam';
+                  } else {
+                    platformColor = Colors.grey;
+                    platformIcon = Icons.gamepad;
+                    platformLabel = platformCode.toString();
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(dialogContext);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => GameAchievementsScreen(
+                              gameId: gameId.toString(),
+                              gameName: name,
+                              platform: platformCode.toString(),
+                              coverUrl: coverUrl,
+                            ),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: platformColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: platformColor,
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(platformIcon, color: platformColor, size: 32),
+                            const SizedBox(width: 16),
+                            Text(
+                              platformLabel,
+                              style: TextStyle(
+                                color: platformColor,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildFilterChip(String label, String? platformCode) {
     final isSelected = _platformFilter == platformCode;
     
@@ -384,16 +509,22 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
     return GestureDetector(
       onTap: () {
         if (gameId != null) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => GameAchievementsScreen(
-                gameId: gameId.toString(),
-                gameName: name,
-                platform: _platformFilter ?? platformCode,
-                coverUrl: coverUrl,
+          // If game has multiple platforms and no filter is active, show platform selector
+          if (allPlatforms.length > 1 && _platformFilter == null) {
+            _showPlatformSelectionDialog(context, game);
+          } else {
+            // Navigate directly to achievements
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => GameAchievementsScreen(
+                  gameId: gameId.toString(),
+                  gameName: name,
+                  platform: _platformFilter ?? platformCode,
+                  coverUrl: coverUrl,
+                ),
               ),
-            ),
-          );
+            );
+          }
         }
       },
       child: Container(
@@ -523,16 +654,22 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
       child: GestureDetector(
         onTap: () {
           if (gameId != null) {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => GameAchievementsScreen(
-                  gameId: gameId.toString(),
-                  gameName: name,
-                  platform: _platformFilter ?? platformCode,
-                  coverUrl: coverUrl,
+            // If game has multiple platforms and no filter is active, show platform selector
+            if (allPlatforms.length > 1 && _platformFilter == null) {
+              _showPlatformSelectionDialog(context, game);
+            } else {
+              // Navigate directly to achievements
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => GameAchievementsScreen(
+                    gameId: gameId.toString(),
+                    gameName: name,
+                    platform: _platformFilter ?? platformCode,
+                    coverUrl: coverUrl,
+                  ),
                 ),
-              ),
-            );
+              );
+            }
           }
         },
         child: Container(
