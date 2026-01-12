@@ -13,6 +13,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
 import 'package:statusxp/utils/html.dart' as html;
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:statusxp/utils/statusxp_logger.dart';
 
 // Global auth refresh service
 late final AuthRefreshService authRefreshService;
@@ -50,7 +51,7 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
         // This is wrapped in try-catch to prevent DNS errors from crashing the app
         authRefreshService.refreshIfNeededOnResume().catchError((error) {
           // Silently ignore network errors on resume
-          print('Token refresh on resume failed (will retry later): $error');
+          statusxpLog('Token refresh on resume failed (will retry later): $error');
         });
       });
     }
@@ -71,13 +72,13 @@ void main() async {
   try {
     await dotenv.load(fileName: '.env');
   } catch (e) {
-    print('Error loading .env: $e');
+    statusxpLog('Error loading .env: $e');
   }
 
   // On web, clear any leftover Supabase sessions from previous logouts
   if (kIsWeb) {
-    print('=== STARTUP CHECK ===');
-    print('LocalStorage keys before init: ${html.window.localStorage.length}');
+    statusxpLog('=== STARTUP CHECK ===');
+    statusxpLog('LocalStorage keys before init: ${html.window.localStorage.length}');
   }
 
   await Supabase.initialize(
@@ -121,8 +122,8 @@ void main() async {
       }
       // Ignore tokenRefreshed events to prevent loop
     } catch (e, stack) {
-      print('⚠️ Error in auth state change listener: $e');
-      print('Stack: $stack');
+      statusxpLog('⚠️ Error in auth state change listener: $e');
+      statusxpLog('Stack: $stack');
       // Don't rethrow - we don't want auth state changes to crash the app
     }
   });
@@ -175,7 +176,7 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
         }
       }
     } catch (e) {
-      print('Error handling OAuth callback: $e');
+      statusxpLog('Error handling OAuth callback: $e');
     }
   }
 
@@ -199,14 +200,14 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
   }
 
   Future<void> _handleDeepLink(Uri uri) async {
-    print('Deep link received: $uri');
-    print('Fragment: ${uri.fragment}');
+    statusxpLog('Deep link received: $uri');
+    statusxpLog('Fragment: ${uri.fragment}');
     
     // Check if this is a recovery/password reset link
     final fullUrl = uri.toString();
     if (fullUrl.contains('type=recovery') || fullUrl.contains('reset-password')) {
       try {
-        print('Password reset link detected');
+        statusxpLog('Password reset link detected');
         
         // Extract the session from URL (this logs them in with recovery session)
         await Supabase.instance.client.auth.getSessionFromUrl(Uri.parse(fullUrl));
@@ -219,8 +220,13 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
           appRouter.go('/reset-password');
         }
       } catch (e, stackTrace) {
-        print('Error handling password reset: $e');
-        print('Stack trace: $stackTrace');
+        statusxpLog('Error handling password reset: $e');
+        statusxpLog('Stack trace: $stackTrace');
+        // Top-level error handler for uncaught errors
+        FlutterError.onError = (FlutterErrorDetails details) {
+          statusxpLog('UNCAUGHT FLUTTER ERROR: ${details.exceptionAsString()}');
+          statusxpLog('Stack trace: ${details.stack}');
+        };
       }
     }
   }
