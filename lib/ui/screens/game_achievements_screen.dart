@@ -1395,8 +1395,12 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       print('🔍 Checking cache for achievement ID: ${widget.achievementId}');
       final supabase = Supabase.instance.client;
       
-      // Try parsing as int if it's a string
-      final achievementId = int.tryParse(widget.achievementId!) ?? widget.achievementId!;
+      // Parse achievementId as int (database id column is integer)
+      final achievementId = int.tryParse(widget.achievementId!);
+      if (achievementId == null) {
+        print('❌ Invalid achievement ID format: ${widget.achievementId}');
+        return null;
+      }
       
       final response = await supabase
           .from('achievements')
@@ -1428,8 +1432,12 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       print('💾 Saving guide to database for achievement ID: ${widget.achievementId}');
       final supabase = Supabase.instance.client;
       
-      // Try parsing as int if it's a string
-      final achievementId = int.tryParse(widget.achievementId!) ?? widget.achievementId!;
+      // Parse achievementId as int (database id column is integer)
+      final achievementId = int.tryParse(widget.achievementId!);
+      if (achievementId == null) {
+        print('❌ Invalid achievement ID format: ${widget.achievementId}');
+        return;
+      }
       
       await supabase
           .from('achievements')
