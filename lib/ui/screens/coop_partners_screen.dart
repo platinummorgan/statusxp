@@ -108,8 +108,9 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   Widget build(BuildContext context) {
     super.build(context); // Must call super for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
-    final selectedPlatform = ref.watch(selectedPlatformProvider);
     final requestsAsync = ref.watch(openRequestsProvider);
+    // Use read here - no need to watch since openRequestsProvider already watches it
+    final selectedPlatform = ref.read(selectedPlatformProvider);
 
     return Column(
       children: [
