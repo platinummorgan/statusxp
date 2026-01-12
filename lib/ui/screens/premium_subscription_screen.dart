@@ -109,6 +109,35 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     }
   }
 
+  Future<void> _manageStripeSubscription() async {
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      
+      final response = await supabase.functions.invoke(
+        'stripe-customer-portal',
+        headers: {
+          'Authorization': 'Bearer ${supabase.auth.currentSession?.accessToken}',
+        },
+      );
+
+      if (response.data != null && response.data['url'] != null) {
+        final portalUrl = response.data['url'] as String;
+        final uri = Uri.parse(portalUrl);
+        
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          _showError('Could not open subscription management');
+        }
+      } else {
+        _showError('Failed to create portal session');
+      }
+    } catch (e) {
+      print('Error opening billing portal: $e');
+      _showError('Failed to open subscription management');
+    }
+  }
+
   Future<void> _restorePurchases() async {
     setState(() => _isLoading = true);
     
@@ -243,7 +272,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
           ),
           const SizedBox(height: 24),
           OutlinedButton(
-            onPressed: () => _subscriptionService.manageSubscription(),
+            onPressed: kIsWeb ? _manageStripeSubscription : () => _subscriptionService.manageSubscription(),
             style: OutlinedButton.styleFrom(
               foregroundColor: accentPrimary,
               side: const BorderSide(color: accentPrimary),

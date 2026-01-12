@@ -1,0 +1,5 @@
+{
+  "allowedOrigins": ["*"],
+  "allowedHeaders": ["stripe-signature", "content-type"],
+  "allowCredentials": false
+}
