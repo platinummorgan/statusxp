@@ -63,6 +63,12 @@ class SubscriptionService {
 
   /// Initialize the IAP connection and listen for purchase updates
   Future<void> initialize() async {
+    // Skip IAP initialization on web
+    if (kIsWeb) {
+      _isAvailable = false;
+      return;
+    }
+
     // Check if IAP is available
     _isAvailable = await _iap.isAvailable();
     
