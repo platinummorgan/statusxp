@@ -43,21 +43,21 @@ class TrophyHelpService {
     String? platform,
     String? gameId,
   }) async {
-    var query = _supabase
+    final queryBuilder = _supabase
         .from('trophy_help_requests')
         .select()
-        .match({'status': 'open'})
-        .order('created_at', ascending: false);
+        .eq('status', 'open');
 
+    // Apply filters
+    var filteredQuery = queryBuilder;
     if (platform != null) {
-      query = query.match({'platform': platform});
+      filteredQuery = filteredQuery.eq('platform', platform);
     }
-
     if (gameId != null) {
-      query = query.match({'game_id': gameId});
+      filteredQuery = filteredQuery.eq('game_id', gameId);
     }
 
-    final response = await query;
+    final response = await filteredQuery.order('created_at', ascending: false);
     return (response as List)
         .map((json) => TrophyHelpRequest.fromJson(json))
         .toList();

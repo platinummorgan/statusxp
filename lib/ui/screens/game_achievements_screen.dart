@@ -1314,6 +1314,43 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         throw Exception('Unknown pack type: $packType');
     }
   }
+
+  /// Detects if an achievement is likely multiplayer/co-op based on keywords
+  bool _isMultiplayerAchievement(Map<String, dynamic> achievement) {
+    final name = (achievement['name'] as String? ?? '').toLowerCase();
+    final description = (achievement['description'] as String? ?? '').toLowerCase();
+    final combined = '$name $description';
+
+    // List of multiplayer/co-op keywords
+    const multiplayerKeywords = [
+      'multiplayer',
+      'multi-player',
+      'co-op',
+      'coop',
+      'cooperative',
+      'online',
+      'with a friend',
+      'with friend',
+      'with friends',
+      'with other',
+      '2 player',
+      'two player',
+      '3 player',
+      'three player',
+      '4 player',
+      'four player',
+      'squad',
+      'team',
+      'party',
+      'raid',
+      'pvp',
+      'versus',
+      'matchmaking',
+      'lobby',
+    ];
+
+    return multiplayerKeywords.any((keyword) => combined.contains(keyword));
+  }
 }
 
 /// Widget that displays AI-generated achievement guide with streaming support
@@ -1780,42 +1817,4 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       }
     }
   }
-
-  /// Detects if an achievement is likely multiplayer/co-op based on keywords
-  bool _isMultiplayerAchievement(Map<String, dynamic> achievement) {
-    final name = (achievement['name'] as String? ?? '').toLowerCase();
-    final description = (achievement['description'] as String? ?? '').toLowerCase();
-    final combined = '$name $description';
-
-    // List of multiplayer/co-op keywords
-    const multiplayerKeywords = [
-      'multiplayer',
-      'multi-player',
-      'co-op',
-      'coop',
-      'cooperative',
-      'online',
-      'with a friend',
-      'with friend',
-      'with friends',
-      'with other',
-      '2 player',
-      'two player',
-      '3 player',
-      'three player',
-      '4 player',
-      'four player',
-      'squad',
-      'team',
-      'party',
-      'raid',
-      'pvp',
-      'versus',
-      'matchmaking',
-      'lobby',
-    ];
-
-    return multiplayerKeywords.any((keyword) => combined.contains(keyword));
-  }
 }
-
