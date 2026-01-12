@@ -19,9 +19,10 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization')
-    console.log('Auth header present:', !!authHeader)
+    const jwt = authHeader?.replace(/^Bearer\s+/i, '')
+    console.log('JWT present:', !!jwt)
     
-    if (!authHeader) {
+    if (!jwt) {
       return new Response(
         JSON.stringify({ error: 'Missing authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -30,15 +31,14 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: `Bearer ${jwt}` } },
     })
 
     console.log('Getting user...')
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    console.log('User result:', { userId: user?.id, error: authError?.message })
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser(jwt)
+    console.log('User result:', { userId: user?.id, email: user?.email, error: authError?.message })
     
     if (authError || !user) {
       return new Response(
@@ -46,6 +46,10 @@ serve(async (req) => {
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Use service role for Stripe operations
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Find customer by email
     const customers = await stripe.customers.list({
