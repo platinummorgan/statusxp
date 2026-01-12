@@ -455,7 +455,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),

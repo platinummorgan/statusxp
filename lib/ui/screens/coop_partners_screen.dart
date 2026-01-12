@@ -13,13 +13,13 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
 });
 
 // Provider for open requests filtered by platform
-final openRequestsProvider = FutureProvider.autoDispose
-    .family<List<TrophyHelpRequest>, String?>((ref, platform) async {
+final openRequestsProvider =
+    FutureProvider.family<List<TrophyHelpRequest>, String?>((ref, platform) async {
   final service = ref.read(trophyHelpServiceProvider);
   return service.getOpenRequests(platform: platform);
 });
 
-final myRequestsProvider = FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
+final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
   final service = ref.read(trophyHelpServiceProvider);
   return service.getMyRequests();
 });
@@ -92,7 +92,6 @@ class _FindHelpTab extends ConsumerWidget {
     final theme = Theme.of(context);
     final requestsAsync = ref.watch(openRequestsProvider(selectedPlatform));
 
-    return Column(
     return Column(
       children: [
         // Platform filter
@@ -494,6 +493,7 @@ class _MyRequestCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timeAgo = timeago.format(request.createdAt);
+    final service = ref.read(trophyHelpServiceProvider);
     
     // Platform-specific styling
     Color platformColor;

@@ -96,7 +96,7 @@ class FlexRoomRepository {
           mostTimeSunk: results[1] as FlexTile?,
           sweattiestPlatinum: results[2] as FlexTile?,
           superlatives: {},
-          recentFlexes: results[3] as List<RecentFlex>,
+          recentFlexes: results[3],
         );
       }
 

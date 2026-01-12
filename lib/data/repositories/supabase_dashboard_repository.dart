@@ -24,7 +24,7 @@ class SupabaseDashboardRepository {
     final psnStats = results[1] as PlatformStats;
     final xboxStats = results[2] as PlatformStats;
     final steamStats = results[3] as PlatformStats;
-    final profile = results[4] as Map<String, dynamic>;
+    final profile = results[4];
 
     return DashboardStats(
       displayName: profile['displayName'] as String,
