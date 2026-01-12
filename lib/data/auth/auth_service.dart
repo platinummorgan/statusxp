@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'dart:html' as html;
+import 'package:statusxp/utils/html.dart' as html;
 
 /// Service for managing Supabase authentication.
 /// 

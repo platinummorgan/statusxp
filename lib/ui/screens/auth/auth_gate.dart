@@ -8,7 +8,7 @@ import 'package:statusxp/ui/screens/auth/sign_in_screen.dart';
 import 'package:statusxp/ui/screens/auth/biometric_login_screen.dart';
 import 'package:statusxp/ui/screens/onboarding_screen.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:html' as html;
+import 'package:statusxp/utils/html.dart' as html;
 
 /// Authentication gate that controls access to the main app.
 /// 

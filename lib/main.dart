@@ -11,7 +11,7 @@ import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/services/auth_refresh_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
-import 'dart:html' as html;
+import 'package:statusxp/utils/html.dart' as html;
 import 'package:flutter_web_plugins/url_strategy.dart';
 
 // Global auth refresh service
