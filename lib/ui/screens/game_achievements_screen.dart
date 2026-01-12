@@ -1402,18 +1402,22 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         return null;
       }
       
+      print('🔎 Querying achievements table for ID: $achievementId');
       final response = await supabase
           .from('achievements')
-          .select('ai_guide')
+          .select('ai_guide, ai_guide_generated_at')
           .eq('id', achievementId)
           .single();
 
+      print('📊 Database response: $response');
       final cachedGuide = response['ai_guide'] as String?;
+      final generatedAt = response['ai_guide_generated_at'] as String?;
+      
       if (cachedGuide != null && cachedGuide.isNotEmpty) {
-        print('✅ Found cached guide (${cachedGuide.length} chars)');
+        print('✅ Found cached guide (${cachedGuide.length} chars) generated at: $generatedAt');
         return cachedGuide;
       } else {
-        print('⚠️ No cached guide found in database');
+        print('⚠️ No cached guide found - ai_guide: $cachedGuide, generated_at: $generatedAt');
         return null;
       }
     } catch (e) {
@@ -1439,17 +1443,22 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         return;
       }
       
-      await supabase
+      print('💾 Attempting to update achievement ID: $achievementId with guide (${guide.length} chars)');
+      final result = await supabase
           .from('achievements')
           .update({
             'ai_guide': guide,
             'ai_guide_generated_at': DateTime.now().toIso8601String(),
           })
-          .eq('id', achievementId);
+          .eq('id', achievementId)
+          .select('id, ai_guide');
       
+      print('📊 Update result: $result');
       print('✅ Guide saved successfully');
     } catch (e) {
       print('❌ Error saving guide: $e');
+      // Also print the stack trace to see more details
+      print('Stack trace: ${StackTrace.current}');
     }
   }
 
