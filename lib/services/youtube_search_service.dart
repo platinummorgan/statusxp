@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class YouTubeSearchService {
-  static const _baseUrl = 'https://www.googleapis.com/youtube/v3/search';
+  final _supabase = Supabase.instance.client;
 
-  /// Search YouTube for achievement guide videos
+  /// Search YouTube for achievement guide videos via Supabase Edge Function
   /// Returns the first video URL found, or null if none found
   Future<String?> searchAchievementGuide({
     required String gameTitle,
@@ -14,39 +13,21 @@ class YouTubeSearchService {
   }) async {
     print('🎬 YouTube search started - Game: "$gameTitle", Achievement: "$achievementName"');
     
-    // Try dotenv first (works on mobile), fallback to compile-time constant (web)
-    String? apiKey = dotenv.env['YOUTUBE_API_KEY'];
-    if (apiKey == null || apiKey.isEmpty) {
-      apiKey = const String.fromEnvironment('YOUTUBE_API_KEY', defaultValue: '');
-    }
-    
-    print('🔑 YouTube API key: ${apiKey.isEmpty ? "EMPTY/MISSING" : "Found (${apiKey.length} chars)"}');
-    
-    if (apiKey.isEmpty) {
-      print('❌ YouTube API key is missing or empty - search aborted');
-      return null;
-    }
-    
-    print('🔎 Searching YouTube for: "$gameTitle $achievementName"');
-
     // Build search query
     final query = '$gameTitle $achievementName trophy achievement guide';
+    print('🔎 Searching YouTube for: "$query"');
     
     try {
-      final uri = Uri.parse(_baseUrl).replace(queryParameters: {
-        'key': apiKey,
-        'part': 'snippet',
-        'q': query,
-        'type': 'video',
-        'maxResults': '1',
-        'order': 'relevance',
-        'videoEmbeddable': 'true',
-      });
+      final response = await _supabase.functions.invoke(
+        'youtube-search',
+        body: {
+          'query': query,
+          'maxResults': 1,
+        },
+      );
 
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+      if (response.status == 200) {
+        final data = response.data as Map<String, dynamic>;
         final items = data['items'] as List?;
         
         if (items != null && items.isNotEmpty) {
@@ -58,7 +39,7 @@ class YouTubeSearchService {
           print('⚠️ No YouTube videos found in search results');
         }
       } else {
-        print('❌ YouTube API error: ${response.statusCode} - ${response.body}');
+        print('❌ YouTube function error: ${response.status}');
       }
     } catch (e) {
       print('❌ YouTube search exception: $e');
