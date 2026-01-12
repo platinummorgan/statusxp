@@ -134,7 +134,7 @@ flutter:
     - assets/images/
     - PRIVACY.md
     - TERMS_OF_SERVICE.md
-    # Note: .env is excluded from web builds (not compatible)
+    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

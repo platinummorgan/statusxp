@@ -14,11 +14,15 @@ class YouTubeSearchService {
   }) async {
     print('🎬 YouTube search started - Game: "$gameTitle", Achievement: "$achievementName"');
     
-    // Use dotenv for all platforms (web and mobile)
-    final apiKey = dotenv.env['YOUTUBE_API_KEY'];
-    print('🔑 YouTube API key from .env: ${apiKey?.isEmpty ?? true ? "EMPTY/MISSING" : "Found (${apiKey?.length ?? 0} chars)"}');
-    
+    // Try dotenv first (works on mobile), fallback to compile-time constant (web)
+    String? apiKey = dotenv.env['YOUTUBE_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
+      apiKey = const String.fromEnvironment('YOUTUBE_API_KEY', defaultValue: '');
+    }
+    
+    print('🔑 YouTube API key: ${apiKey.isEmpty ? "EMPTY/MISSING" : "Found (${apiKey.length} chars)"}');
+    
+    if (apiKey.isEmpty) {
       print('❌ YouTube API key is missing or empty - search aborted');
       return null;
     }

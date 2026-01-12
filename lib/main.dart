@@ -67,12 +67,9 @@ void main() async {
     usePathUrlStrategy();
   }
 
-  // Load environment variables (only on native platforms)
-  // Web uses compile-time constants from SupabaseConfig
+  // Load environment variables
   try {
-    if (!kIsWeb) {
-      await dotenv.load(fileName: '.env');
-    }
+    await dotenv.load(fileName: '.env');
   } catch (e) {
     print('Error loading .env: $e');
   }
