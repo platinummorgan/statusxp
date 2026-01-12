@@ -391,92 +391,71 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
   }
 
   Widget _buildMyRequestsTab(ThemeData theme) {
-    final service = ref.watch(trophyHelpServiceProvider);
+    final myRequestsAsync = ref.watch(myRequestsProvider);
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(myRequestsProvider);
-      },
-      child: Consumer(
-        builder: (context, ref, child) {
-          final myRequestsAsync = ref.watch(myRequestsProvider);
-
-          return myRequestsAsync.when(
-            data: (requests) {
-              if (requests.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.inbox_outlined,
-                        size: 64,
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No requests yet',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white.withOpacity(0.6),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Create a request to find co-op partners',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withOpacity(0.4),
-                        ),
-                      ),
-                    ],
+    return myRequestsAsync.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),
+        ),
+      ),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text('Error: $error'),
+          ],
+        ),
+      ),
+      data: (requests) {
+        if (requests.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.inbox_outlined,
+                  size: 64,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No requests yet',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white.withOpacity(0.6),
                   ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: requests.length,
-                itemBuilder: (context, index) {
-                  return _buildMyRequestCard(requests[index], service);
-                },
-              );
-            },
-            loading: () => const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),
-              ),
-            ),
-            error: (error, stack) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: Colors.red.withOpacity(0.7),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Create a request to find co-op partners',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withOpacity(0.4),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Error loading requests',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    error.toString(),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withOpacity(0.6),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
-        },
-      ),
+        }
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(myRequestsProvider);
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: requests.length,
+            itemBuilder: (context, index) {
+              return _buildMyRequestCard(requests[index]);
+            },
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildMyRequestCard(TrophyHelpRequest request, TrophyHelpService service) {
+  Widget _buildMyRequestCard(TrophyHelpRequest request) {
     final timeAgo = timeago.format(request.createdAt);
     
     // Platform-specific styling
