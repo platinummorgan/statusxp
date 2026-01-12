@@ -13,11 +13,11 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
 });
 
 // State provider for selected platform filter
-final selectedPlatformProvider = StateProvider<String?>((ref) => null);
+final selectedPlatformProvider = StateProvider.autoDispose<String?>((ref) => null);
 
 // Provider for open requests filtered by platform
 final openRequestsProvider =
-    FutureProvider<List<TrophyHelpRequest>>((ref) async {
+    FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
   try {
     final platform = ref.watch(selectedPlatformProvider);
     final service = ref.read(trophyHelpServiceProvider);
@@ -30,7 +30,7 @@ final openRequestsProvider =
   }
 });
 
-final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
+final myRequestsProvider = FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
   try {
     final service = ref.read(trophyHelpServiceProvider);
     final results = await service.getMyRequests();
