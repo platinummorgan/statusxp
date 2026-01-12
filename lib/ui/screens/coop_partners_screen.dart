@@ -79,12 +79,16 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _FindHelpTab(selectedPlatform: _selectedPlatform, onPlatformChanged: (value) {
-            setState(() {
-              _selectedPlatform = value;
-            });
-          }),
-          const _MyRequestsTab(),
+          _FindHelpTab(
+            key: const ValueKey('find_help_tab'),
+            selectedPlatform: _selectedPlatform, 
+            onPlatformChanged: (value) {
+              setState(() {
+                _selectedPlatform = value;
+              });
+            },
+          ),
+          const _MyRequestsTab(key: ValueKey('my_requests_tab')),
         ],
       ),
     );
