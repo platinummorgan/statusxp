@@ -108,7 +108,6 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   Widget build(BuildContext context) {
     super.build(context); // Must call super for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
-    final selectedPlatform = ref.watch(selectedPlatformProvider);
     final requestsAsync = ref.watch(openRequestsProvider);
 
     return Column(
@@ -214,8 +213,7 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
     );
   }
 
-  Widget _buildPlatformChip(String label, String? value) {
-    final isSelected = widget.selectedPlatform == value;
+  Widget _buildPlatformChip(String label, String? value) {    final selectedPlatform = ref.watch(selectedPlatformProvider);    final isSelected = widget.selectedPlatform == value;
     return FilterChip(
       label: Text(label),
       selected: isSelected,
