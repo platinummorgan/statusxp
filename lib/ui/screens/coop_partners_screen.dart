@@ -12,13 +12,11 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
   return TrophyHelpService(ref.read(supabaseClientProvider));
 });
 
+// Provider for open requests filtered by platform
 final openRequestsProvider = FutureProvider.autoDispose
-    .family<List<TrophyHelpRequest>, Map<String, String?>>((ref, filters) async {
+    .family<List<TrophyHelpRequest>, String?>((ref, platform) async {
   final service = ref.read(trophyHelpServiceProvider);
-  return service.getOpenRequests(
-    platform: filters['platform'],
-    gameId: filters['gameId'],
-  );
+  return service.getOpenRequests(platform: platform);
 });
 
 final myRequestsProvider = FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
@@ -53,8 +51,7 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final filters = {'platform': _selectedPlatform, 'gameId': null};
-    final requestsAsync = ref.watch(openRequestsProvider(filters));
+    final requestsAsync = ref.watch(openRequestsProvider(_selectedPlatform));
 
     return Scaffold(
       appBar: AppBar(

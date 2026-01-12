@@ -43,42 +43,54 @@ class TrophyHelpService {
     String? platform,
     String? gameId,
   }) async {
-    final queryBuilder = _supabase
-        .from('trophy_help_requests')
-        .select()
-        .eq('status', 'open');
+    try {
+      final queryBuilder = _supabase
+          .from('trophy_help_requests')
+          .select()
+          .eq('status', 'open');
 
-    // Apply filters
-    var filteredQuery = queryBuilder;
-    if (platform != null) {
-      filteredQuery = filteredQuery.eq('platform', platform);
-    }
-    if (gameId != null) {
-      filteredQuery = filteredQuery.eq('game_id', gameId);
-    }
+      // Apply filters
+      var filteredQuery = queryBuilder;
+      if (platform != null) {
+        filteredQuery = filteredQuery.eq('platform', platform);
+      }
+      if (gameId != null) {
+        filteredQuery = filteredQuery.eq('game_id', gameId);
+      }
 
-    final response = await filteredQuery.order('created_at', ascending: false);
-    return (response as List)
-        .map((json) => TrophyHelpRequest.fromJson(json))
-        .toList();
+      final response = await filteredQuery.order('created_at', ascending: false);
+      return (response as List)
+          .map((json) => TrophyHelpRequest.fromJson(json))
+          .toList();
+    } catch (e) {
+      print('Error fetching open requests: $e');
+      // Return empty list instead of throwing to avoid breaking UI
+      return [];
+    }
   }
 
   /// Get user's own requests
   Future<List<TrophyHelpRequest>> getMyRequests() async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('User must be logged in');
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        print('User not logged in, returning empty requests');
+        return [];
+      }
+
+      final response = await _supabase
+          .from('trophy_help_requests')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map((json) => TrophyHelpRequest.fromJson(json))
+          .toList();
+    } catch (e) {
+      print('Error fetching my requests: $e');
+      return [];
     }
-
-    final response = await _supabase
-        .from('trophy_help_requests')
-        .select()
-        .eq('user_id', userId)
-        .order('created_at', ascending: false);
-
-    return (response as List)
-        .map((json) => TrophyHelpRequest.fromJson(json))
-        .toList();
   }
 
   /// Get a specific request by ID
