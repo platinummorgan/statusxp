@@ -1,4 +1,5 @@
 {
+  "buildCommand": "echo 'Using pre-built files'",
   "outputDirectory": "build/web",
   "framework": null,
   "cleanUrls": false,
