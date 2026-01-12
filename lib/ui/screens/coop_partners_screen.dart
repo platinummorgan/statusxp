@@ -14,33 +14,17 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
 });
 
 // State provider for selected platform filter
-final selectedPlatformProvider = StateProvider.autoDispose<String?>((ref) {
-  print('🎯 PLATFORM RUN  ${DateTime.now().toIso8601String()}');
-  ref.onDispose(() {
-    print('🎯 PLATFORM DISPOSE ${DateTime.now().toIso8601String()}');
-  });
-  return null;
-});
+final selectedPlatformProvider = StateProvider<String?>((ref) => null);
 
 // Provider for open requests filtered by platform
 final openRequestsProvider =
-    FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
-  print('🔄 OPEN_REQ RUN  ${DateTime.now().toIso8601String()}');
-  ref.onDispose(() {
-    print('🔄 OPEN_REQ DISPOSE ${DateTime.now().toIso8601String()}');
-  });
-
+    FutureProvider<List<TrophyHelpRequest>>((ref) async {
   final platform = ref.watch(selectedPlatformProvider);
   final service = ref.read(trophyHelpServiceProvider);
-  final results = await service.getOpenRequests(platform: platform);
-  return results;
+  return service.getOpenRequests(platform: platform);
 });
 
-final myRequestsProvider = FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
-  print('📋 MY_REQ RUN  ${DateTime.now().toIso8601String()}');
-  ref.onDispose(() {
-    print('📋 MY_REQ DISPOSE ${DateTime.now().toIso8601String()}');
-  });
+final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
   try {
     final service = ref.read(trophyHelpServiceProvider);
     final results = await service.getMyRequests();
