@@ -45,9 +45,6 @@ Method:
 [Be specific with locations, button combinations, requirements]
 [Mention if it's unmissable or story-related]
 
-YouTube reference:
-[Provide a YouTube URL for a video guide if possible, or state "No specific video guide found"]
-
 Keep it concise and actionable. No fluff.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

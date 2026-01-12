@@ -1373,6 +1373,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         _isLoading = false;
       });
     } catch (e) {
+      print('❌ Error in guide generation flow: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
