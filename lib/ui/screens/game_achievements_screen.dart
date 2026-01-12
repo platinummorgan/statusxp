@@ -1443,6 +1443,20 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         return;
       }
       
+      // First verify the record exists
+      print('🔍 Verifying achievement exists in database...');
+      final existsCheck = await supabase
+          .from('achievements')
+          .select('id, name')
+          .eq('id', achievementId)
+          .maybeSingle();
+      
+      if (existsCheck == null) {
+        print('❌ Achievement ID $achievementId does not exist in database');
+        return;
+      }
+      print('✅ Achievement exists: ${existsCheck['name']} (ID: ${existsCheck['id']})');
+      
       print('💾 Attempting to update achievement ID: $achievementId with guide (${guide.length} chars)');
       final result = await supabase
           .from('achievements')
@@ -1454,7 +1468,11 @@ class _AIGuideContentState extends State<_AIGuideContent> {
           .select('id, ai_guide');
       
       print('📊 Update result: $result');
-      print('✅ Guide saved successfully');
+      if (result.isNotEmpty) {
+        print('✅ Guide saved successfully - Updated ${result.length} record(s)');
+      } else {
+        print('⚠️ Update completed but no records returned - this might still be successful');
+      }
     } catch (e) {
       print('❌ Error saving guide: $e');
       // Also print the stack trace to see more details
