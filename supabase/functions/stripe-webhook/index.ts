@@ -62,15 +62,27 @@ serve(async (req) => {
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-        const userId = subscription.metadata?.user_id
+        
+        // Get customer email from Stripe
+        const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer
+        const customerEmail = customer.email
+        
+        if (!customerEmail) {
+          console.error('❌ No customer email in subscription')
+          break
+        }
 
-        if (!userId) {
-          console.error('❌ No user ID in subscription metadata')
+        // Look up user by email using service role
+        const { data: authData, error: authError } = await supabase.auth.admin.listUsers()
+        const user = authData?.users.find(u => u.email === customerEmail)
+
+        if (!user) {
+          console.error('❌ User not found for email:', customerEmail)
           break
         }
 
         const isActive = subscription.status === 'active'
-        console.log(`🔄 Subscription updated for user ${userId}: ${subscription.status}`)
+        console.log(`🔄 Subscription updated for user ${user.id}: ${subscription.status}`)
 
         const { error: updateError } = await supabase
           .from('user_premium_status')
@@ -78,7 +90,7 @@ serve(async (req) => {
             is_premium: isActive,
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
 
         if (updateError) {
           console.error('❌ Error updating subscription status:', updateError)
@@ -91,9 +103,26 @@ serve(async (req) => {
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
-        const userId = subscription.metadata?.user_id
+        
+        // Get customer email from Stripe
+        const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer
+        const customerEmail = customer.email
+        
+        if (!customerEmail) {
+          console.error('❌ No customer email in subscription')
+          break
+        }
 
-        console.log(`🚫 Subscription cancelled for user ${userId}`)
+        // Look up user by email using service role
+        const { data: authData, error: authError } = await supabase.auth.admin.listUsers()
+        const user = authData?.users.find(u => u.email === customerEmail)
+
+        if (!user) {
+          console.error('❌ User not found for email:', customerEmail)
+          break
+        }
+
+        console.log(`🚫 Subscription cancelled for user ${user.id}`)
 
         const { error: updateError } = await supabase
           .from('user_premium_status')
@@ -102,7 +131,7 @@ serve(async (req) => {
             premium_expires_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq('user_id', userId)
+          .eq('user_id', user.id)
 
         if (updateError) {
           console.error('❌ Error cancelling premium:', updateError)
