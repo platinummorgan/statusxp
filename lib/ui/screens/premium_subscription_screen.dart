@@ -110,15 +110,18 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     try {
       final supabase = ref.read(supabaseClientProvider);
       
-      // Ensure we have a valid session
-      final session = supabase.auth.currentSession;
-      if (session == null) {
+      // Refresh session to ensure it's valid
+      final sessionResponse = await supabase.auth.refreshSession();
+      if (sessionResponse.session == null) {
         _showError('Please sign in again');
         return;
       }
       
       final response = await supabase.functions.invoke(
         'stripe-customer-portal',
+        headers: {
+          'Authorization': 'Bearer ${sessionResponse.session!.accessToken}',
+        },
       );
 
       if (response.data != null && response.data['url'] != null) {
