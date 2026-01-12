@@ -80,12 +80,9 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     try {
       final supabase = ref.read(supabaseClientProvider);
       
-      // Call Stripe checkout Edge Function
+      // Call Stripe checkout Edge Function (auth header added automatically)
       final response = await supabase.functions.invoke(
         'stripe-create-checkout',
-        headers: {
-          'Authorization': 'Bearer ${supabase.auth.currentSession?.accessToken}',
-        },
       );
 
       if (response.data != null && response.data['url'] != null) {
@@ -113,11 +110,15 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     try {
       final supabase = ref.read(supabaseClientProvider);
       
+      // Ensure we have a valid session
+      final session = supabase.auth.currentSession;
+      if (session == null) {
+        _showError('Please sign in again');
+        return;
+      }
+      
       final response = await supabase.functions.invoke(
         'stripe-customer-portal',
-        headers: {
-          'Authorization': 'Bearer ${supabase.auth.currentSession?.accessToken}',
-        },
       );
 
       if (response.data != null && response.data['url'] != null) {
