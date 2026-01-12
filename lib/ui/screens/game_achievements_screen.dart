@@ -1385,12 +1385,12 @@ class _AIGuideContentState extends State<_AIGuideContent> {
 
   Future<String?> _checkCachedGuide() async {
     if (widget.achievementId == null) {
-      debugPrint('❌ Achievement ID is null - cannot check cache');
+      print('❌ Achievement ID is null - cannot check cache');
       return null;
     }
 
     try {
-      debugPrint('🔍 Checking cache for achievement ID: ${widget.achievementId}');
+      print('🔍 Checking cache for achievement ID: ${widget.achievementId}');
       final supabase = Supabase.instance.client;
       
       // Try parsing as int if it's a string
@@ -1404,26 +1404,26 @@ class _AIGuideContentState extends State<_AIGuideContent> {
 
       final cachedGuide = response['ai_guide'] as String?;
       if (cachedGuide != null && cachedGuide.isNotEmpty) {
-        debugPrint('✅ Found cached guide (${cachedGuide.length} chars)');
+        print('✅ Found cached guide (${cachedGuide.length} chars)');
         return cachedGuide;
       } else {
-        debugPrint('⚠️ No cached guide found in database');
+        print('⚠️ No cached guide found in database');
         return null;
       }
     } catch (e) {
-      debugPrint('❌ Error checking cached guide: $e');
+      print('❌ Error checking cached guide: $e');
       return null;
     }
   }
 
   Future<void> _saveGuideToDatabase(String guide) async {
     if (widget.achievementId == null) {
-      debugPrint('❌ Cannot save guide - achievement ID is null');
+      print('❌ Cannot save guide - achievement ID is null');
       return;
     }
 
     try {
-      debugPrint('💾 Saving guide to database for achievement ID: ${widget.achievementId}');
+      print('💾 Saving guide to database for achievement ID: ${widget.achievementId}');
       final supabase = Supabase.instance.client;
       
       // Try parsing as int if it's a string
@@ -1437,9 +1437,9 @@ class _AIGuideContentState extends State<_AIGuideContent> {
           })
           .eq('id', achievementId);
       
-      debugPrint('✅ Guide saved successfully');
+      print('✅ Guide saved successfully');
     } catch (e) {
-      debugPrint('❌ Error saving guide: $e');
+      print('❌ Error saving guide: $e');
     }
   }
 
