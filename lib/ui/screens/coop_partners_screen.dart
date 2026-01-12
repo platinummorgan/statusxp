@@ -78,7 +78,7 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
 }
 
 // Separate widget for Find Help tab to isolate provider watching
-class _FindHelpTab extends ConsumerWidget {
+class _FindHelpTab extends ConsumerStatefulWidget {
   final String? selectedPlatform;
   final ValueChanged<String?> onPlatformChanged;
 
@@ -88,9 +88,20 @@ class _FindHelpTab extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_FindHelpTab> createState() => _FindHelpTabState();
+}
+
+class _FindHelpTabState extends ConsumerState<_FindHelpTab> 
+    with AutomaticKeepAliveClientMixin {
+  
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Must call super for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
-    final requestsAsync = ref.watch(openRequestsProvider(selectedPlatform));
+    final requestsAsync = ref.watch(openRequestsProvider(widget.selectedPlatform));
 
     return Column(
       children: [
@@ -196,12 +207,12 @@ class _FindHelpTab extends ConsumerWidget {
   }
 
   Widget _buildPlatformChip(String label, String? value) {
-    final isSelected = selectedPlatform == value;
+    final isSelected = widget.selectedPlatform == value;
     return FilterChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        onPlatformChanged(selected ? value : null);
+        widget.onPlatformChanged(selected ? value : null);
       },
       backgroundColor: const Color(0xFF1a1f3a),
       selectedColor: CyberpunkTheme.neonCyan.withOpacity(0.3),
@@ -413,11 +424,22 @@ class _RequestCard extends ConsumerWidget {
 }
 
 // Separate widget for My Requests tab to isolate provider watching  
-class _MyRequestsTab extends ConsumerWidget {
+class _MyRequestsTab extends ConsumerStatefulWidget {
   const _MyRequestsTab();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MyRequestsTab> createState() => _MyRequestsTabState();
+}
+
+class _MyRequestsTabState extends ConsumerState<_MyRequestsTab>
+    with AutomaticKeepAliveClientMixin {
+  
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Must call super for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
     final myRequestsAsync = ref.watch(myRequestsProvider);
 
