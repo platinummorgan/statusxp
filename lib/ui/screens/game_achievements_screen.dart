@@ -1458,20 +1458,33 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       print('✅ Achievement exists: ${existsCheck['name']} (ID: ${existsCheck['id']})');
       
       print('💾 Attempting to update achievement ID: $achievementId with guide (${guide.length} chars)');
-      final result = await supabase
+      
+      // Try simple update first without select
+      await supabase
           .from('achievements')
           .update({
             'ai_guide': guide,
             'ai_guide_generated_at': DateTime.now().toIso8601String(),
           })
-          .eq('id', achievementId)
-          .select('id, ai_guide');
+          .eq('id', achievementId);
       
-      print('📊 Update result: $result');
-      if (result.isNotEmpty) {
-        print('✅ Guide saved successfully - Updated ${result.length} record(s)');
+      print('📝 Update query executed, verifying if it worked...');
+      
+      // Verify the update worked by querying the record again
+      final verification = await supabase
+          .from('achievements')
+          .select('id, ai_guide, ai_guide_generated_at')
+          .eq('id', achievementId)
+          .single();
+      
+      final savedGuide = verification['ai_guide'] as String?;
+      final savedAt = verification['ai_guide_generated_at'] as String?;
+      
+      if (savedGuide != null && savedGuide.isNotEmpty) {
+        print('✅ Update successful! Guide saved (${savedGuide.length} chars) at $savedAt');
       } else {
-        print('⚠️ Update completed but no records returned - this might still be successful');
+        print('❌ Update failed - guide is still null/empty');
+        print('🔍 Full verification result: $verification');
       }
     } catch (e) {
       print('❌ Error saving guide: $e');
