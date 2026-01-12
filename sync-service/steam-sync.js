@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { uploadExternalIcon } from './icon-proxy-utils.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -456,6 +457,10 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           const playerAchievement = playerAchievements.find(a => a.apiname === achievement.name);
           const rarityPercent = globalStats[achievement.name] || 0;
 
+          // Proxy the icon if available
+          const iconUrl = achievement.icon || '';
+          const proxiedIconUrl = iconUrl ? await uploadExternalIcon(iconUrl, achievement.name, 'steam', supabase) : null;
+
           // Upsert achievement with rarity data
           const achievementData = {
             game_title_id: gameTitle.id,
@@ -464,7 +469,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             platform_achievement_id: achievement.name,
             name: achievement.displayName || achievement.name,
             description: achievement.description || '',
-            icon_url: achievement.icon || '',
+            icon_url: iconUrl,
+            proxied_icon_url: proxiedIconUrl,
             steam_hidden: achievement.hidden === 1,
             rarity_global: rarityPercent,
             is_platinum: false, // Steam doesn't have platinums
