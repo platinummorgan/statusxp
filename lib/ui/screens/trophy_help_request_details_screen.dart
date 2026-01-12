@@ -7,10 +7,6 @@ import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
-  return TrophyHelpService(ref.read(supabaseClientProvider));
-});
-
 final requestDetailsProvider = FutureProvider.autoDispose.family<TrophyHelpRequest?, String>(
   (ref, requestId) async {
     final service = ref.read(trophyHelpServiceProvider);

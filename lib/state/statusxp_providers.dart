@@ -13,6 +13,7 @@ import 'package:statusxp/data/repositories/trophy_room_repository.dart';
 import 'package:statusxp/data/repositories/unified_games_repository.dart';
 import 'package:statusxp/data/supabase_game_edit_service.dart';
 import 'package:statusxp/services/platform_achievement_checker.dart';
+import 'package:statusxp/services/trophy_help_service.dart';
 import 'package:statusxp/domain/game.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/trophy_room_data.dart';
@@ -34,6 +35,11 @@ final authServiceProvider = Provider<AuthService>((ref) {
 /// Provider for the BiometricAuthService instance.
 final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) {
   return BiometricAuthService();
+});
+
+/// Provider for the TrophyHelpService instance.
+final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
+  return TrophyHelpService(ref.read(supabaseClientProvider));
 });
 
 /// StateProvider for requesting a local biometric lock.

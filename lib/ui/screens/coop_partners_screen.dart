@@ -9,10 +9,6 @@ import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/offer_help_dialog.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
-  return TrophyHelpService(ref.read(supabaseClientProvider));
-});
-
 // State provider for selected platform filter
 final selectedPlatformProvider = StateProvider<String?>((ref) => null);
 
