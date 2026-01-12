@@ -602,6 +602,17 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
         const SizedBox(height: 12),
 
         _buildActionButton(
+          label: 'Find Co-op Partners',
+          icon: Icons.handshake,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            context.push('/coop-partners');
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        _buildActionButton(
           label: 'Achievements',
           icon: Icons.stars,
           onTap: () {

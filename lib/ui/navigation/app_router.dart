@@ -19,6 +19,7 @@ import 'package:statusxp/ui/screens/trophy_room_screen.dart';
 import 'package:statusxp/ui/screens/settings_screen.dart';
 import 'package:statusxp/ui/screens/landing_page_screen.dart';
 import 'package:statusxp/ui/screens/premium_success_screen.dart';
+import 'package:statusxp/ui/screens/coop_partners_screen.dart';
 import 'package:statusxp/features/display_case/screens/display_case_screen.dart';
 
 /// StatusXP App Router Configuration
@@ -164,6 +165,13 @@ final GoRouter appRouter = GoRouter(
           path: '/achievements',
           name: 'achievements',
           builder: (context, state) => const AchievementsScreen(),
+        ),
+
+        // Co-op Partners - Find help for multiplayer/co-op trophies
+        GoRoute(
+          path: '/coop-partners',
+          name: 'coop-partners',
+          builder: (context, state) => const CoopPartnersScreen(),
         ),
 
         // Leaderboards - Global rankings
