@@ -1,20 +1,31 @@
+import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/trophy_help_request.dart';
 
 class TrophyHelpService {
-  final SupabaseClient _supabase;
-  
-  // Cache to prevent rapid-fire requests
-  List<TrophyHelpRequest>? _cachedOpenRequests;
-  DateTime? _openRequestsCacheTime;
-  String? _cachedPlatform;
-  
-  List<TrophyHelpRequest>? _cachedMyRequests;
-  DateTime? _myRequestsCacheTime;
-
   TrophyHelpService(this._supabase);
 
-  /// Create a new help request
+  final SupabaseClient _supabase;
+
+  // ------------------------------
+  // Cache / de-dupe settings
+  // ------------------------------
+
+  static const Duration _openRequestsTtl = Duration(seconds: 5);
+
+  // Cache open requests by (platform, gameId)
+  final Map<_OpenKey, _CacheEntry<List<TrophyHelpRequest>>> _openCache = {};
+
+  // In-flight de-dupe so repeated calls share the same Future
+  final Map<_OpenKey, Future<List<TrophyHelpRequest>>> _openInFlight = {};
+
+  // (Optional) My requests cache - left simple. Add TTL if you want.
+  // final _CacheEntry<List<TrophyHelpRequest>>? _myCache;
+
+  // ------------------------------
+  // Public API
+  // ------------------------------
+
   Future<TrophyHelpRequest> createRequest({
     required String gameId,
     required String gameTitle,
@@ -25,158 +36,137 @@ class TrophyHelpService {
     String? availability,
     String? platformUsername,
   }) async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('User must be logged in to create a request');
-    }
+    final userId = _requireUserId();
 
-    final response = await _supabase.from('trophy_help_requests').insert({
-      'user_id': userId,
-      'game_id': gameId,
-      'game_title': gameTitle,
-      'achievement_id': achievementId,
-      'achievement_name': achievementName,
-      'platform': platform,
-      'description': description,
-      'availability': availability,
-      'platform_username': platformUsername,
-      'status': 'open',
-    }).select().single();
+    final row = await _supabase
+        .from('trophy_help_requests')
+        .insert({
+          'user_id': userId,
+          'game_id': gameId,
+          'game_title': gameTitle,
+          'achievement_id': achievementId,
+          'achievement_name': achievementName,
+          'platform': platform,
+          'description': description,
+          'availability': availability,
+          'platform_username': platformUsername,
+          'status': 'open',
+        })
+        .select()
+        .single();
 
-    return TrophyHelpRequest.fromJson(response);
+    // New data exists; open list is now stale
+    _invalidateOpenCache();
+
+    return TrophyHelpRequest.fromJson(row);
   }
 
-  /// Get all open requests with optional filters
+  /// Get all open requests with optional filters.
+  ///
+  /// - TTL cached for 5 seconds by (platform, gameId)
+  /// - In-flight de-duped so repeated calls won't hammer Supabase
   Future<List<TrophyHelpRequest>> getOpenRequests({
     String? platform,
     String? gameId,
   }) async {
-    // Return cached data if less than 5 seconds old and same platform
-    final now = DateTime.now();
-    if (_cachedOpenRequests != null &&
-        _openRequestsCacheTime != null &&
-        _cachedPlatform == platform &&
-        now.difference(_openRequestsCacheTime!).inSeconds < 5) {
-      print('Returning cached open requests (${_cachedOpenRequests!.length} items)');
-      return _cachedOpenRequests!;
-    }
-    
-    try {
-      final queryBuilder = _supabase
-          .from('trophy_help_requests')
-          .select()
-          .eq('status', 'open');
+    final key = _OpenKey(platform: platform, gameId: gameId);
 
-      // Apply filters
-      var filteredQuery = queryBuilder;
-      if (platform != null) {
-        filteredQuery = filteredQuery.eq('platform', platform);
-      }
-      if (gameId != null) {
-        filteredQuery = filteredQuery.eq('game_id', gameId);
-      }
-
-      final response = await filteredQuery.order('created_at', ascending: false);
-      final results = (response as List)
-          .map((json) => TrophyHelpRequest.fromJson(json))
-          .toList();
-      
-      // Cache the results
-      _cachedOpenRequests = results;
-      _openRequestsCacheTime = now;
-      _cachedPlatform = platform;
-      
-      return results;
-    } catch (e) {
-      print('Error fetching open requests: $e');
-      // Return cached data if available, otherwise empty list
-      return _cachedOpenRequests ?? [];
+    // 1) Return fresh cache if still valid
+    final cached = _openCache[key];
+    if (cached != null && !cached.isExpired(_openRequestsTtl)) {
+      return cached.value;
     }
+
+    // 2) If there is an in-flight request for the same key, await it
+    final existingFuture = _openInFlight[key];
+    if (existingFuture != null) return existingFuture;
+
+    // 3) Start a new request, store it in-flight, and clean up when done
+    final future = _fetchOpenRequests(platform: platform, gameId: gameId)
+        .then((results) {
+          _openCache[key] = _CacheEntry(results, DateTime.now());
+          return results;
+        }).catchError((e) {
+      // If fetch fails, return stale cache if any, otherwise empty list
+      final stale = _openCache[key];
+      return stale?.value ?? <TrophyHelpRequest>[];
+    }).whenComplete(() {
+      _openInFlight.remove(key);
+    });
+
+    _openInFlight[key] = future;
+    return future;
   }
 
-  /// Get user's own requests
   Future<List<TrophyHelpRequest>> getMyRequests() async {
-    try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) {
-        print('User not logged in, returning empty requests');
-        return [];
-      }
+    final user = _supabase.auth.currentUser;
+    if (user == null) return <TrophyHelpRequest>[];
 
-      final response = await _supabase
-          .from('trophy_help_requests')
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
+    final rows = await _supabase
+        .from('trophy_help_requests')
+        .select()
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false);
 
-      return (response as List)
-          .map((json) => TrophyHelpRequest.fromJson(json))
-          .toList();
-    } catch (e) {
-      print('Error fetching my requests: $e');
-      return [];
-    }
+    return _mapList(rows, TrophyHelpRequest.fromJson);
   }
 
-  /// Get a specific request by ID
   Future<TrophyHelpRequest?> getRequest(String requestId) async {
-    final response = await _supabase
+    final row = await _supabase
         .from('trophy_help_requests')
         .select()
         .eq('id', requestId)
         .maybeSingle();
 
-    if (response == null) return null;
-    return TrophyHelpRequest.fromJson(response);
+    if (row == null) return null;
+    return TrophyHelpRequest.fromJson(row);
   }
 
-  /// Update request status
   Future<void> updateRequestStatus(String requestId, String status) async {
     await _supabase
         .from('trophy_help_requests')
         .update({'status': status})
         .eq('id', requestId);
+
+    // status changes affect open lists
+    _invalidateOpenCache();
   }
 
-  /// Delete a request
   Future<void> deleteRequest(String requestId) async {
     await _supabase.from('trophy_help_requests').delete().eq('id', requestId);
+    _invalidateOpenCache();
   }
 
-  /// Offer help on a request
   Future<TrophyHelpResponse> offerHelp({
     required String requestId,
     String? message,
   }) async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('User must be logged in to offer help');
-    }
+    final userId = _requireUserId();
 
-    final response = await _supabase.from('trophy_help_responses').insert({
-      'request_id': requestId,
-      'helper_user_id': userId,
-      'message': message,
-      'status': 'pending',
-    }).select().single();
+    final row = await _supabase
+        .from('trophy_help_responses')
+        .insert({
+          'request_id': requestId,
+          'helper_user_id': userId,
+          'message': message,
+          'status': 'pending',
+        })
+        .select()
+        .single();
 
-    return TrophyHelpResponse.fromJson(response);
+    return TrophyHelpResponse.fromJson(row);
   }
 
-  /// Get all responses for a request
   Future<List<TrophyHelpResponse>> getRequestResponses(String requestId) async {
-    final response = await _supabase
+    final rows = await _supabase
         .from('trophy_help_responses')
         .select()
         .eq('request_id', requestId)
         .order('created_at', ascending: false);
 
-    return (response as List)
-        .map((json) => TrophyHelpResponse.fromJson(json))
-        .toList();
+    return _mapList(rows, TrophyHelpResponse.fromJson);
   }
 
-  /// Accept a helper's offer
   Future<void> acceptHelper(String responseId) async {
     await _supabase
         .from('trophy_help_responses')
@@ -184,7 +174,6 @@ class TrophyHelpService {
         .eq('id', responseId);
   }
 
-  /// Decline a helper's offer
   Future<void> declineHelper(String responseId) async {
     await _supabase
         .from('trophy_help_responses')
@@ -192,34 +181,93 @@ class TrophyHelpService {
         .eq('id', responseId);
   }
 
-  /// Get requests where user has offered help
   Future<List<TrophyHelpRequest>> getRequestsIOfferedHelpOn() async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('User must be logged in');
-    }
+    final userId = _requireUserId();
 
-    // Get request IDs where user has responded
-    final responses = await _supabase
+    final responseRows = await _supabase
         .from('trophy_help_responses')
         .select('request_id')
         .eq('helper_user_id', userId);
 
-    if ((responses as List).isEmpty) {
-      return [];
-    }
+    final ids = _mapList(responseRows, (r) => r['request_id'] as String);
+    if (ids.isEmpty) return <TrophyHelpRequest>[];
 
-    final requestIds = responses.map((r) => r['request_id'] as String).toList();
-
-    // Get the actual requests
-    final requests = await _supabase
+    final requestRows = await _supabase
         .from('trophy_help_requests')
         .select()
-        .inFilter('id', requestIds)
+        .inFilter('id', ids)
         .order('created_at', ascending: false);
 
-    return (requests as List)
-        .map((json) => TrophyHelpRequest.fromJson(json))
-        .toList();
+    return _mapList(requestRows, TrophyHelpRequest.fromJson);
   }
+
+  // ------------------------------
+  // Private helpers
+  // ------------------------------
+
+  String _requireUserId() {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('User must be logged in');
+    }
+    return userId;
+  }
+
+  Future<List<TrophyHelpRequest>> _fetchOpenRequests({
+    String? platform,
+    String? gameId,
+  }) async {
+    // Build query with optional filters
+    var query = _supabase
+        .from('trophy_help_requests')
+        .select()
+        .eq('status', 'open');
+
+    if (platform != null) query = query.eq('platform', platform);
+    if (gameId != null) query = query.eq('game_id', gameId);
+
+    final rows = await query.order('created_at', ascending: false);
+    return _mapList(rows, TrophyHelpRequest.fromJson);
+  }
+
+  void _invalidateOpenCache() {
+    _openCache.clear();
+    // optional: also cancel in-flight? usually not needed; let it finish.
+  }
+
+  static List<T> _mapList<T>(
+    Object rows,
+    T Function(Map<String, dynamic>) fromJson,
+  ) {
+    final list = rows as List;
+    return list.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+  }
+}
+
+// ------------------------------
+// Cache models
+// ------------------------------
+
+class _CacheEntry<T> {
+  final T value;
+  final DateTime timestamp;
+  const _CacheEntry(this.value, this.timestamp);
+
+  bool isExpired(Duration ttl) => DateTime.now().difference(timestamp) > ttl;
+}
+
+class _OpenKey {
+  final String? platform;
+  final String? gameId;
+  const _OpenKey({required this.platform, required this.gameId});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _OpenKey &&
+          other.platform == platform &&
+          other.gameId == gameId;
+
+  @override
+  int get hashCode => Object.hash(platform, gameId);
 }
