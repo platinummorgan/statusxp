@@ -242,7 +242,7 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to request details
+          context.push('/coop-partners/${request.id}');
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -539,7 +539,7 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to request details with responses
+          context.push('/coop-partners/${request.id}');
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -645,7 +645,7 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
-                        // TODO: Navigate to request details
+                        context.push('/coop-partners/${request.id}');
                       },
                       icon: const Icon(Icons.visibility, size: 18),
                       label: const Text('View Details'),

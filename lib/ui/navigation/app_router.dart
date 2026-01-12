@@ -20,6 +20,7 @@ import 'package:statusxp/ui/screens/settings_screen.dart';
 import 'package:statusxp/ui/screens/landing_page_screen.dart';
 import 'package:statusxp/ui/screens/premium_success_screen.dart';
 import 'package:statusxp/ui/screens/coop_partners_screen.dart';
+import 'package:statusxp/ui/screens/trophy_help_request_details_screen.dart';
 import 'package:statusxp/features/display_case/screens/display_case_screen.dart';
 
 /// StatusXP App Router Configuration
@@ -172,6 +173,16 @@ final GoRouter appRouter = GoRouter(
           path: '/coop-partners',
           name: 'coop-partners',
           builder: (context, state) => const CoopPartnersScreen(),
+        ),
+
+        // Trophy Help Request Details
+        GoRoute(
+          path: '/coop-partners/:requestId',
+          name: 'trophy-help-details',
+          builder: (context, state) {
+            final requestId = state.pathParameters['requestId']!;
+            return TrophyHelpRequestDetailsScreen(requestId: requestId);
+          },
         ),
 
         // Leaderboards - Global rankings

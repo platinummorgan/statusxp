@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/services/achievement_guide_service.dart';
@@ -8,6 +9,7 @@ import 'package:statusxp/services/youtube_search_service.dart';
 import 'package:statusxp/services/ai_credit_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
+import 'package:statusxp/ui/widgets/create_trophy_request_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Game Achievements Screen - Shows achievements/trophies for a specific game on a platform
@@ -574,49 +576,101 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                   // Get Help button with AI credit badge
                   if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements) ...[
                     const SizedBox(height: 8),
-                    FutureBuilder<AICreditStatus>(
-                      key: ValueKey('credit_badge_${achievement['id']}_$_refreshKey'),
-                      future: AICreditService().checkCredits(),
-                      builder: (context, snapshot) {
-                        final creditBadge = snapshot.hasData ? snapshot.data!.badgeText : '...';
-                        
-                        return TextButton.icon(
-                          onPressed: () => _showAIGuideDialog(context, achievement),
-                          icon: const Icon(Icons.lightbulb_outline, size: 16),
-                          label: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('Get Help'),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: CyberpunkTheme.neonPurple.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: CyberpunkTheme.neonPurple,
-                                    width: 1,
-                                  ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FutureBuilder<AICreditStatus>(
+                            key: ValueKey('credit_badge_${achievement['id']}_$_refreshKey'),
+                            future: AICreditService().checkCredits(),
+                            builder: (context, snapshot) {
+                              final creditBadge = snapshot.hasData ? snapshot.data!.badgeText : '...';
+                              
+                              return TextButton.icon(
+                                onPressed: () => _showAIGuideDialog(context, achievement),
+                                icon: const Icon(Icons.lightbulb_outline, size: 16),
+                                label: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('Get Help'),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: CyberpunkTheme.neonPurple,
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        creditBadge,
+                                        style: const TextStyle(
+                                          color: CyberpunkTheme.neonPurple,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                child: Text(
-                                  creditBadge,
-                                  style: const TextStyle(
-                                    color: CyberpunkTheme.neonPurple,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: CyberpunkTheme.neonPurple,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
+                              );
+                            },
+                          ),
+                        ),
+                        // Request Co-op Help button (only for multiplayer achievements)
+                        if (_isMultiplayerAchievement(achievement) && !isEarned) ...[
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: () async {
+                                final result = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => CreateTrophyRequestDialog(
+                                    gameId: widget.gameId,
+                                    gameTitle: widget.gameName,
+                                    achievementId: achievement['id'].toString(),
+                                    achievementName: achievement['name'],
+                                    platform: widget.platform.toLowerCase().startsWith('ps')
+                                        ? 'psn'
+                                        : widget.platform.toLowerCase().startsWith('xbox')
+                                            ? 'xbox'
+                                            : 'steam',
+                                  ),
+                                );
+                                
+                                if (result == true && mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('View your request in Co-op Partners'),
+                                      action: SnackBarAction(
+                                        label: 'View',
+                                        onPressed: () {
+                                          context.push('/coop-partners');
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.handshake, size: 16),
+                              label: const Text('Find Partner'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: CyberpunkTheme.neonCyan,
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                            ],
+                            ),
                           ),
-                          style: TextButton.styleFrom(
-                            foregroundColor: CyberpunkTheme.neonPurple,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                        );
-                      },
+                        ],
+                      ],
                     ),
                   ],
                 ],
@@ -1726,4 +1780,42 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       }
     }
   }
+
+  /// Detects if an achievement is likely multiplayer/co-op based on keywords
+  bool _isMultiplayerAchievement(Map<String, dynamic> achievement) {
+    final name = (achievement['name'] as String? ?? '').toLowerCase();
+    final description = (achievement['description'] as String? ?? '').toLowerCase();
+    final combined = '$name $description';
+
+    // List of multiplayer/co-op keywords
+    const multiplayerKeywords = [
+      'multiplayer',
+      'multi-player',
+      'co-op',
+      'coop',
+      'cooperative',
+      'online',
+      'with a friend',
+      'with friend',
+      'with friends',
+      'with other',
+      '2 player',
+      'two player',
+      '3 player',
+      'three player',
+      '4 player',
+      'four player',
+      'squad',
+      'team',
+      'party',
+      'raid',
+      'pvp',
+      'versus',
+      'matchmaking',
+      'lobby',
+    ];
+
+    return multiplayerKeywords.any((keyword) => combined.contains(keyword));
+  }
 }
+
