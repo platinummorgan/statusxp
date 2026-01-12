@@ -12,10 +12,14 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
   return TrophyHelpService(ref.read(supabaseClientProvider));
 });
 
+// State provider for selected platform filter
+final selectedPlatformProvider = StateProvider<String?>((ref) => null);
+
 // Provider for open requests filtered by platform
 final openRequestsProvider =
-    FutureProvider.family<List<TrophyHelpRequest>, String?>((ref, platform) async {
+    FutureProvider<List<TrophyHelpRequest>>((ref) async {
   try {
+    final platform = ref.watch(selectedPlatformProvider);
     final service = ref.read(trophyHelpServiceProvider);
     final results = await service.getOpenRequests(platform: platform);
     return results;
@@ -48,7 +52,6 @@ class CoopPartnersScreen extends ConsumerStatefulWidget {
 class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String? _selectedPlatform;
 
   @override
   void initState() {
@@ -78,17 +81,9 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _FindHelpTab(
-            key: const ValueKey('find_help_tab'),
-            selectedPlatform: _selectedPlatform, 
-            onPlatformChanged: (value) {
-              setState(() {
-                _selectedPlatform = value;
-              });
-            },
-          ),
-          const _MyRequestsTab(key: ValueKey('my_requests_tab')),
+        children: const [
+          _FindHelpTab(key: ValueKey('find_help_tab')),
+          _MyRequestsTab(key: ValueKey('my_requests_tab')),
         ],
       ),
     );
@@ -97,13 +92,7 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
 
 // Separate widget for Find Help tab to isolate provider watching
 class _FindHelpTab extends ConsumerStatefulWidget {
-  final String? selectedPlatform;
-  final ValueChanged<String?> onPlatformChanged;
-
-  const _FindHelpTab({
-    required this.selectedPlatform,
-    required this.onPlatformChanged,
-  });
+  const _FindHelpTab({super.key});
 
   @override
   ConsumerState<_FindHelpTab> createState() => _FindHelpTabState();
@@ -119,7 +108,8 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   Widget build(BuildContext context) {
     super.build(context); // Must call super for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
-    final requestsAsync = ref.watch(openRequestsProvider(widget.selectedPlatform));
+    final selectedPlatform = ref.watch(selectedPlatformProvider);
+    final requestsAsync = ref.watch(openRequestsProvider);
 
     return Column(
       children: [
@@ -239,12 +229,12 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
         color: isSelected ? CyberpunkTheme.neonCyan : Colors.white70,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
-      side: BorderSide(
-        color: isSelected ? CyberpunkTheme.neonCyan : Colors.white24,
-      ),
-    );
-  }
-
+      side: BorderSide(selectedPlatform == value;
+    return FilterChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        ref.read(selectedPlatformProvider.notifier).state = selected ? value : null
 }
 
 // Separate stateless widget for request card
