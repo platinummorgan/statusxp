@@ -50,9 +50,6 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final requestsAsync = ref.watch(openRequestsProvider(_selectedPlatform));
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Find Co-op Partners'),
@@ -68,17 +65,34 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildFindHelpTab(requestsAsync, theme),
-          _buildMyRequestsTab(theme),
+          _FindHelpTab(selectedPlatform: _selectedPlatform, onPlatformChanged: (value) {
+            setState(() {
+              _selectedPlatform = value;
+            });
+          }),
+          const _MyRequestsTab(),
         ],
       ),
     );
   }
+}
 
-  Widget _buildFindHelpTab(
-    AsyncValue<List<TrophyHelpRequest>> requestsAsync,
-    ThemeData theme,
-  ) {
+// Separate widget for Find Help tab to isolate provider watching
+class _FindHelpTab extends ConsumerWidget {
+  final String? selectedPlatform;
+  final ValueChanged<String?> onPlatformChanged;
+
+  const _FindHelpTab({
+    required this.selectedPlatform,
+    required this.onPlatformChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final requestsAsync = ref.watch(openRequestsProvider(selectedPlatform));
+
+    return Column(
     return Column(
       children: [
         // Platform filter
@@ -171,7 +185,7 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
                   padding: const EdgeInsets.all(16),
                   itemCount: requests.length,
                   itemBuilder: (context, index) {
-                    return _buildRequestCard(requests[index], theme);
+                    return _RequestCard(request: requests[index]);
                   },
                 ),
               );
@@ -183,14 +197,12 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
   }
 
   Widget _buildPlatformChip(String label, String? value) {
-    final isSelected = _selectedPlatform == value;
+    final isSelected = selectedPlatform == value;
     return FilterChip(
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        setState(() {
-          _selectedPlatform = selected ? value : null;
-        });
+        onPlatformChanged(selected ? value : null);
       },
       backgroundColor: const Color(0xFF1a1f3a),
       selectedColor: CyberpunkTheme.neonCyan.withOpacity(0.3),
@@ -205,7 +217,16 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
     );
   }
 
-  Widget _buildRequestCard(TrophyHelpRequest request, ThemeData theme) {
+}
+
+// Separate stateless widget for request card
+class _RequestCard extends ConsumerWidget {
+  final TrophyHelpRequest request;
+
+  const _RequestCard({required this.request});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     Color platformColor;
     IconData platformIcon;
 
@@ -390,7 +411,15 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
     );
   }
 
-  Widget _buildMyRequestsTab(ThemeData theme) {
+}
+
+// Separate widget for My Requests tab to isolate provider watching  
+class _MyRequestsTab extends ConsumerWidget {
+  const _MyRequestsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final myRequestsAsync = ref.watch(myRequestsProvider);
 
     return myRequestsAsync.when(
@@ -447,15 +476,23 @@ class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
             padding: const EdgeInsets.all(16),
             itemCount: requests.length,
             itemBuilder: (context, index) {
-              return _buildMyRequestCard(requests[index]);
+              return _MyRequestCard(request: requests[index]);
             },
           ),
         );
       },
     );
   }
+}
 
-  Widget _buildMyRequestCard(TrophyHelpRequest request) {
+// Separate stateless widget for my request card
+class _MyRequestCard extends ConsumerWidget {
+  final TrophyHelpRequest request;
+
+  const _MyRequestCard({required this.request});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final timeAgo = timeago.format(request.createdAt);
     
     // Platform-specific styling
