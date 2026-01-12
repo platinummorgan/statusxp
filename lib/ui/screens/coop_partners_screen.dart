@@ -108,6 +108,7 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   Widget build(BuildContext context) {
     super.build(context); // Must call super for AutomaticKeepAliveClientMixin
     final theme = Theme.of(context);
+    final selectedPlatform = ref.watch(selectedPlatformProvider);
     final requestsAsync = ref.watch(openRequestsProvider);
 
     return Column(
@@ -138,10 +139,10 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
                 child: Wrap(
                   spacing: 8,
                   children: [
-                    _buildPlatformChip('All', null),
-                    _buildPlatformChip('PSN', 'psn'),
-                    _buildPlatformChip('Xbox', 'xbox'),
-                    _buildPlatformChip('Steam', 'steam'),
+                    _buildPlatformChip('All', null, selectedPlatform),
+                    _buildPlatformChip('PSN', 'psn', selectedPlatform),
+                    _buildPlatformChip('Xbox', 'xbox', selectedPlatform),
+                    _buildPlatformChip('Steam', 'steam', selectedPlatform),
                   ],
                 ),
               ),
@@ -213,7 +214,8 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
     );
   }
 
-  Widget _buildPlatformChip(String label, String? value) {    final selectedPlatform = ref.watch(selectedPlatformProvider);    final isSelected = widget.selectedPlatform == value;
+  Widget _buildPlatformChip(String label, String? value, String? currentPlatform) {
+    final isSelected = currentPlatform == value;
     return FilterChip(
       label: Text(label),
       selected: isSelected,
