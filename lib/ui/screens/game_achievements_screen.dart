@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -1116,7 +1117,13 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       return;
     }
     
-    // Find the matching product
+    // Handle web purchases with Stripe
+    if (kIsWeb) {
+      await _purchaseAIPackWeb(context, pack);
+      return;
+    }
+    
+    // Handle mobile IAP purchases
     final productId = _getProductIdForPack(pack.type);
     final product = subscriptionService.aiPackProducts.firstWhere(
       (p) => p.id == productId,
@@ -1178,6 +1185,64 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+  
+  Future<void> _purchaseAIPackWeb(BuildContext context, AIPack pack) async {
+    try {
+      final supabase = Supabase.instance.client;
+      
+      // Refresh session
+      final sessionResponse = await supabase.auth.refreshSession();
+      if (sessionResponse.session == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please sign in again'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      
+      // Call Stripe checkout for AI pack
+      final response = await supabase.functions.invoke(
+        'stripe-ai-pack-checkout',
+        body: {
+          'packType': pack.type,
+          'credits': pack.credits,
+          'price': pack.price,
+        },
+        headers: {
+          'Authorization': 'Bearer ${sessionResponse.session!.accessToken}',
+        },
+      );
+
+      if (response.data != null && response.data['url'] != null) {
+        final checkoutUrl = response.data['url'] as String;
+        final uri = Uri.parse(checkoutUrl);
+        
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not open payment page'), backgroundColor: Colors.red),
+            );
+          }
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to create checkout session'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    } catch (e) {
+      print('AI pack checkout error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to start checkout: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
   

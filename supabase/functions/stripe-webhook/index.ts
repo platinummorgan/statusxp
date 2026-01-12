@@ -36,25 +36,46 @@ serve(async (req) => {
           break
         }
 
-        console.log(`💎 Activating premium for user: ${userId}`)
-        console.log(`📧 Customer email: ${session.customer_email}`)
-
-        // Update user_premium_status
-        const { error: updateError } = await supabase
-          .from('user_premium_status')
-          .upsert({
-            user_id: userId,
-            is_premium: true,
-            premium_since: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id'
+        // Check if this is an AI pack purchase (mode: 'payment') or subscription (mode: 'subscription')
+        if (session.mode === 'payment' && session.metadata?.credits) {
+          // AI Pack purchase
+          const credits = parseInt(session.metadata.credits)
+          const packType = session.metadata.pack_type
+          
+          console.log(`🎁 Adding ${credits} AI credits for user: ${userId} (pack: ${packType})`)
+          
+          // Add AI credits to user's balance
+          const { error: creditError } = await supabase.rpc('add_ai_credits', {
+            p_user_id: userId,
+            p_credits: credits,
           })
-
-        if (updateError) {
-          console.error('❌ Error updating premium status:', updateError)
+          
+          if (creditError) {
+            console.error('❌ Error adding AI credits:', creditError)
+          } else {
+            console.log('✅ AI credits added successfully')
+          }
         } else {
-          console.log('✅ Premium status activated successfully')
+          // Premium subscription activation
+          console.log(`💎 Activating premium for user: ${userId}`)
+          console.log(`📧 Customer email: ${session.customer_email}`)
+
+          const { error: updateError } = await supabase
+            .from('user_premium_status')
+            .upsert({
+              user_id: userId,
+              is_premium: true,
+              premium_since: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }, {
+              onConflict: 'user_id'
+            })
+
+          if (updateError) {
+            console.error('❌ Error updating premium status:', updateError)
+          } else {
+            console.log('✅ Premium status activated successfully')
+          }
         }
 
         break

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,7 +6,6 @@ import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/data/auth/auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
-import 'dart:io' show Platform;
 
 /// Modern sign in screen with multiple sign-in options:
 /// - Continue with Biometric (if available)
