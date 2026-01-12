@@ -116471,7 +116471,7 @@ adO(a){var s=0,r=A.n(t.b5),q,p=2,o=[],n=this,m,l,k,j,i,h,g
 var $async$Dq=A.j(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:p=4
 s=7
-return A.d(n.a.aM("user_trophies").aZ(0,"            id,\n            trophy_id,\n            earned_at,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              rarity_global,\n              game_title_id,\n              icon_url: COALESCE(proxied_icon_url, icon_url),\n              game_titles!inner(\n                name,\n                cover_url,\n                proxied_cover_url\n              )\n            )\n          ").aE("user_id",a).f1(0,"earned_at",!1),$async$Dq)
+return A.d(n.a.aM("user_trophies").aZ(0,"            id,\n            trophy_id,\n            earned_at,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              rarity_global,\n              game_title_id,\n              icon_url,\n              proxied_icon_url,\n              game_titles!inner(\n                name,\n                cover_url,\n                proxied_cover_url\n              )\n            )\n          ").aE("user_id",a).f1(0,"earned_at",!1),$async$Dq)
 case 7:m=c
 k=J.fJ(m,new A.aGM())
 j=A.a_(k,k.$ti.i("A.E"))
@@ -116503,7 +116503,7 @@ ae2(a,b){var s=0,r=A.n(t.b5),q,p=2,o=[],n=this,m,l,k,j,i,h,g,f
 var $async$Dx=A.j(function(c,d){if(c===1){o.push(d)
 s=p}while(true)switch(s){case 0:p=4
 s=7
-return A.d(n.a.aM("user_trophies").aZ(0,"            id,\n            trophy_id,\n            earned_at,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              rarity_global,\n              icon_url: COALESCE(proxied_icon_url, icon_url),\n              game_title_id,\n              game_titles!inner(\n                name\n              )\n            )\n          ").aE("user_id",a).f1(0,"earned_at",!1),$async$Dx)
+return A.d(n.a.aM("user_trophies").aZ(0,"            id,\n            trophy_id,\n            earned_at,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              rarity_global,\n              icon_url,\n              proxied_icon_url,\n              game_title_id,\n              game_titles!inner(\n                name\n              )\n            )\n          ").aE("user_id",a).f1(0,"earned_at",!1),$async$Dx)
 case 7:m=d
 j=J.fJ(m,new A.aGP())
 i=A.a_(j,j.$ti.i("A.E"))
@@ -116538,7 +116538,7 @@ adQ(a,b){var s=0,r=A.n(t.b5),q,p=2,o=[],n=this,m,l,k,j
 var $async$Dt=A.j(function(c,d){if(c===1){o.push(d)
 s=p}while(true)switch(s){case 0:p=4
 s=7
-return A.d(n.a.aM("user_trophies").aZ(0,"            id,\n            trophy_id,\n            earned_at,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              icon_url: COALESCE(proxied_icon_url, icon_url),\n              game_title_id,\n              game_titles!inner(\n                name\n              )\n            )\n          ").aE("user_id",a).f1(0,"earned_at",!1).j_(b),$async$Dt)
+return A.d(n.a.aM("user_trophies").aZ(0,"            id,\n            trophy_id,\n            earned_at,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              icon_url,\n              proxied_icon_url,\n              game_title_id,\n              game_titles!inner(\n                name\n              )\n            )\n          ").aE("user_id",a).f1(0,"earned_at",!1).j_(b),$async$Dt)
 case 7:m=d
 l=J.dF(m,new A.aGO(),t.P)
 l=A.a_(l,l.$ti.i("as.E"))
@@ -116566,16 +116566,18 @@ $1(a){var s=t.P.a(J.p(a,"trophies"))
 return J.c(J.p(s,"tier"),"platinum")},
 $S:71}
 A.aGN.prototype={
-$1(a){var s,r,q,p,o=J.T(a),n=t.P,m=n.a(o.h(a,"trophies")),l=n.a(J.p(m,"game_titles"))
-n=J.p(m,"id")
-s=J.p(m,"name")
-r=J.p(l,"name")
-q=J.p(l,"proxied_cover_url")
-if(q==null)q=J.p(l,"cover_url")
-p=A.dD(J.p(m,"rarity_global"))
+$1(a){var s,r,q,p,o,n=J.T(a),m=t.P,l=m.a(n.h(a,"trophies")),k=m.a(J.p(l,"game_titles"))
+m=J.p(l,"id")
+s=J.p(l,"name")
+r=J.p(k,"name")
+q=J.p(k,"proxied_cover_url")
+if(q==null)q=J.p(k,"cover_url")
+p=A.dD(J.p(l,"rarity_global"))
 if(p==null)p=null
 if(p==null)p=100
-return A.W(["trophy_id",n,"trophy_name",s,"game_name",r,"cover_url",q,"rarity",p,"earned_at",o.h(a,"earned_at"),"icon_url",J.p(m,"icon_url")],t.N,t.z)},
+n=n.h(a,"earned_at")
+o=J.p(l,"proxied_icon_url")
+return A.W(["trophy_id",m,"trophy_name",s,"game_name",r,"cover_url",q,"rarity",p,"earned_at",n,"icon_url",o==null?J.p(l,"icon_url"):o],t.N,t.z)},
 $S:83}
 A.aGP.prototype={
 $1(a){var s=t.P.a(J.p(a,"trophies")),r=A.dD(J.p(s,"rarity_global")),q=r==null?null:r,p=q==null?100:q
@@ -116589,19 +116591,27 @@ s=r==null?100:r
 return J.Ub(m,s)},
 $S:123}
 A.aGR.prototype={
+$1(a){var s,r,q,p,o,n=J.T(a),m=t.P,l=m.a(n.h(a,"trophies")),k=m.a(J.p(l,"game_titles"))
+m=J.p(l,"id")
+s=J.p(l,"name")
+r=J.p(k,"name")
+q=J.p(l,"tier")
+p=A.dD(J.p(l,"rarity_global"))
+if(p==null)p=null
+if(p==null)p=100
+n=n.h(a,"earned_at")
+o=J.p(l,"proxied_icon_url")
+return A.W(["trophy_id",m,"trophy_name",s,"game_name",r,"tier",q,"rarity",p,"earned_at",n,"icon_url",o==null?J.p(l,"icon_url"):o],t.N,t.z)},
+$S:83}
+A.aGO.prototype={
 $1(a){var s,r,q,p,o=J.T(a),n=t.P,m=n.a(o.h(a,"trophies")),l=n.a(J.p(m,"game_titles"))
 n=J.p(m,"id")
 s=J.p(m,"name")
 r=J.p(l,"name")
 q=J.p(m,"tier")
-p=A.dD(J.p(m,"rarity_global"))
-if(p==null)p=null
-if(p==null)p=100
-return A.W(["trophy_id",n,"trophy_name",s,"game_name",r,"tier",q,"rarity",p,"earned_at",o.h(a,"earned_at"),"icon_url",J.p(m,"icon_url")],t.N,t.z)},
-$S:83}
-A.aGO.prototype={
-$1(a){var s=J.T(a),r=t.P,q=r.a(s.h(a,"trophies")),p=r.a(J.p(q,"game_titles"))
-return A.W(["trophy_id",J.p(q,"id"),"trophy_name",J.p(q,"name"),"game_name",J.p(p,"name"),"tier",J.p(q,"tier"),"earned_at",s.h(a,"earned_at"),"icon_url",J.p(q,"icon_url")],t.N,t.z)},
+o=o.h(a,"earned_at")
+p=J.p(m,"proxied_icon_url")
+return A.W(["trophy_id",n,"trophy_name",s,"game_name",r,"tier",q,"earned_at",o,"icon_url",p==null?J.p(m,"icon_url"):p],t.N,t.z)},
 $S:83}
 A.ub.prototype={
 Dy(a){return this.ae3(a)},
@@ -117110,7 +117120,7 @@ adv(a){var s=0,r=A.n(t.TZ),q,p=2,o=[],n=this,m,l,k,j
 var $async$Di=A.j(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:p=4
 s=7
-return A.d(n.a.aM("display_case_items").aZ(0,"            id,\n            user_id,\n            trophy_id,\n            display_type,\n            shelf_number,\n            position_in_shelf,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              rarity_global,\n              icon_url: COALESCE(proxied_icon_url, icon_url),\n              game_title_id,\n              game_titles!inner(\n                name,\n                cover_url,\n                proxied_cover_url\n              )\n            )\n          ").aE("user_id",a).Ug(0,"shelf_number").Ug(0,"position_in_shelf"),$async$Di)
+return A.d(n.a.aM("display_case_items").aZ(0,"            id,\n            user_id,\n            trophy_id,\n            display_type,\n            shelf_number,\n            position_in_shelf,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              rarity_global,\n              icon_url,\n              proxied_icon_url,\n              game_title_id,\n              game_titles!inner(\n                name,\n                cover_url,\n                proxied_cover_url\n              )\n            )\n          ").aE("user_id",a).Ug(0,"shelf_number").Ug(0,"position_in_shelf"),$async$Di)
 case 7:m=c
 l=J.dF(m,new A.ajP(),t.Bi)
 l=A.a_(l,l.$ti.i("as.E"))
@@ -117142,7 +117152,7 @@ s=7
 return A.d(j.aM("display_case_items").a7T(0).aE("user_id",a9).aE("shelf_number",a7).aE("position_in_shelf",a6),$async$Ay)
 case 7:i=t.N
 s=8
-return A.d(j.aM("display_case_items").tS(0,A.W(["user_id",a9,"trophy_id",a8,"display_type",a5.b,"shelf_number",a7,"position_in_shelf",a6],i,t.K)).aZ(0,"            id,\n            user_id,\n            trophy_id,\n            display_type,\n            shelf_number,\n            position_in_shelf,\n            trophies!inner(\n              name,\n              tier,\n              rarity_global,\n              icon_url: COALESCE(proxied_icon_url, icon_url),\n              game_titles!inner(\n                name,\n                cover_url,\n                proxied_cover_url\n              )\n            )\n          ").kG(0),$async$Ay)
+return A.d(j.aM("display_case_items").tS(0,A.W(["user_id",a9,"trophy_id",a8,"display_type",a5.b,"shelf_number",a7,"position_in_shelf",a6],i,t.K)).aZ(0,"            id,\n            user_id,\n            trophy_id,\n            display_type,\n            shelf_number,\n            position_in_shelf,\n            trophies!inner(\n              name,\n              tier,\n              rarity_global,\n              icon_url,\n              proxied_icon_url,\n              game_titles!inner(\n                name,\n                cover_url,\n                proxied_cover_url\n              )\n            )\n          ").kG(0),$async$Ay)
 case 8:m=b1
 j=t.P
 l=j.a(J.p(m,"trophies"))
@@ -117157,7 +117167,8 @@ c=J.p(l,"name")
 b=J.p(k,"name")
 a=J.p(l,"tier")
 a0=J.p(l,"rarity_global")
-a1=J.p(l,"icon_url")
+a1=J.p(l,"proxied_icon_url")
+if(a1==null)a1=J.p(l,"icon_url")
 a2=J.p(k,"proxied_cover_url")
 j=A.b7n(A.W(["id",j,"user_id",h,"trophy_id",g,"display_type",f,"shelf_number",e,"position_in_shelf",d,"trophy_name",c,"game_name",b,"tier",a,"rarity",a0,"icon_url",a1,"game_image_url",a2==null?J.p(k,"cover_url"):a2],i,t.z))
 q=j
@@ -117207,7 +117218,7 @@ adq(a){var s=0,r=A.n(t.b5),q,p=2,o=[],n=this,m,l,k,j
 var $async$y6=A.j(function(b,c){if(b===1){o.push(c)
 s=p}while(true)switch(s){case 0:p=4
 s=7
-return A.d(n.a.aM("user_trophies").aZ(0,"            trophy_id,\n            earned_at,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              rarity_global,\n              icon_url: COALESCE(proxied_icon_url, icon_url),\n              game_title_id,\n              game_titles!inner(\n                name,\n                cover_url,\n                proxied_cover_url\n              )\n            )\n          ").aE("user_id",a).f1(0,"earned_at",!1),$async$y6)
+return A.d(n.a.aM("user_trophies").aZ(0,"            trophy_id,\n            earned_at,\n            trophies!inner(\n              id,\n              name,\n              tier,\n              rarity_global,\n              icon_url,\n              proxied_icon_url,\n              game_title_id,\n              game_titles!inner(\n                name,\n                cover_url,\n                proxied_cover_url\n              )\n            )\n          ").aE("user_id",a).f1(0,"earned_at",!1),$async$y6)
 case 7:m=c
 l=J.dF(m,new A.ajO(),t.P)
 l=A.a_(l,l.$ti.i("as.E"))
@@ -117287,7 +117298,8 @@ o=J.p(f,"name")
 n=J.p(e,"name")
 m=J.p(f,"tier")
 l=J.p(f,"rarity_global")
-k=J.p(f,"icon_url")
+k=J.p(f,"proxied_icon_url")
+if(k==null)k=J.p(f,"icon_url")
 j=J.p(e,"proxied_cover_url")
 return A.b7n(A.W(["id",g,"user_id",s,"trophy_id",r,"display_type",q,"shelf_number",p,i,h,"trophy_name",o,"game_name",n,"tier",m,"rarity",l,"icon_url",k,"game_image_url",j==null?J.p(e,"cover_url"):j],t.N,t.z))},
 $S:780}
@@ -117298,7 +117310,8 @@ s=J.p(k,"name")
 r=J.p(j,"name")
 q=J.p(k,"tier")
 p=J.p(k,"rarity_global")
-o=J.p(k,"icon_url")
+o=J.p(k,"proxied_icon_url")
+if(o==null)o=J.p(k,"icon_url")
 n=J.p(j,"proxied_cover_url")
 if(n==null)n=J.p(j,"cover_url")
 return A.W(["trophy_id",l,"trophy_name",s,"game_name",r,"tier",q,"rarity",p,"icon_url",o,"game_image_url",n,"earned_at",m.h(a,"earned_at")],t.N,t.z)},
@@ -121712,7 +121725,7 @@ else l=c.toLowerCase()
 k=null
 q=7
 s=10
-return A.d(n.aM("achievements").aZ(0,"              id,\n              name,\n              description,\n              icon_url: COALESCE(proxied_icon_url, icon_url),\n              rarity_global,\n              rarity_band,\n              base_status_xp,\n              psn_trophy_type,\n              xbox_gamerscore,\n              xbox_is_secret,\n              steam_hidden,\n              is_platinum,\n              is_dlc,\n              dlc_name\n            ").aE("game_title_id",o.a.d).aE("platform",l).f1(0,"is_platinum",!1).K9(0,"psn_trophy_type",!0,!1).f1(0,"id",!0),$async$rN)
+return A.d(n.aM("achievements").aZ(0,"              id,\n              name,\n              description,\n              icon_url,\n              proxied_icon_url,\n              rarity_global,\n              rarity_band,\n              base_status_xp,\n              psn_trophy_type,\n              xbox_gamerscore,\n              xbox_is_secret,\n              steam_hidden,\n              is_platinum,\n              is_dlc,\n              dlc_name\n            ").aE("game_title_id",o.a.d).aE("platform",l).f1(0,"is_platinum",!1).K9(0,"psn_trophy_type",!0,!1).f1(0,"id",!0),$async$rN)
 case 10:k=a7
 A.dh("[GameAchievements] Found "+J.b7(k)+" achievements")
 q=3
@@ -121722,7 +121735,7 @@ case 7:q=6
 a1=p.pop()
 q=12
 s=15
-return A.d(n.aM("trophies").aZ(0,"                id,\n                name,\n                description,\n                icon_url: COALESCE(proxied_icon_url, icon_url),\n                rarity_global,\n                tier,\n                hidden\n              ").aE("game_title_id",o.a.d),$async$rN)
+return A.d(n.aM("trophies").aZ(0,"                id,\n                name,\n                description,\n                icon_url,\n                proxied_icon_url,\n                rarity_global,\n                tier,\n                hidden\n              ").aE("game_title_id",o.a.d),$async$rN)
 case 15:k=a7
 A.dh("[GameAchievements] Found "+J.b7(k)+" trophies")
 q=6
@@ -121845,38 +121858,39 @@ J.cG(p,q)}s=k.$ti.i("bJ<1>")
 l=A.a_(new A.bJ(k,s),s.i("A.E"))
 B.b.eb(l,new A.aPX())
 return A.j5(null,new A.aPY(this,l,k,b),l.length,B.U,B.O)},
-amc(a1,a2,a3,a4){var s,r,q,p,o,n,m,l=this,k=null,j="icon_url",i=J.T(a1),h=A.ae(i.h(a1,"trophy_tier")),g=l.asE(h),f=A.dD(i.h(a1,"rarity_global")),e=A.ae(i.h(a1,"rarity_band")),d=A.dD(i.h(a1,"base_status_xp")),c=A.bB(i.h(a1,"xbox_gamerscore")),b=A.e4(i.h(a1,"xbox_is_secret")),a=A.e4(i.h(a1,"steam_hidden")),a0=a===!0
-a=A.q(B.d.M(255*(a2?0.9:0.5)),B.a_.j()>>>16&255,B.a_.j()>>>8&255,B.a_.j()&255)
+amc(a2,a3,a4,a5){var s,r,q,p,o,n,m,l=this,k=null,j="proxied_icon_url",i="icon_url",h=J.T(a2),g=A.ae(h.h(a2,"trophy_tier")),f=l.asE(g),e=A.dD(h.h(a2,"rarity_global")),d=A.ae(h.h(a2,"rarity_band")),c=A.dD(h.h(a2,"base_status_xp")),b=A.bB(h.h(a2,"xbox_gamerscore")),a=A.e4(h.h(a2,"xbox_is_secret")),a0=A.e4(h.h(a2,"steam_hidden")),a1=a0===!0
+a0=A.q(B.d.M(255*(a3?0.9:0.5)),B.a_.j()>>>16&255,B.a_.j()>>>8&255,B.a_.j()&255)
 s=A.Y(12)
-r=a2?a4:B.d3
-q=a2?2:1
+r=a3?a5:B.d3
+q=a3?2:1
 p=A.Y(8)
-if(i.h(a1,j)!=null){o=i.h(a1,j)
-n=a2?k:B.ak
-m=a2?k:B.Iq
-m=A.fP(o,n,m,new A.aPQ(l,h,g),B.bx,60,k,60)
-o=m}else o=l.YM(h,g)
+if(h.h(a2,j)!=null||h.h(a2,i)!=null){o=h.h(a2,j)
+if(o==null)o=h.h(a2,i)
+n=a3?k:B.ak
+m=a3?k:B.Iq
+m=A.fP(o,n,m,new A.aPQ(l,g,f),B.bx,60,k,60)
+o=m}else o=l.YM(g,f)
 o=A.ho(p,o)
-b=b!==!0
-if((!b||a0)&&!a2)p="Hidden Achievement"
-else{p=i.h(a1,"name")
+a=a!==!0
+if((!a||a1)&&!a3)p="Hidden Achievement"
+else{p=h.h(a2,"name")
 if(p==null)p="Unknown"}n=t.p
-p=A.a([A.x(p,k,k,k,k,A.af(k,k,a2?B.e:B.hR,k,k,k,k,k,k,k,k,16,k,k,B.w,k,k,!0,k,k,k,k,k,k,k,k),k,k),B.ao],n)
-if(b&&!a0||a2||l.z){m=i.h(a1,"description")
+p=A.a([A.x(p,k,k,k,k,A.af(k,k,a3?B.e:B.hR,k,k,k,k,k,k,k,k,16,k,k,B.w,k,k,!0,k,k,k,k,k,k,k,k),k,k),B.ao],n)
+if(a&&!a1||a3||l.z){m=h.h(a2,"description")
 if(m==null)m=""
-p.push(A.x(m,2,B.ag,k,k,A.af(k,k,a2?B.B:B.cP,k,k,k,k,k,k,k,k,13,k,k,k,k,k,!0,k,k,k,k,k,k,k,k),k,k))}p.push(B.a9)
+p.push(A.x(m,2,B.ag,k,k,A.af(k,k,a3?B.B:B.cP,k,k,k,k,k,k,k,k,13,k,k,k,k,k,!0,k,k,k,k,k,k,k,k),k,k))}p.push(B.a9)
 m=A.a([],n)
-if(h!=null)m.push(l.yO(h.toUpperCase(),g,l.a0r(h)))
-if(c!=null&&c>0)m.push(l.yO(A.o(c)+"G",B.bl,B.dr))
-if(f!=null)m.push(l.yO(B.d.aa(f,1)+"% \u2022 "+l.asg(e),l.arj(e),B.QK))
-if(d!=null)m.push(l.yO(B.d.aa(d,1)+" XP",B.r,B.Q0))
-if(a2&&a3!=null)m.push(l.yO(l.ara(a3),B.n,B.eg))
+if(g!=null)m.push(l.yO(g.toUpperCase(),f,l.a0r(g)))
+if(b!=null&&b>0)m.push(l.yO(A.o(b)+"G",B.bl,B.dr))
+if(e!=null)m.push(l.yO(B.d.aa(e,1)+"% \u2022 "+l.asg(d),l.arj(d),B.QK))
+if(c!=null)m.push(l.yO(B.d.aa(c,1)+" XP",B.r,B.Q0))
+if(a3&&a4!=null)m.push(l.yO(l.ara(a4),B.n,B.eg))
 p.push(A.iO(B.am,m,B.c_,4,8))
-if(b&&!a0||a2||l.z){i=A.o(i.h(a1,"id"))
-b=l.as
+if(a&&!a1||a3||l.z){h=A.o(h.h(a2,"id"))
+a=l.as
 m=$.c9().b
 m===$&&A.b()
-B.b.K(p,A.a([B.a9,new A.eJ(new A.Gc(m).AO(),new A.aPR(l,a1),new A.de("credit_badge_"+i+"_"+b,t.kK),t.jm)],n))}return A.vq(new A.ai(B.cB,A.aA(A.a([o,B.a5,A.b3(A.ad(p,B.D,B.h,B.i),1)],n),B.D,B.h,B.i,0,k),k),k,a,k,B.cl,new A.cu(s,new A.aV(r,q,B.z,-1)))},
+B.b.K(p,A.a([B.a9,new A.eJ(new A.Gc(m).AO(),new A.aPR(l,a2),new A.de("credit_badge_"+h+"_"+a,t.kK),t.jm)],n))}return A.vq(new A.ai(B.cB,A.aA(A.a([o,B.a5,A.b3(A.ad(p,B.D,B.h,B.i),1)],n),B.D,B.h,B.i,0,k),k),k,a0,k,B.cl,new A.cu(s,new A.aV(r,q,B.z,-1)))},
 YM(a,b){var s=null
 return A.a2(s,A.aS(this.a0r(a),b,s,s,30),B.j,B.jv,s,s,s,60,s,s,s,s,60)},
 yO(a,b,c){var s=null,r=A.q(38,b.j()>>>16&255,b.j()>>>8&255,b.j()&255),q=A.Y(6),p=A.aN(b,1)

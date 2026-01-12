@@ -26,7 +26,8 @@ class DisplayCaseRepository {
               name,
               tier,
               rarity_global,
-              icon_url: COALESCE(proxied_icon_url, icon_url),
+              icon_url,
+              proxied_icon_url,
               game_title_id,
               game_titles!inner(
                 name,
@@ -54,7 +55,7 @@ class DisplayCaseRepository {
           'game_name': gameTitle['name'],
           'tier': trophy['tier'],
           'rarity': trophy['rarity_global'],
-          'icon_url': trophy['icon_url'],
+          'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
           'game_image_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
         });
       }).toList();
@@ -100,7 +101,8 @@ class DisplayCaseRepository {
               name,
               tier,
               rarity_global,
-              icon_url: COALESCE(proxied_icon_url, icon_url),
+              icon_url,
+              proxied_icon_url,
               game_titles!inner(
                 name,
                 cover_url,
@@ -124,7 +126,7 @@ class DisplayCaseRepository {
         'game_name': gameTitle['name'],
         'tier': trophy['tier'],
         'rarity': trophy['rarity_global'],
-        'icon_url': trophy['icon_url'],
+        'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
         'game_image_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
       });
     } catch (e) {
@@ -245,7 +247,8 @@ class DisplayCaseRepository {
               name,
               tier,
               rarity_global,
-              icon_url: COALESCE(proxied_icon_url, icon_url),
+              icon_url,
+              proxied_icon_url,
               game_title_id,
               game_titles!inner(
                 name,
@@ -267,7 +270,7 @@ class DisplayCaseRepository {
           'game_name': gameTitle['name'],
           'tier': trophy['tier'],
           'rarity': trophy['rarity_global'],
-          'icon_url': trophy['icon_url'],
+          'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
           'game_image_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
           'earned_at': row['earned_at'],
         };

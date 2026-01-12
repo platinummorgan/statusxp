@@ -80,7 +80,8 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               id,
               name,
               description,
-              icon_url: COALESCE(proxied_icon_url, icon_url),
+              icon_url,
+              proxied_icon_url,
               rarity_global,
               rarity_band,
               base_status_xp,
@@ -108,7 +109,8 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 id,
                 name,
                 description,
-                icon_url: COALESCE(proxied_icon_url, icon_url),
+                icon_url,
+                proxied_icon_url,
                 rarity_global,
                 tier,
                 hidden
@@ -485,9 +487,9 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
             // Icon
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: achievement['icon_url'] != null
+              child: achievement['proxied_icon_url'] != null || achievement['icon_url'] != null
                   ? Image.network(
-                      achievement['icon_url'],
+                      achievement['proxied_icon_url'] ?? achievement['icon_url'],
                       width: 60,
                       height: 60,
                       fit: BoxFit.cover,

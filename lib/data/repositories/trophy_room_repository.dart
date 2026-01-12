@@ -24,7 +24,8 @@ class TrophyRoomRepository {
               tier,
               rarity_global,
               game_title_id,
-              icon_url: COALESCE(proxied_icon_url, icon_url),
+              icon_url,
+              proxied_icon_url,
               game_titles!inner(
                 name,
                 cover_url,
@@ -52,7 +53,7 @@ class TrophyRoomRepository {
           'cover_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
           'rarity': (trophy['rarity_global'] as num?)?.toDouble() ?? 100.0,
           'earned_at': row['earned_at'],
-          'icon_url': trophy['icon_url'],
+          'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
         };
       }).toList();
     } catch (e) {
@@ -74,7 +75,8 @@ class TrophyRoomRepository {
               name,
               tier,
               rarity_global,
-              icon_url: COALESCE(proxied_icon_url, icon_url),
+              icon_url,
+              proxied_icon_url,
               game_title_id,
               game_titles!inner(
                 name
@@ -112,7 +114,7 @@ class TrophyRoomRepository {
           'tier': trophy['tier'],
           'rarity': (trophy['rarity_global'] as num?)?.toDouble() ?? 100.0,
           'earned_at': row['earned_at'],
-          'icon_url': trophy['icon_url'],
+          'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
         };
       }).toList();
     } catch (e) {
@@ -133,7 +135,8 @@ class TrophyRoomRepository {
               id,
               name,
               tier,
-              icon_url: COALESCE(proxied_icon_url, icon_url),
+              icon_url,
+              proxied_icon_url,
               game_title_id,
               game_titles!inner(
                 name
@@ -154,7 +157,7 @@ class TrophyRoomRepository {
           'game_name': gameTitle['name'],
           'tier': trophy['tier'],
           'earned_at': row['earned_at'],
-          'icon_url': trophy['icon_url'],
+          'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
         };
       }).toList();
     } catch (e) {
