@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'package:statusxp/ui/screens/markdown_viewer_screen.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Premium Subscription Screen
 /// 
@@ -18,6 +21,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
   final SubscriptionService _subscriptionService = SubscriptionService();
   bool _isLoading = true;
   bool _isPremium = false;
+  bool _isProcessingStripe = false;
 
   @override
   void initState() {
@@ -35,6 +39,13 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
   }
 
   Future<void> _subscribeToPremium() async {
+    // Handle web Stripe payments
+    if (kIsWeb) {
+      await _subscribeWithStripe();
+      return;
+    }
+
+    // Handle mobile in-app purchases
     if (_subscriptionService.products.isEmpty) {
       _showError('Premium subscription not available at the moment');
       return;
@@ -60,6 +71,41 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       }
     } else {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _subscribeWithStripe() async {
+    setState(() => _isProcessingStripe = true);
+    
+    try {
+      final supabase = ref.read(supabaseClientProvider);
+      
+      // Call Stripe checkout Edge Function
+      final response = await supabase.functions.invoke(
+        'stripe-create-checkout',
+        headers: {
+          'Authorization': 'Bearer ${supabase.auth.currentSession?.accessToken}',
+        },
+      );
+
+      if (response.data != null && response.data['url'] != null) {
+        final checkoutUrl = response.data['url'] as String;
+        
+        // Open Stripe Checkout in browser
+        final uri = Uri.parse(checkoutUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          _showError('Could not open payment page');
+        }
+      } else {
+        _showError('Failed to create checkout session');
+      }
+    } catch (e) {
+      print('Stripe checkout error: $e');
+      _showError('Failed to start checkout process');
+    } finally {
+      setState(() => _isProcessingStripe = false);
     }
   }
 
@@ -385,6 +431,41 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
   }
 
   Widget _buildSubscribeButton(SubscriptionPlan plan) {
+    // Web users get Stripe checkout button
+    if (kIsWeb) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _isProcessingStripe ? null : _subscribeToPremium,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: accentPrimary,
+            foregroundColor: backgroundDark,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: _isProcessingStripe
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: backgroundDark,
+                  ),
+                )
+              : const Text(
+                  'Subscribe with Card',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+        ),
+      );
+    }
+
+    // Mobile app subscribe button
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -418,6 +499,11 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
   }
 
   Widget _buildRestoreButton() {
+    // Hide restore button on web
+    if (kIsWeb) {
+      return const SizedBox.shrink();
+    }
+
     return TextButton(
       onPressed: _restorePurchases,
       child: const Text(

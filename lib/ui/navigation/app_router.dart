@@ -18,6 +18,7 @@ import 'package:statusxp/ui/screens/status_poster_screen.dart';
 import 'package:statusxp/ui/screens/trophy_room_screen.dart';
 import 'package:statusxp/ui/screens/settings_screen.dart';
 import 'package:statusxp/ui/screens/landing_page_screen.dart';
+import 'package:statusxp/ui/screens/premium_success_screen.dart';
 import 'package:statusxp/features/display_case/screens/display_case_screen.dart';
 
 /// StatusXP App Router Configuration
@@ -40,6 +41,13 @@ final GoRouter appRouter = GoRouter(
       path: '/reset-password',
       name: 'reset-password',
       builder: (context, state) => const ResetPasswordScreen(),
+    ),
+
+    // Premium Success - Stripe payment success redirect
+    GoRoute(
+      path: '/premium/success',
+      name: 'premium-success',
+      builder: (context, state) => const PremiumSuccessScreen(),
     ),
 
     ShellRoute(
