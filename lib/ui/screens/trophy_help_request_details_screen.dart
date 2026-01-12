@@ -11,7 +11,7 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
   return TrophyHelpService(ref.read(supabaseClientProvider));
 });
 
-final requestDetailsProvider = FutureProvider.autoDispose.family<TrophyHelpRequest, String>(
+final requestDetailsProvider = FutureProvider.autoDispose.family<TrophyHelpRequest?, String>(
   (ref, requestId) async {
     final service = ref.read(trophyHelpServiceProvider);
     return service.getRequest(requestId);
@@ -52,7 +52,14 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
           ref.invalidate(requestResponsesProvider(requestId));
         },
         child: requestAsync.when(
-          data: (request) => _buildContent(context, theme, request, responsesAsync, ref),
+          data: (request) {
+            if (request == null) {
+              return const Center(
+                child: Text('Request not found'),
+              );
+            }
+            return _buildContent(context, theme, request, responsesAsync, ref);
+          },
           loading: () => const Center(
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),

@@ -46,15 +46,15 @@ class TrophyHelpService {
     var query = _supabase
         .from('trophy_help_requests')
         .select()
-        .eq('status', 'open')
+        .match({'status': 'open'})
         .order('created_at', ascending: false);
 
     if (platform != null) {
-      query = query.eq('platform', platform);
+      query = query.match({'platform': platform});
     }
 
     if (gameId != null) {
-      query = query.eq('game_id', gameId);
+      query = query.match({'game_id': gameId});
     }
 
     final response = await query;
@@ -178,7 +178,7 @@ class TrophyHelpService {
     final requests = await _supabase
         .from('trophy_help_requests')
         .select()
-        .in_('id', requestIds)
+        .inFilter('id', requestIds)
         .order('created_at', ascending: false);
 
     return (requests as List)

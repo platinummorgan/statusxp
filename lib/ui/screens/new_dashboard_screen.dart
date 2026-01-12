@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'dart:html' as html show window;
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
@@ -124,7 +125,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
               child: TextButton.icon(
                 onPressed: () async {
                   // Detect iOS vs Android and open appropriate store
-                  final userAgent = html.window.navigator.userAgent.toLowerCase();
+                  final userAgent = html.window.navigator?.userAgent?.toLowerCase() ?? '';
                   final isIOS = userAgent.contains('iphone') || userAgent.contains('ipad');
                   
                   final url = isIOS
