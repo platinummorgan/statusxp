@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,8 @@ import 'package:statusxp/ui/widgets/glass_panel.dart';
 import 'package:statusxp/ui/widgets/neon_action_chip.dart';
 import 'package:statusxp/ui/widgets/neon_ring.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
+import 'package:statusxp/utils/html.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Dashboard Screen - Cyberpunk HUD Main Screen
 /// 
@@ -55,6 +58,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
         centerTitle: true,
         actions: [
+          if (kIsWeb) ...[
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: TextButton.icon(
+                onPressed: () async {
+                  // Detect iOS vs Android and open appropriate store
+                  final userAgent = window.navigator.userAgent.toLowerCase();
+                  final isIOS = userAgent.contains('iphone') || userAgent.contains('ipad');
+                  
+                  final url = isIOS
+                      ? Uri.parse('https://apps.apple.com/app/id6757080961')
+                      : Uri.parse('https://play.google.com/store/apps/details?id=com.statusxp.statusxp');
+                  
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  }
+                },
+                icon: const Icon(Icons.phone_android, size: 18, color: CyberpunkTheme.neonCyan),
+                label: const Text(
+                  'Also on Android & iOS',
+                  style: TextStyle(
+                    color: CyberpunkTheme.neonCyan,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  backgroundColor: CyberpunkTheme.neonCyan.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.3)),
+                  ),
+                ),
+              ),
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: 'Settings',

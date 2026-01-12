@@ -658,7 +658,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                                     ),
                                   ),
                                   child: QrImageView(
-                                    data: 'https://play.google.com/store/apps/details?id=com.statusxp.statusxp',
+                                    data: 'https://statusxp.com',
                                     version: QrVersions.auto,
                                     size: 80,
                                     backgroundColor: Colors.white,
