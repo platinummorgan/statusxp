@@ -1295,29 +1295,31 @@ class _AIGuideContentState extends State<_AIGuideContent> {
   }
 
   Future<void> _loadGuide() async {
+    // Always consume AI credit (even for cached guides)
+    final creditService = AICreditService();
+    try {
+      await creditService.consumeCredit();
+      // Immediately refresh the credit badge on the parent screen
+      widget.onCreditConsumed?.call();
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to use AI credit: $e';
+        _isLoading = false;
+      });
+      return;
+    }
+
     // Check if we already have a cached guide in the database
     final cached = await _checkCachedGuide();
     if (cached != null) {
       setState(() {
         _guideText = cached;
+        _isLoading = false;
       });
       return;
     }
 
-    // Consume AI credit before generating
-    final creditService = AICreditService();
-      // Immediately refresh the credit badge on the parent screen
-      widget.onCreditConsumed?.call();
-    try {
-      await creditService.consumeCredit();
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to use AI credit: $e';
-      });
-      return;
-    }
-
-    // Generate new guide
+    // No cached guide found - generate new one with ChatGPT
     setState(() {
       _isLoading = true;
       _error = null;
@@ -1382,35 +1384,62 @@ class _AIGuideContentState extends State<_AIGuideContent> {
   }
 
   Future<String?> _checkCachedGuide() async {
-    if (widget.achievementId == null) return null;
+    if (widget.achievementId == null) {
+      debugPrint('❌ Achievement ID is null - cannot check cache');
+      return null;
+    }
 
     try {
+      debugPrint('🔍 Checking cache for achievement ID: ${widget.achievementId}');
       final supabase = Supabase.instance.client;
+      
+      // Try parsing as int if it's a string
+      final achievementId = int.tryParse(widget.achievementId!) ?? widget.achievementId!;
+      
       final response = await supabase
           .from('achievements')
           .select('ai_guide')
-          .eq('id', widget.achievementId!)
+          .eq('id', achievementId)
           .single();
 
-      return response['ai_guide'] as String?;
+      final cachedGuide = response['ai_guide'] as String?;
+      if (cachedGuide != null && cachedGuide.isNotEmpty) {
+        debugPrint('✅ Found cached guide (${cachedGuide.length} chars)');
+        return cachedGuide;
+      } else {
+        debugPrint('⚠️ No cached guide found in database');
+        return null;
+      }
     } catch (e) {
+      debugPrint('❌ Error checking cached guide: $e');
       return null;
     }
   }
 
   Future<void> _saveGuideToDatabase(String guide) async {
-    if (widget.achievementId == null) return;
+    if (widget.achievementId == null) {
+      debugPrint('❌ Cannot save guide - achievement ID is null');
+      return;
+    }
 
     try {
+      debugPrint('💾 Saving guide to database for achievement ID: ${widget.achievementId}');
       final supabase = Supabase.instance.client;
+      
+      // Try parsing as int if it's a string
+      final achievementId = int.tryParse(widget.achievementId!) ?? widget.achievementId!;
+      
       await supabase
           .from('achievements')
           .update({
             'ai_guide': guide,
             'ai_guide_generated_at': DateTime.now().toIso8601String(),
           })
-          .eq('id', widget.achievementId!);
+          .eq('id', achievementId);
+      
+      debugPrint('✅ Guide saved successfully');
     } catch (e) {
+      debugPrint('❌ Error saving guide: $e');
     }
   }
 
