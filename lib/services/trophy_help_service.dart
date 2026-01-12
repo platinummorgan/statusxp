@@ -3,6 +3,14 @@ import 'package:statusxp/domain/trophy_help_request.dart';
 
 class TrophyHelpService {
   final SupabaseClient _supabase;
+  
+  // Cache to prevent rapid-fire requests
+  List<TrophyHelpRequest>? _cachedOpenRequests;
+  DateTime? _openRequestsCacheTime;
+  String? _cachedPlatform;
+  
+  List<TrophyHelpRequest>? _cachedMyRequests;
+  DateTime? _myRequestsCacheTime;
 
   TrophyHelpService(this._supabase);
 
@@ -43,6 +51,16 @@ class TrophyHelpService {
     String? platform,
     String? gameId,
   }) async {
+    // Return cached data if less than 5 seconds old and same platform
+    final now = DateTime.now();
+    if (_cachedOpenRequests != null &&
+        _openRequestsCacheTime != null &&
+        _cachedPlatform == platform &&
+        now.difference(_openRequestsCacheTime!).inSeconds < 5) {
+      print('Returning cached open requests (${_cachedOpenRequests!.length} items)');
+      return _cachedOpenRequests!;
+    }
+    
     try {
       final queryBuilder = _supabase
           .from('trophy_help_requests')
@@ -59,13 +77,20 @@ class TrophyHelpService {
       }
 
       final response = await filteredQuery.order('created_at', ascending: false);
-      return (response as List)
+      final results = (response as List)
           .map((json) => TrophyHelpRequest.fromJson(json))
           .toList();
+      
+      // Cache the results
+      _cachedOpenRequests = results;
+      _openRequestsCacheTime = now;
+      _cachedPlatform = platform;
+      
+      return results;
     } catch (e) {
       print('Error fetching open requests: $e');
-      // Return empty list instead of throwing to avoid breaking UI
-      return [];
+      // Return cached data if available, otherwise empty list
+      return _cachedOpenRequests ?? [];
     }
   }
 
