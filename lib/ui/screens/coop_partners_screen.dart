@@ -15,40 +15,32 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
 
 // State provider for selected platform filter
 final selectedPlatformProvider = StateProvider.autoDispose<String?>((ref) {
-  print('selectedPlatformProvider CREATED ${DateTime.now()}');
-  ref.onDispose(() => print('selectedPlatformProvider DISPOSED ${DateTime.now()}'));
+  debugPrint('PLATFORM RUN  ${DateTime.now().toIso8601String()}');
+  ref.onDispose(() {
+    debugPrint('PLATFORM DISPOSE ${DateTime.now().toIso8601String()}');
+  });
   return null;
 });
 
 // Provider for open requests filtered by platform
 final openRequestsProvider =
     FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
-  print('openRequestsProvider RUN ${DateTime.now()}');
-  ref.onDispose(() => print('openRequestsProvider DISPOSED ${DateTime.now()}'));
-  
-  // Keep alive for 30 seconds to prevent constant disposal/recreation
-  final link = ref.keepAlive();
-  Timer(const Duration(seconds: 30), link.close);
-  
-  try {
-    final platform = ref.watch(selectedPlatformProvider);
-    final service = ref.read(trophyHelpServiceProvider);
-    final results = await service.getOpenRequests(platform: platform);
-    return results;
-  } catch (e, stack) {
-    print('Error in openRequestsProvider: $e');
-    print('Stack: $stack');
-    return [];
-  }
+  debugPrint('OPEN_REQ RUN  ${DateTime.now().toIso8601String()}');
+  ref.onDispose(() {
+    debugPrint('OPEN_REQ DISPOSE ${DateTime.now().toIso8601String()}');
+  });
+
+  final platform = ref.watch(selectedPlatformProvider);
+  final service = ref.read(trophyHelpServiceProvider);
+  final results = await service.getOpenRequests(platform: platform);
+  return results;
 });
 
 final myRequestsProvider = FutureProvider.autoDispose<List<TrophyHelpRequest>>((ref) async {
-  print('myRequestsProvider RUN ${DateTime.now()}');
-  ref.onDispose(() => print('myRequestsProvider DISPOSED ${DateTime.now()}'));
-  
-  // Keep alive for 30 seconds
-  final link = ref.keepAlive();
-  Timer(const Duration(seconds: 30), link.close);
+  debugPrint('MY_REQ RUN  ${DateTime.now().toIso8601String()}');
+  ref.onDispose(() {
+    debugPrint('MY_REQ DISPOSE ${DateTime.now().toIso8601String()}');
+  });
   try {
     final service = ref.read(trophyHelpServiceProvider);
     final results = await service.getMyRequests();
