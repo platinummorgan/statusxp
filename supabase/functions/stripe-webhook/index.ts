@@ -8,18 +8,23 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 })
 
 serve(async (req) => {
+  console.log('🔔 Webhook request received')
+  
   const signature = req.headers.get('stripe-signature')
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
   if (!signature || !webhookSecret) {
+    console.log('❌ Missing signature or webhook secret')
     return new Response('Missing signature or webhook secret', { status: 400 })
   }
 
   try {
     const body = await req.text()
+    console.log('📦 Body received, constructing event...')
     const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
 
     console.log('✅ Webhook received:', event.type)
+    console.log('📋 Event data:', JSON.stringify(event.data.object, null, 2))
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -41,19 +46,23 @@ serve(async (req) => {
           // AI Pack purchase
           const credits = parseInt(session.metadata.credits)
           const packType = session.metadata.pack_type
+          const priceUsd = session.amount_total ? session.amount_total / 100 : 0
           
-          console.log(`🎁 Adding ${credits} AI credits for user: ${userId} (pack: ${packType})`)
+          console.log(`🎁 Adding ${credits} AI credits for user: ${userId} (pack: ${packType}, price: $${priceUsd})`)
           
-          // Add AI credits to user's balance
-          const { error: creditError } = await supabase.rpc('add_ai_credits', {
+          // Add AI credits to user's balance using the correct function signature
+          const { error: creditError } = await supabase.rpc('add_ai_pack_credits', {
             p_user_id: userId,
+            p_pack_type: packType,
             p_credits: credits,
+            p_price: priceUsd,
+            p_platform: 'web',
           })
           
           if (creditError) {
             console.error('❌ Error adding AI credits:', creditError)
           } else {
-            console.log('✅ AI credits added successfully')
+            console.log('✅ AI credits added successfully to user_ai_credits.pack_credits')
           }
         } else {
           // Premium subscription activation
@@ -172,7 +181,9 @@ serve(async (req) => {
       status: 200,
     })
   } catch (error) {
-    console.error('❌ Webhook error:', error.message)
+    console.error('❌ Webhook error:', error)
+    console.error('❌ Error message:', error.message)
+    console.error('❌ Error stack:', error.stack)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
