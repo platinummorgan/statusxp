@@ -101,7 +101,6 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Must call super for AutomaticKeepAliveClientMixin
-    print('🏗️ _FindHelpTab BUILD ${DateTime.now().toIso8601String()}');
     final theme = Theme.of(context);
     final requestsAsync = ref.watch(openRequestsProvider);
     // Watch (not read) so UI updates when selection changes
@@ -216,7 +215,7 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
       label: Text(label),
       selected: isSelected,
       onSelected: (selected) {
-        widget.onPlatformChanged(selected ? value : null);
+        ref.read(selectedPlatformProvider.notifier).state = selected ? value : null;
       },
       backgroundColor: const Color(0xFF1a1f3a),
       selectedColor: CyberpunkTheme.neonCyan.withOpacity(0.3),
@@ -225,12 +224,11 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
         color: isSelected ? CyberpunkTheme.neonCyan : Colors.white70,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
-      side: BorderSide(selectedPlatform == value;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        ref.read(selectedPlatformProvider.notifier).state = selected ? value : null
+      side: BorderSide(
+        color: isSelected ? CyberpunkTheme.neonCyan : Colors.white24,
+      ),
+    );
+  }
 }
 
 // Separate stateless widget for request card
