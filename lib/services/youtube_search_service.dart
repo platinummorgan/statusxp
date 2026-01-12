@@ -12,17 +12,18 @@ class YouTubeSearchService {
     required String gameTitle,
     required String achievementName,
   }) async {
-    String? apiKey;
-    if (kIsWeb) {
-      // On web, API key would come from Vercel environment variables
-      apiKey = const String.fromEnvironment('YOUTUBE_API_KEY', defaultValue: '');
-    } else {
-      apiKey = dotenv.env['YOUTUBE_API_KEY'];
-    }
+    print('🎬 YouTube search started - Game: "$gameTitle", Achievement: "$achievementName"');
+    
+    // Use dotenv for all platforms (web and mobile)
+    final apiKey = dotenv.env['YOUTUBE_API_KEY'];
+    print('🔑 YouTube API key from .env: ${apiKey?.isEmpty ?? true ? "EMPTY/MISSING" : "Found (${apiKey?.length ?? 0} chars)"}');
     
     if (apiKey == null || apiKey.isEmpty) {
+      print('❌ YouTube API key is missing or empty - search aborted');
       return null;
     }
+    
+    print('🔎 Searching YouTube for: "$gameTitle $achievementName"');
 
     // Build search query
     final query = '$gameTitle $achievementName trophy achievement guide';
@@ -46,11 +47,17 @@ class YouTubeSearchService {
         
         if (items != null && items.isNotEmpty) {
           final videoId = items[0]['id']['videoId'];
-          return 'https://www.youtube.com/watch?v=$videoId';
+          final videoUrl = 'https://www.youtube.com/watch?v=$videoId';
+          print('✅ Found YouTube video: $videoUrl');
+          return videoUrl;
+        } else {
+          print('⚠️ No YouTube videos found in search results');
         }
       } else {
+        print('❌ YouTube API error: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
+      print('❌ YouTube search exception: $e');
       return null;
     }
 

@@ -1314,13 +1314,31 @@ class _AIGuideContentState extends State<_AIGuideContent> {
     // Check if we already have a cached guide in the database
     final cached = await _checkCachedGuide();
     if (cached != null) {
+      print('✅ Loaded guide from cache (${cached.length} chars)');
       setState(() {
         _guideText = cached;
+      });
+      
+      // Search for YouTube video even for cached guides (if not already included)
+      if (!_guideText.contains('youtube.com')) {
+        print('🎥 Cached guide has no YouTube link - searching...');
+        await _appendYouTubeLink();
+        // Update database with YouTube link if found
+        if (_guideText.contains('youtube.com')) {
+          await _saveGuideToDatabase(_guideText);
+        }
+      } else {
+        print('✅ Cached guide already has YouTube link');
+      }
+      
+      setState(() {
         _isLoading = false;
       });
       return;
     }
 
+    print('🤖 No cached guide - generating new one with AI...');
+    
     // No cached guide found - generate new one with ChatGPT
     setState(() {
       _isLoading = true;
@@ -1341,8 +1359,12 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         });
       }
 
+      print('✅ AI guide generation complete - now searching for YouTube video...');
+      
       // Search for YouTube video and append to guide
       await _appendYouTubeLink();
+      
+      print('✅ YouTube search complete - now saving to database...');
 
       // Save to database
       await _saveGuideToDatabase(_guideText);
@@ -1360,6 +1382,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
 
   Future<void> _appendYouTubeLink() async {
     try {
+      print('🎥 Starting YouTube search for: "${widget.gameTitle}" - "${widget.achievementName}"');
       final youtubeService = YouTubeSearchService();
       final videoUrl = await youtubeService.searchAchievementGuide(
         gameTitle: widget.gameTitle,
@@ -1367,6 +1390,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       );
 
       if (videoUrl != null) {
+        print('✅ YouTube video found: $videoUrl');
         // Replace "No specific video guide found" with actual link
         setState(() {
           if (_guideText.contains('No specific video guide found')) {
@@ -1379,8 +1403,11 @@ class _AIGuideContentState extends State<_AIGuideContent> {
             _guideText += '\n\nYouTube reference:\n$videoUrl';
           }
         });
+      } else {
+        print('⚠️ No YouTube video found');
       }
     } catch (e) {
+      print('❌ YouTube search error: $e');
       // Continue without YouTube link if it fails
     }
   }
