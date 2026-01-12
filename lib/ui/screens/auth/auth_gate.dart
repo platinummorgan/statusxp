@@ -176,7 +176,13 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
 
     // First time user - show onboarding
     if (_needsOnboarding) {
-      return const OnboardingScreen();
+      return OnboardingScreen(
+        onComplete: () {
+          setState(() {
+            _needsOnboarding = false;
+          });
+        },
+      );
     }
 
     // User has biometric token and is not authenticated yet - show biometric login

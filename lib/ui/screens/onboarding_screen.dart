@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:statusxp/utils/html.dart' as html;
+import 'package:go_router/go_router.dart';
 
 /// Enhanced onboarding screen with interactive features and animations
 /// 
@@ -14,7 +15,9 @@ import 'package:statusxp/utils/html.dart' as html;
 /// - Interactive elements for engagement
 /// - Skip option for experienced users
 class OnboardingScreen extends ConsumerStatefulWidget {
-  const OnboardingScreen({super.key});
+  final VoidCallback? onComplete;
+  
+  const OnboardingScreen({super.key, this.onComplete});
 
   @override
   ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -69,8 +72,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       await prefs.setBool('onboarding_complete', true);
     }
     
+    // Notify parent that onboarding is complete
+    widget.onComplete?.call();
+    
     if (mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+      context.go('/');
     }
   }
 
