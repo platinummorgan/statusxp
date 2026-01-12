@@ -29,6 +29,22 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     _initialize();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh premium status when returning to this screen
+    _refreshPremiumStatus();
+  }
+
+  Future<void> _refreshPremiumStatus() async {
+    final isPremium = await _subscriptionService.isPremiumActive();
+    if (mounted && isPremium != _isPremium) {
+      setState(() {
+        _isPremium = isPremium;
+      });
+    }
+  }
+
   Future<void> _initialize() async {
     await _subscriptionService.initialize();
     final isPremium = await _subscriptionService.isPremiumActive();
