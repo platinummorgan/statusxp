@@ -661,6 +661,15 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               // Get rarity from OpenXBL (falls back to null if not available)
               const rarityPercent = openXBLRarityMap.get(achievement.id) || null;
               
+              // Proxy the icon URL through Supabase Storage
+              const iconUrl = achievement.mediaAssets?.[0]?.url;
+              const proxiedIconUrl = await uploadExternalIcon(
+                iconUrl,
+                achievement.id,
+                'xbox',
+                supabase
+              );
+              
               // Build upsert object
               const achievementUpsert = {
                 game_title_id: gameTitle.id,
@@ -669,7 +678,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 platform_achievement_id: achievement.id,
                 name: achievement.name,
                 description: achievement.description,
-                icon_url: achievement.mediaAssets?.[0]?.url,
+                icon_url: iconUrl,
+                proxied_icon_url: proxiedIconUrl,
                 xbox_gamerscore: achievement.rewards?.[0]?.value || 0,
                 xbox_is_secret: achievement.isSecret || false,
                 is_platinum: false, // Xbox doesn't have platinums

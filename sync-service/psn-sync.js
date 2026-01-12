@@ -582,6 +582,14 @@ export async function syncPSNAchievements(
               }
             }
 
+            // Proxy the icon URL through Supabase Storage
+            const proxiedIconUrl = await uploadExternalIcon(
+              trophyMeta.trophyIconUrl,
+              trophyMeta.trophyId.toString(),
+              'psn',
+              supabase
+            );
+
             const achievementData = {
               game_title_id: gameTitle.id,
               platform: 'psn',
@@ -590,6 +598,7 @@ export async function syncPSNAchievements(
               name: trophyMeta.trophyName,
               description: trophyMeta.trophyDetail,
               icon_url: trophyMeta.trophyIconUrl,
+              proxied_icon_url: proxiedIconUrl,
               psn_trophy_type: trophyMeta.trophyType,
               rarity_global: rarityPercent,
               is_platinum: trophyMeta.trophyType === 'platinum',
