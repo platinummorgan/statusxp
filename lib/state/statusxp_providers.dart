@@ -40,6 +40,9 @@ final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) {
 
 /// Provider for the TrophyHelpService instance.
 final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
+  statusxpLog('CREATE TrophyHelpService ${identityHashCode(ref)}');
+  ref.onDispose(() => statusxpLog('DISPOSE TrophyHelpService ${identityHashCode(ref)}'));
+  
   return TrophyHelpService(ref.read(supabaseClientProvider));
 });
 

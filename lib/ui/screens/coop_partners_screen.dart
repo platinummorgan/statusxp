@@ -19,7 +19,9 @@ final selectedPlatformProvider = StateProvider<String?>((ref) => null);
 // Open requests depend on selected platform (family = clean caching per platform)
 final openRequestsProvider =
     FutureProvider.family<List<TrophyHelpRequest>, String?>((ref, platform) async {
-  statusxpLog('[PROVIDER RUN] openRequestsProvider(platform=${platform ?? "all"})');
+  statusxpLog('RUN openRequestsProvider(platform=${platform ?? "all"}) container=${identityHashCode(ref)}');
+  ref.onDispose(() => statusxpLog('DISPOSE openRequestsProvider(platform=${platform ?? "all"})');
+  
   final service = ref.read(trophyHelpServiceProvider);
   return service.getOpenRequests(platform: platform);
 });
