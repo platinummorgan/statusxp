@@ -17,6 +17,7 @@ import 'package:statusxp/services/trophy_help_service.dart';
 import 'package:statusxp/domain/game.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/trophy_room_data.dart';
+import 'package:statusxp/domain/trophy_help_request.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/domain/user_stats.dart';
 import 'package:statusxp/domain/user_stats_calculator.dart';
