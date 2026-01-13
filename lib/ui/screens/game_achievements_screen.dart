@@ -588,10 +588,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                               );
                             },
                             icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                            label: const Text('Tips/Comments'),
+                            label: const Text('Tips/Comments', style: TextStyle(fontSize: 12)),
                             style: TextButton.styleFrom(
                               foregroundColor: CyberpunkTheme.neonCyan,
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -611,10 +611,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                 label: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Text('AI Help'),
-                                    const SizedBox(width: 6),
+                                    const Text('AI Help', style: TextStyle(fontSize: 12)),
+                                    const SizedBox(width: 4),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                                       decoration: BoxDecoration(
                                         color: CyberpunkTheme.neonPurple.withOpacity(0.3),
                                         borderRadius: BorderRadius.circular(8),
@@ -627,7 +627,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                         creditBadge,
                                         style: const TextStyle(
                                           color: CyberpunkTheme.neonPurple,
-                                          fontSize: 10,
+                                          fontSize: 9,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -636,7 +636,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                 ),
                                 style: TextButton.styleFrom(
                                   foregroundColor: CyberpunkTheme.neonPurple,
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                                   minimumSize: Size.zero,
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
@@ -644,52 +644,54 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                             },
                           ),
                         ),
-                        if (!isEarned) const SizedBox(width: 4),
-                        if (!isEarned)
-                          Expanded(
-                            child: TextButton.icon(
-                              onPressed: () async {
-                                final result = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) => CreateTrophyRequestDialog(
-                                    gameId: widget.gameId,
-                                    gameTitle: widget.gameName,
-                                    achievementId: achievement['id'].toString(),
-                                    achievementName: achievement['name'],
-                                    platform: widget.platform.toLowerCase().startsWith('ps')
-                                        ? 'psn'
-                                        : widget.platform.toLowerCase().startsWith('xbox')
-                                            ? 'xbox'
-                                            : 'steam',
-                                  ),
-                                );
-                                
-                                if (result == true && mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text('View your request in Co-op Partners'),
-                                      action: SnackBarAction(
-                                        label: 'View',
-                                        onPressed: () {
-                                          context.push('/coop-partners');
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.handshake, size: 16),
-                              label: const Text('Find Partner'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: CyberpunkTheme.neonCyan,
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                            ),
-                          ),
                       ],
                     ),
+                    if (!isEarned) ...[
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            final result = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => CreateTrophyRequestDialog(
+                                gameId: widget.gameId,
+                                gameTitle: widget.gameName,
+                                achievementId: achievement['id'].toString(),
+                                achievementName: achievement['name'],
+                                platform: widget.platform.toLowerCase().startsWith('ps')
+                                    ? 'psn'
+                                    : widget.platform.toLowerCase().startsWith('xbox')
+                                        ? 'xbox'
+                                        : 'steam',
+                              ),
+                            );
+                            
+                            if (result == true && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('View your request in Co-op Partners'),
+                                  action: SnackBarAction(
+                                    label: 'View',
+                                    onPressed: () {
+                                      context.push('/coop-partners');
+                                    },
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.handshake, size: 16),
+                          label: const Text('Find Partner', style: TextStyle(fontSize: 12)),
+                          style: TextButton.styleFrom(
+                            foregroundColor: CyberpunkTheme.neonCyan,
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ],
               ),
