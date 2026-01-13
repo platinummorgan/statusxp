@@ -1,10 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/achievement_comment.dart';
+import 'package:statusxp/services/content_moderation_service.dart';
 
 class AchievementCommentService {
   AchievementCommentService(this._supabase);
 
   final SupabaseClient _supabase;
+  final _moderationService = ContentModerationService();
 
   /// Get all comments for a specific achievement
   /// Returns comments sorted by newest first
@@ -94,6 +96,12 @@ class AchievementCommentService {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) {
       throw Exception('User must be authenticated to post comments');
+    }
+
+    // Moderate content before posting
+    final moderationResult = await _moderationService.moderateContent(commentText);
+    if (!moderationResult.isSafe) {
+      throw Exception(moderationResult.reason ?? 'Comment contains inappropriate content');
     }
 
     // Insert the comment
