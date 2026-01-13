@@ -16,14 +16,13 @@ import 'package:statusxp/utils/statusxp_logger.dart';
 // UI filter state
 final selectedPlatformProvider = StateProvider<String?>((ref) => null);
 
-// Open requests depend on selected platform (family = clean caching per platform)
-final openRequestsProvider =
-    FutureProvider.family<List<TrophyHelpRequest>, String?>((ref, platform) async {
-  statusxpLog('RUN openRequestsProvider(platform=${platform ?? "all"}) container=${identityHashCode(ref)}');
-  ref.onDispose(() => statusxpLog('DISPOSE openRequestsProvider(platform=${platform ?? "all"})'));
+// Fetch ALL open requests once (no family, no parameters)
+final openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
+  statusxpLog('RUN openRequestsProvider (fetching ALL)');
+  ref.onDispose(() => statusxpLog('DISPOSE openRequestsProvider'));
   
   final service = ref.read(trophyHelpServiceProvider);
-  return service.getOpenRequests(platform: platform);
+  return service.getOpenRequests(); // No platform filter
 });
 
 // My requests
@@ -122,17 +121,22 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
           child: Consumer(
             builder: (context, ref, child) {
               final selectedPlatform = ref.watch(selectedPlatformProvider);
-              final requestsAsync = ref.watch(openRequestsProvider(selectedPlatform));
+              final requestsAsync = ref.watch(openRequestsProvider);
+              
               return requestsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _ErrorState(message: 'Error: $error'),
-              data: (requests) {
+              data: (allRequests) {
+                // Filter on UI side instead of backend
+                final requests = selectedPlatform == null 
+                  ? allRequests 
+                  : allRequests.where((r) => r.platform == selectedPlatform).toList();
+                
                 if (requests.isEmpty) return const _EmptyFindHelpState();
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    // family invalidate needs the param
-                    ref.invalidate(openRequestsProvider(selectedPlatform));
+                    ref.invalidate(openRequestsProvider);
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
