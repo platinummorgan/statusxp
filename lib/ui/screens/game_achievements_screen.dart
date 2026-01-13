@@ -558,48 +558,41 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
             // Badges row below icon
             const SizedBox(height: 8),
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Trophy type (PSN)
                 if (trophyType != null) ...[
-                  Flexible(
-                    child: _buildBadge(
-                      trophyType.toUpperCase(),
-                      trophyColor,
-                      _getTrophyIcon(trophyType),
-                    ),
+                  _buildBadge(
+                    trophyType.toUpperCase(),
+                    trophyColor,
+                    _getTrophyIcon(trophyType),
                   ),
                   const SizedBox(width: 6),
                 ],
                 // Gamerscore (Xbox)
                 if (gamerscore != null && gamerscore > 0) ...[
-                  Flexible(
-                    child: _buildBadge(
-                      '${gamerscore}G',
-                      const Color(0xFF107C10),
-                      Icons.stars,
-                    ),
+                  _buildBadge(
+                    '${gamerscore}G',
+                    const Color(0xFF107C10),
+                    Icons.stars,
                   ),
                   const SizedBox(width: 6),
                 ],
                 // Rarity
                 if (rarityGlobal != null) ...[
-                  Flexible(
-                    child: _buildBadge(
-                      '${rarityGlobal.toStringAsFixed(1)}% • ${_getRarityLabel(rarityBand)}',
-                      _getRarityColor(rarityBand),
-                      Icons.diamond_outlined,
-                    ),
+                  _buildBadge(
+                    '${rarityGlobal.toStringAsFixed(1)}% • ${_getRarityLabel(rarityBand)}',
+                    _getRarityColor(rarityBand),
+                    Icons.diamond_outlined,
                   ),
                   const SizedBox(width: 6),
                 ],
                 // StatusXP
                 if (statusXP != null)
-                  Flexible(
-                    child: _buildBadge(
-                      '${statusXP.toStringAsFixed(1)} XP',
-                      CyberpunkTheme.neonPurple,
-                      Icons.bolt,
-                    ),
+                  _buildBadge(
+                    '${statusXP.toStringAsFixed(1)} XP',
+                    CyberpunkTheme.neonPurple,
+                    Icons.bolt,
                   ),
               ],
             ),
@@ -607,6 +600,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
             if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements) ...[
               const SizedBox(height: 8),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Expanded(
                     child: TextButton.icon(
@@ -752,16 +746,12 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         children: [
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 3),
-          Flexible(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-              ),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
