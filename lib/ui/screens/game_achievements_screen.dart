@@ -596,124 +596,121 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               const SizedBox(height: 8),
               Row(
                 children: [
-                        Expanded(
-                          child: TextButton.icon(
-                            onPressed: () {
-                              context.push(
-                                '/achievement-comments/${achievement['id']}'
-                                '?name=${Uri.encodeComponent(achievement['name'])}'
-                                '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}',
-                              );
-                            },
-                            icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                            label: const Text('Tips/Comments', style: TextStyle(fontSize: 12)),
-                            style: TextButton.styleFrom(
-                              foregroundColor: CyberpunkTheme.neonCyan,
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                              minimumSize: const Size(0, 32),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          flex: 2,
-                          child: FutureBuilder<AICreditStatus>(
-                            key: ValueKey('credit_badge_${achievement['id']}_$_refreshKey'),
-                            future: AICreditService().checkCredits(),
-                            builder: (context, snapshot) {
-                              final creditBadge = snapshot.hasData ? snapshot.data!.badgeText : '...';
-                              
-                              return TextButton.icon(
-                                onPressed: () => _showAIGuideDialog(context, achievement),
-                                icon: const Icon(Icons.lightbulb_outline, size: 16),
-                                label: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text('AI Help', style: TextStyle(fontSize: 12)),
-                                    const SizedBox(width: 4),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: CyberpunkTheme.neonPurple.withOpacity(0.3),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: CyberpunkTheme.neonPurple,
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        creditBadge,
-                                        style: const TextStyle(
-                                          color: CyberpunkTheme.neonPurple,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: CyberpunkTheme.neonPurple,
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                  minimumSize: const Size(0, 32),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+                  Expanded(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        context.push(
+                          '/achievement-comments/${achievement['id']}'
+                          '?name=${Uri.encodeComponent(achievement['name'])}'
+                          '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}',
+                        );
+                      },
+                      icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                      label: const Text('Tips/Comments', style: TextStyle(fontSize: 12)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: CyberpunkTheme.neonCyan,
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
-                    if (!isEarned) ...[
-                      const SizedBox(height: 4),
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton.icon(
-                          onPressed: () async {
-                            final result = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => CreateTrophyRequestDialog(
-                                gameId: widget.gameId,
-                                gameTitle: widget.gameName,
-                                achievementId: achievement['id'].toString(),
-                                achievementName: achievement['name'],
-                                platform: widget.platform.toLowerCase().startsWith('ps')
-                                    ? 'psn'
-                                    : widget.platform.toLowerCase().startsWith('xbox')
-                                        ? 'xbox'
-                                        : 'steam',
-                              ),
-                            );
-                            
-                            if (result == true && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('View your request in Co-op Partners'),
-                                  action: SnackBarAction(
-                                    label: 'View',
-                                    onPressed: () {
-                                      context.push('/coop-partners');
-                                    },
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    flex: 2,
+                    child: FutureBuilder<AICreditStatus>(
+                      key: ValueKey('credit_badge_${achievement['id']}_$_refreshKey'),
+                      future: AICreditService().checkCredits(),
+                      builder: (context, snapshot) {
+                        final creditBadge = snapshot.hasData ? snapshot.data!.badgeText : '...';
+                        
+                        return TextButton.icon(
+                          onPressed: () => _showAIGuideDialog(context, achievement),
+                          icon: const Icon(Icons.lightbulb_outline, size: 16),
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('AI Help', style: TextStyle(fontSize: 12)),
+                              const SizedBox(width: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: CyberpunkTheme.neonPurple,
+                                    width: 1,
                                   ),
                                 ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.handshake, size: 16),
-                          label: const Text('Find Partner', style: TextStyle(fontSize: 12)),
+                                child: Text(
+                                  creditBadge,
+                                  style: const TextStyle(
+                                    color: CyberpunkTheme.neonPurple,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           style: TextButton.styleFrom(
-                            foregroundColor: CyberpunkTheme.neonCyan,
+                            foregroundColor: CyberpunkTheme.neonPurple,
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                            minimumSize: Size.zero,
+                            minimumSize: const Size(0, 32),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                        ),
-                      ),
-                    ],
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
+              if (!isEarned) ...[
+                const SizedBox(height: 4),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final result = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => CreateTrophyRequestDialog(
+                          gameId: widget.gameId,
+                          gameTitle: widget.gameName,
+                          achievementId: achievement['id'].toString(),
+                          achievementName: achievement['name'],
+                          platform: widget.platform.toLowerCase().startsWith('ps')
+                              ? 'psn'
+                              : widget.platform.toLowerCase().startsWith('xbox')
+                                  ? 'xbox'
+                                  : 'steam',
+                        ),
+                      );
+                      
+                      if (result == true && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('View your request in Co-op Partners'),
+                            action: SnackBarAction(
+                              label: 'View',
+                              onPressed: () {
+                                context.push('/coop-partners');
+                              },
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.handshake, size: 16),
+                    label: const Text('Find Partner', style: TextStyle(fontSize: 12)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: CyberpunkTheme.neonCyan,
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
