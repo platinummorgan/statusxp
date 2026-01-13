@@ -8,17 +8,6 @@ import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/offer_help_dialog.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-// Simple providers - no caching, no family, no complexity
-final _openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  final service = ref.read(trophyHelpServiceProvider);
-  return service.getOpenRequests();
-});
-
-final _myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  final service = ref.read(trophyHelpServiceProvider);
-  return service.getMyRequests();
-});
-
 // ------------------------------
 // Screen
 // ------------------------------
