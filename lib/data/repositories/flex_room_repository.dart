@@ -96,16 +96,7 @@ class FlexRoomRepository {
           mostTimeSunk: results[1] as FlexTile?,
           sweattiestPlatinum: results[2] as FlexTile?,
           superlatives: {},
-          recentFlexes: results[3],
-        );
-      }
-
-      // Parse stored flex room data
-      final data = response;
-
-      // Build list of all queries to run in parallel
-      final featuredQueries = <Future>[];
-      
+        recentFlexes: (results[3] as List).map((e) => RecentFlex.fromJson(e as Map<String, dynamic>)).toList(),
       // Featured tiles queries
       featuredQueries.add(
         data['flex_of_all_time_id'] != null
