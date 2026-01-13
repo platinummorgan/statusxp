@@ -49,10 +49,13 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
 /// UI filter state for coop partners screen
 final selectedPlatformProvider = StateProvider<String?>((ref) => null);
 
-/// Fetch ALL open trophy help requests
+/// Fetch ALL open trophy help requests (keepAlive to prevent disposal)
 final openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
   statusxpLog('RUN openRequestsProvider (fetching ALL)');
   ref.onDispose(() => statusxpLog('DISPOSE openRequestsProvider'));
+  
+  // Keep this provider alive even when not watched
+  ref.keepAlive();
   
   final service = ref.read(trophyHelpServiceProvider);
   return service.getOpenRequests();
