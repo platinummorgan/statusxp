@@ -592,13 +592,14 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                             style: TextButton.styleFrom(
                               foregroundColor: CyberpunkTheme.neonCyan,
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                              minimumSize: Size.zero,
+                              minimumSize: const Size(0, 32),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
                         ),
                         const SizedBox(width: 4),
                         Expanded(
+                          flex: 2,
                           child: FutureBuilder<AICreditStatus>(
                             key: ValueKey('credit_badge_${achievement['id']}_$_refreshKey'),
                             future: AICreditService().checkCredits(),
@@ -637,7 +638,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                 style: TextButton.styleFrom(
                                   foregroundColor: CyberpunkTheme.neonPurple,
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                  minimumSize: Size.zero,
+                                  minimumSize: const Size(0, 32),
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 ),
                               );
