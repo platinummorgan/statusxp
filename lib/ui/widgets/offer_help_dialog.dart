@@ -241,7 +241,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.schedule,
                             size: 16,
                             color: CyberpunkTheme.neonCyan,
@@ -320,7 +320,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.info_outline,
                       color: CyberpunkTheme.neonCyan,
                       size: 20,

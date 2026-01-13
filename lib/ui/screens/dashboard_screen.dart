@@ -63,13 +63,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: TextButton.icon(
                 onPressed: () async {
-                  // Detect iOS vs Android and open appropriate store
-                  final userAgent = window.navigator.userAgent.toLowerCase();
-                  final isIOS = userAgent.contains('iphone') || userAgent.contains('ipad');
-                  
-                  final url = isIOS
-                      ? Uri.parse('https://apps.apple.com/app/id6757080961')
-                      : Uri.parse('https://play.google.com/store/apps/details?id=com.statusxp.statusxp');
+                  // Default to Android link (can't detect platform without dart:html)
+                  final url = Uri.parse('https://play.google.com/store/apps/details?id=com.statusxp.statusxp');
                   
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);

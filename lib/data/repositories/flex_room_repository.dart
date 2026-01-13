@@ -101,7 +101,7 @@ class FlexRoomRepository {
       }
 
       // If flex room data exists, load the configured tiles
-      final data = response as Map<String, dynamic>;
+      final data = response;
       final featuredQueries = <Future>[];
       
       // Featured tiles queries

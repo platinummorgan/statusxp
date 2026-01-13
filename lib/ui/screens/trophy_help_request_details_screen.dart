@@ -264,7 +264,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.schedule,
                       size: 16,
                       color: CyberpunkTheme.neonCyan,
@@ -295,7 +295,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.person,
                       size: 16,
                       color: CyberpunkTheme.neonCyan,
@@ -586,7 +586,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.person,
                 size: 20,
                 color: CyberpunkTheme.neonCyan,

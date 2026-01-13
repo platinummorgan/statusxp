@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
-import 'dart:html' as html show window;
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
@@ -124,13 +123,8 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
               padding: const EdgeInsets.only(right: 8),
               child: TextButton.icon(
                 onPressed: () async {
-                  // Detect iOS vs Android and open appropriate store
-                  final userAgent = html.window.navigator?.userAgent?.toLowerCase() ?? '';
-                  final isIOS = userAgent.contains('iphone') || userAgent.contains('ipad');
-                  
-                  final url = isIOS
-                      ? Uri.parse('https://apps.apple.com/app/id6757080961')
-                      : Uri.parse('https://play.google.com/store/apps/details?id=com.statusxp.statusxp');
+                  // Default to Android link (can't detect platform without dart:html)
+                  final url = Uri.parse('https://play.google.com/store/apps/details?id=com.statusxp.statusxp');
                   
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);

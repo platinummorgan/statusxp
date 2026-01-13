@@ -347,7 +347,7 @@ class _CreateTrophyRequestDialogState
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.info_outline,
                         color: CyberpunkTheme.neonCyan,
                         size: 20,
