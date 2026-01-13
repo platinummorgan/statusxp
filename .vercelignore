@@ -1,9 +1,8 @@
-# Vercel ignore file - only upload build/web directory
+# Vercel ignore file - we need source files to build Flutter
 .dart_tool/
 .git/
 .gitignore
 .idea/
-.vscode/
 .metadata
 android/
 ios/
@@ -11,18 +10,10 @@ linux/
 macos/
 windows/
 test/
-lib/
 *.sql
 *.md
 *.iml
 *.log
-*.yaml
-*.lock
 .env
-.flutter-plugins*
-.packages
-analysis_options.yaml
-pubspec.yaml
-pubspec.lock
 devtools_options.yaml
 README.md
