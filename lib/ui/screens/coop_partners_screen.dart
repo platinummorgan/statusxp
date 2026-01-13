@@ -81,8 +81,6 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   Widget build(BuildContext context) {
     super.build(context);
     
-    statusxpLog('BUILD _FindHelpTabState at ${DateTime.now().millisecondsSinceEpoch}');
-    
     final selectedPlatform = ref.watch(selectedPlatformProvider);
     final requestsAsync = ref.watch(openRequestsProvider);
 

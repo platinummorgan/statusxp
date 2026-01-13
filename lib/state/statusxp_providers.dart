@@ -41,9 +41,6 @@ final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) {
 
 /// Provider for the TrophyHelpService instance.
 final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
-  statusxpLog('CREATE TrophyHelpService ${identityHashCode(ref)}');
-  ref.onDispose(() => statusxpLog('DISPOSE TrophyHelpService ${identityHashCode(ref)}'));
-  
   return TrophyHelpService(ref.read(supabaseClientProvider));
 });
 
@@ -52,9 +49,6 @@ final selectedPlatformProvider = StateProvider<String?>((ref) => null);
 
 /// Fetch ALL open trophy help requests (keepAlive to prevent disposal)
 final openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  statusxpLog('RUN openRequestsProvider (fetching ALL)');
-  ref.onDispose(() => statusxpLog('DISPOSE openRequestsProvider'));
-  
   // Keep this provider alive even when not watched
   ref.keepAlive();
   
@@ -64,7 +58,6 @@ final openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async
 
 /// Fetch user's own trophy help requests
 final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  statusxpLog('[PROVIDER RUN] myRequestsProvider');
   final service = ref.read(trophyHelpServiceProvider);
   return service.getMyRequests();
 });
