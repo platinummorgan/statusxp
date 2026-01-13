@@ -185,6 +185,9 @@ class AchievementCommentsScreen extends ConsumerWidget {
               ),
             ),
           ),
+
+          // Comment input
+          _CommentInput(achievementId: achievementId),
         ],
       ),
     );
@@ -345,6 +348,188 @@ class _CommentCard extends StatelessWidget {
                 color: Colors.white.withOpacity(0.9),
                 fontSize: 14,
                 height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CommentInput extends ConsumerStatefulWidget {
+  final int achievementId;
+
+  const _CommentInput({required this.achievementId});
+
+  @override
+  ConsumerState<_CommentInput> createState() => _CommentInputState();
+}
+
+class _CommentInputState extends ConsumerState<_CommentInput> {
+  final _textController = TextEditingController();
+  final _focusNode = FocusNode();
+  bool _isPosting = false;
+  static const int _maxLength = 500;
+
+  @override
+  void dispose() {
+    _textController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  Future<void> _postComment() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty || text.length > _maxLength || _isPosting) return;
+
+    setState(() => _isPosting = true);
+
+    try {
+      final service = ref.read(achievementCommentServiceProvider);
+      await service.postComment(
+        achievementId: widget.achievementId,
+        commentText: text,
+      );
+
+      // Clear input
+      _textController.clear();
+      _focusNode.unfocus();
+
+      // Refresh comments list
+      ref.invalidate(achievementCommentsProvider(widget.achievementId));
+      ref.invalidate(achievementCommentCountProvider(widget.achievementId));
+
+      // Show success
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Comment posted!'),
+            backgroundColor: CyberpunkTheme.neonCyan,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to post: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPosting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1a1f3a),
+        border: Border(
+          top: BorderSide(
+            color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+          ),
+        ),
+      ),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 12,
+      ),
+      child: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _textController,
+                focusNode: _focusNode,
+                enabled: !_isPosting,
+                maxLines: null,
+                maxLength: _maxLength,
+                textCapitalization: TextCapitalization.sentences,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Share a tip or coordinate...',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.4),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFF0f1729),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: CyberpunkTheme.neonCyan,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  counterStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.4),
+                    fontSize: 12,
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {}); // Rebuild to update button state
+                },
+                onSubmitted: (_) => _postComment(),
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              onPressed: _textController.text.trim().isEmpty || _isPosting
+                  ? null
+                  : _postComment,
+              icon: _isPosting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          CyberpunkTheme.neonCyan,
+                        ),
+                      ),
+                    )
+                  : const Icon(Icons.send),
+              style: IconButton.styleFrom(
+                backgroundColor: _textController.text.trim().isEmpty
+                    ? CyberpunkTheme.neonCyan.withOpacity(0.2)
+                    : CyberpunkTheme.neonCyan,
+                foregroundColor: _textController.text.trim().isEmpty
+                    ? CyberpunkTheme.neonCyan.withOpacity(0.5)
+                    : const Color(0xFF0f1729),
+                disabledBackgroundColor:
+                    CyberpunkTheme.neonCyan.withOpacity(0.2),
+                disabledForegroundColor:
+                    CyberpunkTheme.neonCyan.withOpacity(0.5),
+                padding: const EdgeInsets.all(12),
               ),
             ),
           ],

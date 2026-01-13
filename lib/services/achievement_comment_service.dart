@@ -83,4 +83,49 @@ class AchievementCommentService {
     
     return counts;
   }
+
+  /// Post a new comment
+  /// Returns the created comment with profile data
+  Future<AchievementComment> postComment({
+    required int achievementId,
+    required String commentText,
+  }) async {
+    // Insert the comment
+    final response = await _supabase
+        .from('achievement_comments')
+        .insert({
+          'achievement_id': achievementId,
+          'comment_text': commentText,
+        })
+        .select('''
+          id,
+          achievement_id,
+          user_id,
+          comment_text,
+          created_at,
+          updated_at,
+          is_hidden,
+          is_flagged,
+          flag_count,
+          profiles!inner(username, display_name, avatar_url)
+        ''')
+        .single();
+
+    // Flatten the nested profile data
+    final profiles = response['profiles'];
+    final profile = profiles is List && profiles.isNotEmpty 
+        ? profiles[0] as Map<String, dynamic>
+        : profiles as Map<String, dynamic>?;
+    
+    final flattenedRow = Map<String, dynamic>.from(response);
+    flattenedRow.remove('profiles');
+    
+    if (profile != null) {
+      flattenedRow['username'] = profile['username'];
+      flattenedRow['display_name'] = profile['display_name'];
+      flattenedRow['avatar_url'] = profile['avatar_url'];
+    }
+    
+    return AchievementComment.fromJson(flattenedRow);
+  }
 }
