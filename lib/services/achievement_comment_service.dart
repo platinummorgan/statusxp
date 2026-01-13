@@ -44,9 +44,10 @@ class AchievementCommentService {
   Future<int> getCommentCount(int achievementId) async {
     final response = await _supabase
         .from('achievement_comments')
-        .select('id', const FetchOptions(count: CountOption.exact))
+        .select('id')
         .eq('achievement_id', achievementId)
-        .eq('is_hidden', false);
+        .eq('is_hidden', false)
+        .count(CountOption.exact);
 
     return response.count ?? 0;
   }
