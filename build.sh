@@ -1,9 +1,27 @@
 #!/bin/bash
 set -e
 
+echo "===================="
 echo "Current directory: $(pwd)"
-echo "Listing files:"
-ls -la
+echo "===================="
+echo "Listing all files (including hidden):"
+ls -lha
+echo "===================="
+echo "Checking for pubspec.yaml:"
+find . -name "pubspec.yaml" -type f 2>/dev/null || echo "No pubspec.yaml found anywhere"
+echo "===================="
+
+# Check if pubspec.yaml exists
+if [ -f "pubspec.yaml" ]; then
+    echo "✓ Found pubspec.yaml in root"
+elif [ -f "./pubspec.yaml" ]; then
+    echo "✓ Found pubspec.yaml with explicit path"
+else
+    echo "✗ ERROR: pubspec.yaml not found!"
+    echo "Full directory tree:"
+    find . -maxdepth 2 -type f 2>/dev/null | head -20
+    exit 1
+fi
 
 echo "Starting Flutter Web build..."
 
@@ -18,14 +36,6 @@ if ! command -v flutter &> /dev/null; then
     # Configure Flutter
     flutter config --no-analytics
     flutter --version
-fi
-
-# Verify we're in the right directory
-if [ ! -f "pubspec.yaml" ]; then
-    echo "Error: pubspec.yaml not found in $(pwd)"
-    echo "Available files:"
-    ls -la
-    exit 1
 fi
 
 # Build the web app
