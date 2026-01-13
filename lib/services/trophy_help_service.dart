@@ -69,18 +69,26 @@ class TrophyHelpService {
     String? platform,
     String? gameId,
   }) async {
+    print('[SERVICE] getOpenRequests called with platform=$platform, gameId=$gameId at ${DateTime.now().millisecondsSinceEpoch}');
+    
     final key = _OpenKey(platform: platform, gameId: gameId);
 
     // 1) Return fresh cache if still valid
     final cached = _openCache[key];
     if (cached != null && !cached.isExpired(_openRequestsTtl)) {
+      print('[SERVICE] Returning cached data (${cached.value.length} items)');
       return cached.value;
     }
 
     // 2) If there is an in-flight request for the same key, await it
     final existingFuture = _openInFlight[key];
-    if (existingFuture != null) return existingFuture;
+    if (existingFuture != null) {
+      print('[SERVICE] Returning in-flight future');
+      return existingFuture;
+    }
 
+    print('[SERVICE] Making NEW network request');
+    
     // 3) Start a new request, store it in-flight, and clean up when done
     final future = _fetchOpenRequests(platform: platform, gameId: gameId)
         .then((results) {
