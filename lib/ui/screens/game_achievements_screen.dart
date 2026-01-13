@@ -625,8 +625,9 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                           ),
                         ),
                         // Request Co-op Help button (for all unearned achievements)
-                        if (!isEarned) ...[
+                        if (!isEarned)
                           const SizedBox(width: 4),
+                        if (!isEarned)
                           Expanded(
                             child: TextButton.icon(
                               onPressed: () async {
@@ -669,7 +670,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ],
