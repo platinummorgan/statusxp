@@ -624,8 +624,8 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                             },
                           ),
                         ),
-                        // Request Co-op Help button (only for multiplayer achievements)
-                        if (_isMultiplayerAchievement(achievement) && !isEarned) ...[
+                        // Request Co-op Help button (for all unearned achievements)
+                        if (!isEarned) ...[
                           const SizedBox(width: 4),
                           Expanded(
                             child: TextButton.icon(
@@ -1321,6 +1321,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
     final description = (achievement['description'] as String? ?? '').toLowerCase();
     final combined = '$name $description';
 
+    // Always log in web builds
+    print('[MULTIPLAYER CHECK] Name: $name');
+    print('[MULTIPLAYER CHECK] Description: $description');
+
     // List of multiplayer/co-op keywords
     const multiplayerKeywords = [
       'multiplayer',
@@ -1347,9 +1351,26 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       'versus',
       'matchmaking',
       'lobby',
+      'player',           // catch "a player", "another player"
+      'players',          // catch "other players"
+      'opponent',         // catch "opponent", "opponents"
+      'adversary',
+      'adversaries',
+      'competitive',
+      'deathmatch',
+      'domination',       // game mode
+      'capture',          // capture the flag, etc
+      'ranked',
+      'unranked',
+      'leaderboard',
     ];
 
-    return multiplayerKeywords.any((keyword) => combined.contains(keyword));
+    final isMultiplayer = multiplayerKeywords.any((keyword) => combined.contains(keyword));
+    
+    // Always log
+    print('[MULTIPLAYER CHECK] Is multiplayer: $isMultiplayer');
+    
+    return isMultiplayer;
   }
 }
 
