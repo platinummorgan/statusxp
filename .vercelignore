@@ -11,9 +11,10 @@ macos/
 windows/
 test/
 *.sql
-*.md
 *.iml
 *.log
 .env
 devtools_options.yaml
 README.md
+!PRIVACY.md
+!TERMS_OF_SERVICE.md
