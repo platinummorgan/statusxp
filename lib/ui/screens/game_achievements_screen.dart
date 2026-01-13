@@ -712,7 +712,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 ),
               ],
             ],
-          ),
+          ],
         ),
       ),
     );
