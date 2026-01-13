@@ -12,12 +12,16 @@ class AchievementCommentService {
     final response = await _supabase
         .from('achievement_comments')
         .select('''
-          *,
-          profiles:user_id (
-            username,
-            display_name,
-            avatar_url
-          )
+          id,
+          achievement_id,
+          user_id,
+          comment_text,
+          created_at,
+          updated_at,
+          is_hidden,
+          is_flagged,
+          flag_count,
+          profiles!inner(username, display_name, avatar_url)
         ''')
         .eq('achievement_id', achievementId)
         .eq('is_hidden', false)
@@ -27,8 +31,13 @@ class AchievementCommentService {
 
     return rows.map((row) {
       // Flatten the nested profile data
-      final profile = row['profiles'] as Map<String, dynamic>?;
+      final profiles = row['profiles'];
+      final profile = profiles is List && profiles.isNotEmpty 
+          ? profiles[0] as Map<String, dynamic>
+          : profiles as Map<String, dynamic>?;
+      
       final flattenedRow = Map<String, dynamic>.from(row);
+      flattenedRow.remove('profiles');
       
       if (profile != null) {
         flattenedRow['username'] = profile['username'];
