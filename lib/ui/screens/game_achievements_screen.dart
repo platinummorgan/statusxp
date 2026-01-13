@@ -507,16 +507,32 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
-                  Text(
-                    (isSecret || isHidden) && !isEarned
-                        ? 'Hidden Achievement'
-                        : achievement['name'] ?? 'Unknown',
-                    style: TextStyle(
-                      color: isEarned ? Colors.white : Colors.white54,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  // Title and earned date row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          (isSecret || isHidden) && !isEarned
+                              ? 'Hidden Achievement'
+                              : achievement['name'] ?? 'Unknown',
+                          style: TextStyle(
+                            color: isEarned ? Colors.white : Colors.white54,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      // Earned date badge (top right)
+                      if (isEarned && earnedAt != null) ...[
+                        const SizedBox(width: 8),
+                        _buildBadge(
+                          _formatDate(earnedAt),
+                          CyberpunkTheme.neonCyan,
+                          Icons.check_circle,
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 4),
                   // Description
@@ -531,7 +547,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                   const SizedBox(height: 8),
-                  // Badges
+                  // Badges row (no earned date here anymore)
                   Wrap(
                     spacing: 8,
                     runSpacing: 4,
@@ -563,13 +579,6 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                           '${statusXP.toStringAsFixed(1)} XP',
                           CyberpunkTheme.neonPurple,
                           Icons.bolt,
-                        ),
-                      // Earned date
-                      if (isEarned && earnedAt != null)
-                        _buildBadge(
-                          _formatDate(earnedAt),
-                          CyberpunkTheme.neonCyan,
-                          Icons.check_circle,
                         ),
                     ],
                   ),
