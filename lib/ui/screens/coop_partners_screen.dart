@@ -105,19 +105,23 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final selectedPlatform = ref.watch(selectedPlatformProvider);
-
     return Column(
       children: [
-        _PlatformFilterBar(
-          selectedPlatform: selectedPlatform,
-          onChanged: (platform) =>
-              ref.read(selectedPlatformProvider.notifier).state = platform,
+        Consumer(
+          builder: (context, ref, child) {
+            final selectedPlatform = ref.watch(selectedPlatformProvider);
+            return _PlatformFilterBar(
+              selectedPlatform: selectedPlatform,
+              onChanged: (platform) =>
+                  ref.read(selectedPlatformProvider.notifier).state = platform,
+            );
+          },
         ),
 
         Expanded(
           child: Consumer(
             builder: (context, ref, child) {
+              final selectedPlatform = ref.watch(selectedPlatformProvider);
               final requestsAsync = ref.watch(openRequestsProvider(selectedPlatform));
               return requestsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
