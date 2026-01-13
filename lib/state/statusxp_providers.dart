@@ -44,24 +44,6 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
   return TrophyHelpService(ref.read(supabaseClientProvider));
 });
 
-/// UI filter state for coop partners screen
-final selectedPlatformProvider = StateProvider<String?>((ref) => null);
-
-/// Fetch ALL open trophy help requests (keepAlive to prevent disposal)
-final openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  // Keep this provider alive even when not watched
-  ref.keepAlive();
-  
-  final service = ref.read(trophyHelpServiceProvider);
-  return service.getOpenRequests();
-});
-
-/// Fetch user's own trophy help requests
-final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  final service = ref.read(trophyHelpServiceProvider);
-  return service.getMyRequests();
-});
-
 /// StateProvider for requesting a local biometric lock.
 /// 
 /// Used to trigger a lock screen without signing out.

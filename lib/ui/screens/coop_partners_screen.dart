@@ -7,7 +7,17 @@ import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/offer_help_dialog.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:statusxp/utils/statusxp_logger.dart';
+
+// Simple providers - no caching, no family, no complexity
+final _openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
+  final service = ref.read(trophyHelpServiceProvider);
+  return service.getOpenRequests();
+});
+
+final _myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
+  final service = ref.read(trophyHelpServiceProvider);
+  return service.getMyRequests();
+});
 
 // ------------------------------
 // Screen
@@ -76,20 +86,24 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+  
+  String? _selectedPlatform;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     
-    final selectedPlatform = ref.watch(selectedPlatformProvider);
-    final requestsAsync = ref.watch(openRequestsProvider);
+    final requestsAsync = ref.watch(_openRequestsProvider);
 
     return Column(
       children: [
         _PlatformFilterBar(
-          selectedPlatform: selectedPlatform,
-          onChanged: (platform) =>
-              ref.read(selectedPlatformProvider.notifier).state = platform,
+          selectedPlatform: _selectedPlatform,
+          onChanged: (platform) {
+            setState(() {
+              _selectedPlatform = platform;
+            });
+          },
         ),
 
         Expanded(
@@ -98,15 +112,15 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
             error: (error, _) => _ErrorState(message: 'Error: $error'),
             data: (allRequests) {
               // Filter on UI side
-              final requests = selectedPlatform == null 
+              final requests = _selectedPlatform == null 
                 ? allRequests 
-                : allRequests.where((r) => r.platform == selectedPlatform).toList();
+                : allRequests.where((r) => r.platform == _selectedPlatform).toList();
               
               if (requests.isEmpty) return const _EmptyFindHelpState();
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  ref.invalidate(openRequestsProvider);
+                  ref.invalidate(_myRequestsProvider);
                 },
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
