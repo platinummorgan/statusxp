@@ -573,11 +573,31 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                         ),
                     ],
                   ),
-                  // Get Help button with AI credit badge
+                  // Action buttons row
                   if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements) ...[
                     const SizedBox(height: 8),
                     Row(
                       children: [
+                        Expanded(
+                          child: TextButton.icon(
+                            onPressed: () {
+                              context.push(
+                                '/achievement-comments/${achievement['id']}'
+                                '?name=${Uri.encodeComponent(achievement['name'])}'
+                                '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}',
+                              );
+                            },
+                            icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                            label: const Text('Comments'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: CyberpunkTheme.neonCyan,
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
                         Expanded(
                           child: FutureBuilder<AICreditStatus>(
                             key: ValueKey('credit_badge_${achievement['id']}_$_refreshKey'),
@@ -591,7 +611,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                 label: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Text('Get Help'),
+                                    const Text('AI Help'),
                                     const SizedBox(width: 6),
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -624,9 +644,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                             },
                           ),
                         ),
-                        // Request Co-op Help button (for all unearned achievements)
-                        if (!isEarned)
-                          const SizedBox(width: 4),
+                        if (!isEarned) const SizedBox(width: 4),
                         if (!isEarned)
                           Expanded(
                             child: TextButton.icon(

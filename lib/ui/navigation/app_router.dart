@@ -21,6 +21,7 @@ import 'package:statusxp/ui/screens/landing_page_screen.dart';
 import 'package:statusxp/ui/screens/premium_success_screen.dart';
 import 'package:statusxp/ui/screens/coop_partners_screen.dart';
 import 'package:statusxp/ui/screens/trophy_help_request_details_screen.dart';
+import 'package:statusxp/ui/screens/achievement_comments_screen.dart';
 import 'package:statusxp/features/display_case/screens/display_case_screen.dart';
 
 /// StatusXP App Router Configuration
@@ -182,6 +183,22 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) {
             final requestId = state.pathParameters['requestId']!;
             return TrophyHelpRequestDetailsScreen(requestId: requestId);
+          },
+        ),
+
+        // Achievement Comments - Community tips and coordination
+        GoRoute(
+          path: '/achievement-comments/:achievementId',
+          name: 'achievement-comments',
+          builder: (context, state) {
+            final achievementId = int.parse(state.pathParameters['achievementId']!);
+            final achievementName = state.uri.queryParameters['name'] ?? 'Achievement';
+            final achievementIconUrl = state.uri.queryParameters['icon'];
+            return AchievementCommentsScreen(
+              achievementId: achievementId,
+              achievementName: achievementName,
+              achievementIconUrl: achievementIconUrl,
+            );
           },
         ),
 

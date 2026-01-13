@@ -14,14 +14,13 @@ import 'package:statusxp/data/repositories/unified_games_repository.dart';
 import 'package:statusxp/data/supabase_game_edit_service.dart';
 import 'package:statusxp/services/platform_achievement_checker.dart';
 import 'package:statusxp/services/trophy_help_service.dart';
+import 'package:statusxp/services/achievement_comment_service.dart';
 import 'package:statusxp/domain/game.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/trophy_room_data.dart';
-import 'package:statusxp/domain/trophy_help_request.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/domain/user_stats.dart';
 import 'package:statusxp/domain/user_stats_calculator.dart';
-import 'package:statusxp/utils/statusxp_logger.dart';
 
 /// Provider for the Supabase client instance.
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -42,6 +41,11 @@ final biometricAuthServiceProvider = Provider<BiometricAuthService>((ref) {
 /// Provider for the TrophyHelpService instance.
 final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
   return TrophyHelpService(ref.read(supabaseClientProvider));
+});
+
+/// Provider for the AchievementCommentService instance.
+final achievementCommentServiceProvider = Provider<AchievementCommentService>((ref) {
+  return AchievementCommentService(ref.read(supabaseClientProvider));
 });
 
 /// StateProvider for requesting a local biometric lock.
