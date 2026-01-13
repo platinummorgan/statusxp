@@ -612,7 +612,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                         );
                       },
                       icon: const Icon(Icons.chat_bubble_outline, size: 14),
-                      label: const Text('Tips/Comments', style: TextStyle(fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      label: const Text('Tips/Comments', style: TextStyle(fontSize: 10)),
                       style: TextButton.styleFrom(
                         foregroundColor: CyberpunkTheme.neonCyan,
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
