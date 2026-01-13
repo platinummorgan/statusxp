@@ -10,29 +10,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:statusxp/utils/statusxp_logger.dart';
 
 // ------------------------------
-// Providers
-// ------------------------------
-
-// UI filter state
-final selectedPlatformProvider = StateProvider<String?>((ref) => null);
-
-// Fetch ALL open requests once (no family, no parameters)
-final openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  statusxpLog('RUN openRequestsProvider (fetching ALL)');
-  ref.onDispose(() => statusxpLog('DISPOSE openRequestsProvider'));
-  
-  final service = ref.read(trophyHelpServiceProvider);
-  return service.getOpenRequests(); // No platform filter
-});
-
-// My requests
-final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
-  statusxpLog('[PROVIDER RUN] myRequestsProvider');
-  final service = ref.read(trophyHelpServiceProvider);
-  return service.getMyRequests();
-});
-
-// ------------------------------
 // Screen
 // ------------------------------
 

@@ -46,6 +46,25 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
   return TrophyHelpService(ref.read(supabaseClientProvider));
 });
 
+/// UI filter state for coop partners screen
+final selectedPlatformProvider = StateProvider<String?>((ref) => null);
+
+/// Fetch ALL open trophy help requests
+final openRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
+  statusxpLog('RUN openRequestsProvider (fetching ALL)');
+  ref.onDispose(() => statusxpLog('DISPOSE openRequestsProvider'));
+  
+  final service = ref.read(trophyHelpServiceProvider);
+  return service.getOpenRequests();
+});
+
+/// Fetch user's own trophy help requests
+final myRequestsProvider = FutureProvider<List<TrophyHelpRequest>>((ref) async {
+  statusxpLog('[PROVIDER RUN] myRequestsProvider');
+  final service = ref.read(trophyHelpServiceProvider);
+  return service.getMyRequests();
+});
+
 /// StateProvider for requesting a local biometric lock.
 /// 
 /// Used to trigger a lock screen without signing out.
