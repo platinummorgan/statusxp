@@ -611,11 +611,11 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                           '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}',
                         );
                       },
-                      icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                      label: const Text('Tips/Comments', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.chat_bubble_outline, size: 14),
+                      label: const Text('Tips/Comments', style: TextStyle(fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
                       style: TextButton.styleFrom(
                         foregroundColor: CyberpunkTheme.neonCyan,
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                         minimumSize: const Size(0, 32),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
@@ -632,17 +632,17 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                         
                         return TextButton.icon(
                           onPressed: () => _showAIGuideDialog(context, achievement),
-                          icon: const Icon(Icons.lightbulb_outline, size: 16),
+                          icon: const Icon(Icons.lightbulb_outline, size: 14),
                           label: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('AI Help', style: TextStyle(fontSize: 12)),
-                              const SizedBox(width: 4),
+                              const Text('AI Help', style: TextStyle(fontSize: 10)),
+                              const SizedBox(width: 3),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
                                 decoration: BoxDecoration(
                                   color: CyberpunkTheme.neonPurple.withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
                                     color: CyberpunkTheme.neonPurple,
                                     width: 1,
@@ -652,7 +652,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                                   creditBadge,
                                   style: const TextStyle(
                                     color: CyberpunkTheme.neonPurple,
-                                    fontSize: 9,
+                                    fontSize: 8,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -661,7 +661,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                           ),
                           style: TextButton.styleFrom(
                             foregroundColor: CyberpunkTheme.neonPurple,
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                             minimumSize: const Size(0, 32),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
