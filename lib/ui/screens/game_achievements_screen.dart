@@ -483,110 +483,119 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: achievement['proxied_icon_url'] != null || achievement['icon_url'] != null
-                  ? Image.network(
-                      achievement['proxied_icon_url'] ?? achievement['icon_url'],
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      color: isEarned ? null : Colors.black54,
-                      colorBlendMode: isEarned ? null : BlendMode.darken,
-                      errorBuilder: (_, __, ___) => _buildPlaceholderIcon(trophyType, trophyColor),
-                    )
-                  : _buildPlaceholderIcon(trophyType, trophyColor),
-            ),
-            const SizedBox(width: 12),
-            // Details
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title and earned date row
-                  Row(
+            // Top row: Icon, Title, Date
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: achievement['proxied_icon_url'] != null || achievement['icon_url'] != null
+                      ? Image.network(
+                          achievement['proxied_icon_url'] ?? achievement['icon_url'],
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          color: isEarned ? null : Colors.black54,
+                          colorBlendMode: isEarned ? null : BlendMode.darken,
+                          errorBuilder: (_, __, ___) => _buildPlaceholderIcon(trophyType, trophyColor),
+                        )
+                      : _buildPlaceholderIcon(trophyType, trophyColor),
+                ),
+                const SizedBox(width: 12),
+                // Title and description
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          (isSecret || isHidden) && !isEarned
-                              ? 'Hidden Achievement'
-                              : achievement['name'] ?? 'Unknown',
-                          style: TextStyle(
-                            color: isEarned ? Colors.white : Colors.white54,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                      // Title and earned date row
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              (isSecret || isHidden) && !isEarned
+                                  ? 'Hidden Achievement'
+                                  : achievement['name'] ?? 'Unknown',
+                              style: TextStyle(
+                                color: isEarned ? Colors.white : Colors.white54,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          // Earned date badge (top right)
+                          if (isEarned && earnedAt != null) ...[
+                            const SizedBox(width: 8),
+                            _buildBadge(
+                              _formatDate(earnedAt),
+                              CyberpunkTheme.neonCyan,
+                              Icons.check_circle,
+                            ),
+                          ],
+                        ],
                       ),
-                      // Earned date badge (top right)
-                      if (isEarned && earnedAt != null) ...[
-                        const SizedBox(width: 8),
-                        _buildBadge(
-                          _formatDate(earnedAt),
-                          CyberpunkTheme.neonCyan,
-                          Icons.check_circle,
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  // Description
-                  if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements)
-                    Text(
-                      achievement['description'] ?? '',
-                      style: TextStyle(
-                        color: isEarned ? Colors.white70 : Colors.white38,
-                        fontSize: 13,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  const SizedBox(height: 8),
-                  // Badges row (no earned date here anymore)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      // Trophy type (PSN)
-                      if (trophyType != null)
-                        _buildBadge(
-                          trophyType.toUpperCase(),
-                          trophyColor,
-                          _getTrophyIcon(trophyType),
-                        ),
-                      // Gamerscore (Xbox)
-                      if (gamerscore != null && gamerscore > 0)
-                        _buildBadge(
-                          '${gamerscore}G',
-                          const Color(0xFF107C10),
-                          Icons.stars,
-                        ),
-                      // Rarity
-                      if (rarityGlobal != null)
-                        _buildBadge(
-                          '${rarityGlobal.toStringAsFixed(1)}% • ${_getRarityLabel(rarityBand)}',
-                          _getRarityColor(rarityBand),
-                          Icons.diamond_outlined,
-                        ),
-                      // StatusXP
-                      if (statusXP != null)
-                        _buildBadge(
-                          '${statusXP.toStringAsFixed(1)} XP',
-                          CyberpunkTheme.neonPurple,
-                          Icons.bolt,
+                      const SizedBox(height: 4),
+                      // Description
+                      if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements)
+                        Text(
+                          achievement['description'] ?? '',
+                          style: TextStyle(
+                            color: isEarned ? Colors.white70 : Colors.white38,
+                            fontSize: 13,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                     ],
                   ),
-                  // Action buttons row
-                  if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
+                ),
+              ],
+            ),
+            // Badges row below icon
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                // Trophy type (PSN)
+                if (trophyType != null)
+                  _buildBadge(
+                    trophyType.toUpperCase(),
+                    trophyColor,
+                    _getTrophyIcon(trophyType),
+                  ),
+                // Gamerscore (Xbox)
+                if (gamerscore != null && gamerscore > 0)
+                  _buildBadge(
+                    '${gamerscore}G',
+                    const Color(0xFF107C10),
+                    Icons.stars,
+                  ),
+                // Rarity
+                if (rarityGlobal != null)
+                  _buildBadge(
+                    '${rarityGlobal.toStringAsFixed(1)}% • ${_getRarityLabel(rarityBand)}',
+                    _getRarityColor(rarityBand),
+                    Icons.diamond_outlined,
+                  ),
+                // StatusXP
+                if (statusXP != null)
+                  _buildBadge(
+                    '${statusXP.toStringAsFixed(1)} XP',
+                    CyberpunkTheme.neonPurple,
+                    Icons.bolt,
+                  ),
+              ],
+            ),
+            // Action buttons row
+            if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
                         Expanded(
                           child: TextButton.icon(
                             onPressed: () {
@@ -705,8 +714,8 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                   ],
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
