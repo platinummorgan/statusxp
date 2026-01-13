@@ -90,11 +90,18 @@ class AchievementCommentService {
     required int achievementId,
     required String commentText,
   }) async {
+    // Get current user
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('User must be authenticated to post comments');
+    }
+
     // Insert the comment
     final response = await _supabase
         .from('achievement_comments')
         .insert({
           'achievement_id': achievementId,
+          'user_id': userId,
           'comment_text': commentText,
         })
         .select('''
