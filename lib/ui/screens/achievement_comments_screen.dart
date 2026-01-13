@@ -4,6 +4,7 @@ import 'package:statusxp/domain/achievement_comment.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Provider for loading comments for a specific achievement
 final achievementCommentsProvider = FutureProvider.autoDispose.family<List<AchievementComment>, int>(
@@ -273,14 +274,101 @@ class _EmptyCommentsState extends StatelessWidget {
   }
 }
 
-class _CommentCard extends StatelessWidget {
+class _CommentCard extends ConsumerWidget {
   final AchievementComment comment;
 
   const _CommentCard({required this.comment});
 
+  Future<void> _deleteComment(BuildContext context, WidgetRef ref) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1a1f3a),
+        title: const Text(
+          'Delete Comment?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Are you sure you want to delete this comment? This action cannot be undone.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final service = ref.read(achievementCommentServiceProvider);
+      await service.deleteComment(comment.id);
+
+      // Refresh the comments list
+      ref.invalidate(achievementCommentsProvider(comment.achievementId));
+      ref.invalidate(achievementCommentCountProvider(comment.achievementId));
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Comment deleted'),
+            backgroundColor: CyberpunkTheme.neonCyan,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  Icons.warning_rounded,
+                  color: Color(0xFF0f1729),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Failed to delete: ${e.toString()}',
+                    style: const TextStyle(
+                      color: Color(0xFF0f1729),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red[400],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final timeAgo = timeago.format(comment.createdAt);
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final isOwnComment = currentUserId == comment.userId;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -336,6 +424,15 @@ class _CommentCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                // Delete button (only for own comments)
+                if (isOwnComment)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    iconSize: 20,
+                    color: Colors.white.withOpacity(0.4),
+                    onPressed: () => _deleteComment(context, ref),
+                    tooltip: 'Delete comment',
+                  ),
               ],
             ),
 
