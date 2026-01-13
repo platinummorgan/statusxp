@@ -106,7 +106,6 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
     super.build(context);
 
     final selectedPlatform = ref.watch(selectedPlatformProvider);
-    final requestsAsync = ref.watch(openRequestsProvider(selectedPlatform));
 
     return Column(
       children: [
@@ -117,30 +116,34 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
         ),
 
         Expanded(
-          child: requestsAsync.when(
+          child: Consumer(
+            builder: (context, ref, child) {
+              final requestsAsync = ref.watch(openRequestsProvider(selectedPlatform));
+              return requestsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _ErrorState(message: 'Error: $error'),
-            data: (requests) {
-              if (requests.isEmpty) return const _EmptyFindHelpState();
+              data: (requests) {
+                if (requests.isEmpty) return const _EmptyFindHelpState();
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  // family invalidate needs the param
-                  ref.invalidate(openRequestsProvider(selectedPlatform));
-                },
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: requests.length,
-                  itemBuilder: (context, index) =>
-                      _RequestCard(request: requests[index]),
-                ),
-              );
-            },
-          ),
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    // family invalidate needs the param
+                    ref.invalidate(openRequestsProvider(selectedPlatform));
+                  },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: requests.length,
+                    itemBuilder: (context, index) =>
+                        _RequestCard(request: requests[index]),
+                  ),
+                );
+              },
+            );
+          },
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }
 
 class _PlatformFilterBar extends StatelessWidget {
