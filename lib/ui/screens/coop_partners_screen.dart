@@ -103,55 +103,47 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    
+    final selectedPlatform = ref.watch(selectedPlatformProvider);
+    final requestsAsync = ref.watch(openRequestsProvider);
 
     return Column(
       children: [
-        Consumer(
-          builder: (context, ref, child) {
-            final selectedPlatform = ref.watch(selectedPlatformProvider);
-            return _PlatformFilterBar(
-              selectedPlatform: selectedPlatform,
-              onChanged: (platform) =>
-                  ref.read(selectedPlatformProvider.notifier).state = platform,
-            );
-          },
+        _PlatformFilterBar(
+          selectedPlatform: selectedPlatform,
+          onChanged: (platform) =>
+              ref.read(selectedPlatformProvider.notifier).state = platform,
         ),
 
         Expanded(
-          child: Consumer(
-            builder: (context, ref, child) {
-              final selectedPlatform = ref.watch(selectedPlatformProvider);
-              final requestsAsync = ref.watch(openRequestsProvider);
-              
-              return requestsAsync.when(
+          child: requestsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, _) => _ErrorState(message: 'Error: $error'),
-              data: (allRequests) {
-                // Filter on UI side instead of backend
-                final requests = selectedPlatform == null 
-                  ? allRequests 
-                  : allRequests.where((r) => r.platform == selectedPlatform).toList();
-                
-                if (requests.isEmpty) return const _EmptyFindHelpState();
+            data: (allRequests) {
+              // Filter on UI side
+              final requests = selectedPlatform == null 
+                ? allRequests 
+                : allRequests.where((r) => r.platform == selectedPlatform).toList();
+              
+              if (requests.isEmpty) return const _EmptyFindHelpState();
 
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(openRequestsProvider);
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: requests.length,
-                    itemBuilder: (context, index) =>
-                        _RequestCard(request: requests[index]),
-                  ),
-                );
-              },
-            );
-          },
+              return RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(openRequestsProvider);
+                },
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: requests.length,
+                  itemBuilder: (context, index) =>
+                      _RequestCard(request: requests[index]),
+                ),
+              );
+            },
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 class _PlatformFilterBar extends StatelessWidget {
