@@ -96,7 +96,14 @@ class FlexRoomRepository {
           mostTimeSunk: results[1] as FlexTile?,
           sweattiestPlatinum: results[2] as FlexTile?,
           superlatives: {},
-        recentFlexes: (results[3] as List).map((e) => RecentFlex.fromJson(e as Map<String, dynamic>)).toList(),
+          recentFlexes: (results[3] as List).map((e) => RecentFlex.fromJson(e as Map<String, dynamic>)).toList(),
+        );
+      }
+
+      // If flex room data exists, load the configured tiles
+      final data = response as Map<String, dynamic>;
+      final featuredQueries = <Future>[];
+      
       // Featured tiles queries
       featuredQueries.add(
         data['flex_of_all_time_id'] != null
