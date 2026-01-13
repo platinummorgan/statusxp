@@ -23,7 +23,15 @@ class AchievementCommentService {
           is_hidden,
           is_flagged,
           flag_count,
-          profiles!inner(username, display_name, avatar_url)
+          profiles!inner(
+            psn_online_id, 
+            psn_avatar_url, 
+            steam_display_name, 
+            steam_avatar_url, 
+            xbox_gamertag, 
+            xbox_avatar_url, 
+            preferred_display_platform
+          )
         ''')
         .eq('achievement_id', achievementId)
         .eq('is_hidden', false)
@@ -42,9 +50,39 @@ class AchievementCommentService {
       flattenedRow.remove('profiles');
       
       if (profile != null) {
-        flattenedRow['username'] = profile['username'];
-        flattenedRow['display_name'] = profile['display_name'];
-        flattenedRow['avatar_url'] = profile['avatar_url'];
+        // Determine display name and avatar based on preferred platform
+        final preferredPlatform = profile['preferred_display_platform'] as String? ?? 'psn';
+        
+        // Set display name based on preferred platform
+        String? displayName;
+        String? avatarUrl;
+        
+        if (preferredPlatform == 'psn' && profile['psn_online_id'] != null) {
+          displayName = profile['psn_online_id'] as String;
+          avatarUrl = profile['psn_avatar_url'] as String?;
+        } else if (preferredPlatform == 'steam' && profile['steam_display_name'] != null) {
+          displayName = profile['steam_display_name'] as String;
+          avatarUrl = profile['steam_avatar_url'] as String?;
+        } else if (preferredPlatform == 'xbox' && profile['xbox_gamertag'] != null) {
+          displayName = profile['xbox_gamertag'] as String;
+          avatarUrl = profile['xbox_avatar_url'] as String?;
+        } else {
+          // Fallback logic
+          if (profile['psn_online_id'] != null) {
+            displayName = profile['psn_online_id'] as String;
+            avatarUrl = profile['psn_avatar_url'] as String?;
+          } else if (profile['steam_display_name'] != null) {
+            displayName = profile['steam_display_name'] as String;
+            avatarUrl = profile['steam_avatar_url'] as String?;
+          } else if (profile['xbox_gamertag'] != null) {
+            displayName = profile['xbox_gamertag'] as String;
+            avatarUrl = profile['xbox_avatar_url'] as String?;
+          }
+        }
+        
+        flattenedRow['username'] = displayName;
+        flattenedRow['display_name'] = displayName;
+        flattenedRow['avatar_url'] = avatarUrl;
       }
       
       return AchievementComment.fromJson(flattenedRow);

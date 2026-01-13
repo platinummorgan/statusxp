@@ -414,9 +414,34 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to post: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                Icon(
+                  Icons.warning_rounded,
+                  color: const Color(0xFF0f1729),
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    e.toString().replaceAll('Exception: ', ''),
+                    style: const TextStyle(
+                      color: Color(0xFF0f1729),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red[400],
             behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
