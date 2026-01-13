@@ -453,9 +453,11 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
                 controller: _textController,
                 focusNode: _focusNode,
                 enabled: !_isPosting,
-                maxLines: null,
+                maxLines: 3,
+                minLines: 1,
                 maxLength: _maxLength,
                 textCapitalization: TextCapitalization.sentences,
+                textInputAction: TextInputAction.send,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
