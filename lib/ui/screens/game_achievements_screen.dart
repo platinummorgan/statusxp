@@ -557,37 +557,49 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
             ),
             // Badges row below icon
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 4,
+            Row(
               children: [
                 // Trophy type (PSN)
-                if (trophyType != null)
-                  _buildBadge(
-                    trophyType.toUpperCase(),
-                    trophyColor,
-                    _getTrophyIcon(trophyType),
+                if (trophyType != null) ...[
+                  Flexible(
+                    child: _buildBadge(
+                      trophyType.toUpperCase(),
+                      trophyColor,
+                      _getTrophyIcon(trophyType),
+                    ),
                   ),
+                  const SizedBox(width: 6),
+                ],
                 // Gamerscore (Xbox)
-                if (gamerscore != null && gamerscore > 0)
-                  _buildBadge(
-                    '${gamerscore}G',
-                    const Color(0xFF107C10),
-                    Icons.stars,
+                if (gamerscore != null && gamerscore > 0) ...[
+                  Flexible(
+                    child: _buildBadge(
+                      '${gamerscore}G',
+                      const Color(0xFF107C10),
+                      Icons.stars,
+                    ),
                   ),
+                  const SizedBox(width: 6),
+                ],
                 // Rarity
-                if (rarityGlobal != null)
-                  _buildBadge(
-                    '${rarityGlobal.toStringAsFixed(1)}% • ${_getRarityLabel(rarityBand)}',
-                    _getRarityColor(rarityBand),
-                    Icons.diamond_outlined,
+                if (rarityGlobal != null) ...[
+                  Flexible(
+                    child: _buildBadge(
+                      '${rarityGlobal.toStringAsFixed(1)}% • ${_getRarityLabel(rarityBand)}',
+                      _getRarityColor(rarityBand),
+                      Icons.diamond_outlined,
+                    ),
                   ),
+                  const SizedBox(width: 6),
+                ],
                 // StatusXP
                 if (statusXP != null)
-                  _buildBadge(
-                    '${statusXP.toStringAsFixed(1)} XP',
-                    CyberpunkTheme.neonPurple,
-                    Icons.bolt,
+                  Flexible(
+                    child: _buildBadge(
+                      '${statusXP.toStringAsFixed(1)} XP',
+                      CyberpunkTheme.neonPurple,
+                      Icons.bolt,
+                    ),
                   ),
               ],
             ),
@@ -729,7 +741,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
 
   Widget _buildBadge(String label, Color color, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(6),
@@ -738,14 +750,18 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],
