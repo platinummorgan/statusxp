@@ -77,12 +77,44 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
   bool get wantKeepAlive => true;
   
   String? _selectedPlatform;
+  List<TrophyHelpRequest> _allRequests = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRequests();
+  }
+
+  Future<void> _loadRequests() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final service = ref.read(trophyHelpServiceProvider);
+      final requests = await service.getOpenRequests();
+      if (mounted) {
+        setState(() {
+          _allRequests = requests;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
-    final requestsAsync = ref.watch(_openRequestsProvider);
 
     return Column(
       children: [
@@ -96,30 +128,30 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
         ),
 
         Expanded(
-          child: requestsAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => _ErrorState(message: 'Error: $error'),
-            data: (allRequests) {
-              // Filter on UI side
-              final requests = _selectedPlatform == null 
-                ? allRequests 
-                : allRequests.where((r) => r.platform == _selectedPlatform).toList();
-              
-              if (requests.isEmpty) return const _EmptyFindHelpState();
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? _ErrorState(message: 'Error: $_error')
+                  : () {
+                      // Filter on UI side
+                      final requests = _selectedPlatform == null
+                          ? _allRequests
+                          : _allRequests
+                              .where((r) => r.platform == _selectedPlatform)
+                              .toList();
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(_myRequestsProvider);
-                },
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: requests.length,
-                  itemBuilder: (context, index) =>
-                      _RequestCard(request: requests[index]),
-                ),
-              );
-            },
-          ),
+                      if (requests.isEmpty) return const _EmptyFindHelpState();
+
+                      return RefreshIndicator(
+                        onRefresh: _loadRequests,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: requests.length,
+                          itemBuilder: (context, index) =>
+                              _RequestCard(request: requests[index]),
+                        ),
+                      );
+                    }(),
         ),
       ],
     );
@@ -372,15 +404,13 @@ class _RequestCard extends ConsumerWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () async {
-                    final result = await showDialog<bool>(
+                    await showDialog<bool>(
                       context: context,
                       builder: (_) => OfferHelpDialog(request: request),
                     );
 
-                    if (result == true) {
-                      final platform = ref.read(selectedPlatformProvider);
-                      ref.invalidate(openRequestsProvider(platform));
-                    }
+                    // Dialog returns true if help was offered successfully
+                    // No need to invalidate anything - user can pull to refresh if needed
                   },
                   icon: const Icon(Icons.handshake, size: 18),
                   label: const Text('Offer Help'),
@@ -454,55 +484,90 @@ class _MyRequestsTabState extends ConsumerState<_MyRequestsTab>
   @override
   bool get wantKeepAlive => true;
 
+  List<TrophyHelpRequest> _myRequests = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMyRequests();
+  }
+
+  Future<void> _loadMyRequests() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final service = ref.read(trophyHelpServiceProvider);
+      final requests = await service.getMyRequests();
+      if (mounted) {
+        setState(() {
+          _myRequests = requests;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
-
-    final myRequestsAsync = ref.watch(myRequestsProvider);
     final theme = Theme.of(context);
 
-    return myRequestsAsync.when(
-      loading: () => const Center(
+    if (_isLoading) {
+      return const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),
         ),
-      ),
-      error: (error, _) => _ErrorState(message: 'Error: $error'),
-      data: (requests) {
-        if (requests.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.inbox_outlined,
-                    size: 64, color: Colors.white.withOpacity(0.3)),
-                const SizedBox(height: 16),
-                Text(
-                  'No requests yet',
-                  style: theme.textTheme.titleLarge
-                      ?.copyWith(color: Colors.white.withOpacity(0.6)),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Create a request to find co-op partners',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: Colors.white.withOpacity(0.4)),
-                ),
-              ],
-            ),
-          );
-        }
+      );
+    }
 
-        return RefreshIndicator(
-          onRefresh: () async => ref.invalidate(myRequestsProvider),
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: requests.length,
-            itemBuilder: (context, index) =>
-                _MyRequestCard(request: requests[index]),
-          ),
-        );
-      },
+    if (_error != null) {
+      return _ErrorState(message: 'Error: $_error');
+    }
+
+    if (_myRequests.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined,
+                size: 64, color: Colors.white.withOpacity(0.3)),
+            const SizedBox(height: 16),
+            Text(
+              'No requests yet',
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(color: Colors.white.withOpacity(0.6)),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create a request to find co-op partners',
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: Colors.white.withOpacity(0.4)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadMyRequests,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _myRequests.length,
+        itemBuilder: (context, index) =>
+            _MyRequestCard(request: _myRequests[index]),
+      ),
     );
   }
 }
@@ -616,7 +681,7 @@ class _MyRequestCard extends ConsumerWidget {
 
                         try {
                           await service.updateRequestStatus(request.id, 'cancelled');
-                          ref.invalidate(myRequestsProvider);
+                          // Request cancelled - user can pull to refresh to see updated list
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Request cancelled')),
@@ -649,7 +714,7 @@ class _MyRequestCard extends ConsumerWidget {
 
                         try {
                           await service.deleteRequest(request.id);
-                          ref.invalidate(myRequestsProvider);
+                          // Request deleted - user can pull to refresh to see updated list
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Request deleted')),
