@@ -136,12 +136,18 @@ class AchievementCheckerService {
   }
 
   Future<Set<String>> _getUnlockedAchievementIds(String userId) async {
-    final result = await _client
-        .from('user_meta_achievements')
-        .select('achievement_id')
-        .eq('user_id', userId);
+    try {
+      final result = await _client
+          .from('user_meta_achievements')
+          .select('achievement_id')
+          .eq('user_id', userId);
 
-    return result.map((row) => row['achievement_id'] as String).toSet();
+      final ids = result.map((row) => row['achievement_id'] as String).toSet();
+      return ids;
+    } catch (e) {
+      // If query fails, return empty set (will check each achievement individually)
+      return {};
+    }
   }
 
   Future<List<String>> _checkRarityAchievements(
@@ -154,32 +160,37 @@ class AchievementCheckerService {
 
     // Rare Air: 1 trophy < 5%
     if (!unlocked.contains('rare_air') && (rarityCounts[5.0] ?? 0) >= 1) {
-      await _unlockAchievement(userId, 'rare_air');
-      newlyUnlocked.add('rare_air');
+      if (await _unlockAchievement(userId, 'rare_air')) {
+        newlyUnlocked.add('rare_air');
+      }
     }
 
     // Baller: 1 trophy < 2%
     if (!unlocked.contains('baller') && (rarityCounts[2.0] ?? 0) >= 1) {
-      await _unlockAchievement(userId, 'baller');
-      newlyUnlocked.add('baller');
+      if (await _unlockAchievement(userId, 'baller')) {
+        newlyUnlocked.add('baller');
+      }
     }
 
     // One-Percenter: 1 trophy < 1%
     if (!unlocked.contains('one_percenter') && (rarityCounts[1.0] ?? 0) >= 1) {
-      await _unlockAchievement(userId, 'one_percenter');
-      newlyUnlocked.add('one_percenter');
+      if (await _unlockAchievement(userId, 'one_percenter')) {
+        newlyUnlocked.add('one_percenter');
+      }
     }
 
     // Diamond Hands: 5 trophies < 5%
     if (!unlocked.contains('diamond_hands') && (rarityCounts[5.0] ?? 0) >= 5) {
-      await _unlockAchievement(userId, 'diamond_hands');
-      newlyUnlocked.add('diamond_hands');
+      if (await _unlockAchievement(userId, 'diamond_hands')) {
+        newlyUnlocked.add('diamond_hands');
+      }
     }
 
     // Mythic Hunter: 10 trophies < 5%
     if (!unlocked.contains('mythic_hunter') && (rarityCounts[5.0] ?? 0) >= 10) {
-      await _unlockAchievement(userId, 'mythic_hunter');
-      newlyUnlocked.add('mythic_hunter');
+      if (await _unlockAchievement(userId, 'mythic_hunter')) {
+        newlyUnlocked.add('mythic_hunter');
+      }
     }
 
     // Elite Finish: 1 platinum with rarity < 10%
@@ -199,8 +210,7 @@ class AchievementCheckerService {
       });
       
       if (hasElite) {
-        await _unlockAchievement(userId, 'elite_finish');
-        newlyUnlocked.add('elite_finish');
+        if (await _unlockAchievement(userId, 'elite_finish')) {          newlyUnlocked.add('elite_finish');        }
       }
     }
 
@@ -221,8 +231,7 @@ class AchievementCheckerService {
       });
       
       if (hasSweat) {
-        await _unlockAchievement(userId, 'sweat_lord');
-        newlyUnlocked.add('sweat_lord');
+        if (await _unlockAchievement(userId, 'sweat_lord')) {          newlyUnlocked.add('sweat_lord');        }
       }
     }
 
@@ -255,8 +264,7 @@ class AchievementCheckerService {
       final totalRare = rarePsnTrophies.length + rareAchievements.length;
       
       if (totalRare >= 25) {
-        await _unlockAchievement(userId, 'never_casual');
-        newlyUnlocked.add('never_casual');
+        if (await _unlockAchievement(userId, 'never_casual')) {          newlyUnlocked.add('never_casual');        }
       }
     }
 
@@ -335,8 +343,7 @@ class AchievementCheckerService {
         }
         
         if (overallRarest != null && rarestRecent <= overallRarest) {
-          await _unlockAchievement(userId, 'fresh_flex');
-          newlyUnlocked.add('fresh_flex');
+          if (await _unlockAchievement(userId, 'fresh_flex')) {            newlyUnlocked.add('fresh_flex');          }
         }
       }
     }
@@ -355,44 +362,36 @@ class AchievementCheckerService {
 
     // Trophy count milestones
     if (!unlocked.contains('warming_up') && total >= 50) {
-      await _unlockAchievement(userId, 'warming_up');
-      newlyUnlocked.add('warming_up');
+      if (await _unlockAchievement(userId, 'warming_up')) {        newlyUnlocked.add('warming_up');      }
     }
 
     if (!unlocked.contains('on_the_grind') && total >= 250) {
-      await _unlockAchievement(userId, 'on_the_grind');
-      newlyUnlocked.add('on_the_grind');
+      if (await _unlockAchievement(userId, 'on_the_grind')) {        newlyUnlocked.add('on_the_grind');      }
     }
 
     if (!unlocked.contains('xp_machine') && total >= 500) {
-      await _unlockAchievement(userId, 'xp_machine');
-      newlyUnlocked.add('xp_machine');
+      if (await _unlockAchievement(userId, 'xp_machine')) {        newlyUnlocked.add('xp_machine');      }
     }
 
     if (!unlocked.contains('achievement_engine') && total >= 1000) {
-      await _unlockAchievement(userId, 'achievement_engine');
-      newlyUnlocked.add('achievement_engine');
+      if (await _unlockAchievement(userId, 'achievement_engine')) {        newlyUnlocked.add('achievement_engine');      }
     }
 
     if (!unlocked.contains('no_life_great_life') && total >= 2500) {
-      await _unlockAchievement(userId, 'no_life_great_life');
-      newlyUnlocked.add('no_life_great_life');
+      if (await _unlockAchievement(userId, 'no_life_great_life')) {        newlyUnlocked.add('no_life_great_life');      }
     }
 
     // Platinum milestones
     if (!unlocked.contains('double_digits') && platinums >= 10) {
-      await _unlockAchievement(userId, 'double_digits');
-      newlyUnlocked.add('double_digits');
+      if (await _unlockAchievement(userId, 'double_digits')) {        newlyUnlocked.add('double_digits');      }
     }
 
     if (!unlocked.contains('certified_platinum') && platinums >= 25) {
-      await _unlockAchievement(userId, 'certified_platinum');
-      newlyUnlocked.add('certified_platinum');
+      if (await _unlockAchievement(userId, 'certified_platinum')) {        newlyUnlocked.add('certified_platinum');      }
     }
 
     if (!unlocked.contains('legendary_finisher') && platinums >= 50) {
-      await _unlockAchievement(userId, 'legendary_finisher');
-      newlyUnlocked.add('legendary_finisher');
+      if (await _unlockAchievement(userId, 'legendary_finisher')) {        newlyUnlocked.add('legendary_finisher');      }
     }
 
     // Spike Week - 3 games to 100% in one week
@@ -401,8 +400,7 @@ class AchievementCheckerService {
     });
     
     if (!unlocked.contains('spike_week') && weekCompletions == true) {
-      await _unlockAchievement(userId, 'spike_week');
-      newlyUnlocked.add('spike_week');
+      if (await _unlockAchievement(userId, 'spike_week')) {        newlyUnlocked.add('spike_week');      }
     }
 
     // Power Session - 100 trophies in 24 hours
@@ -411,8 +409,7 @@ class AchievementCheckerService {
     });
     
     if (!unlocked.contains('power_session') && powerSession == true) {
-      await _unlockAchievement(userId, 'power_session');
-      newlyUnlocked.add('power_session');
+      if (await _unlockAchievement(userId, 'power_session')) {        newlyUnlocked.add('power_session');      }
     }
 
     return newlyUnlocked;
@@ -435,24 +432,20 @@ class AchievementCheckerService {
 
     // Welcome achievements - first trophy on each platform
     if (!unlocked.contains('welcome_trophy_room') && hasPSN) {
-      await _unlockAchievement(userId, 'welcome_trophy_room');
-      newlyUnlocked.add('welcome_trophy_room');
+      if (await _unlockAchievement(userId, 'welcome_trophy_room')) {        newlyUnlocked.add('welcome_trophy_room');      }
     }
 
     if (!unlocked.contains('welcome_gamerscore') && hasXbox) {
-      await _unlockAchievement(userId, 'welcome_gamerscore');
-      newlyUnlocked.add('welcome_gamerscore');
+      if (await _unlockAchievement(userId, 'welcome_gamerscore')) {        newlyUnlocked.add('welcome_gamerscore');      }
     }
 
     if (!unlocked.contains('welcome_pc_grind') && hasSteam) {
-      await _unlockAchievement(userId, 'welcome_pc_grind');
-      newlyUnlocked.add('welcome_pc_grind');
+      if (await _unlockAchievement(userId, 'welcome_pc_grind')) {        newlyUnlocked.add('welcome_pc_grind');      }
     }
 
     // Triforce - achievements on all three platforms
     if (!unlocked.contains('triforce') && hasPSN && hasXbox && hasSteam) {
-      await _unlockAchievement(userId, 'triforce');
-      newlyUnlocked.add('triforce');
+      if (await _unlockAchievement(userId, 'triforce')) {        newlyUnlocked.add('triforce');      }
     }
 
     // Cross-Platform Conqueror - platinum on PS, 1000G on Xbox, 100% on Steam
@@ -482,8 +475,7 @@ class AchievementCheckerService {
           .limit(1);
       
       if (hasPSPlatinum.isNotEmpty && hasXboxCompletion.isNotEmpty && hasSteamCompletion.isNotEmpty) {
-        await _unlockAchievement(userId, 'cross_platform_conqueror');
-        newlyUnlocked.add('cross_platform_conqueror');
+        if (await _unlockAchievement(userId, 'cross_platform_conqueror')) {          newlyUnlocked.add('cross_platform_conqueror');        }
       }
     }
 
@@ -499,8 +491,7 @@ class AchievementCheckerService {
 
     // Systems Online - synced all three platforms
     if (!unlocked.contains('systems_online') && stats['allPlatformsSynced'] == true) {
-      await _unlockAchievement(userId, 'systems_online');
-      newlyUnlocked.add('systems_online');
+      if (await _unlockAchievement(userId, 'systems_online')) {        newlyUnlocked.add('systems_online');      }
     }
 
     // Interior Designer - check if flex room has been customized
@@ -525,16 +516,14 @@ class AchievementCheckerService {
       }
 
       if (filledSlots >= 3) {
-        await _unlockAchievement(userId, 'interior_designer');
-        newlyUnlocked.add('interior_designer');
+        if (await _unlockAchievement(userId, 'interior_designer')) {          newlyUnlocked.add('interior_designer');        }
       }
     }
 
     // Rank Up IRL - 10,000+ total trophies
     final totalAchievements = stats['totalAchievements'] as int;
     if (!unlocked.contains('rank_up_irl') && totalAchievements >= 10000) {
-      await _unlockAchievement(userId, 'rank_up_irl');
-      newlyUnlocked.add('rank_up_irl');
+      if (await _unlockAchievement(userId, 'rank_up_irl')) {        newlyUnlocked.add('rank_up_irl');      }
     }
 
     // Note: profile_pimp and showboat require features we haven't built yet
@@ -566,21 +555,18 @@ class AchievementCheckerService {
 
       // Night Owl - between 2-4 AM
       if (!unlocked.contains('night_owl') && hour >= 2 && hour < 4) {
-        await _unlockAchievement(userId, 'night_owl');
-        newlyUnlocked.add('night_owl');
+        if (await _unlockAchievement(userId, 'night_owl')) {          newlyUnlocked.add('night_owl');        }
       }
 
       // Early Grind - before 7 AM
       if (!unlocked.contains('early_grind') && hour < 7) {
-        await _unlockAchievement(userId, 'early_grind');
-        newlyUnlocked.add('early_grind');
+        if (await _unlockAchievement(userId, 'early_grind')) {          newlyUnlocked.add('early_grind');        }
       }
 
       // New Year New Flex - first trophy of the year
       if (!unlocked.contains('new_year_new_flex') && 
           earnedAt.month == 1 && earnedAt.day == 1) {
-        await _unlockAchievement(userId, 'new_year_new_flex');
-        newlyUnlocked.add('new_year_new_flex');
+        if (await _unlockAchievement(userId, 'new_year_new_flex')) {          newlyUnlocked.add('new_year_new_flex');        }
       }
     }
 
@@ -661,14 +647,12 @@ class AchievementCheckerService {
 
     // One Week Streak - 7 consecutive days
     if (!unlocked.contains('one_week_streak') && maxStreak >= 7) {
-      await _unlockAchievement(userId, 'one_week_streak');
-      newlyUnlocked.add('one_week_streak');
+      if (await _unlockAchievement(userId, 'one_week_streak')) {        newlyUnlocked.add('one_week_streak');      }
     }
 
     // Daily Grinder - 30 consecutive days
     if (!unlocked.contains('daily_grinder') && maxStreak >= 30) {
-      await _unlockAchievement(userId, 'daily_grinder');
-      newlyUnlocked.add('daily_grinder');
+      if (await _unlockAchievement(userId, 'daily_grinder')) {        newlyUnlocked.add('daily_grinder');      }
     }
 
     // No Days Off - 5+ trophies every day for 7 days
@@ -692,8 +676,7 @@ class AchievementCheckerService {
     }
     
     if (!unlocked.contains('no_days_off') && maxConsecutiveHeavyDays >= 7) {
-      await _unlockAchievement(userId, 'no_days_off');
-      newlyUnlocked.add('no_days_off');
+      if (await _unlockAchievement(userId, 'no_days_off')) {        newlyUnlocked.add('no_days_off');      }
     }
 
     // Touch Grass - 7 days without earning anything
@@ -704,8 +687,7 @@ class AchievementCheckerService {
     }
     
     if (!unlocked.contains('touch_grass') && maxGap >= 7) {
-      await _unlockAchievement(userId, 'touch_grass');
-      newlyUnlocked.add('touch_grass');
+      if (await _unlockAchievement(userId, 'touch_grass')) {        newlyUnlocked.add('touch_grass');      }
     }
 
     // Note: instant_gratification requires game session tracking
@@ -714,9 +696,11 @@ class AchievementCheckerService {
     return newlyUnlocked;
   }
 
-  Future<void> _unlockAchievement(String userId, String achievementId) async {
+  /// Unlocks an achievement for a user
+  /// Returns true if newly unlocked, false if already existed
+  Future<bool> _unlockAchievement(String userId, String achievementId) async {
     try {
-      // Check if already unlocked to avoid unnecessary upserts
+      // Check if already unlocked to avoid unnecessary inserts
       final existing = await _client
           .from('user_meta_achievements')
           .select('achievement_id')
@@ -725,7 +709,7 @@ class AchievementCheckerService {
           .maybeSingle();
       
       if (existing != null) {
-        return; // Already unlocked, skip
+        return false; // Already unlocked
       }
 
       await _client.from('user_meta_achievements').insert({
@@ -733,8 +717,10 @@ class AchievementCheckerService {
         'achievement_id': achievementId,
         'unlocked_at': DateTime.now().toIso8601String(),
       });
+      return true; // Newly unlocked
     } catch (e) {
-      // Silently ignore conflicts - achievement already exists
+      // Insert failed (likely duplicate) - treat as not newly unlocked
+      return false;
     }
   }
 }
