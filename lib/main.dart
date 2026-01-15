@@ -31,13 +31,7 @@ bool _isSupabaseAuthStorageKey(String key) {
 void _sanitizeSupabaseAuthStorage() {
   try {
     final storage = html.window.localStorage;
-    final keys = <String>[];
-    for (var i = 0; i < storage.length; i++) {
-      final key = storage.key(i);
-      if (key != null) {
-        keys.add(key);
-      }
-    }
+    final keys = storage.keys.toList(growable: false);
 
     for (final key in keys) {
       if (!_isSupabaseAuthStorageKey(key)) continue;
