@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -35,8 +36,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkBiometricAvailability();
-    _maybeAutoPromptBiometric();
+    if (!kIsWeb) {
+      _checkBiometricAvailability();
+      _maybeAutoPromptBiometric();
+    }
   }
 
   @override
@@ -57,6 +60,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
 
   /// Check if biometric sign-in is available
   Future<void> _checkBiometricAvailability() async {
+    if (kIsWeb) return;
     final biometricAvailable = await _biometricService.isBiometricAvailable();
     
     if (mounted) {
@@ -68,6 +72,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   }
 
   void _maybeAutoPromptBiometric() {
+    if (kIsWeb) return;
     if (!widget.autoPromptBiometric || _hasAutoPrompted) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {

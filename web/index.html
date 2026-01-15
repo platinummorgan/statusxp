@@ -163,6 +163,13 @@
       });
     }
     
+    // Enable source map debugging
+    window.flutterConfiguration = {
+      serviceWorkerVersion: null,
+      debug: true,
+      sourceMaps: true,
+    };
+    
     // Remove loading screen when Flutter is ready
     window.addEventListener('flutter-first-frame', function() {
       const loading = document.getElementById('loading');
@@ -174,6 +181,8 @@
     });
   </script>
   
+  <!-- Load debug configuration in development -->
+  <script src="flutter_web_debug.js"></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

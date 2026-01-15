@@ -46,7 +46,12 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
     WidgetsBinding.instance.addObserver(this);
     _checkOnboardingStatus();
     _checkInitialAuthStatus();
-    _checkBiometricToken();
+    if (kIsWeb) {
+      _hasBiometricToken = false;
+      _checkingBiometric = false;
+    } else {
+      _checkBiometricToken();
+    }
   }
 
   @override

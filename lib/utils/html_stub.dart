@@ -7,9 +7,27 @@ class Window {
 }
 
 class Storage {
-  void clear() {}
-  void remove(String key) {}
-  int get length => 0;
+  final Map<String, String> _data = {};
+
+  void clear() {
+    _data.clear();
+  }
+
+  void remove(String key) {
+    _data.remove(key);
+  }
+
+  int get length => _data.length;
+
+  bool containsKey(String key) => _data.containsKey(key);
+
+  String? operator [](String key) => _data[key];
+
+  void operator []=(String key, String value) {
+    _data[key] = value;
+  }
+
+  List<String> get keys => _data.keys.toList(growable: false);
 }
 
 class History {

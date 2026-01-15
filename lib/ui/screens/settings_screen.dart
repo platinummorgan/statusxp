@@ -528,8 +528,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   onDisconnect: _profile?['psn_account_id'] != null
                       ? () => _disconnectPlatform('PlayStation')
                       : null,
-                ),
-
+                  ),
+                ],
+  
                 const Divider(height: 1),
 
                 // Xbox
@@ -682,10 +683,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Preferred Display Platform (THIRD)
                 _buildPreferredPlatformTile(),
 
-                const Divider(height: 1),
+                if (!kIsWeb) ...[
+                  const Divider(height: 1),
                 
-                // Biometric Authentication (FOURTH)
-                FutureBuilder<bool>(
+                  // Biometric Authentication (FOURTH)
+                  FutureBuilder<bool>(
                   future: _biometricService.isBiometricAvailable(),
                   builder: (context, snapshot) {
                     final isAvailable = snapshot.data ?? false;
