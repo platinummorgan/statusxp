@@ -68,6 +68,9 @@ dependencies:
   # OpenAI integration for achievement guides
   dart_openai: ^5.1.0
   
+  # Environment variables (optional for local dev)
+  flutter_dotenv: ^5.1.0
+  
   # HTTP client for API requests
   http: ^1.1.0
   
