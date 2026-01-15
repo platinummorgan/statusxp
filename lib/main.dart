@@ -79,15 +79,37 @@ void main() async {
       statusxpLog('Stack: $stack');
       
       // If error contains null check operator, clear localStorage as it might be corrupted
+      // But only do this once to prevent infinite reload loops
       if (kIsWeb && error.toString().contains('Null check operator')) {
-        statusxpLog('Clearing potentially corrupted localStorage...');
-        try {
-          html.window.localStorage.clear();
-          statusxpLog('LocalStorage cleared due to null check error');
-          // Reload the page to restart with clean state
-          html.window.location.reload();
-        } catch (e) {
-          statusxpLog('Error clearing localStorage: $e');
+        final hasAlreadyClearedKey = 'statusxp_already_cleared_localStorage';
+        final hasAlreadyCleared = html.window.localStorage.getItem(hasAlreadyClearedKey);
+        
+        if (hasAlreadyCleared == null) {
+          statusxpLog('Clearing potentially corrupted localStorage...');
+          try {
+            // Set flag first, then clear everything else
+            html.window.localStorage.setItem(hasAlreadyClearedKey, 'true');
+            
+            // Clear everything except the flag
+            final keysToRemove = <String>[];
+            for (int i = 0; i < html.window.localStorage.length!; i++) {
+              final key = html.window.localStorage.key(i);
+              if (key != null && key != hasAlreadyClearedKey) {
+                keysToRemove.add(key);
+              }
+            }
+            for (final key in keysToRemove) {
+              html.window.localStorage.removeItem(key);
+            }
+            
+            statusxpLog('LocalStorage cleared due to null check error (except reload flag)');
+            // Reload the page to restart with clean state
+            html.window.location.reload();
+          } catch (e) {
+            statusxpLog('Error clearing localStorage: $e');
+          }
+        } else {
+          statusxpLog('Already cleared localStorage once - not reloading again to prevent infinite loop');
         }
       }
     },
