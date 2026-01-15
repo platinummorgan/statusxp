@@ -59,7 +59,7 @@ class FlexRoomRepository {
         rarityBand: _getRarityBand(rarityPercent),
         statusXP: _getStatusXP(rarityPercent),
         earnedAt: DateTime.parse(userAchievementRow['earned_at']),
-        iconUrl: achievement['icon_url'],
+        iconUrl: achievement['proxied_icon_url'] ?? achievement['icon_url'],
       );
     } catch (e) {
       return null;
@@ -223,6 +223,7 @@ class FlexRoomRepository {
               description,
               platform,
               icon_url,
+              proxied_icon_url,
               rarity_global,
               game_title_id,
               psn_trophy_type,
@@ -258,13 +259,15 @@ class FlexRoomRepository {
             description,
             platform,
             icon_url,
+            proxied_icon_url,
             rarity_global,
             game_title_id,
             psn_trophy_type,
             game_titles!inner(
               id,
               name,
-              cover_url
+              cover_url,
+              proxied_cover_url
             ),
             user_achievements!inner(
               id,
@@ -291,13 +294,13 @@ class FlexRoomRepository {
         achievementName: response['name'],
         gameName: gameData?['name'] ?? 'Unknown Game',
         gameId: response['game_title_id']?.toString(),
-        gameCoverUrl: gameData?['cover_url'],
+        gameCoverUrl: gameData?['proxied_cover_url'] ?? gameData?['cover_url'],
         platform: response['platform'],
         rarityPercent: rarityPercent,
         rarityBand: _getRarityBand(rarityPercent),
         statusXP: _getStatusXP(rarityPercent),
         earnedAt: DateTime.parse(userAchievement['earned_at']),
-        iconUrl: response['icon_url'],
+        iconUrl: response['proxied_icon_url'] ?? response['icon_url'],
       );
     } catch (e) {
       return null;
@@ -359,13 +362,15 @@ class FlexRoomRepository {
             description,
             platform,
             icon_url,
+            proxied_icon_url,
             rarity_global,
             game_title_id,
             psn_trophy_type,
             game_titles!inner(
               id,
               name,
-              cover_url
+              cover_url,
+              proxied_cover_url
             ),
             user_achievements!inner(
               id,
@@ -393,13 +398,13 @@ class FlexRoomRepository {
         achievementName: response['name'],
         gameName: gameData?['name'] ?? 'Unknown Game',
         gameId: response['game_title_id']?.toString(),
-        gameCoverUrl: gameData?['cover_url'],
+        gameCoverUrl: gameData?['proxied_cover_url'] ?? gameData?['cover_url'],
         platform: response['platform'],
         rarityPercent: response['rarity_global']?.toDouble(),
         rarityBand: _getRarityBand(response['rarity_global']?.toDouble()),
         statusXP: _getStatusXP(response['rarity_global']?.toDouble()),
         earnedAt: DateTime.parse(userAchievement['earned_at']),
-        iconUrl: response['icon_url'],
+        iconUrl: response['proxied_icon_url'] ?? response['icon_url'],
       );
     } catch (e) {
       return null;
@@ -779,6 +784,7 @@ class FlexRoomRepository {
             name,
             description,
             icon_url,
+            proxied_icon_url,
             rarity_global,
             rarity_band,
             base_status_xp,
