@@ -1,5 +1,6 @@
 // Force redeploy after optimization fix - Dec 7, 2025
 import { createClient } from '@supabase/supabase-js';
+import { uploadExternalIcon } from './icon-proxy-utils.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
