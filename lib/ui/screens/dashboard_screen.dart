@@ -10,7 +10,6 @@ import 'package:statusxp/ui/widgets/glass_panel.dart';
 import 'package:statusxp/ui/widgets/neon_action_chip.dart';
 import 'package:statusxp/ui/widgets/neon_ring.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
-import 'package:statusxp/utils/html.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Dashboard Screen - Cyberpunk HUD Main Screen

@@ -114,6 +114,7 @@ class Game extends Equatable {
       silverTrophies: json['silverTrophies'] as int? ?? 0,
       goldTrophies: json['goldTrophies'] as int? ?? 0,
       platinumTrophies: json['platinumTrophies'] as int? ?? 0,
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
     );
   }
 
@@ -132,6 +133,7 @@ class Game extends Equatable {
       'silverTrophies': silverTrophies,
       'goldTrophies': goldTrophies,
       'platinumTrophies': platinumTrophies,
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 

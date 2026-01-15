@@ -102,25 +102,16 @@ class MetaAchievementRepository {
   }
 
   /// Manually unlock an achievement (for testing/admin)
+  /// Uses atomic database function to prevent race conditions
   Future<bool> unlockAchievement(String userId, String achievementId) async {
     try {
-      // Check if already unlocked
-      final existing = await _client
-          .from('user_meta_achievements')
-          .select('achievement_id')
-          .eq('user_id', userId)
-          .eq('achievement_id', achievementId)
-          .maybeSingle();
-      
-      if (existing != null) {
-        return true; // Already unlocked
-      }
-
-      await _client.from('user_meta_achievements').insert({
-        'user_id': userId,
-        'achievement_id': achievementId,
-        'unlocked_at': DateTime.now().toIso8601String(),
+      final response = await _client.rpc('unlock_achievement_if_new', params: {
+        'p_user_id': userId,
+        'p_achievement_id': achievementId,
+        'p_unlocked_at': DateTime.now().toIso8601String(),
       });
+      
+      // Function always succeeds (inserts new or ignores existing)
       return true;
     } catch (e) {
       return false;

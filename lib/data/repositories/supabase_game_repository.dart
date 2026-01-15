@@ -83,12 +83,16 @@ class SupabaseGameRepository {
         
         // Use last_trophy_earned_at from database, fallback to last_played_at
         final lastTrophyStr = row['last_trophy_earned_at'] as String?;
+        print('DEBUG REPO: Game ${gameTitle['name']} - last_trophy_earned_at from DB: $lastTrophyStr');
         DateTime? updatedAt = lastTrophyStr != null ? DateTime.tryParse(lastTrophyStr) : null;
         
         if (updatedAt == null) {
           final lastPlayedStr = row['last_played_at'] as String?;
+          print('DEBUG REPO: Fallback to last_played_at: $lastPlayedStr');
           updatedAt = lastPlayedStr != null ? DateTime.tryParse(lastPlayedStr) : null;
         }
+        
+        print('DEBUG REPO: Final updatedAt for ${gameTitle['name']}: $updatedAt');
         
         return Game(
           id: gameTitleId.toString(), // Use game_title_id, not user_games.id

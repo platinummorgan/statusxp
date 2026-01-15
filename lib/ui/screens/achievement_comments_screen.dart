@@ -239,13 +239,13 @@ class _EmptyCommentsState extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.info_outline,
                     color: CyberpunkTheme.neonCyan,
                     size: 24,
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  const Text(
                     'Use comments to:',
                     style: TextStyle(
                       color: CyberpunkTheme.neonCyan,
@@ -394,7 +394,7 @@ class _CommentCard extends ConsumerWidget {
                       ? NetworkImage(comment.avatarUrl!)
                       : null,
                   child: comment.avatarUrl == null
-                      ? Icon(
+                      ? const Icon(
                           Icons.person,
                           size: 18,
                           color: CyberpunkTheme.neonCyan,
@@ -500,8 +500,8 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
       // Show success
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Comment posted!'),
+          const SnackBar(
+            content: Text('Comment posted!'),
             backgroundColor: CyberpunkTheme.neonCyan,
             behavior: SnackBarBehavior.floating,
           ),
@@ -513,9 +513,9 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
           SnackBar(
             content: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.warning_rounded,
-                  color: const Color(0xFF0f1729),
+                  color: Color(0xFF0f1729),
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -605,7 +605,7 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
+                    borderSide: const BorderSide(
                       color: CyberpunkTheme.neonCyan,
                       width: 2,
                     ),

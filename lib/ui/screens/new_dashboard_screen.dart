@@ -10,7 +10,6 @@ import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:statusxp/utils/html.dart' as html;
 
 /// New Dashboard Screen - Cross-Platform Overview
 ///

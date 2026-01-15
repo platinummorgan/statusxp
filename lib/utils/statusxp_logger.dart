@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:developer' as developer;
 
 void statusxpLog(String message) {

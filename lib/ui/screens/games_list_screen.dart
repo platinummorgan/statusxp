@@ -43,6 +43,15 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
   final ScrollController _scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    // Invalidate games on screen load to ensure fresh data with timestamps
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(gamesProvider);
+    });
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
@@ -88,7 +97,11 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
             // Both have no timestamp, sort by name
             return a.name.compareTo(b.name);
           }
-          return bTime.compareTo(aTime);
+          final result = bTime.compareTo(aTime);
+          if (result != 0) {
+            print('SORT: ${a.name} (${aTime.toLocal()}) vs ${b.name} (${bTime.toLocal()}) = $result');
+          }
+          return result;
         case GameSortOption.platinumEarned:
           // Platinumed games first (check if earned, not if available)
           if (a.platinumTrophies != b.platinumTrophies) {
@@ -216,6 +229,8 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
                     setState(() {
                       _sortBy = option;
                     });
+                    // Force refresh games data to ensure we have latest timestamps
+                    ref.invalidate(gamesProvider);
                     _scrollController.animateTo(
                       0,
                       duration: const Duration(milliseconds: 300),

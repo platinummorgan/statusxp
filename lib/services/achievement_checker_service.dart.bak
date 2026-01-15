@@ -698,19 +698,28 @@ class AchievementCheckerService {
 
   /// Unlocks an achievement for a user
   /// Returns true if newly unlocked, false if already existed
-  /// Uses atomic database function to prevent race conditions
   Future<bool> _unlockAchievement(String userId, String achievementId) async {
     try {
-      final response = await _client.rpc('unlock_achievement_if_new', params: {
-        'p_user_id': userId,
-        'p_achievement_id': achievementId,
-        'p_unlocked_at': DateTime.now().toIso8601String(),
-      });
+      // Check if already unlocked to avoid unnecessary inserts
+      final existing = await _client
+          .from('user_meta_achievements')
+          .select('achievement_id')
+          .eq('user_id', userId)
+          .eq('achievement_id', achievementId)
+          .maybeSingle();
       
-      // Function returns true if newly inserted, false if already existed
-      return response == true;
+      if (existing != null) {
+        return false; // Already unlocked
+      }
+
+      await _client.from('user_meta_achievements').insert({
+        'user_id': userId,
+        'achievement_id': achievementId,
+        'unlocked_at': DateTime.now().toIso8601String(),
+      });
+      return true; // Newly unlocked
     } catch (e) {
-      // RPC call failed - treat as not newly unlocked
+      // Insert failed (likely duplicate) - treat as not newly unlocked
       return false;
     }
   }

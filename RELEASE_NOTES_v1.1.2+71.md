@@ -1,4 +1,4 @@
-# StatusXP v1.1.2+71 Release Notes
+2+71 Release Notes
 
 ## 🎉 Major New Feature: Achievement Comments & Tips System
 
