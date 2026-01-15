@@ -154,14 +154,24 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       final credentials = await _biometricService.getStoredCredentials();
       
       if (credentials != null) {
-        // Email/password user - sign in with stored credentials
-        final authService = ref.read(authServiceProvider);
-        await authService.signInWithPassword(
-          email: credentials['email']!,
-          password: credentials['password']!,
-        );
-        _clearLocalLock();
-        // Success! Auth gate will handle navigation
+        final email = credentials['email'];
+        final password = credentials['password'];
+        
+        if (email != null && password != null) {
+          // Email/password user - sign in with stored credentials
+          final authService = ref.read(authServiceProvider);
+          await authService.signInWithPassword(
+            email: email,
+            password: password,
+          );
+          _clearLocalLock();
+          // Success! Auth gate will handle navigation
+        } else {
+          // Invalid credentials stored - clear and show error
+          await _biometricService.clearStoredCredentials();
+          _showSnackBar('Invalid credentials stored. Please sign in again.');
+          return;
+        }
       } else {
         // OAuth user - if a valid session already exists, just unlock
         final currentSession = Supabase.instance.client.auth.currentSession;
