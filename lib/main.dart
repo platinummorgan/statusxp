@@ -81,6 +81,9 @@ void _sanitizeSupabaseAuthStorage() {
 }
 
 Future<void> _syncBiometricSessionIfNeeded(Session session) async {
+  if (kIsWeb) {
+    return;
+  }
   final biometricEnabled = await _biometricAuthService.isBiometricEnabled();
   if (!biometricEnabled) return;
 
