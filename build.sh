@@ -41,27 +41,14 @@ fi
 # Build the web app
 echo "Building Flutter web app..."
 
-# Debug: Check all environment variables
-echo "=== Environment Variables Check ==="
-env | grep -i supabase || echo "No SUPABASE vars found"
-echo "=================================="
-
-# Use hardcoded values if env vars not available
-SUPABASE_URL="${SUPABASE_URL:-https://ksriqcmumjkemtfjuedm.supabase.co}"
-SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzcmlxY211bWprZW10Zmp1ZWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MTQxODQsImV4cCI6MjA4MDI5MDE4NH0.svxzehEtMDUQjF-stp7GL_LmRKQOFu_6PxI0IgbLVoQ}"
+# Use hardcoded values
+SUPABASE_URL="https://ksriqcmumjkemtfjuedm.supabase.co"
+SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzcmlxY211bWprZW10Zmp1ZWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MTQxODQsImV4cCI6MjA4MDI5MDE4NH0.svxzehEtMDUQjF-stp7GL_LmRKQOFu_6PxI0IgbLVoQ"
 
 echo "Using SUPABASE_URL: $SUPABASE_URL"
-echo "Using SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:0:20}..."
 
-# Create .env file
-cat > .env << EOF
-SUPABASE_URL=$SUPABASE_URL
-SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
-EOF
-
-echo "Created .env file:"
-cat .env
-
-flutter build web --release --no-tree-shake-icons
+flutter build web --release --no-tree-shake-icons \
+  --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+  --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
 echo "Build completed successfully!"
