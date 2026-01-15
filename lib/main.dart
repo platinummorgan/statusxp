@@ -112,11 +112,12 @@ void main() async {
   Supabase.instance.client.auth.onAuthStateChange.listen((data) {
     try {
       final event = data.event;
+      final session = data.session;
       
       // Only restart refresh timer on actual sign in/out, not on token refresh
-      if (event == AuthChangeEvent.signedIn) {
+      if (event == AuthChangeEvent.signedIn && session != null) {
         authRefreshService.startPeriodicRefresh();
-        _syncBiometricSessionIfNeeded(data.session!);
+        _syncBiometricSessionIfNeeded(session);
       } else if (event == AuthChangeEvent.signedOut) {
         authRefreshService.stopPeriodicRefresh();
       }
