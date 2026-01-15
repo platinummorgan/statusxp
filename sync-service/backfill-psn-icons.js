@@ -10,20 +10,36 @@ const supabase = createClient(
 async function backfillPsnIcons() {
   console.log('🔄 Starting PSN icon backfill...');
   
-  // Get all PSN achievements without proxied URLs
-  const { data: achievements, error } = await supabase
-    .from('achievements')
-    .select('id, platform_achievement_id, icon_url')
-    .eq('platform', 'psn')
-    .is('proxied_icon_url', null)
-    .not('icon_url', 'is', null);
+  // Fetch ALL PSN achievements without proxied URLs (paginated)
+  let allAchievements = [];
+  let from = 0;
+  const pageSize = 1000;
   
-  if (error) {
-    console.error('❌ Failed to fetch achievements:', error);
-    return;
+  while (true) {
+    const { data, error, count } = await supabase
+      .from('achievements')
+      .select('id, platform_achievement_id, icon_url', { count: 'exact' })
+      .eq('platform', 'psn')
+      .is('proxied_icon_url', null)
+      .not('icon_url', 'is', null)
+      .range(from, from + pageSize - 1);
+    
+    if (error) {
+      console.error('❌ Failed to fetch achievements:', error);
+      return;
+    }
+    
+    if (data.length === 0) break;
+    
+    allAchievements = allAchievements.concat(data);
+    console.log(`📄 Fetched ${allAchievements.length} of ${count} achievements...`);
+    
+    if (data.length < pageSize) break;
+    from += pageSize;
   }
   
-  console.log(`📊 Found ${achievements.length} PSN achievements to backfill`);
+  const achievements = allAchievements;
+  console.log(`📊 Total PSN achievements to backfill: ${achievements.length}`);
   
   let successCount = 0;
   let failCount = 0;
