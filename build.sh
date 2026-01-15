@@ -40,6 +40,8 @@ fi
 
 # Build the web app
 echo "Building Flutter web app..."
-flutter build web --release --no-tree-shake-icons
+flutter build web --release --no-tree-shake-icons \
+  --dart-define=SUPABASE_URL=https://ksriqcmumjkemtfjuedm.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzcmlxY211bWprZW10Zmp1ZWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MTQxODQsImV4cCI6MjA4MDI5MDE4NH0.svxzehEtMDUQjF-stp7GL_LmRKQOFu_6PxI0IgbLVoQ
 
 echo "Build completed successfully!"
