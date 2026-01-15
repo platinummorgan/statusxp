@@ -51,21 +51,47 @@ class UnifiedGamesRepository {
           final int totalCount = (platformData['total_trophies'] as int?) ?? 
                                  (platformData['xbox_total_achievements'] as int?) ?? 0;
           
+          // Parse timestamps
+          final lastPlayedAtStr = platformData['last_played_at'] as String?;
+          final lastTrophyEarnedAtStr = platformData['last_trophy_earned_at'] as String?;
+          
+          DateTime? lastPlayedAt;
+          DateTime? lastTrophyEarnedAt;
+          
+          if (lastPlayedAtStr != null) {
+            try {
+              lastPlayedAt = DateTime.parse(lastPlayedAtStr);
+            } catch (e) {
+              print('Error parsing last_played_at: $e');
+            }
+          }
+          
+          if (lastTrophyEarnedAtStr != null) {
+            try {
+              lastTrophyEarnedAt = DateTime.parse(lastTrophyEarnedAtStr);
+            } catch (e) {
+              print('Error parsing last_trophy_earned_at: $e');
+            }
+          }
+          
+          // Get rarest achievement rarity
+          final rarestRarity = (platformData['rarest_achievement_rarity'] as num?)?.toDouble();
+          
           platforms.add(PlatformGameData(
             platform: platform,
             gameId: gameTitleId,
             achievementsEarned: earnedCount,
             achievementsTotal: totalCount,
             completion: completion,
-            rarestAchievementRarity: null, // Available in detailed view
+            rarestAchievementRarity: rarestRarity,
             hasPlatinum: platinum > 0,
             bronzeCount: bronze,
             silverCount: silver,
             goldCount: gold,
             platinumCount: platinum,
             statusXP: statusXP,
-            lastPlayedAt: null, // Available in group-level data
-            lastTrophyEarnedAt: null,
+            lastPlayedAt: lastPlayedAt,
+            lastTrophyEarnedAt: lastTrophyEarnedAt,
           ));
         }
         
