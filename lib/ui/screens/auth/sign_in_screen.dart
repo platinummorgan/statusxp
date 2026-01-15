@@ -169,7 +169,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         } else {
           // Invalid credentials stored - clear and show error
           await _biometricService.clearStoredCredentials();
-          _showSnackBar('Invalid credentials stored. Please sign in again.');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Invalid credentials stored. Please sign in again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
           return;
         }
       } else {
