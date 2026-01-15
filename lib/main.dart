@@ -77,7 +77,19 @@ void main() async {
     (error, stack) {
       statusxpLog('Uncaught error in zone: $error');
       statusxpLog('Stack: $stack');
-      // Don't crash on errors in production
+      
+      // If error contains null check operator, clear localStorage as it might be corrupted
+      if (kIsWeb && error.toString().contains('Null check operator')) {
+        statusxpLog('Clearing potentially corrupted localStorage...');
+        try {
+          html.window.localStorage.clear();
+          statusxpLog('LocalStorage cleared due to null check error');
+          // Reload the page to restart with clean state
+          html.window.location.reload();
+        } catch (e) {
+          statusxpLog('Error clearing localStorage: $e');
+        }
+      }
     },
   );
 }
@@ -101,7 +113,12 @@ Future<void> _initializeApp() async {
   // On web, clear any leftover Supabase sessions from previous logouts
   if (kIsWeb) {
     statusxpLog('=== STARTUP CHECK ===');
-    statusxpLog('LocalStorage keys before init: ${html.window.localStorage.length}');
+    try {
+      final localStorageLength = html.window.localStorage.length;
+      statusxpLog('LocalStorage keys before init: $localStorageLength');
+    } catch (e) {
+      statusxpLog('Error accessing localStorage: $e');
+    }
   }
 
   await Supabase.initialize(
@@ -119,7 +136,11 @@ Future<void> _initializeApp() async {
   
   // On web, clear logout flag if user is now signed in
   if (kIsWeb && Supabase.instance.client.auth.currentSession != null) {
-    html.window.localStorage.remove('statusxp_logged_out');
+    try {
+      html.window.localStorage.remove('statusxp_logged_out');
+    } catch (e) {
+      statusxpLog('Error clearing logout flag: $e');
+    }
   }
 
   // Initialize manual auth refresh service with better error handling
