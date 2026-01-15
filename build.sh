@@ -40,8 +40,18 @@ fi
 
 # Build the web app
 echo "Building Flutter web app..."
-flutter build web --release --no-tree-shake-icons \
-  --dart-define=SUPABASE_URL=https://ksriqcmumjkemtfjuedm.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzcmlxY211bWprZW10Zmp1ZWRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MTQxODQsImV4cCI6MjA4MDI5MDE4NH0.svxzehEtMDUQjF-stp7GL_LmRKQOFu_6PxI0IgbLVoQ
+echo "SUPABASE_URL from Vercel: $SUPABASE_URL"
+echo "SUPABASE_ANON_KEY from Vercel: ${SUPABASE_ANON_KEY:0:20}..."
+
+# Create .env file from Vercel environment variables
+cat > .env << EOF
+SUPABASE_URL=$SUPABASE_URL
+SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+EOF
+
+echo "Created .env file with Vercel environment variables"
+cat .env
+
+flutter build web --release --no-tree-shake-icons
 
 echo "Build completed successfully!"
