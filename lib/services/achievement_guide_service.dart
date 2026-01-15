@@ -13,7 +13,7 @@ class AchievementGuideService {
     String? platform,
   }) async* {
     final supabase = Supabase.instance.client;
-    const functionUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/generate-achievement-guide';
+    final functionUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/generate-achievement-guide';
     final accessToken = supabase.auth.currentSession?.accessToken;
 
     if (accessToken == null) {
