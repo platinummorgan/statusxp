@@ -105,9 +105,8 @@ export async function syncPSNAchievements(
 
   const psnModule = await import('psn-api');
   const psnApi = psnModule.default ?? psnModule;
-  const { getUserTitles, getTitleTrophies, getUserTrophiesEarnedForTitle, exchangeRefreshTokenForAuthTokens } =
+  const { getUserTitles, getTitleTrophies, getUserTrophiesEarnedForTitle, exchangeRefreshTokenForAuthTokens, getProfileFromAccountId } =
     psnApi;
-  const getUserProfile = psnApi.getUserProfile; // Optional - may not exist in all versions
 
   try {
     console.log('Refreshing PSN access token...');
@@ -116,38 +115,34 @@ export async function syncPSNAchievements(
     let currentRefreshToken = authTokens.refreshToken;
     console.log('PSN access token refreshed successfully');
 
-    // Fetch user profile to ensure psn_online_id is set (if available)
+    // Fetch user profile to ensure psn_online_id is set
     console.log('Fetching PSN user profile...');
     try {
-      if (getUserProfile) {
-        const userProfile = await getUserProfile({ accessToken: currentAccessToken }, accountId);
-        console.log(`PSN profile fetched: ${userProfile.onlineId}`);
-        
-        // Get current profile to check display_name and preferred_display_platform
-        const { data: currentProfile } = await supabase
-          .from('profiles')
-          .select('display_name, preferred_display_platform')
-          .eq('id', userId)
-          .single();
-        
-        const updates = {
-          psn_online_id: userProfile.onlineId,
-          psn_account_id: accountId,
-        };
-        
-        // If display_name is missing or should use PSN name, update it
-        if (!currentProfile?.display_name || currentProfile.preferred_display_platform === 'psn') {
-          updates.display_name = userProfile.onlineId;
-        }
-        
-        await supabase
-          .from('profiles')
-          .update(updates)
-          .eq('id', userId);
-        console.log('✅ PSN profile info updated');
-      } else {
-        console.log('⚠️ getUserProfile not available in psn-api version, skipping profile fetch');
+      const userProfile = await getProfileFromAccountId({ accessToken: currentAccessToken }, accountId);
+      console.log(`PSN profile fetched: ${userProfile.onlineId}`);
+      
+      // Get current profile to check display_name and preferred_display_platform
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('display_name, preferred_display_platform')
+        .eq('id', userId)
+        .single();
+      
+      const updates = {
+        psn_online_id: userProfile.onlineId,
+        psn_account_id: accountId,
+      };
+      
+      // If display_name is missing or should use PSN name, update it
+      if (!currentProfile?.display_name || currentProfile.preferred_display_platform === 'psn') {
+        updates.display_name = userProfile.onlineId;
       }
+      
+      await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', userId);
+      console.log('✅ PSN profile info updated');
     } catch (profileError) {
       console.error('⚠️ Failed to fetch PSN profile, continuing with sync:', profileError.message);
     }
