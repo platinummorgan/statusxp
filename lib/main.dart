@@ -82,7 +82,9 @@ void main() async {
       // But only do this once to prevent infinite reload loops
       if (kIsWeb && error.toString().contains('Null check operator')) {
         final hasAlreadyClearedKey = 'statusxp_already_cleared_localStorage';
-        final hasAlreadyCleared = html.window.localStorage[hasAlreadyClearedKey];
+        final hasAlreadyCleared = html.window.localStorage.containsKey(hasAlreadyClearedKey) 
+            ? html.window.localStorage[hasAlreadyClearedKey]
+            : null;
         
         if (hasAlreadyCleared == null) {
           statusxpLog('Clearing potentially corrupted localStorage...');

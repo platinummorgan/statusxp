@@ -7,7 +7,7 @@ import 'package:statusxp/theme/cyberpunk_theme.dart';
 /// Displays a circular progress indicator with cyberpunk neon styling.
 /// Used for showing platinum trophy count and completion rate.
 class NeonRing extends StatefulWidget {
-  final int value;
+  final int? value;
   final String label;
   final double progress; // 0.0 to 1.0
   final Color color;
@@ -112,7 +112,7 @@ class _NeonRingState extends State<NeonRing> with SingleTickerProviderStateMixin
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                widget.value.toString(),
+                (widget.value ?? 0).toString(),
                 style: theme.textTheme.displayLarge?.copyWith(
                   color: widget.color,
                   fontWeight: FontWeight.w900,
