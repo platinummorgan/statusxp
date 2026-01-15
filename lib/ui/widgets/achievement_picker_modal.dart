@@ -715,7 +715,7 @@ class _AchievementPickerModalState
                     if (tile.statusXP != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        '${tile.statusXP!.toStringAsFixed(1)} XP',
+                        '${(tile.statusXP ?? 0).toStringAsFixed(1)} XP',
                         style: const TextStyle(
                           color: CyberpunkTheme.neonPurple,
                           fontSize: 11,
@@ -747,7 +747,7 @@ class _AchievementPickerModalState
                   child: Column(
                     children: [
                       Text(
-                        '${tile.rarityPercent!.toStringAsFixed(1)}%',
+                        '${(tile.rarityPercent ?? 0).toStringAsFixed(1)}%',
                         style: TextStyle(
                           color: _getRarityColor(tile.rarityBand),
                           fontSize: 14,

@@ -150,7 +150,7 @@ void showTrophyDetailsPopup(
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '${item.rarity!.toStringAsFixed(2)}% RARITY',
+                      '${(item.rarity ?? 0).toStringAsFixed(2)}% RARITY',
                       style: TextStyle(
                         color: theme.primaryAccent,
                         fontSize: 13,

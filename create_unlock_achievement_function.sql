@@ -8,17 +8,27 @@ CREATE OR REPLACE FUNCTION unlock_achievement_if_new(
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
-SECURITY INVOKER
+SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_exists BOOLEAN;
 BEGIN
-  -- Try to insert, ignore if already exists
-  INSERT INTO user_meta_achievements (user_id, achievement_id, unlocked_at)
-  VALUES (p_user_id, p_achievement_id, p_unlocked_at)
-  ON CONFLICT (user_id, achievement_id) DO NOTHING;
+  -- Check if achievement already exists
+  SELECT EXISTS(
+    SELECT 1 FROM user_meta_achievements 
+    WHERE user_id = p_user_id AND achievement_id = p_achievement_id
+  ) INTO v_exists;
   
-  -- Return true if a row was inserted, false if it already existed
-  RETURN FOUND;
+  -- If it doesn't exist, insert it
+  IF NOT v_exists THEN
+    INSERT INTO user_meta_achievements (user_id, achievement_id, unlocked_at)
+    VALUES (p_user_id, p_achievement_id, p_unlocked_at);
+    RETURN TRUE;
+  END IF;
+  
+  -- Already exists, return false
+  RETURN FALSE;
 END;
 $$;
 

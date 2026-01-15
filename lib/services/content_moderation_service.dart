@@ -8,7 +8,7 @@ class ContentModerationService {
   /// Returns true if content is safe, false if flagged
   Future<ModerationResult> moderateContent(String text) async {
     final supabase = Supabase.instance.client;
-    final functionUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/moderate-content';
+    const functionUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/moderate-content';
     final accessToken = supabase.auth.currentSession?.accessToken;
 
     if (accessToken == null) {

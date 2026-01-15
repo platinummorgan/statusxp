@@ -310,7 +310,7 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                                       ],
                                     ),
                                     child: Text(
-                                      '${trophy.rarityGlobal!.toStringAsFixed(1)}%',
+                                      '${(trophy.rarityGlobal ?? 0).toStringAsFixed(1)}%',
                                       style: const TextStyle(
                                         fontSize: 10,
                                         color: CyberpunkTheme.neonCyan,

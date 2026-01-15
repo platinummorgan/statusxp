@@ -128,7 +128,7 @@ class GameListTile extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            '${game.platinumRarity!.toStringAsFixed(1)}%',
+                            '${(game.platinumRarity ?? 0).toStringAsFixed(1)}%',
                             style: const TextStyle(
                               fontSize: 10,
                               color: Color(0xFF00CED1),

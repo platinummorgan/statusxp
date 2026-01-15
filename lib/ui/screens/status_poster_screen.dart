@@ -389,7 +389,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                                       ),
                                     ),
                                     child: Text(
-                                      'TOP ${_percentile!.toStringAsFixed(0)}%',
+                                      'TOP ${(_percentile ?? 0).toStringAsFixed(0)}%',
                                       style: theme.textTheme.labelMedium?.copyWith(
                                         color: CyberpunkTheme.goldNeon,
                                         fontWeight: FontWeight.w800,

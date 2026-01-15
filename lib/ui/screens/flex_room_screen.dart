@@ -676,7 +676,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    '${tile.rarityPercent!.toStringAsFixed(1)}%',
+                    '${(tile.rarityPercent ?? 0).toStringAsFixed(1)}%',
                     style: TextStyle(
                       color: _getRarityColor(tile.rarityBand),
                       fontSize: 10,
@@ -1175,7 +1175,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 const SizedBox(height: 2),
                 if (tile.rarityPercent != null)
                   Text(
-                    '${tile.rarityPercent!.toStringAsFixed(1)}%',
+                    '${(tile.rarityPercent ?? 0).toStringAsFixed(1)}%',
                     style: TextStyle(
                       color: _getRarityColor(tile.rarityBand),
                       fontSize: 8,
