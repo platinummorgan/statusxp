@@ -93,8 +93,8 @@ void main() async {
             // Clear everything except the flag
             final keysToRemove = <String>[];
             for (int i = 0; i < html.window.localStorage.length; i++) {
-              final key = html.window.localStorage.keys.elementAt(i);
-              if (key != hasAlreadyClearedKey) {
+              final key = html.window.localStorage.key(i);
+              if (key != null && key != hasAlreadyClearedKey) {
                 keysToRemove.add(key);
               }
             }
