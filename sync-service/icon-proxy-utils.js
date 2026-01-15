@@ -26,7 +26,7 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
     // Download the image
     const response = await fetch(externalUrl);
     if (!response.ok) {
-      console.error(`[ICON PROXY] Failed to download ${externalUrl}: ${response.status}`);
+      console.error(`[ICON PROXY] Failed to download ${platform}/${achievementId} from ${externalUrl}: HTTP ${response.status}`);
       return null;
     }
 
@@ -34,6 +34,40 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
     
     // Determine file extension
     const contentType = response.headers.get('content-type') || 'image/png';
+    let extension = 'png';
+    if (contentType.includes('jpeg') || contentType.includes('jpg')) extension = 'jpg';
+    else if (contentType.includes('gif')) extension = 'gif';
+    else if (contentType.includes('webp')) extension = 'webp';
+    
+    // Create filename
+    const timestamp = Date.now();
+    const filename = `achievement-icons/${platform}/${achievementId}_${timestamp}.${extension}`;
+    
+    // Upload to Supabase Storage
+    const { error } = await supabase.storage
+      .from('avatars')
+      .upload(filename, arrayBuffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (error) {
+      console.error(`[ICON PROXY] Failed to upload ${platform}/${achievementId} to storage:`, error.message);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filename);
+
+    console.log(`[ICON PROXY] ✅ Successfully proxied ${platform}/${achievementId}`);
+    return publicUrl;
+  } catch (error) {
+    console.error(`[ICON PROXY] Exception for ${platform}/${achievementId}:`, error.message);
+    return null;
+  }
+}
     let extension = 'png';
     if (contentType.includes('jpeg') || contentType.includes('jpg')) extension = 'jpg';
     else if (contentType.includes('gif')) extension = 'gif';

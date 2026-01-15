@@ -694,13 +694,17 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 name: achievement.name,
                 description: achievement.description,
                 icon_url: iconUrl,
-                proxied_icon_url: proxiedIconUrl,
                 xbox_gamerscore: achievement.rewards?.[0]?.value || 0,
                 xbox_is_secret: achievement.isSecret || false,
                 is_platinum: false, // Xbox doesn't have platinums
                 is_dlc: isDLC,
                 dlc_name: null,
               };
+
+              // Only include proxied_icon_url if upload succeeded
+              if (proxiedIconUrl) {
+                achievementUpsert.proxied_icon_url = proxiedIconUrl;
+              }
 
               // Only update rarity if we fetched new data
               if (needsRarityUpdate && rarityPercent !== null) {
@@ -711,7 +715,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               // Check if achievement exists
               const { data: existing } = await supabase
                 .from('achievements')
-                .select('id')
+                .select('id, proxied_icon_url')
                 .eq('game_title_id', title.gameTitleId)
                 .eq('platform', 'xbox')
                 .eq('platform_achievement_id', achievement.id)

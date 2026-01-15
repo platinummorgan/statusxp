@@ -631,7 +631,6 @@ export async function syncPSNAchievements(
               name: trophyMeta.trophyName,
               description: trophyMeta.trophyDetail,
               icon_url: trophyMeta.trophyIconUrl,
-              proxied_icon_url: proxiedIconUrl,
               psn_trophy_type: trophyMeta.trophyType,
               rarity_global: rarityPercent,
               is_platinum: trophyMeta.trophyType === 'platinum',
@@ -640,10 +639,15 @@ export async function syncPSNAchievements(
               dlc_name: dlcName,
             };
 
+            // Only include proxied_icon_url if upload succeeded
+            if (proxiedIconUrl) {
+              achievementData.proxied_icon_url = proxiedIconUrl;
+            }
+
             // Check if achievement exists
             const { data: existing } = await supabase
               .from('achievements')
-              .select('id')
+              .select('id, proxied_icon_url')
               .eq('game_title_id', gameTitle.id)
               .eq('platform', 'psn')
               .eq('platform_achievement_id', trophyMeta.trophyId.toString())

@@ -485,7 +485,6 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             name: achievement.displayName || achievement.name,
             description: achievement.description || '',
             icon_url: iconUrl,
-            proxied_icon_url: proxiedIconUrl,
             steam_hidden: achievement.hidden === 1,
             rarity_global: rarityPercent,
             is_platinum: false, // Steam doesn't have platinums
@@ -493,10 +492,15 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             dlc_name: dlcName,
           };
 
+          // Only include proxied_icon_url if upload succeeded
+          if (proxiedIconUrl) {
+            achievementData.proxied_icon_url = proxiedIconUrl;
+          }
+
           // Check if achievement exists
           const { data: existing } = await supabase
             .from('achievements')
-            .select('id')
+            .select('id, proxied_icon_url')
             .eq('game_title_id', gameTitle.id)
             .eq('platform', 'steam')
             .eq('platform_achievement_id', achievement.name)
