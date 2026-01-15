@@ -198,7 +198,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
               // Update stored token with new one from refreshed session
               final newToken = authService.refreshToken;
               final newExpiry = authService.refreshTokenExpiry;
-              if (newToken != null && newExpiry != null) {
+              if (newToken != null && newExpiry != null && authService.currentUser != null) {
                 await _biometricService.storeRefreshToken(
                   refreshToken: newToken,
                   userId: authService.currentUser!.id,
@@ -292,7 +292,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       final refreshed = await Supabase.instance.client.auth.refreshSession();
       final refreshedSession =
           refreshed.session ?? Supabase.instance.client.auth.currentSession;
-      if (refreshedSession != null && refreshedSession.refreshToken != null) {
+      if (refreshedSession != null && refreshedSession.refreshToken != null && refreshedSession.expiresAt != null) {
         // Store the new refresh token
         final expiresAt = DateTime.fromMillisecondsSinceEpoch(refreshedSession.expiresAt! * 1000);
         await _biometricService.storeRefreshToken(
@@ -873,7 +873,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
               // Submit Button
               ElevatedButton(
                 onPressed: () {
-                  if (_formKey.currentState!.validate()) {
+                  if (_formKey.currentState?.validate() ?? false) {
                     if (_isLoginMode) {
                       widget.onSignIn(
                         _emailController.text.trim(),
