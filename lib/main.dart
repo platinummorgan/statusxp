@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/config/supabase_config.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
@@ -66,13 +65,6 @@ void main() async {
     // Ensure imperative navigation (push) updates the browser URL.
     GoRouter.optionURLReflectsImperativeAPIs = true;
     usePathUrlStrategy();
-  }
-
-  // Load environment variables
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (e) {
-    statusxpLog('Error loading .env: $e');
   }
 
   // On web, clear any leftover Supabase sessions from previous logouts

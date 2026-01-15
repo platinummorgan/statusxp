@@ -68,9 +68,6 @@ dependencies:
   # OpenAI integration for achievement guides
   dart_openai: ^5.1.0
   
-  # Environment variables
-  flutter_dotenv: ^5.1.0
-  
   # HTTP client for API requests
   http: ^1.1.0
   
@@ -137,7 +134,6 @@ flutter:
     - assets/images/
     - PRIVACY.md
     - TERMS_OF_SERVICE.md
-    - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
