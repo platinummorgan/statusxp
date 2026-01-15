@@ -255,12 +255,12 @@ class AchievementCheckerService {
     await _check(userId, 'xbox_100_rare', stats['rare'], 100, unlocked, newlyUnlocked);
     
     // Gamerscore milestones
-    await _check(userId, 'xbox_1000_gamerscore', stats['gamerscore'], 1000, unlocked, newlyUnlocked);
-    await _check(userId, 'xbox_5000_gamerscore', stats['gamerscore'], 5000, unlocked, newlyUnlocked);
-    await _check(userId, 'xbox_10000_gamerscore', stats['gamerscore'], 10000, unlocked, newlyUnlocked);
-    await _check(userId, 'xbox_25000_gamerscore', stats['gamerscore'], 25000, unlocked, newlyUnlocked);
-    await _check(userId, 'xbox_50000_gamerscore', stats['gamerscore'], 50000, unlocked, newlyUnlocked);
-    await _check(userId, 'xbox_100000_gamerscore', stats['gamerscore'], 100000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_1000_gs', stats['gamerscore'], 1000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_5000_gs', stats['gamerscore'], 5000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_10000_gs', stats['gamerscore'], 10000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_25000_gs', stats['gamerscore'], 25000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_50000_gs', stats['gamerscore'], 50000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_100000_gs', stats['gamerscore'], 100000, unlocked, newlyUnlocked);
   }
 
   /// Check Steam achievements
