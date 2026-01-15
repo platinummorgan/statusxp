@@ -104,11 +104,11 @@ class MetaAchievementRepository {
   /// Manually unlock an achievement (for testing/admin)
   Future<bool> unlockAchievement(String userId, String achievementId) async {
     try {
-      await _client.from('user_meta_achievements').insert({
+      await _client.from('user_meta_achievements').upsert({
         'user_id': userId,
         'achievement_id': achievementId,
         'unlocked_at': DateTime.now().toIso8601String(),
-      });
+      }, onConflict: 'user_id,achievement_id');
       return true;
     } catch (e) {
       return false;

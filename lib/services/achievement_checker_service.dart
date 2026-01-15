@@ -716,11 +716,11 @@ class AchievementCheckerService {
 
   Future<void> _unlockAchievement(String userId, String achievementId) async {
     try {
-      await _client.from('user_meta_achievements').insert({
+      await _client.from('user_meta_achievements').upsert({
         'user_id': userId,
         'achievement_id': achievementId,
         'unlocked_at': DateTime.now().toIso8601String(),
-      });
+      }, onConflict: 'user_id,achievement_id');
     } catch (e) {
     }
   }
