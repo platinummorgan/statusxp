@@ -87,27 +87,15 @@ void main() async {
         if (hasAlreadyCleared == null) {
           statusxpLog('Clearing potentially corrupted localStorage...');
           try {
-            // Set flag first, then clear everything else
+            // Simple approach: clear everything and set flag after
+            html.window.localStorage.clear();
             html.window.localStorage[hasAlreadyClearedKey] = 'true';
             
-            // Clear everything except the flag
-            final keysToRemove = <String>[];
-            for (int i = 0; i < html.window.localStorage.length; i++) {
-              final key = html.window.localStorage.key(i);
-              if (key != null && key != hasAlreadyClearedKey) {
-                keysToRemove.add(key);
-              }
-            }
-            for (final key in keysToRemove) {
-              html.window.localStorage.remove(key);
-            }
-            
-            statusxpLog('LocalStorage cleared due to null check error (except reload flag)');
+            statusxpLog('LocalStorage cleared due to null check error (reload flag set)');
             // Reload the page to restart with clean state
             html.window.location.reload();
           } catch (e) {
             statusxpLog('Error clearing localStorage: $e');
-          }
           }
         } else {
           statusxpLog('Already cleared localStorage once - not reloading again to prevent infinite loop');
