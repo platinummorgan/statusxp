@@ -1,5 +1,8 @@
--- Fix get_user_grouped_games to include last_trophy_earned_at and rarest_trophy_rarity
+-- Fix get_user_grouped_games to include last_trophy_earned_at and rarest_earned_achievement_rarity
 -- Required for Last Trophy and Rarity sorting in games list
+
+-- Drop existing function first to allow return type change
+DROP FUNCTION IF EXISTS get_user_grouped_games(UUID);
 
 CREATE OR REPLACE FUNCTION get_user_grouped_games(
   p_user_id UUID
@@ -72,7 +75,7 @@ BEGIN
       ) as completion,
       ug.last_played_at,
       ug.last_trophy_earned_at,
-      ug.rarest_trophy_rarity,
+      ug.rarest_earned_achievement_rarity,
       ug.earned_trophies,
       ug.total_trophies,
       ug.bronze_trophies,
@@ -107,7 +110,7 @@ BEGIN
       'xbox_achievements_earned', current_game.xbox_achievements_earned,
       'xbox_total_achievements', current_game.xbox_total_achievements,
       'last_trophy_earned_at', current_game.last_trophy_earned_at,
-      'rarest_achievement_rarity', current_game.rarest_trophy_rarity
+      'rarest_achievement_rarity', current_game.rarest_earned_achievement_rarity
     )];
     group_statusxp := COALESCE(current_game.statusxp_effective, 0);
     group_completion := current_game.completion;
@@ -143,7 +146,7 @@ BEGIN
         ) as completion,
         ug2.last_played_at,
         ug2.last_trophy_earned_at,
-        ug2.rarest_trophy_rarity,
+        ug2.rarest_earned_achievement_rarity,
         ug2.earned_trophies,
         ug2.total_trophies,
         ug2.bronze_trophies,
@@ -175,7 +178,7 @@ BEGIN
         'xbox_achievements_earned', similar_game.xbox_achievements_earned,
         'xbox_total_achievements', similar_game.xbox_total_achievements,
         'last_trophy_earned_at', similar_game.last_trophy_earned_at,
-        'rarest_achievement_rarity', similar_game.rarest_trophy_rarity
+        'rarest_achievement_rarity', similar_game.rarest_earned_achievement_rarity
       ));
       group_statusxp := group_statusxp + COALESCE(similar_game.statusxp_effective, 0);
       group_completion := group_completion + similar_game.completion;
