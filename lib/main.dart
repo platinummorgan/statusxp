@@ -294,6 +294,13 @@ bool _isSupabaseAuthStorageKey(String key) {
   return key.contains('supabase') && key.contains('auth');
 }
 
+bool _isOAuthFlowKey(String key) {
+  // Preserve OAuth PKCE flow keys - these are needed during active login
+  return key.contains('code-verifier') || 
+         key.contains('code_challenge') ||
+         key.contains('oauth-state');
+}
+
 void _sanitizeSupabaseAuthStorage() {
   try {
     final storage = html.window.localStorage;
@@ -301,6 +308,12 @@ void _sanitizeSupabaseAuthStorage() {
 
     for (final key in keys) {
       if (!_isSupabaseAuthStorageKey(key)) continue;
+      
+      // CRITICAL: Don't remove OAuth flow keys during active login
+      if (_isOAuthFlowKey(key)) {
+        _safeLog('Preserving OAuth flow key: $key');
+        continue;
+      }
 
       final raw = storage[key];
       if (raw == null || raw.isEmpty) {
@@ -366,10 +379,12 @@ Future<void> _attemptWebStorageRecovery() async {
     _safeLog('Attempting targeted storage recovery...');
     storage[flagKey] = 'true';
 
-    // First: only remove Supabase auth keys
+    // First: only remove Supabase auth keys (but preserve OAuth flow keys)
     final keys = storage.keys.toList(growable: false);
     for (final k in keys) {
-      if (_isSupabaseAuthStorageKey(k)) storage.remove(k);
+      if (_isSupabaseAuthStorageKey(k) && !_isOAuthFlowKey(k)) {
+        storage.remove(k);
+      }
     }
 
     // If you still want the nuclear option, do it *after* targeted cleanup:
