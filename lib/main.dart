@@ -114,15 +114,8 @@ Future<void> _initializeApp() async {
     await dotenv.load(fileName: '.env');
   } catch (_) {}
 
-  if (kIsWeb) {
-    _safeLog('=== STARTUP CHECK ===');
-    try {
-      _safeLog('LocalStorage keys before init: ${html.window.localStorage.length}');
-      _sanitizeSupabaseAuthStorage();
-    } catch (e) {
-      _safeLog('Error accessing localStorage: ${_safeStr(e)}');
-    }
-  }
+  // Don't proactively clean storage - only clean on actual errors
+  // This prevents interfering with active OAuth flows
 
   try {
     await Supabase.initialize(
