@@ -68,36 +68,3 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
     return null;
   }
 }
-    let extension = 'png';
-    if (contentType.includes('jpeg') || contentType.includes('jpg')) extension = 'jpg';
-    else if (contentType.includes('gif')) extension = 'gif';
-    else if (contentType.includes('webp')) extension = 'webp';
-    
-    // Create filename
-    const timestamp = Date.now();
-    const filename = `achievement-icons/${platform}/${achievementId}_${timestamp}.${extension}`;
-    
-    // Upload to Supabase Storage
-    const { error } = await supabase.storage
-      .from('avatars')
-      .upload(filename, arrayBuffer, {
-        contentType,
-        upsert: true,
-      });
-
-    if (error) {
-      console.error('[ICON PROXY] Upload error:', error);
-      return null;
-    }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(filename);
-
-    return publicUrl;
-  } catch (error) {
-    console.error('[ICON PROXY] Exception:', error.message);
-    return null;
-  }
-}
