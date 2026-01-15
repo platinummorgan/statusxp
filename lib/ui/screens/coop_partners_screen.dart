@@ -565,7 +565,10 @@ class _MyRequestsTabState extends ConsumerState<_MyRequestsTab>
         padding: const EdgeInsets.all(16),
         itemCount: _myRequests.length,
         itemBuilder: (context, index) =>
-            _MyRequestCard(request: _myRequests[index]),
+            _MyRequestCard(
+              request: _myRequests[index],
+              onDeleted: _loadMyRequests,
+            ),
       ),
     );
   }
@@ -573,8 +576,12 @@ class _MyRequestsTabState extends ConsumerState<_MyRequestsTab>
 
 class _MyRequestCard extends ConsumerWidget {
   final TrophyHelpRequest request;
+  final VoidCallback onDeleted;
 
-  const _MyRequestCard({required this.request});
+  const _MyRequestCard({
+    required this.request,
+    required this.onDeleted,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -713,11 +720,12 @@ class _MyRequestCard extends ConsumerWidget {
 
                         try {
                           await service.deleteRequest(request.id);
-                          // Request deleted - user can pull to refresh to see updated list
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Request deleted')),
                             );
+                            // Reload the list to remove the deleted item
+                            onDeleted();
                           }
                         } catch (e) {
                           if (context.mounted) {
