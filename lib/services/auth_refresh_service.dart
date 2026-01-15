@@ -50,8 +50,18 @@ class AuthRefreshService {
       if (session == null) return;
       
       // Check if token is expired or about to expire (within 10 minutes)
+      final expiresAtEpoch = session.expiresAt;
+      if (expiresAtEpoch == null) {
+        // Older or corrupted sessions can lack expiresAt, especially on web.
+        if (session.refreshToken == null) {
+          print('Session missing expiresAt and refreshToken; skipping refresh check.');
+          return;
+        }
+        await _refreshWithRetry();
+        return;
+      }
       final expiresAt = DateTime.fromMillisecondsSinceEpoch(
-        session.expiresAt! * 1000,
+        expiresAtEpoch * 1000,
       );
       final timeUntilExpiry = expiresAt.difference(DateTime.now());
       
