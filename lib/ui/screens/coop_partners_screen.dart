@@ -774,16 +774,16 @@ Future<bool?> _confirm(
 }) {
   return showDialog<bool>(
     context: context,
-    builder: (_) => AlertDialog(
+    builder: (dialogContext) => AlertDialog(
       title: Text(title),
       content: Text(message),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.pop(dialogContext, false),
           child: const Text('Cancel'),
         ),
         TextButton(
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: () => Navigator.pop(dialogContext, true),
           style: destructive
               ? TextButton.styleFrom(foregroundColor: Colors.red)
               : null,
