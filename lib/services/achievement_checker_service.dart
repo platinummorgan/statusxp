@@ -48,20 +48,23 @@ class AchievementCheckerService {
   /// Get PSN statistics
   Future<Map<String, dynamic>> _getPSNStats(String userId) async {
     try {
+      // Join user_trophies with trophies to get tier and rarity
       final trophies = await _client
           .from('user_trophies')
-          .select('trophy_type, rarity')
-          .eq('user_id', userId)
-          .eq('platform', 'psn');
+          .select('trophies(tier, rarity_global)')
+          .eq('user_id', userId);
       
       final trophyList = trophies as List;
       final stats = {
         'total': trophyList.length,
-        'bronze': trophyList.where((t) => t['trophy_type'] == 'bronze').length,
-        'silver': trophyList.where((t) => t['trophy_type'] == 'silver').length,
-        'gold': trophyList.where((t) => t['trophy_type'] == 'gold').length,
-        'platinum': trophyList.where((t) => t['trophy_type'] == 'platinum').length,
-        'rare': trophyList.where((t) => (t['rarity'] as num?) != null && (t['rarity'] as num) < 10.0).length,
+        'bronze': trophyList.where((t) => t['trophies']?['tier'] == 'bronze').length,
+        'silver': trophyList.where((t) => t['trophies']?['tier'] == 'silver').length,
+        'gold': trophyList.where((t) => t['trophies']?['tier'] == 'gold').length,
+        'platinum': trophyList.where((t) => t['trophies']?['tier'] == 'platinum').length,
+        'rare': trophyList.where((t) {
+          final rarity = t['trophies']?['rarity_global'] as num?;
+          return rarity != null && rarity < 10.0;
+        }).length,
       };
       
       return stats;
@@ -73,17 +76,26 @@ class AchievementCheckerService {
   /// Get Xbox statistics
   Future<Map<String, dynamic>> _getXboxStats(String userId) async {
     try {
+      // Join user_achievements with achievements to get rarity and gamerscore
       final achievements = await _client
           .from('user_achievements')
-          .select('rarity, gamerscore')
-          .eq('user_id', userId)
-          .eq('platform', 'xbox');
+          .select('achievements(rarity_global, xbox_gamerscore, platform)')
+          .eq('user_id', userId);
       
-      final achievementList = achievements as List;
+      final achievementList = (achievements as List)
+          .where((a) => a['achievements']?['platform'] == 'xbox')
+          .toList();
+          
       final stats = {
         'total': achievementList.length,
-        'rare': achievementList.where((a) => (a['rarity'] as num?) != null && (a['rarity'] as num) < 10.0).length,
-        'gamerscore': achievementList.fold<int>(0, (sum, a) => sum + ((a['gamerscore'] as int?) ?? 0)),
+        'rare': achievementList.where((a) {
+          final rarity = a['achievements']?['rarity_global'] as num?;
+          return rarity != null && rarity < 10.0;
+        }).length,
+        'gamerscore': achievementList.fold<int>(0, (sum, a) {
+          final gs = a['achievements']?['xbox_gamerscore'] as int?;
+          return sum + (gs ?? 0);
+        }),
       };
       
       return stats;
@@ -95,16 +107,22 @@ class AchievementCheckerService {
   /// Get Steam statistics
   Future<Map<String, dynamic>> _getSteamStats(String userId) async {
     try {
+      // Join user_achievements with achievements to get rarity
       final achievements = await _client
           .from('user_achievements')
-          .select('rarity')
-          .eq('user_id', userId)
-          .eq('platform', 'steam');
+          .select('achievements(rarity_global, platform)')
+          .eq('user_id', userId);
       
-      final achievementList = achievements as List;
+      final achievementList = (achievements as List)
+          .where((a) => a['achievements']?['platform'] == 'steam')
+          .toList();
+          
       final stats = {
         'total': achievementList.length,
-        'rare': achievementList.where((a) => (a['rarity'] as num?) != null && (a['rarity'] as num) < 10.0).length,
+        'rare': achievementList.where((a) {
+          final rarity = a['achievements']?['rarity_global'] as num?;
+          return rarity != null && rarity < 10.0;
+        }).length,
       };
       
       return stats;
@@ -117,30 +135,23 @@ class AchievementCheckerService {
   Future<Map<String, dynamic>> _getCrossStats(String userId) async {
     try {
       // Get total unlocks across all platforms
-      final psnCount = await _getPlatformCount(userId, 'psn', 'user_trophies');
-      final xboxCount = await _getPlatformCount(userId, 'xbox', 'user_achievements');
-      final steamCount = await _getPlatformCount(userId, 'steam', 'user_achievements');
+      final psnCount = await _getPlatformCount(userId, 'psn');
+      final xboxCount = await _getPlatformCount(userId, 'xbox');
+      final steamCount = await _getPlatformCount(userId, 'steam');
       
-      // Get StatusXP
-      final userProfile = await _client
-          .from('user_profiles')
-          .select('statusxp')
-          .eq('user_id', userId)
-          .maybeSingle();
-      
-      final statusxp = (userProfile?['statusxp'] as num?)?.toInt() ?? 0;
-      
-      // Get game counts
-      final games = await _client
+      // Get StatusXP from user_games.statusxp_effective
+      final userGames = await _client
           .from('user_games')
-          .select('platform')
+          .select('statusxp_effective')
           .eq('user_id', userId);
       
-      final gameList = games as List;
-      final psnGames = gameList.where((g) => g['platform'] == 'psn').length;
-      final xboxGames = gameList.where((g) => g['platform'] == 'xbox').length;
-      final steamGames = gameList.where((g) => g['platform'] == 'steam').length;
-      final totalGames = psnGames + xboxGames + steamGames;
+      final gameList = userGames as List;
+      final totalStatusXP = gameList.fold<int>(0, (sum, g) {
+        final xp = g['statusxp_effective'] as int?;
+        return sum + (xp ?? 0);
+      });
+      
+      final totalGames = gameList.length;
       
       // Count platforms with achievements
       final activePlatforms = [
@@ -151,13 +162,25 @@ class AchievementCheckerService {
       
       return {
         'total_unlocks': psnCount + xboxCount + steamCount,
-        'statusxp': statusxp,
+        'statusxp': totalStatusXP,
         'total_games': totalGames,
         'psn_count': psnCount,
         'xbox_count': xboxCount,
         'steam_count': steamCount,
         'active_platforms': activePlatforms,
       };
+    } catch (e) {
+      return {
+        'total_unlocks': 0,
+        'statusxp': 0,
+        'total_games': 0,
+        'psn_count': 0,
+        'xbox_count': 0,
+        'steam_count': 0,
+        'active_platforms': 0,
+      };
+    }
+  }
     } catch (e) {
       return {'total_unlocks': 0, 'statusxp': 0, 'total_games': 0, 'psn_count': 0, 'xbox_count': 0, 'steam_count': 0, 'active_platforms': 0};
     }
@@ -322,14 +345,24 @@ class AchievementCheckerService {
   }
 
   /// Get platform count helper
-  Future<int> _getPlatformCount(String userId, String platform, String table) async {
+  Future<int> _getPlatformCount(String userId, String platform) async {
     try {
-      final result = await _client
-          .from(table)
-          .select('*')
-          .eq('user_id', userId)
-          .eq('platform', platform);
-      return (result as List).length;
+      if (platform == 'psn') {
+        // PSN uses user_trophies table
+        final result = await _client
+            .from('user_trophies')
+            .select('id', count: CountOption.exact)
+            .eq('user_id', userId);
+        return result.count;
+      } else {
+        // Xbox and Steam use user_achievements with platform filter
+        final result = await _client
+            .from('user_achievements')
+            .select('achievements!inner(platform)', count: CountOption.exact)
+            .eq('user_id', userId)
+            .eq('achievements.platform', platform);
+        return result.count;
+      }
     } catch (e) {
       return 0;
     }
