@@ -8,7 +8,12 @@ class AchievementCheckerService {
   AchievementCheckerService(this._client);
 
   /// Check all achievements for a user and unlock any that are met
+  /// TEMPORARILY DISABLED: Old achievement IDs don't match new meta_achievements schema
   Future<List<String>> checkAndUnlockAchievements(String userId) async {
+    // TODO: Rebuild achievement checker to use new achievement ID scheme (psn_*, xbox_*, steam_*, cross_*)
+    return [];
+    
+    /* DISABLED CODE - uncomment after updating achievement IDs
     final newlyUnlocked = <String>[];
 
     try {
@@ -48,7 +53,10 @@ class AchievementCheckerService {
     } catch (e) {
       return [];
     }
-  }  Future<Map<String, dynamic>> _getUserStats(String userId) async {
+    */
+  }
+
+  Future<Map<String, dynamic>> _getUserStats(String userId) async {
     // Get total trophy/achievement counts with rarity data
     // PSN trophies from user_trophies table
     final trophyData = await _client
