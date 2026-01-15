@@ -409,30 +409,30 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
         // PSN Circle
         _buildPlatformCircle(
           label: 'Platinums',
-          value: stats.psnStats.platinums.toString(),
-          subtitle: '${stats.psnStats.gamesCount} Games',
+          value: (stats.psnStats.platinums ?? 0).toString(),
+          subtitle: '${stats.psnStats.gamesCount ?? 0} Games',
           bottomLabel:
-              '${stats.psnStats.averagePerGame.toStringAsFixed(0)} AVG/GAME',
+              '${(stats.psnStats.averagePerGame ?? 0).toStringAsFixed(0)} AVG/GAME',
           color: const Color(0xFF00A8E1), // PlayStation Blue
         ),
 
         // Xbox Circle
         _buildPlatformCircle(
           label: 'Xbox Gamerscore',
-          value: stats.xboxStats.gamerscore.toString(),
-          subtitle: '${stats.xboxStats.gamesCount} Games',
+          value: (stats.xboxStats.gamerscore ?? 0).toString(),
+          subtitle: '${stats.xboxStats.gamesCount ?? 0} Games',
           bottomLabel:
-              '${stats.xboxStats.achievementsUnlocked} ACHIEVEMENTS',
+              '${stats.xboxStats.achievementsUnlocked ?? 0} ACHIEVEMENTS',
           color: const Color(0xFF107C10), // Xbox Green
         ),
 
         // Steam Circle
         _buildPlatformCircle(
           label: 'Steam Achievs',
-          value: stats.steamStats.achievementsUnlocked.toString(),
-          subtitle: '${stats.steamStats.gamesCount} Games',
+          value: (stats.steamStats.achievementsUnlocked ?? 0).toString(),
+          subtitle: '${stats.steamStats.gamesCount ?? 0} Games',
           bottomLabel:
-              '${stats.steamStats.averagePerGame.toStringAsFixed(0)} AVG/GAME',
+              '${(stats.steamStats.averagePerGame ?? 0).toStringAsFixed(0)} AVG/GAME',
           color: const Color(0xFF66C0F4), // Steam Blue
         ),
       ],
