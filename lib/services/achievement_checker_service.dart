@@ -181,10 +181,6 @@ class AchievementCheckerService {
       };
     }
   }
-    } catch (e) {
-      return {'total_unlocks': 0, 'statusxp': 0, 'total_games': 0, 'psn_count': 0, 'xbox_count': 0, 'steam_count': 0, 'active_platforms': 0};
-    }
-  }
 
   /// Check PSN achievements
   Future<void> _checkPSNAchievements(String userId, Map<String, dynamic> stats, Set<String> unlocked, List<String> newlyUnlocked) async {
