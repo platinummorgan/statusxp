@@ -347,16 +347,18 @@ class AchievementCheckerService {
         // PSN uses user_trophies table
         final result = await _client
             .from('user_trophies')
-            .select('id', count: CountOption.exact)
-            .eq('user_id', userId);
+            .select('id')
+            .eq('user_id', userId)
+            .count();
         return result.count;
       } else {
         // Xbox and Steam use user_achievements with platform filter
         final result = await _client
             .from('user_achievements')
-            .select('achievements!inner(platform)', count: CountOption.exact)
+            .select('achievements!inner(platform)')
             .eq('user_id', userId)
-            .eq('achievements.platform', platform);
+            .eq('achievements.platform', platform)
+            .count();
         return result.count;
       }
     } catch (e) {
