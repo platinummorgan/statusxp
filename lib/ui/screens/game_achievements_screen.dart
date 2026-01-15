@@ -160,15 +160,17 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       // Create a map of earned achievements
       final earnedMap = <String, String>{};
       for (final ua in userEarnedResponse) {
-        final id = (ua['achievement_id'] ?? ua['trophy_id']).toString();
+        final id = (ua['achievement_id'] ?? ua['trophy_id'])?.toString() ?? '';
         final date = (ua['earned_at'] ?? ua['unlocked_at']) as String;
-        earnedMap[id] = date;
+        if (id.isNotEmpty) {
+          earnedMap[id] = date;
+        }
       }
       print('[GameAchievements] First 5 earned IDs: ${earnedMap.keys.take(5).toList()}');
 
       // Merge the data
       final achievements = (achievementsResponse).map((ach) {
-        final achievementId = ach['id'].toString();
+        final achievementId = (ach['id'] ?? '').toString();
         final earnedAt = earnedMap[achievementId];
         
         if (earnedAt != null) {

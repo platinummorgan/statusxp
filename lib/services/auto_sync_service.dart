@@ -140,7 +140,7 @@ class AutoSyncService {
       if (response == null) return false;
       
       final accountId = response[columnName];
-      return accountId != null && accountId.toString().isNotEmpty;
+      return accountId != null && (accountId.toString()).isNotEmpty;
     } catch (e) {
       debugPrint('Error checking $platform link: $e');
       return false;
