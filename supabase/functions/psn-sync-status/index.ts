@@ -58,7 +58,7 @@ serve(async (req) => {
 
     // Get latest sync log
     const { data: latestLog } = await supabase
-      .from('psn_sync_log')
+      .from('psn_sync_logs')
       .select('*')
       .eq('user_id', user.id)
       .order('started_at', { ascending: false })
