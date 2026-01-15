@@ -14,6 +14,7 @@ import 'package:app_links/app_links.dart';
 import 'package:statusxp/utils/html.dart' as html;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:statusxp/utils/statusxp_logger.dart';
+import 'dart:async';
 
 // Global auth refresh service
 late final AuthRefreshService authRefreshService;
@@ -60,6 +61,28 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Add global error handler to catch unhandled exceptions
+  FlutterError.onError = (FlutterErrorDetails details) {
+    statusxpLog('FlutterError caught: ${details.exception}');
+    statusxpLog('Stack: ${details.stack}');
+    // Don't crash on errors in production
+  };
+
+  // Add zone error handler for async exceptions
+  runZonedGuarded(
+    () async {
+      await _initializeApp();
+    },
+    (error, stack) {
+      statusxpLog('Uncaught error in zone: $error');
+      statusxpLog('Stack: $stack');
+      // Don't crash on errors in production
+    },
+  );
+}
+
+Future<void> _initializeApp() async {
 
   // Use path-based URL strategy for web (no #)
   if (kIsWeb) {
