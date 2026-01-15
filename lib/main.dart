@@ -58,13 +58,21 @@ void _sanitizeSupabaseAuthStorage() {
       }
 
       final session = decoded['currentSession'];
-      final expiresAt = session is Map<String, dynamic>
-          ? (session['expires_at'] ?? session['expiresAt'])
-          : (decoded['expires_at'] ?? decoded['expiresAt']);
+      final sessionMap = session is Map<String, dynamic> ? session : decoded;
+      final expiresAt = sessionMap['expires_at'] ?? sessionMap['expiresAt'];
+      final accessToken = sessionMap['access_token'] ?? sessionMap['accessToken'];
+      final refreshToken = sessionMap['refresh_token'] ?? sessionMap['refreshToken'];
+      final tokenType = sessionMap['token_type'] ?? sessionMap['tokenType'];
+      final user = sessionMap['user'];
+      final userId = user is Map<String, dynamic> ? user['id'] : null;
 
-      if (expiresAt == null) {
+      if (expiresAt == null ||
+          accessToken == null ||
+          refreshToken == null ||
+          tokenType == null ||
+          userId == null) {
         storage.remove(key);
-        statusxpLog('Removed auth storage key missing expiry: $key');
+        statusxpLog('Removed invalid auth storage key: $key');
       }
     }
   } catch (e) {
