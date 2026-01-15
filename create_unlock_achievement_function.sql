@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION unlock_achievement_if_new(
 )
 RETURNS BOOLEAN
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = public
 AS $$
 BEGIN

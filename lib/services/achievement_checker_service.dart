@@ -8,47 +8,100 @@ class AchievementCheckerService {
   AchievementCheckerService(this._client);
 
   /// Check all achievements for a user and unlock any that are met
-  /// TEMPORARILY DISABLED: Old achievement IDs don't match new meta_achievements schema
+  /// Works with the actual meta_achievements in the database (psn_*, xbox_*, steam_*, cross_*)
   Future<List<String>> checkAndUnlockAchievements(String userId) async {
-    // TODO: Rebuild achievement checker to use new achievement ID scheme (psn_*, xbox_*, steam_*, cross_*)
-    return [];
-    
-    /* DISABLED CODE - uncomment after updating achievement IDs
     final newlyUnlocked = <String>[];
 
     try {
-      // Get user's current stats
-      final stats = await _getUserStats(userId);
       // Get already unlocked achievements
       final unlockedIds = await _getUnlockedAchievementIds(userId);
-      // Check each category
-      final rarityUnlocked = await _checkRarityAchievements(userId, stats, unlockedIds);
-      newlyUnlocked.addAll(rarityUnlocked);
       
-      final volumeUnlocked = await _checkVolumeAchievements(userId, stats, unlockedIds);
-      newlyUnlocked.addAll(volumeUnlocked);
+      // Get user trophy/achievement counts by platform
+      final psnCount = await _getPlatformTrophyCount(userId, 'psn');
+      final xboxCount = await _getPlatformAchievementCount(userId, 'xbox');
+      final steamCount = await _getPlatformAchievementCount(userId, 'steam');
+      final totalCount = psnCount + xboxCount + steamCount;
       
-      final platformUnlocked = await _checkPlatformAchievements(userId, stats, unlockedIds);
-      newlyUnlocked.addAll(platformUnlocked);
+      // Check PSN trophy milestones
+      await _checkTrophyMilestone(userId, 'psn_10_trophies', psnCount, 10, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'psn_50_trophies', psnCount, 50, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'psn_100_trophies', psnCount, 100, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'psn_500_trophies', psnCount, 500, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'psn_1000_trophies', psnCount, 1000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'psn_2500_trophies', psnCount, 2500, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'psn_5000_trophies', psnCount, 5000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'psn_10000_trophies', psnCount, 10000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'psn_15000_trophies', psnCount, 15000, unlockedIds, newlyUnlocked);
       
-      final metaUnlocked = await _checkMetaAchievements(userId, stats, unlockedIds);
-      newlyUnlocked.addAll(metaUnlocked);
+      // Check Xbox achievement milestones
+      await _checkTrophyMilestone(userId, 'xbox_10_achievements', xboxCount, 10, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'xbox_50_achievements', xboxCount, 50, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'xbox_100_achievements', xboxCount, 100, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'xbox_500_achievements', xboxCount, 500, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'xbox_1000_achievements', xboxCount, 1000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'xbox_2500_achievements', xboxCount, 2500, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'xbox_5000_achievements', xboxCount, 5000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'xbox_10000_achievements', xboxCount, 10000, unlockedIds, newlyUnlocked);
       
-      // TODO: Uncomment after running add_achievement_schema.sql migration
-      // final completionUnlocked = await _checkCompletionAchievements(userId, stats, unlockedIds);
-      // debugPrint('📊 Completion check: ${completionUnlocked.length} new achievements');
-      // newlyUnlocked.addAll(completionUnlocked);
+      // Check Steam achievement milestones
+      await _checkTrophyMilestone(userId, 'steam_10_achievements', steamCount, 10, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'steam_50_achievements', steamCount, 50, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'steam_100_achievements', steamCount, 100, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'steam_500_achievements', steamCount, 500, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'steam_1000_achievements', steamCount, 1000, unlockedIds, newlyUnlocked);
+  }
+  
+  /// Helper to check and unlock a trophy milestone
+  Future<void> _checkTrophyMilestone(
+    String userId,
+    String achievementId,
+    int currentCount,
+    int requiredCount,
+    Set<String> unlocked,
+    List<String> newlyUnlocked,
+  ) async {
+    if (!unlocked.contains(achievementId) && currentCount >= requiredCount) {
+      if (await _unlockAchievement(userId, achievementId)) {
+        newlyUnlocked.add(achievementId);
+      }
+    }
+  }
+  
+  /// Get PSN trophy count for user
+  Future<int> _getPlatformTrophyCount(String userId, String platform) async {
+    try {
+      final result = await _client
+          .from('user_trophies')
+          .select('trophy_id')
+          .eq('user_id', userId)
+          .eq('platform', platform);
+      return (result as List).length;
+    } catch (e) {
+      return 0;
+    }
+  }
+  
+  /// Get Xbox/Steam achievement count for user
+  Future<int> _getPlatformAchievementCount(String userId, String platform) async {
+    try {
+      final result = await _client
+          .from('user_achievements')
+          .select('achievement_id')
+          .eq('user_id', userId)
+          .eq('platform', platform);
+      return (result as List).length;
+    } catch (e) {
+      return 0;
+    }await _checkTrophyMilestone(userId, 'steam_2500_achievements', steamCount, 2500, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'steam_5000_achievements', steamCount, 5000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'steam_10000_achievements', steamCount, 10000, unlockedIds, newlyUnlocked);
       
-      // TODO: Uncomment after running add_achievement_schema.sql migration
-      // final varietyUnlocked = await _checkVarietyAchievements(userId, stats, unlockedIds);
-      // debugPrint('🎭 Variety check: ${varietyUnlocked.length} new achievements');
-      // newlyUnlocked.addAll(varietyUnlocked);
-      
-      final timeUnlocked = await _checkTimeAchievements(userId, stats, unlockedIds);
-      newlyUnlocked.addAll(timeUnlocked);
-      
-      final streakUnlocked = await _checkStreakAchievements(userId, stats, unlockedIds);
-      newlyUnlocked.addAll(streakUnlocked);
+      // Check cross-platform volume milestones
+      await _checkTrophyMilestone(userId, 'cross_1000_unlocks', totalCount, 1000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'cross_2500_unlocks', totalCount, 2500, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'cross_5000_unlocks', totalCount, 5000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'cross_10000_unlocks', totalCount, 10000, unlockedIds, newlyUnlocked);
+      await _checkTrophyMilestone(userId, 'cross_15000_unlocks', totalCount, 15000, unlockedIds, newlyUnlocked);
       return newlyUnlocked;
     } catch (e) {
       return [];
