@@ -15,10 +15,68 @@ import 'package:statusxp/utils/html.dart' as html;
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:statusxp/utils/statusxp_logger.dart';
 import 'dart:async';
+import 'dart:convert';
 
 // Global auth refresh service
 late final AuthRefreshService authRefreshService;
 final BiometricAuthService _biometricAuthService = BiometricAuthService();
+
+bool _isSupabaseAuthStorageKey(String key) {
+  if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+    return true;
+  }
+  return key.contains('supabase') && key.contains('auth');
+}
+
+void _sanitizeSupabaseAuthStorage() {
+  try {
+    final storage = html.window.localStorage;
+    final keys = <String>[];
+    for (var i = 0; i < storage.length; i++) {
+      final key = storage.key(i);
+      if (key != null) {
+        keys.add(key);
+      }
+    }
+
+    for (final key in keys) {
+      if (!_isSupabaseAuthStorageKey(key)) continue;
+
+      final raw = storage[key];
+      if (raw == null || raw.isEmpty) {
+        storage.remove(key);
+        statusxpLog('Removed empty auth storage key: $key');
+        continue;
+      }
+
+      Map<String, dynamic>? decoded;
+      try {
+        final parsed = jsonDecode(raw);
+        if (parsed is Map<String, dynamic>) {
+          decoded = parsed;
+        }
+      } catch (_) {}
+
+      if (decoded == null) {
+        storage.remove(key);
+        statusxpLog('Removed invalid auth storage key: $key');
+        continue;
+      }
+
+      final session = decoded['currentSession'];
+      final expiresAt = session is Map<String, dynamic>
+          ? (session['expires_at'] ?? session['expiresAt'])
+          : (decoded['expires_at'] ?? decoded['expiresAt']);
+
+      if (expiresAt == null) {
+        storage.remove(key);
+        statusxpLog('Removed auth storage key missing expiry: $key');
+      }
+    }
+  } catch (e) {
+    statusxpLog('Skipped auth storage sanitize: $e');
+  }
+}
 
 Future<void> _syncBiometricSessionIfNeeded(Session session) async {
   final biometricEnabled = await _biometricAuthService.isBiometricEnabled();
@@ -129,6 +187,7 @@ Future<void> _initializeApp() async {
     try {
       final localStorageLength = html.window.localStorage.length;
       statusxpLog('LocalStorage keys before init: $localStorageLength');
+      _sanitizeSupabaseAuthStorage();
     } catch (e) {
       statusxpLog('Error accessing localStorage: $e');
     }
