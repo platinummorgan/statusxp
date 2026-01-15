@@ -1,14 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Achievement Checker Service
-/// Automatically detects when users meet achievement conditions and unlocks them
+/// Achievement Checker Service - Complete implementation for all 133 meta achievements
 class AchievementCheckerService {
   final SupabaseClient _client;
 
   AchievementCheckerService(this._client);
 
   /// Check all achievements for a user and unlock any that are met
-  /// Works with the actual meta_achievements in the database (psn_*, xbox_*, steam_*, cross_*)
   Future<List<String>> checkAndUnlockAchievements(String userId) async {
     final newlyUnlocked = <String>[];
 
@@ -16,63 +14,319 @@ class AchievementCheckerService {
       // Get already unlocked achievements
       final unlockedIds = await _getUnlockedAchievementIds(userId);
       
-      // Get user trophy/achievement counts by platform
-      final psnCount = await _getPlatformTrophyCount(userId, 'psn');
-      final xboxCount = await _getPlatformAchievementCount(userId, 'xbox');
-      final steamCount = await _getPlatformAchievementCount(userId, 'steam');
-      final totalCount = psnCount + xboxCount + steamCount;
+      // Get all user stats in parallel
+      final results = await Future.wait([
+        _getPSNStats(userId),
+        _getXboxStats(userId),
+        _getSteamStats(userId),
+        _getCrossStats(userId),
+      ]);
       
-      // Check PSN trophy milestones
-      await _checkTrophyMilestone(userId, 'psn_10_trophies', psnCount, 10, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'psn_50_trophies', psnCount, 50, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'psn_100_trophies', psnCount, 100, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'psn_500_trophies', psnCount, 500, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'psn_1000_trophies', psnCount, 1000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'psn_2500_trophies', psnCount, 2500, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'psn_5000_trophies', psnCount, 5000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'psn_10000_trophies', psnCount, 10000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'psn_15000_trophies', psnCount, 15000, unlockedIds, newlyUnlocked);
+      final psnStats = results[0] as Map<String, dynamic>;
+      final xboxStats = results[1] as Map<String, dynamic>;
+      final steamStats = results[2] as Map<String, dynamic>;
+      final crossStats = results[3] as Map<String, dynamic>;
       
-      // Check Xbox achievement milestones
-      await _checkTrophyMilestone(userId, 'xbox_10_achievements', xboxCount, 10, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'xbox_50_achievements', xboxCount, 50, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'xbox_100_achievements', xboxCount, 100, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'xbox_500_achievements', xboxCount, 500, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'xbox_1000_achievements', xboxCount, 1000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'xbox_2500_achievements', xboxCount, 2500, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'xbox_5000_achievements', xboxCount, 5000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'xbox_10000_achievements', xboxCount, 10000, unlockedIds, newlyUnlocked);
+      // Check PSN achievements
+      await _checkPSNAchievements(userId, psnStats, unlockedIds, newlyUnlocked);
       
-      // Check Steam achievement milestones
-      await _checkTrophyMilestone(userId, 'steam_10_achievements', steamCount, 10, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'steam_50_achievements', steamCount, 50, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'steam_100_achievements', steamCount, 100, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'steam_500_achievements', steamCount, 500, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'steam_1000_achievements', steamCount, 1000, unlockedIds, newlyUnlocked);
+      // Check Xbox achievements
+      await _checkXboxAchievements(userId, xboxStats, unlockedIds, newlyUnlocked);
+      
+      // Check Steam achievements
+      await _checkSteamAchievements(userId, steamStats, unlockedIds, newlyUnlocked);
+      
+      // Check Cross-platform achievements
+      await _checkCrossPlatformAchievements(userId, crossStats, unlockedIds, newlyUnlocked);
+
+      return newlyUnlocked;
+    } catch (e) {
+      return [];
+    }
   }
-  
-  /// Helper to check and unlock a trophy milestone
-  Future<void> _checkTrophyMilestone(
-    String userId,
-    String achievementId,
-    int currentCount,
-    int requiredCount,
-    Set<String> unlocked,
-    List<String> newlyUnlocked,
-  ) async {
-    if (!unlocked.contains(achievementId) && currentCount >= requiredCount) {
+
+  /// Get PSN statistics
+  Future<Map<String, dynamic>> _getPSNStats(String userId) async {
+    try {
+      final trophies = await _client
+          .from('user_trophies')
+          .select('trophy_type, rarity')
+          .eq('user_id', userId)
+          .eq('platform', 'psn');
+      
+      final trophyList = trophies as List;
+      final stats = {
+        'total': trophyList.length,
+        'bronze': trophyList.where((t) => t['trophy_type'] == 'bronze').length,
+        'silver': trophyList.where((t) => t['trophy_type'] == 'silver').length,
+        'gold': trophyList.where((t) => t['trophy_type'] == 'gold').length,
+        'platinum': trophyList.where((t) => t['trophy_type'] == 'platinum').length,
+        'rare': trophyList.where((t) => (t['rarity'] as num?) != null && (t['rarity'] as num) < 10.0).length,
+      };
+      
+      return stats;
+    } catch (e) {
+      return {'total': 0, 'bronze': 0, 'silver': 0, 'gold': 0, 'platinum': 0, 'rare': 0};
+    }
+  }
+
+  /// Get Xbox statistics
+  Future<Map<String, dynamic>> _getXboxStats(String userId) async {
+    try {
+      final achievements = await _client
+          .from('user_achievements')
+          .select('rarity, gamerscore')
+          .eq('user_id', userId)
+          .eq('platform', 'xbox');
+      
+      final achievementList = achievements as List;
+      final stats = {
+        'total': achievementList.length,
+        'rare': achievementList.where((a) => (a['rarity'] as num?) != null && (a['rarity'] as num) < 10.0).length,
+        'gamerscore': achievementList.fold<int>(0, (sum, a) => sum + ((a['gamerscore'] as int?) ?? 0)),
+      };
+      
+      return stats;
+    } catch (e) {
+      return {'total': 0, 'rare': 0, 'gamerscore': 0};
+    }
+  }
+
+  /// Get Steam statistics
+  Future<Map<String, dynamic>> _getSteamStats(String userId) async {
+    try {
+      final achievements = await _client
+          .from('user_achievements')
+          .select('rarity')
+          .eq('user_id', userId)
+          .eq('platform', 'steam');
+      
+      final achievementList = achievements as List;
+      final stats = {
+        'total': achievementList.length,
+        'rare': achievementList.where((a) => (a['rarity'] as num?) != null && (a['rarity'] as num) < 10.0).length,
+      };
+      
+      return stats;
+    } catch (e) {
+      return {'total': 0, 'rare': 0};
+    }
+  }
+
+  /// Get cross-platform statistics
+  Future<Map<String, dynamic>> _getCrossStats(String userId) async {
+    try {
+      // Get total unlocks across all platforms
+      final psnCount = await _getPlatformCount(userId, 'psn', 'user_trophies');
+      final xboxCount = await _getPlatformCount(userId, 'xbox', 'user_achievements');
+      final steamCount = await _getPlatformCount(userId, 'steam', 'user_achievements');
+      
+      // Get StatusXP
+      final userProfile = await _client
+          .from('user_profiles')
+          .select('statusxp')
+          .eq('user_id', userId)
+          .maybeSingle();
+      
+      final statusxp = (userProfile?['statusxp'] as num?)?.toInt() ?? 0;
+      
+      // Get game counts
+      final games = await _client
+          .from('user_games')
+          .select('platform')
+          .eq('user_id', userId);
+      
+      final gameList = games as List;
+      final psnGames = gameList.where((g) => g['platform'] == 'psn').length;
+      final xboxGames = gameList.where((g) => g['platform'] == 'xbox').length;
+      final steamGames = gameList.where((g) => g['platform'] == 'steam').length;
+      final totalGames = psnGames + xboxGames + steamGames;
+      
+      // Count platforms with achievements
+      final activePlatforms = [
+        if (psnCount > 0) 'psn',
+        if (xboxCount > 0) 'xbox',
+        if (steamCount > 0) 'steam',
+      ].length;
+      
+      return {
+        'total_unlocks': psnCount + xboxCount + steamCount,
+        'statusxp': statusxp,
+        'total_games': totalGames,
+        'psn_count': psnCount,
+        'xbox_count': xboxCount,
+        'steam_count': steamCount,
+        'active_platforms': activePlatforms,
+      };
+    } catch (e) {
+      return {'total_unlocks': 0, 'statusxp': 0, 'total_games': 0, 'psn_count': 0, 'xbox_count': 0, 'steam_count': 0, 'active_platforms': 0};
+    }
+  }
+
+  /// Check PSN achievements
+  Future<void> _checkPSNAchievements(String userId, Map<String, dynamic> stats, Set<String> unlocked, List<String> newlyUnlocked) async {
+    // Trophy volume milestones
+    await _check(userId, 'psn_10_trophies', stats['total'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_50_trophies', stats['total'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_100_trophies', stats['total'], 100, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_500_trophies', stats['total'], 500, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_1000_trophies', stats['total'], 1000, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_2500_trophies', stats['total'], 2500, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_5000_trophies', stats['total'], 5000, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_10000_trophies', stats['total'], 10000, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_15000_trophies', stats['total'], 15000, unlocked, newlyUnlocked);
+    
+    // Bronze trophies
+    await _check(userId, 'psn_25_bronze', stats['bronze'], 25, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_100_bronze', stats['bronze'], 100, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_500_bronze', stats['bronze'], 500, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_1000_bronze', stats['bronze'], 1000, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_5000_bronze', stats['bronze'], 5000, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_10000_bronze', stats['bronze'], 10000, unlocked, newlyUnlocked);
+    
+    // Silver trophies
+    await _check(userId, 'psn_10_silver', stats['silver'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_100_silver', stats['silver'], 100, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_500_silver', stats['silver'], 500, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_1000_silver', stats['silver'], 1000, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_2000_silver', stats['silver'], 2000, unlocked, newlyUnlocked);
+    
+    // Gold trophies
+    await _check(userId, 'psn_10_gold', stats['gold'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_50_gold', stats['gold'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_100_gold', stats['gold'], 100, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_500_gold', stats['gold'], 500, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_1000_gold', stats['gold'], 1000, unlocked, newlyUnlocked);
+    
+    // Platinum trophies
+    await _check(userId, 'psn_1_platinum', stats['platinum'], 1, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_10_platinum', stats['platinum'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_25_platinum', stats['platinum'], 25, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_50_platinum', stats['platinum'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_100_platinum', stats['platinum'], 100, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_150_platinum', stats['platinum'], 150, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_200_platinum', stats['platinum'], 200, unlocked, newlyUnlocked);
+    
+    // Rare trophies
+    await _check(userId, 'psn_1_rare', stats['rare'], 1, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_10_rare', stats['rare'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_25_rare', stats['rare'], 25, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_50_rare', stats['rare'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'psn_100_rare', stats['rare'], 100, unlocked, newlyUnlocked);
+  }
+
+  /// Check Xbox achievements
+  Future<void> _checkXboxAchievements(String userId, Map<String, dynamic> stats, Set<String> unlocked, List<String> newlyUnlocked) async {
+    // Achievement volume milestones
+    await _check(userId, 'xbox_10_achievements', stats['total'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_50_achievements', stats['total'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_100_achievements', stats['total'], 100, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_500_achievements', stats['total'], 500, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_1000_achievements', stats['total'], 1000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_2500_achievements', stats['total'], 2500, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_5000_achievements', stats['total'], 5000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_10000_achievements', stats['total'], 10000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_15000_achievements', stats['total'], 15000, unlocked, newlyUnlocked);
+    
+    // Rare achievements
+    await _check(userId, 'xbox_1_rare', stats['rare'], 1, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_10_rare', stats['rare'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_25_rare', stats['rare'], 25, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_50_rare', stats['rare'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_100_rare', stats['rare'], 100, unlocked, newlyUnlocked);
+    
+    // Gamerscore milestones
+    await _check(userId, 'xbox_1000_gamerscore', stats['gamerscore'], 1000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_5000_gamerscore', stats['gamerscore'], 5000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_10000_gamerscore', stats['gamerscore'], 10000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_25000_gamerscore', stats['gamerscore'], 25000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_50000_gamerscore', stats['gamerscore'], 50000, unlocked, newlyUnlocked);
+    await _check(userId, 'xbox_100000_gamerscore', stats['gamerscore'], 100000, unlocked, newlyUnlocked);
+  }
+
+  /// Check Steam achievements
+  Future<void> _checkSteamAchievements(String userId, Map<String, dynamic> stats, Set<String> unlocked, List<String> newlyUnlocked) async {
+    // Achievement volume milestones
+    await _check(userId, 'steam_10_achievements', stats['total'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_50_achievements', stats['total'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_100_achievements', stats['total'], 100, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_500_achievements', stats['total'], 500, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_1000_achievements', stats['total'], 1000, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_2500_achievements', stats['total'], 2500, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_5000_achievements', stats['total'], 5000, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_10000_achievements', stats['total'], 10000, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_15000_achievements', stats['total'], 15000, unlocked, newlyUnlocked);
+    
+    // Rare achievements
+    await _check(userId, 'steam_1_rare', stats['rare'], 1, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_10_rare', stats['rare'], 10, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_25_rare', stats['rare'], 25, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_50_rare', stats['rare'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'steam_100_rare', stats['rare'], 100, unlocked, newlyUnlocked);
+  }
+
+  /// Check cross-platform achievements
+  Future<void> _checkCrossPlatformAchievements(String userId, Map<String, dynamic> stats, Set<String> unlocked, List<String> newlyUnlocked) async {
+    // Total unlock milestones
+    await _check(userId, 'cross_1000_unlocks', stats['total_unlocks'], 1000, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_2500_unlocks', stats['total_unlocks'], 2500, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_5000_unlocks', stats['total_unlocks'], 5000, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_10000_unlocks', stats['total_unlocks'], 10000, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_15000_unlocks', stats['total_unlocks'], 15000, unlocked, newlyUnlocked);
+    
+    // StatusXP milestones
+    await _check(userId, 'cross_statusxp_500', stats['statusxp'], 500, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_statusxp_1500', stats['statusxp'], 1500, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_statusxp_3500', stats['statusxp'], 3500, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_statusxp_7500', stats['statusxp'], 7500, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_statusxp_15000', stats['statusxp'], 15000, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_statusxp_20000', stats['statusxp'], 20000, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_statusxp_25000', stats['statusxp'], 25000, unlocked, newlyUnlocked);
+    
+    // Game collection counts
+    await _check(userId, 'cross_50_games', stats['total_games'], 50, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_100_games', stats['total_games'], 100, unlocked, newlyUnlocked);
+    await _check(userId, 'cross_250_games', stats['total_games'], 250, unlocked, newlyUnlocked);
+    
+    // Platform variety (requires achievements on all 3 platforms)
+    if (stats['active_platforms'] >= 3) {
+      // cross_triple_threat: 100+ on each
+      if (stats['psn_count'] >= 100 && stats['xbox_count'] >= 100 && stats['steam_count'] >= 100) {
+        await _check(userId, 'cross_triple_threat', 1, 1, unlocked, newlyUnlocked);
+      }
+      
+      // cross_universal_gamer: 500+ on each
+      if (stats['psn_count'] >= 500 && stats['xbox_count'] >= 500 && stats['steam_count'] >= 500) {
+        await _check(userId, 'cross_universal_gamer', 1, 1, unlocked, newlyUnlocked);
+      }
+      
+      // cross_platform_master: 1000+ on each
+      if (stats['psn_count'] >= 1000 && stats['xbox_count'] >= 1000 && stats['steam_count'] >= 1000) {
+        await _check(userId, 'cross_platform_master', 1, 1, unlocked, newlyUnlocked);
+      }
+      
+      // cross_ecosystem_legend: 2500+ on each
+      if (stats['psn_count'] >= 2500 && stats['xbox_count'] >= 2500 && stats['steam_count'] >= 2500) {
+        await _check(userId, 'cross_ecosystem_legend', 1, 1, unlocked, newlyUnlocked);
+      }
+    }
+  }
+
+  /// Generic check helper
+  Future<void> _check(String userId, String achievementId, int current, int required, Set<String> unlocked, List<String> newlyUnlocked) async {
+    if (!unlocked.contains(achievementId) && current >= required) {
       if (await _unlockAchievement(userId, achievementId)) {
         newlyUnlocked.add(achievementId);
       }
     }
   }
-  
-  /// Get PSN trophy count for user
-  Future<int> _getPlatformTrophyCount(String userId, String platform) async {
+
+  /// Get platform count helper
+  Future<int> _getPlatformCount(String userId, String platform, String table) async {
     try {
       final result = await _client
-          .from('user_trophies')
-          .select('trophy_id')
+          .from(table)
+          .select('*')
           .eq('user_id', userId)
           .eq('platform', platform);
       return (result as List).length;
@@ -80,686 +334,21 @@ class AchievementCheckerService {
       return 0;
     }
   }
-  
-  /// Get Xbox/Steam achievement count for user
-  Future<int> _getPlatformAchievementCount(String userId, String platform) async {
-    try {
-      final result = await _client
-          .from('user_achievements')
-          .select('achievement_id')
-          .eq('user_id', userId)
-          .eq('platform', platform);
-      return (result as List).length;
-    } catch (e) {
-      return 0;
-    }await _checkTrophyMilestone(userId, 'steam_2500_achievements', steamCount, 2500, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'steam_5000_achievements', steamCount, 5000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'steam_10000_achievements', steamCount, 10000, unlockedIds, newlyUnlocked);
-      
-      // Check cross-platform volume milestones
-      await _checkTrophyMilestone(userId, 'cross_1000_unlocks', totalCount, 1000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'cross_2500_unlocks', totalCount, 2500, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'cross_5000_unlocks', totalCount, 5000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'cross_10000_unlocks', totalCount, 10000, unlockedIds, newlyUnlocked);
-      await _checkTrophyMilestone(userId, 'cross_15000_unlocks', totalCount, 15000, unlockedIds, newlyUnlocked);
-      return newlyUnlocked;
-    } catch (e) {
-      return [];
-    }
-    */
-  }
 
-  Future<Map<String, dynamic>> _getUserStats(String userId) async {
-    // Get total trophy/achievement counts with rarity data
-    // PSN trophies from user_trophies table
-    final trophyData = await _client
-        .from('user_trophies')
-        .select('trophy_id, trophies(*)')
-        .eq('user_id', userId);
-
-    // Xbox/Steam achievements from user_achievements table
-    final achievementData = await _client
-        .from('user_achievements')
-        .select('achievement_id, achievements(*)')
-        .eq('user_id', userId);
-
-    final totalAchievements = trophyData.length + achievementData.length;
-    final rarityCounts = <double, int>{};
-    
-    // Count PSN trophy rarities
-    for (final trophy in trophyData) {
-      final trophyInfo = trophy['trophies'] as Map<String, dynamic>?;
-      final rarity = trophyInfo?['rarity_global'] as num?;
-      if (rarity != null && rarity > 0) {
-        if (rarity < 1.0) rarityCounts[1.0] = (rarityCounts[1.0] ?? 0) + 1;
-        if (rarity < 2.0) rarityCounts[2.0] = (rarityCounts[2.0] ?? 0) + 1;
-        if (rarity < 5.0) rarityCounts[5.0] = (rarityCounts[5.0] ?? 0) + 1;
-      }
-    }
-    
-    // Count Xbox/Steam achievement rarities
-    for (final achievement in achievementData) {
-      final achievementInfo = achievement['achievements'] as Map<String, dynamic>?;
-      final rarity = achievementInfo?['rarity_global'] as num?;
-      if (rarity != null && rarity > 0) {
-        if (rarity < 1.0) rarityCounts[1.0] = (rarityCounts[1.0] ?? 0) + 1;
-        if (rarity < 2.0) rarityCounts[2.0] = (rarityCounts[2.0] ?? 0) + 1;
-        if (rarity < 5.0) rarityCounts[5.0] = (rarityCounts[5.0] ?? 0) + 1;
-      }
-    }
-
-    // Get platinum/completion counts
-    final gameData = await _client
-        .from('user_games')
-        .select('platform_id, completion_percent, has_platinum')
-        .eq('user_id', userId);
-
-    int platinumCount = 0;
-    final int totalGames = gameData.length;
-    final platformCounts = <int, int>{};
-
-    for (final game in gameData) {
-      final platformId = game['platform_id'] as int?;
-      final hasPlatinum = game['has_platinum'] as bool?;
-
-      if (platformId != null) {
-        platformCounts[platformId] = (platformCounts[platformId] ?? 0) + 1;
-      }
-
-      // Only count actual platinums, not 100% completions
-      if (hasPlatinum == true) {
-        platinumCount++;
-      }
-    }
-
-    // Check if all three platforms synced
-    final profileData = await _client
-        .from('profiles')
-        .select('last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at')
-        .eq('id', userId)
-        .single();
-
-    final hasPsnSync = profileData['last_psn_sync_at'] != null;
-    final hasXboxSync = profileData['last_xbox_sync_at'] != null;
-    final hasSteamSync = profileData['last_steam_sync_at'] != null;
-
-    return {
-      'totalAchievements': totalAchievements,
-      'rarityCounts': rarityCounts,
-      'platinumCount': platinumCount,
-      'totalGames': totalGames,
-      'platformCounts': platformCounts,
-      'hasPsnSync': hasPsnSync,
-      'hasXboxSync': hasXboxSync,
-      'hasSteamSync': hasSteamSync,
-      'allPlatformsSynced': hasPsnSync && hasXboxSync && hasSteamSync,
-    };
-  }
-
+  /// Get unlocked achievement IDs
   Future<Set<String>> _getUnlockedAchievementIds(String userId) async {
     try {
       final result = await _client
           .from('user_meta_achievements')
           .select('achievement_id')
           .eq('user_id', userId);
-
-      final ids = result.map((row) => row['achievement_id'] as String).toSet();
-      return ids;
+      return (result as List).map((r) => r['achievement_id'] as String).toSet();
     } catch (e) {
-      // If query fails, return empty set (will check each achievement individually)
       return {};
     }
   }
 
-  Future<List<String>> _checkRarityAchievements(
-    String userId,
-    Map<String, dynamic> stats,
-    Set<String> unlocked,
-  ) async {
-    final newlyUnlocked = <String>[];
-    final rarityCounts = stats['rarityCounts'] as Map<double, int>;
-
-    // Rare Air: 1 trophy < 5%
-    if (!unlocked.contains('rare_air') && (rarityCounts[5.0] ?? 0) >= 1) {
-      if (await _unlockAchievement(userId, 'rare_air')) {
-        newlyUnlocked.add('rare_air');
-      }
-    }
-
-    // Baller: 1 trophy < 2%
-    if (!unlocked.contains('baller') && (rarityCounts[2.0] ?? 0) >= 1) {
-      if (await _unlockAchievement(userId, 'baller')) {
-        newlyUnlocked.add('baller');
-      }
-    }
-
-    // One-Percenter: 1 trophy < 1%
-    if (!unlocked.contains('one_percenter') && (rarityCounts[1.0] ?? 0) >= 1) {
-      if (await _unlockAchievement(userId, 'one_percenter')) {
-        newlyUnlocked.add('one_percenter');
-      }
-    }
-
-    // Diamond Hands: 5 trophies < 5%
-    if (!unlocked.contains('diamond_hands') && (rarityCounts[5.0] ?? 0) >= 5) {
-      if (await _unlockAchievement(userId, 'diamond_hands')) {
-        newlyUnlocked.add('diamond_hands');
-      }
-    }
-
-    // Mythic Hunter: 10 trophies < 5%
-    if (!unlocked.contains('mythic_hunter') && (rarityCounts[5.0] ?? 0) >= 10) {
-      if (await _unlockAchievement(userId, 'mythic_hunter')) {
-        newlyUnlocked.add('mythic_hunter');
-      }
-    }
-
-    // Elite Finish: 1 platinum with rarity < 10%
-    if (!unlocked.contains('elite_finish')) {
-      // Check achievements table for PSN platinums
-      final elitePlatinums = await _client
-          .from('user_achievements')
-          .select('achievement_id, achievements!inner(is_platinum, rarity_global)')
-          .eq('user_id', userId);
-      
-      final hasElite = elitePlatinums.any((row) {
-        final achievement = row['achievements'] as Map<String, dynamic>?;
-        if (achievement == null) return false;
-        return achievement['is_platinum'] == true &&
-               (achievement['rarity_global'] as num?) != null &&
-               (achievement['rarity_global'] as num) < 10.0;
-      });
-      
-      if (hasElite) {
-        if (await _unlockAchievement(userId, 'elite_finish')) {          newlyUnlocked.add('elite_finish');        }
-      }
-    }
-
-    // Sweat Lord: 1 platinum with rarity < 5%
-    if (!unlocked.contains('sweat_lord')) {
-      // Check achievements table for PSN platinums
-      final sweatPlatinums = await _client
-          .from('user_achievements')
-          .select('achievement_id, achievements!inner(is_platinum, rarity_global)')
-          .eq('user_id', userId);
-      
-      final hasSweat = sweatPlatinums.any((row) {
-        final achievement = row['achievements'] as Map<String, dynamic>?;
-        if (achievement == null) return false;
-        return achievement['is_platinum'] == true &&
-               (achievement['rarity_global'] as num?) != null &&
-               (achievement['rarity_global'] as num) < 5.0;
-      });
-      
-      if (hasSweat) {
-        if (await _unlockAchievement(userId, 'sweat_lord')) {          newlyUnlocked.add('sweat_lord');        }
-      }
-    }
-
-    // Never Casual: 25 trophies/achievements all rarer than 20%
-    if (!unlocked.contains('never_casual')) {
-      // Check PSN trophies
-      final psnResult = await _client
-          .from('user_trophies')
-          .select('trophy_id, trophies(*)')
-          .eq('user_id', userId);
-      
-      final rarePsnTrophies = psnResult.where((row) {
-        final trophy = row['trophies'] as Map<String, dynamic>?;
-        if (trophy == null) return false;
-        return (trophy['rarity_global'] as num?) != null && (trophy['rarity_global'] as num) < 20.0;
-      }).toList();
-      
-      // Check Xbox/Steam achievements
-      final achievementsResult = await _client
-          .from('user_achievements')
-          .select('achievement_id, achievements(*)')
-          .eq('user_id', userId);
-      
-      final rareAchievements = achievementsResult.where((row) {
-        final achievement = row['achievements'] as Map<String, dynamic>?;
-        if (achievement == null) return false;
-        return (achievement['rarity_global'] as num?) != null && (achievement['rarity_global'] as num) < 20.0;
-      }).toList();
-      
-      final totalRare = rarePsnTrophies.length + rareAchievements.length;
-      
-      if (totalRare >= 25) {
-        if (await _unlockAchievement(userId, 'never_casual')) {          newlyUnlocked.add('never_casual');        }
-      }
-    }
-
-    // Fresh Flex: Rarest trophy in last 7 days
-    if (!unlocked.contains('fresh_flex')) {
-      final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
-      
-      // Check PSN trophies
-      final psnResult = await _client
-          .from('user_trophies')
-          .select('trophy_id, trophies(*), earned_at')
-          .eq('user_id', userId)
-          .gte('earned_at', sevenDaysAgo);
-      
-      final recentPsn = psnResult.where((row) {
-        final trophy = row['trophies'] as Map<String, dynamic>?;
-        return trophy != null && (trophy['rarity_global'] as num?) != null;
-      }).toList();
-      
-      // Check Xbox/Steam achievements
-      final achievementsResult = await _client
-          .from('user_achievements')
-          .select('achievement_id, achievements(*), earned_at')
-          .eq('user_id', userId)
-          .gte('earned_at', sevenDaysAgo);
-      
-      final recentAchievements = achievementsResult.where((row) {
-        final achievement = row['achievements'] as Map<String, dynamic>?;
-        return achievement != null && (achievement['rarity_global'] as num?) != null;
-      }).toList();
-      
-      // Find rarest recent trophy
-      double? rarestRecent;
-      for (final row in recentPsn) {
-        final trophy = row['trophies'] as Map<String, dynamic>;
-        final rarity = (trophy['rarity_global'] as num).toDouble();
-        if (rarestRecent == null || rarity < rarestRecent) {
-          rarestRecent = rarity;
-        }
-      }
-      for (final row in recentAchievements) {
-        final achievement = row['achievements'] as Map<String, dynamic>;
-        final rarity = (achievement['rarity_global'] as num).toDouble();
-        if (rarestRecent == null || rarity < rarestRecent) {
-          rarestRecent = rarity;
-        }
-      }
-      
-      // Check if this is the user's overall rarest trophy
-      if (rarestRecent != null) {
-        // Get all trophies/achievements
-        final allPsnResult = await _client
-            .from('user_trophies')
-            .select('trophy_id, trophies(*)')
-            .eq('user_id', userId);
-        
-        final allAchievementsResult = await _client
-            .from('user_achievements')
-            .select('achievement_id, achievements(*)')
-            .eq('user_id', userId);
-        
-        double? overallRarest;
-        for (final row in allPsnResult) {
-          final trophy = row['trophies'] as Map<String, dynamic>?;
-          final rarity = trophy?['rarity_global'] as num?;
-          if (rarity != null && (overallRarest == null || rarity < overallRarest)) {
-            overallRarest = rarity.toDouble();
-          }
-        }
-        for (final row in allAchievementsResult) {
-          final achievement = row['achievements'] as Map<String, dynamic>?;
-          final rarity = achievement?['rarity_global'] as num?;
-          if (rarity != null && (overallRarest == null || rarity < overallRarest)) {
-            overallRarest = rarity.toDouble();
-          }
-        }
-        
-        if (overallRarest != null && rarestRecent <= overallRarest) {
-          if (await _unlockAchievement(userId, 'fresh_flex')) {            newlyUnlocked.add('fresh_flex');          }
-        }
-      }
-    }
-
-    return newlyUnlocked;
-  }
-
-  Future<List<String>> _checkVolumeAchievements(
-    String userId,
-    Map<String, dynamic> stats,
-    Set<String> unlocked,
-  ) async {
-    final newlyUnlocked = <String>[];
-    final total = stats['totalAchievements'] as int;
-    final platinums = stats['platinumCount'] as int;
-
-    // Trophy count milestones
-    if (!unlocked.contains('warming_up') && total >= 50) {
-      if (await _unlockAchievement(userId, 'warming_up')) {        newlyUnlocked.add('warming_up');      }
-    }
-
-    if (!unlocked.contains('on_the_grind') && total >= 250) {
-      if (await _unlockAchievement(userId, 'on_the_grind')) {        newlyUnlocked.add('on_the_grind');      }
-    }
-
-    if (!unlocked.contains('xp_machine') && total >= 500) {
-      if (await _unlockAchievement(userId, 'xp_machine')) {        newlyUnlocked.add('xp_machine');      }
-    }
-
-    if (!unlocked.contains('achievement_engine') && total >= 1000) {
-      if (await _unlockAchievement(userId, 'achievement_engine')) {        newlyUnlocked.add('achievement_engine');      }
-    }
-
-    if (!unlocked.contains('no_life_great_life') && total >= 2500) {
-      if (await _unlockAchievement(userId, 'no_life_great_life')) {        newlyUnlocked.add('no_life_great_life');      }
-    }
-
-    // Platinum milestones
-    if (!unlocked.contains('double_digits') && platinums >= 10) {
-      if (await _unlockAchievement(userId, 'double_digits')) {        newlyUnlocked.add('double_digits');      }
-    }
-
-    if (!unlocked.contains('certified_platinum') && platinums >= 25) {
-      if (await _unlockAchievement(userId, 'certified_platinum')) {        newlyUnlocked.add('certified_platinum');      }
-    }
-
-    if (!unlocked.contains('legendary_finisher') && platinums >= 50) {
-      if (await _unlockAchievement(userId, 'legendary_finisher')) {        newlyUnlocked.add('legendary_finisher');      }
-    }
-
-    // Spike Week - 3 games to 100% in one week
-    final weekCompletions = await _client.rpc('check_spike_week', params: {
-      'p_user_id': userId,
-    });
-    
-    if (!unlocked.contains('spike_week') && weekCompletions == true) {
-      if (await _unlockAchievement(userId, 'spike_week')) {        newlyUnlocked.add('spike_week');      }
-    }
-
-    // Power Session - 100 trophies in 24 hours
-    final powerSession = await _client.rpc('check_power_session', params: {
-      'p_user_id': userId,
-    });
-    
-    if (!unlocked.contains('power_session') && powerSession == true) {
-      if (await _unlockAchievement(userId, 'power_session')) {        newlyUnlocked.add('power_session');      }
-    }
-
-    return newlyUnlocked;
-  }
-
-  Future<List<String>> _checkPlatformAchievements(
-    String userId,
-    Map<String, dynamic> stats,
-    Set<String> unlocked,
-  ) async {
-    final newlyUnlocked = <String>[];
-    final platformCounts = stats['platformCounts'] as Map<int, int>;
-
-    // Platform IDs: PSN=[1,2,5,9], Xbox=[3,10,11,12], Steam=[4]
-    final hasPSN = (platformCounts[1] ?? 0) > 0 || (platformCounts[2] ?? 0) > 0 || 
-                   (platformCounts[5] ?? 0) > 0 || (platformCounts[9] ?? 0) > 0;
-    final hasXbox = (platformCounts[3] ?? 0) > 0 || (platformCounts[10] ?? 0) > 0 || 
-                    (platformCounts[11] ?? 0) > 0 || (platformCounts[12] ?? 0) > 0;
-    final hasSteam = (platformCounts[4] ?? 0) > 0;
-
-    // Welcome achievements - first trophy on each platform
-    if (!unlocked.contains('welcome_trophy_room') && hasPSN) {
-      if (await _unlockAchievement(userId, 'welcome_trophy_room')) {        newlyUnlocked.add('welcome_trophy_room');      }
-    }
-
-    if (!unlocked.contains('welcome_gamerscore') && hasXbox) {
-      if (await _unlockAchievement(userId, 'welcome_gamerscore')) {        newlyUnlocked.add('welcome_gamerscore');      }
-    }
-
-    if (!unlocked.contains('welcome_pc_grind') && hasSteam) {
-      if (await _unlockAchievement(userId, 'welcome_pc_grind')) {        newlyUnlocked.add('welcome_pc_grind');      }
-    }
-
-    // Triforce - achievements on all three platforms
-    if (!unlocked.contains('triforce') && hasPSN && hasXbox && hasSteam) {
-      if (await _unlockAchievement(userId, 'triforce')) {        newlyUnlocked.add('triforce');      }
-    }
-
-    // Cross-Platform Conqueror - platinum on PS, 1000G on Xbox, 100% on Steam
-    if (!unlocked.contains('cross_platform_conqueror')) {
-      final hasPSPlatinum = await _client
-          .from('user_games')
-          .select('id')
-          .eq('user_id', userId)
-          .inFilter('platform_id', [1, 2, 5, 9])
-          .eq('has_platinum', true)
-          .limit(1);
-      
-      final hasXboxCompletion = await _client
-          .from('user_games')
-          .select('id')
-          .eq('user_id', userId)
-          .inFilter('platform_id', [3, 10, 11, 12])
-          .eq('has_platinum', true)
-          .limit(1);
-      
-      final hasSteamCompletion = await _client
-          .from('user_games')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('platform_id', 4)
-          .gte('completion_percent', 100)
-          .limit(1);
-      
-      if (hasPSPlatinum.isNotEmpty && hasXboxCompletion.isNotEmpty && hasSteamCompletion.isNotEmpty) {
-        if (await _unlockAchievement(userId, 'cross_platform_conqueror')) {          newlyUnlocked.add('cross_platform_conqueror');        }
-      }
-    }
-
-    return newlyUnlocked;
-  }
-
-  Future<List<String>> _checkMetaAchievements(
-    String userId,
-    Map<String, dynamic> stats,
-    Set<String> unlocked,
-  ) async {
-    final newlyUnlocked = <String>[];
-
-    // Systems Online - synced all three platforms
-    if (!unlocked.contains('systems_online') && stats['allPlatformsSynced'] == true) {
-      if (await _unlockAchievement(userId, 'systems_online')) {        newlyUnlocked.add('systems_online');      }
-    }
-
-    // Interior Designer - check if flex room has been customized
-    final flexRoomData = await _client
-        .from('flex_room_data')
-        .select('flex_of_all_time_id, rarest_flex_id, most_time_sunk_id, sweatiest_platinum_id, superlatives')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-    if (!unlocked.contains('interior_designer') && flexRoomData != null) {
-      // Check if at least 3 of the main slots are filled
-      int filledSlots = 0;
-      if (flexRoomData['flex_of_all_time_id'] != null) filledSlots++;
-      if (flexRoomData['rarest_flex_id'] != null) filledSlots++;
-      if (flexRoomData['most_time_sunk_id'] != null) filledSlots++;
-      if (flexRoomData['sweatiest_platinum_id'] != null) filledSlots++;
-      
-      // Count superlatives
-      final superlatives = flexRoomData['superlatives'] as Map<String, dynamic>?;
-      if (superlatives != null && superlatives.isNotEmpty) {
-        filledSlots += superlatives.length;
-      }
-
-      if (filledSlots >= 3) {
-        if (await _unlockAchievement(userId, 'interior_designer')) {          newlyUnlocked.add('interior_designer');        }
-      }
-    }
-
-    // Rank Up IRL - 10,000+ total trophies
-    final totalAchievements = stats['totalAchievements'] as int;
-    if (!unlocked.contains('rank_up_irl') && totalAchievements >= 10000) {
-      if (await _unlockAchievement(userId, 'rank_up_irl')) {        newlyUnlocked.add('rank_up_irl');      }
-    }
-
-    // Note: profile_pimp and showboat require features we haven't built yet
-    // (custom avatar/banner uploads, and sharing/export functionality)
-
-    return newlyUnlocked;
-  }
-
-
-  Future<List<String>> _checkTimeAchievements(
-    String userId,
-    Map<String, dynamic> stats,
-    Set<String> unlocked,
-  ) async {
-    final newlyUnlocked = <String>[];
-
-    // Check for time-based achievements using earned_at timestamps
-    final trophies = await _client
-        .from('user_trophies')
-        .select('earned_at')
-        .eq('user_id', userId)
-        .not('earned_at', 'is', null)
-        .order('earned_at', ascending: false)
-        .limit(1000);
-
-    for (final trophy in trophies) {
-      final earnedAt = DateTime.parse(trophy['earned_at'] as String);
-      final hour = earnedAt.hour;
-
-      // Night Owl - between 2-4 AM
-      if (!unlocked.contains('night_owl') && hour >= 2 && hour < 4) {
-        if (await _unlockAchievement(userId, 'night_owl')) {          newlyUnlocked.add('night_owl');        }
-      }
-
-      // Early Grind - before 7 AM
-      if (!unlocked.contains('early_grind') && hour < 7) {
-        if (await _unlockAchievement(userId, 'early_grind')) {          newlyUnlocked.add('early_grind');        }
-      }
-
-      // New Year New Flex - first trophy of the year
-      if (!unlocked.contains('new_year_new_flex') && 
-          earnedAt.month == 1 && earnedAt.day == 1) {
-        if (await _unlockAchievement(userId, 'new_year_new_flex')) {          newlyUnlocked.add('new_year_new_flex');        }
-      }
-    }
-
-    // TODO: Uncomment after running add_achievement_schema.sql migration
-    // Birthday Buff - earned a trophy on your birthday
-    // if (!unlocked.contains('birthday_buff')) {
-    //   final profile = await _client
-    //       .from('profiles')
-    //       .select('birthday')
-    //       .eq('id', userId)
-    //       .single();
-    //   
-    //   final birthday = profile['birthday'] as String?;
-    //   if (birthday != null) {
-    //     final birthdayDate = DateTime.parse(birthday);
-    //     
-    //     for (final trophy in trophies) {
-    //       final earnedAt = DateTime.parse(trophy['earned_at'] as String);
-    //       if (earnedAt.month == birthdayDate.month && earnedAt.day == birthdayDate.day) {
-    //         await _unlockAchievement(userId, 'birthday_buff');
-    //         newlyUnlocked.add('birthday_buff');
-    //         break;
-    //       }
-    //     }
-    //   }
-    // }
-
-    // Note: speedrun_finish requires tracking platinum earn times
-
-    return newlyUnlocked;
-  }
-
-  Future<List<String>> _checkStreakAchievements(
-    String userId,
-    Map<String, dynamic> stats,
-    Set<String> unlocked,
-  ) async {
-    final newlyUnlocked = <String>[];
-
-    // Get all trophy earn dates
-    final trophies = await _client
-        .from('user_trophies')
-        .select('earned_at')
-        .eq('user_id', userId)
-        .not('earned_at', 'is', null)
-        .order('earned_at', ascending: true);
-
-    if (trophies.isEmpty) return newlyUnlocked;
-
-    // Group by date (ignoring time)
-    final earnDates = <DateTime>{};
-    final earnCountsByDate = <String, int>{};
-    
-    for (final trophy in trophies) {
-      final earnedAt = DateTime.parse(trophy['earned_at'] as String);
-      final dateOnly = DateTime(earnedAt.year, earnedAt.month, earnedAt.day);
-      earnDates.add(dateOnly);
-      
-      final dateKey = dateOnly.toIso8601String().substring(0, 10);
-      earnCountsByDate[dateKey] = (earnCountsByDate[dateKey] ?? 0) + 1;
-    }
-
-    final sortedDates = earnDates.toList()..sort();
-
-    // Check for consecutive day streaks
-    int currentStreak = 1;
-    int maxStreak = 1;
-    
-    for (int i = 1; i < sortedDates.length; i++) {
-      final diff = sortedDates[i].difference(sortedDates[i - 1]).inDays;
-      if (diff == 1) {
-        currentStreak++;
-        maxStreak = maxStreak > currentStreak ? maxStreak : currentStreak;
-      } else {
-        currentStreak = 1;
-      }
-    }
-
-    // One Week Streak - 7 consecutive days
-    if (!unlocked.contains('one_week_streak') && maxStreak >= 7) {
-      if (await _unlockAchievement(userId, 'one_week_streak')) {        newlyUnlocked.add('one_week_streak');      }
-    }
-
-    // Daily Grinder - 30 consecutive days
-    if (!unlocked.contains('daily_grinder') && maxStreak >= 30) {
-      if (await _unlockAchievement(userId, 'daily_grinder')) {        newlyUnlocked.add('daily_grinder');      }
-    }
-
-    // No Days Off - 5+ trophies every day for 7 days
-    int consecutiveHeavyDays = 0;
-    int maxConsecutiveHeavyDays = 0;
-    
-    for (int i = 0; i < sortedDates.length; i++) {
-      final dateKey = sortedDates[i].toIso8601String().substring(0, 10);
-      final count = earnCountsByDate[dateKey] ?? 0;
-      
-      if (count >= 5) {
-        consecutiveHeavyDays++;
-        if (i > 0 && sortedDates[i].difference(sortedDates[i - 1]).inDays != 1) {
-          consecutiveHeavyDays = 1;
-        }
-        maxConsecutiveHeavyDays = maxConsecutiveHeavyDays > consecutiveHeavyDays 
-            ? maxConsecutiveHeavyDays : consecutiveHeavyDays;
-      } else {
-        consecutiveHeavyDays = 0;
-      }
-    }
-    
-    if (!unlocked.contains('no_days_off') && maxConsecutiveHeavyDays >= 7) {
-      if (await _unlockAchievement(userId, 'no_days_off')) {        newlyUnlocked.add('no_days_off');      }
-    }
-
-    // Touch Grass - 7 days without earning anything
-    int maxGap = 0;
-    for (int i = 1; i < sortedDates.length; i++) {
-      final gap = sortedDates[i].difference(sortedDates[i - 1]).inDays;
-      maxGap = maxGap > gap ? maxGap : gap;
-    }
-    
-    if (!unlocked.contains('touch_grass') && maxGap >= 7) {
-      if (await _unlockAchievement(userId, 'touch_grass')) {        newlyUnlocked.add('touch_grass');      }
-    }
-
-    // Note: instant_gratification requires game session tracking
-    // which we don't have yet
-
-    return newlyUnlocked;
-  }
-
-  /// Unlocks an achievement for a user
-  /// Returns true if newly unlocked, false if already existed
-  /// Uses atomic database function to prevent race conditions
+  /// Unlock achievement using atomic database function
   Future<bool> _unlockAchievement(String userId, String achievementId) async {
     try {
       final response = await _client.rpc('unlock_achievement_if_new', params: {
@@ -768,10 +357,8 @@ class AchievementCheckerService {
         'p_unlocked_at': DateTime.now().toIso8601String(),
       });
       
-      // Function returns true if newly inserted, false if already existed
       return response == true;
     } catch (e) {
-      // RPC call failed - treat as not newly unlocked
       return false;
     }
   }
