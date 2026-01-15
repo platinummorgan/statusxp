@@ -124,15 +124,29 @@ Future<void> _initializeApp() async {
     }
   }
 
-  await Supabase.initialize(
-    url: SupabaseConfig.supabaseUrl,
-    anonKey: SupabaseConfig.supabaseAnonKey,
-    authOptions: const FlutterAuthClientOptions(
-      authFlowType: AuthFlowType.pkce,
-      autoRefreshToken: true,
-    ),
-    realtimeClientOptions: const RealtimeClientOptions(eventsPerSecond: 2),
-  );
+  try {
+    await Supabase.initialize(
+      url: SupabaseConfig.supabaseUrl,
+      anonKey: SupabaseConfig.supabaseAnonKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        autoRefreshToken: true,
+      ),
+      realtimeClientOptions: const RealtimeClientOptions(eventsPerSecond: 2),
+    );
+  } catch (e) {
+    _safeLog('Supabase initialization error (likely corrupt session): ${_safeStr(e)}');
+    // Clear ALL storage and force clean restart
+    if (kIsWeb) {
+      try {
+        html.window.localStorage.clear();
+        _safeLog('Cleared all storage due to initialization error - please refresh');
+      } catch (clearError) {
+        _safeLog('Failed to clear storage: ${_safeStr(clearError)}');
+      }
+    }
+    rethrow;
+  }
 
   if (kIsWeb && Supabase.instance.client.auth.currentSession != null) {
     try {
