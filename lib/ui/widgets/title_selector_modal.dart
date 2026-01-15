@@ -297,7 +297,7 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
                         if (!isLocked) ...[
                           const SizedBox(height: 4),
                           Text(
-                            'Unlocked ${_formatDate(achievement.unlockedAt!)}',
+                            'Unlocked ${_formatDate(achievement.unlockedAt ?? DateTime.now())}',
                             style: TextStyle(
                               color: categoryColor.withOpacity(0.6),
                               fontSize: 10,

@@ -33,8 +33,8 @@ class TrophyBreakdownChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final proportion = totalTrophies != null && totalTrophies! > 0
-        ? count / totalTrophies!
+    final proportion = totalTrophies != null && (totalTrophies ?? 0) > 0
+        ? count / (totalTrophies ?? 1)
         : 0.0;
     
     return Container(
@@ -84,7 +84,7 @@ class TrophyBreakdownChip extends StatelessWidget {
           ),
           
           // Mini progress bar (proportional to total)
-          if (totalTrophies != null && totalTrophies! > 0)
+          if (totalTrophies != null && (totalTrophies ?? 0) > 0)
             Container(
               height: 3,
               decoration: BoxDecoration(

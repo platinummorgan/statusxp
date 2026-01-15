@@ -107,7 +107,7 @@ class PlatinumHeroCard extends StatelessWidget {
           ),
           
           // Platinum rate stat
-          if (totalGames != null && totalGames! > 0) ...[
+          if (totalGames != null && (totalGames ?? 0) > 0) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
@@ -127,7 +127,7 @@ class PlatinumHeroCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${((platinumCount / totalGames!) * 100).toStringAsFixed(1)}% of games platinumed',
+                    '${((platinumCount / (totalGames ?? 1)) * 100).toStringAsFixed(1)}% of games platinumed',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: accentPrimary,
                       fontWeight: FontWeight.w600,

@@ -49,10 +49,10 @@ class PsnAvatar extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: avatarUrl != null && avatarUrl!.isNotEmpty
+              child: avatarUrl != null && (avatarUrl?.isNotEmpty ?? false)
                   ? Image.network(
                       // Convert HTTP to HTTPS to avoid mixed content errors on web
-                      avatarUrl!.replaceFirst('http://', 'https://'),
+                      (avatarUrl ?? '').replaceFirst('http://', 'https://'),
                       fit: BoxFit.cover,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
