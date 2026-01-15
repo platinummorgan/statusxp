@@ -13,7 +13,7 @@ class SupabaseTrophyRepository {
       // First, get all trophies for the game
       final trophiesResponse = await _client
           .from('trophies')
-          .select('id, name, description, tier, icon_url, rarity_global, hidden, sort_order')
+          .select('id, name, description, tier, icon_url, proxied_icon_url, rarity_global, hidden, sort_order')
           .eq('game_title_id', gameTitleId)
           .order('sort_order')
           .range(0, 999); // Use range instead of limit
@@ -42,7 +42,7 @@ class SupabaseTrophyRepository {
           name: row['name'] as String,
           description: row['description'] as String?,
           tier: row['tier'] as String,
-          iconUrl: row['icon_url'] as String?,
+          iconUrl: row['proxied_icon_url'] ?? row['icon_url'] as String?,
           rarityGlobal: (row['rarity_global'] as num?)?.toDouble(),
           hidden: row['hidden'] as bool? ?? false,
           earned: earnedAt != null,

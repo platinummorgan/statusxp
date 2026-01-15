@@ -303,6 +303,7 @@ class DisplayCaseRepository {
             tier,
             rarity_global,
             icon_url,
+            proxied_icon_url,
             game_title_id,
             game_titles!inner(
               name,
@@ -333,7 +334,7 @@ class DisplayCaseRepository {
         'game_name': gameTitle['name'],
         'tier': response['tier'],
         'rarity': response['rarity_global'],
-        'icon_url': response['icon_url'],
+        'icon_url': response['proxied_icon_url'] ?? response['icon_url'],
         'game_image_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
       });
     } catch (e) {
