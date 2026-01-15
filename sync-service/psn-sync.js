@@ -120,13 +120,26 @@ export async function syncPSNAchievements(
       const userProfile = await getUserProfile({ accessToken: currentAccessToken }, accountId);
       console.log(`PSN profile fetched: ${userProfile.onlineId}`);
       
-      // Update profile with online_id if missing
+      // Get current profile to check display_name and preferred_display_platform
+      const { data: currentProfile } = await supabase
+        .from('profiles')
+        .select('display_name, preferred_display_platform')
+        .eq('id', userId)
+        .single();
+      
+      const updates = {
+        psn_online_id: userProfile.onlineId,
+        psn_account_id: accountId,
+      };
+      
+      // If display_name is missing or should use PSN name, update it
+      if (!currentProfile?.display_name || currentProfile.preferred_display_platform === 'psn') {
+        updates.display_name = userProfile.onlineId;
+      }
+      
       await supabase
         .from('profiles')
-        .update({
-          psn_online_id: userProfile.onlineId,
-          psn_account_id: accountId,
-        })
+        .update(updates)
         .eq('id', userId);
       console.log('✅ PSN profile info updated');
     } catch (profileError) {
