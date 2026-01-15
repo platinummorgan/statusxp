@@ -104,7 +104,7 @@ export async function syncPSNAchievements(
 
   const psnModule = await import('psn-api');
   const psnApi = psnModule.default ?? psnModule;
-  const { getUserTitles, getTitleTrophies, getUserTrophiesEarnedForTitle, exchangeRefreshTokenForAuthTokens } =
+  const { getUserTitles, getTitleTrophies, getUserTrophiesEarnedForTitle, exchangeRefreshTokenForAuthTokens, getUserProfile } =
     psnApi;
 
   try {
@@ -113,6 +113,25 @@ export async function syncPSNAchievements(
     let currentAccessToken = authTokens.accessToken;
     let currentRefreshToken = authTokens.refreshToken;
     console.log('PSN access token refreshed successfully');
+
+    // Fetch user profile to ensure psn_online_id is set
+    console.log('Fetching PSN user profile...');
+    try {
+      const userProfile = await getUserProfile({ accessToken: currentAccessToken }, accountId);
+      console.log(`PSN profile fetched: ${userProfile.onlineId}`);
+      
+      // Update profile with online_id if missing
+      await supabase
+        .from('profiles')
+        .update({
+          psn_online_id: userProfile.onlineId,
+          psn_account_id: accountId,
+        })
+        .eq('id', userId);
+      console.log('✅ PSN profile info updated');
+    } catch (profileError) {
+      console.error('⚠️ Failed to fetch PSN profile, continuing with sync:', profileError.message);
+    }
 
     await updateSyncStatus(userId, {
       psn_access_token: authTokens.accessToken,
