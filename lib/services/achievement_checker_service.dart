@@ -716,12 +716,25 @@ class AchievementCheckerService {
 
   Future<void> _unlockAchievement(String userId, String achievementId) async {
     try {
-      await _client.from('user_meta_achievements').upsert({
+      // Check if already unlocked to avoid unnecessary upserts
+      final existing = await _client
+          .from('user_meta_achievements')
+          .select('achievement_id')
+          .eq('user_id', userId)
+          .eq('achievement_id', achievementId)
+          .maybeSingle();
+      
+      if (existing != null) {
+        return; // Already unlocked, skip
+      }
+
+      await _client.from('user_meta_achievements').insert({
         'user_id': userId,
         'achievement_id': achievementId,
         'unlocked_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'user_id,achievement_id');
+      });
     } catch (e) {
+      // Silently ignore conflicts - achievement already exists
     }
   }
 }
