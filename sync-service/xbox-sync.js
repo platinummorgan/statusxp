@@ -198,6 +198,14 @@ async function refreshXboxToken(refreshToken, userId) {
 
   // Save to database
   console.log('[GAMERTAG SAVE] Saving gamertag to database:', gamertag, 'for user:', userId);
+  
+  // Get current profile to check display_name and preferred_display_platform
+  const { data: currentProfile } = await supabase
+    .from('profiles')
+    .select('display_name, preferred_display_platform')
+    .eq('id', userId)
+    .single();
+  
   const updateData = {
     xbox_access_token: xstsData.Token,
     xbox_refresh_token: tokenData.refresh_token,
@@ -205,6 +213,13 @@ async function refreshXboxToken(refreshToken, userId) {
     xbox_user_hash: userHash,
     xbox_gamertag: gamertag,
   };
+  
+  // If display_name is missing or should use Xbox name, update it
+  if (!currentProfile?.display_name || currentProfile.preferred_display_platform === 'xbox') {
+    updateData.display_name = gamertag;
+    console.log('[GAMERTAG SAVE] Updating display_name to:', gamertag);
+  }
+  
   if (avatarUrl) {
     console.log('[GAMERTAG SAVE] Proxying Xbox avatar through Supabase Storage...');
     const proxiedUrl = await uploadExternalAvatar(avatarUrl, userId, 'xbox');

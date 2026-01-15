@@ -101,7 +101,22 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         
         // Save display name and avatar to profile
         console.log('[STEAM NAME SAVE] Saving to database for user:', userId);
+        
+        // Get current profile to check display_name and preferred_display_platform
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('display_name, preferred_display_platform')
+          .eq('id', userId)
+          .single();
+        
         const updateData = { steam_display_name: displayName };
+        
+        // If display_name is missing or should use Steam name, update it
+        if (!currentProfile?.display_name || currentProfile.preferred_display_platform === 'steam') {
+          updateData.display_name = displayName;
+          console.log('[STEAM NAME SAVE] Updating display_name to:', displayName);
+        }
+        
         if (avatarUrl) {
           console.log('[STEAM NAME SAVE] Proxying Steam avatar through Supabase Storage...');
           const proxiedUrl = await uploadExternalAvatar(avatarUrl, userId, 'steam');
