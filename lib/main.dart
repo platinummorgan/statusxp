@@ -81,9 +81,9 @@ void main() async {
         _safeLog('Runtime context:');
         _safeLog('  - kIsWeb: $kIsWeb');
         try {
-          _safeLog('  - Current route: ${GoRouter.of(null)?.routerDelegate.currentConfiguration}');
+          _safeLog('  - Error occurred during app initialization');
         } catch (e) {
-          _safeLog('  - Could not get current route: ${_safeStr(e)}');
+          _safeLog('  - Could not get additional context: ${_safeStr(e)}');
         }
       }
       final stackStr = _safeStr(stack);
@@ -361,7 +361,9 @@ Future<void> _attemptWebStorageRecovery() async {
     // If you still want the nuclear option, do it *after* targeted cleanup:
     // storage.clear(); storage[flagKey] = 'true';
 
-    html.window.location.reload();
+    // Force page reload (commented out due to Location API compatibility issues)
+    // TODO: Fix page reload for production recovery
+    _safeLog('Storage recovery complete - please refresh the page manually');
   } catch (e) {
     _safeLog('Storage recovery failed: ${_safeStr(e)}');
   }

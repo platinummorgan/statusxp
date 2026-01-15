@@ -3,18 +3,19 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:statusxp/data/auth/biometric_auth_service.dart';
-import 'package:statusxp/state/statusxp_providers.dart';
-import 'package:statusxp/ui/screens/psn/psn_connect_screen.dart';
-import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
-import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
-import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
-import 'package:statusxp/services/subscription_service.dart';
-import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
-import 'package:statusxp/theme/colors.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+
+import 'package:statusxp/data/auth/biometric_auth_service.dart';
+import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/theme/colors.dart';
+import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
+import 'package:statusxp/ui/screens/psn/psn_connect_screen.dart';
+import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
+import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
+import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
 
 /// Settings Screen - Platform connections and app configuration
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoadingProfile = true;
   Map<String, dynamic>? _profile;
   bool _showOnLeaderboard = true;
+
   final BiometricAuthService _biometricService = BiometricAuthService();
   String _appVersion = '...';
 
@@ -39,40 +41,50 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<void> _loadAppVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    setState(() {
-      _appVersion = packageInfo.version;
-    });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Reload profile when returning from other screens
-    _loadProfile();
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (!mounted) return;
+      setState(() => _appVersion = packageInfo.version);
+    } catch (_) {
+      // ignore
+    }
   }
 
   Future<void> _loadProfile() async {
+    if (!mounted) return;
     setState(() => _isLoadingProfile = true);
-    
+
     try {
       final supabase = Supabase.instance.client;
       final userId = supabase.auth.currentUser?.id;
-      
-      if (userId != null) {
-        final data = await supabase
-            .from('profiles')
-            .select('psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, steam_id, steam_api_key, steam_display_name, preferred_display_platform, last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at, show_on_leaderboard')
-            .eq('id', userId)
-            .single();
-        
+
+      if (userId == null) {
+        if (!mounted) return;
         setState(() {
-          _profile = data;
-          _showOnLeaderboard = data['show_on_leaderboard'] ?? true;
+          _profile = null;
           _isLoadingProfile = false;
         });
+        return;
       }
-    } catch (e) {
+
+      final data = await supabase
+          .from('profiles')
+          .select(
+            'psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, '
+            'steam_id, steam_api_key, steam_display_name, preferred_display_platform, '
+            'last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at, show_on_leaderboard',
+          )
+          .eq('id', userId)
+          .single();
+
+      if (!mounted) return;
+      setState(() {
+        _profile = data;
+        _showOnLeaderboard = data['show_on_leaderboard'] ?? true;
+        _isLoadingProfile = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
       setState(() => _isLoadingProfile = false);
     }
   }
@@ -105,11 +117,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     try {
       final supabase = Supabase.instance.client;
       final userId = supabase.auth.currentUser?.id;
-      
       if (userId == null) return;
 
       Map<String, dynamic> updates = {};
-      
+
       if (platform == 'PlayStation') {
         updates = {
           'psn_account_id': null,
@@ -137,26 +148,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         };
       }
 
-      await supabase
-          .from('profiles')
-          .update(updates)
-          .eq('id', userId);
+      await supabase.from('profiles').update(updates).eq('id', userId);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$platform disconnected successfully')),
-        );
-        _loadProfile();
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$platform disconnected successfully')),
+      );
+      _loadProfile();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to disconnect: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to disconnect: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -164,27 +170,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     HapticFeedback.lightImpact();
     try {
       final url = Uri.parse(urlString);
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Could not open: $urlString')),
-          );
-        }
-      }
+      await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error opening link: $e')),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error opening link: $e')),
+      );
     }
   }
 
   Future<void> _showSupportDialog() async {
     HapticFeedback.lightImpact();
-    
+
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -192,9 +189,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           children: [
             Icon(Icons.favorite, color: Colors.pink, size: 28),
             SizedBox(width: 12),
-            Expanded(
-              child: Text('Support Development'),
-            ),
+            Expanded(child: Text('Support Development')),
           ],
         ),
         content: Column(
@@ -204,7 +199,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Text(
               'Thanks for considering supporting StatusXP! 🙏',
               style: TextStyle(
-                fontSize: 16, 
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
@@ -223,19 +218,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 16),
-            // PayPal Button
             InkWell(
               onTap: () async {
                 final url = Uri.parse('https://paypal.me/platinummorgan');
-                if (await canLaunchUrl(url)) {
+                try {
                   await launchUrl(url, mode: LaunchMode.externalApplication);
                   if (context.mounted) Navigator.pop(context);
-                } else {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Could not open PayPal link')),
-                    );
-                  }
+                } catch (_) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not open PayPal link')),
+                  );
                 }
               },
               child: Container(
@@ -297,10 +290,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
         ],
       ),
     );
@@ -313,32 +303,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await authService.signOut();
       ref.read(biometricLockRequestedProvider.notifier).state = false;
       ref.read(biometricUnlockGrantedProvider.notifier).state = false;
-      if (mounted) {
-        context.go('/');
-      }
+
+      if (!mounted) return;
+      context.go('/');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to sign out: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to sign out: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   Future<void> _lockApp() async {
     ref.read(biometricUnlockGrantedProvider.notifier).state = false;
     ref.read(biometricLockRequestedProvider.notifier).state = true;
-    
-    if (mounted) {
-      context.go('/');
-    }
+
+    if (!mounted) return;
+    context.go('/');
   }
 
   Future<void> _deleteAccount() async {
-    // First confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -353,10 +340,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'This action CANNOT be undone.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -368,7 +352,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (confirmed != true) return;
 
-    // Second confirmation dialog (extra safety)
     final finalConfirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -378,13 +361,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'This action is permanent and cannot be reversed.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
-              // Show text input dialog
               final input = await showDialog<String>(
                 context: context,
                 builder: (context) {
@@ -393,16 +372,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('Type DELETE'),
                     content: TextField(
                       controller: controller,
-                      decoration: const InputDecoration(
-                        hintText: 'Type DELETE here',
-                      ),
+                      decoration: const InputDecoration(hintText: 'Type DELETE here'),
                       autofocus: true,
                     ),
                     actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
-                      ),
+                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
                       FilledButton(
                         onPressed: () => Navigator.pop(context, controller.text),
                         style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -412,12 +386,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   );
                 },
               );
-              
-              if (input == 'DELETE') {
-                Navigator.pop(context, true);
-              } else {
-                Navigator.pop(context, false);
-              }
+
+              Navigator.pop(context, input == 'DELETE');
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete Forever'),
@@ -428,43 +398,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     if (finalConfirm != true) return;
 
-    // Show loading dialog
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Deleting account...'),
-            ],
-          ),
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Text('Deleting account...'),
+          ],
         ),
-      );
-    }
+      ),
+    );
 
     try {
       final authService = ref.read(authServiceProvider);
       await authService.deleteAccount();
-      
-      // Success - navigate to sign in (auth gate will handle this)
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        context.go('/');
-      }
+
+      if (!mounted) return;
+      Navigator.pop(context); // close loading dialog
+      context.go('/');
     } catch (e) {
-      if (mounted) {
-        Navigator.pop(context); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete account: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
+      if (!mounted) return;
+      Navigator.pop(context); // close loading dialog
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete account: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
 
@@ -485,16 +450,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               children: [
-                // Platform Connections Section
                 _buildSectionHeader('Platform Connections'),
-                
+
                 // PlayStation
                 _buildPlatformTile(
                   icon: Icons.sports_esports,
-                  iconColor: const Color(0xFF0070CC), // PlayStation blue
+                  iconColor: const Color(0xFF0070CC),
                   title: 'PlayStation',
                   subtitle: _profile?['psn_account_id'] != null
-                      ? (_profile!['psn_online_id'] != null
+                      ? (_profile?['psn_online_id'] != null
                           ? 'Connected as ${_profile!['psn_online_id']}'
                           : 'Connected (sync needed)')
                       : 'Not connected',
@@ -508,35 +472,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : null,
                   onTap: () async {
                     if (_profile?['psn_account_id'] != null) {
-                      // Already connected - go to sync screen
                       await context.push('/psn-sync');
-                      // Reload profile to show updated sync time
                       _loadProfile();
                     } else {
-                      // Not connected - go to connect screen
                       final result = await Navigator.push<bool>(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const PSNConnectScreen(),
-                        ),
+                        MaterialPageRoute(builder: (context) => const PSNConnectScreen()),
                       );
-                      if (result == true) {
-                        _loadProfile();
-                      }
+                      if (result == true) _loadProfile();
                     }
                   },
                   onDisconnect: _profile?['psn_account_id'] != null
                       ? () => _disconnectPlatform('PlayStation')
                       : null,
-                  ),
-                ],
-  
+                ),
+
                 const Divider(height: 1),
 
                 // Xbox
                 _buildPlatformTile(
                   icon: Icons.videogame_asset,
-                  iconColor: const Color(0xFF107C10), // Xbox green
+                  iconColor: const Color(0xFF107C10),
                   title: 'Xbox',
                   subtitle: _profile?['xbox_gamertag'] != null
                       ? 'Connected as ${_profile!['xbox_gamertag']}'
@@ -551,19 +507,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : null,
                   onTap: () async {
                     if (_profile?['xbox_xuid'] != null) {
-                      // Already connected - show sync screen
                       context.push('/xbox-sync');
                     } else {
-                      // Not connected - go to connect screen
                       final result = await Navigator.push<bool>(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const XboxConnectScreen(),
-                        ),
+                        MaterialPageRoute(builder: (context) => const XboxConnectScreen()),
                       );
-                      if (result == true) {
-                        _loadProfile();
-                      }
+                      if (result == true) _loadProfile();
                     }
                   },
                   onDisconnect: _profile?['xbox_xuid'] != null
@@ -576,10 +526,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Steam
                 _buildPlatformTile(
                   icon: Icons.cloud,
-                  iconColor: const Color(0xFF66C0F4), // Steam blue
+                  iconColor: const Color(0xFF66C0F4),
                   title: 'Steam',
                   subtitle: _profile?['steam_id'] != null
-                      ? 'Connected as ${_profile!['steam_display_name'] ?? 'Unknown'}'
+                      ? 'Connected as ${_profile?['steam_display_name'] ?? 'Unknown'}'
                       : 'Not connected',
                   isConnected: _profile?['steam_id'] != null,
                   syncStatus: _profile?['steam_id'] != null ? 'success' : null,
@@ -588,26 +538,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : null,
                   onTap: () async {
                     if (_profile?['steam_id'] != null) {
-                      // Already connected - go to sync screen
                       await Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const SteamSyncScreen(),
-                        ),
+                        MaterialPageRoute(builder: (context) => const SteamSyncScreen()),
                       );
-                      // Reload profile to show updated sync time
                       _loadProfile();
                     } else {
-                      // Not connected - go to configure screen
                       final result = await Navigator.push<bool>(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => const SteamConfigureScreen(),
-                        ),
+                        MaterialPageRoute(builder: (context) => const SteamConfigureScreen()),
                       );
-                      if (result == true) {
-                        _loadProfile();
-                      }
+                      if (result == true) _loadProfile();
                     }
                   },
                   onDisconnect: _profile?['steam_id'] != null
@@ -617,27 +558,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 24),
 
-                // App Settings Section
                 _buildSectionHeader('App Settings'),
-                
-                // Premium Subscription (FIRST)
+
+                // Premium
                 FutureBuilder<bool>(
                   future: SubscriptionService().isPremiumActive(),
                   builder: (context, snapshot) {
                     final isPremium = snapshot.data ?? false;
-                    
+
                     return ListTile(
                       leading: Icon(
                         Icons.diamond,
                         color: isPremium ? const Color(0xFFFFD700) : accentPrimary,
                       ),
                       title: Text(isPremium ? 'Premium Active' : 'Upgrade to Premium'),
-                      subtitle: Text(
-                        isPremium 
-                            ? 'Unlimited AI • Faster syncs' 
-                            : 'Unlock unlimited features'
-                      ),
-                      trailing: isPremium 
+                      subtitle: Text(isPremium ? 'Unlimited AI • Faster syncs' : 'Unlock unlimited features'),
+                      trailing: isPremium
                           ? Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
@@ -658,9 +594,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => const PremiumSubscriptionScreen(),
-                          ),
+                          MaterialPageRoute(builder: (context) => const PremiumSubscriptionScreen()),
                         );
                       },
                     );
@@ -668,8 +602,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
 
                 const Divider(height: 1),
-                
-                // Support Development (SECOND)
+
+                // Support
                 ListTile(
                   leading: const Icon(Icons.favorite, color: Colors.pink),
                   title: const Text('Support Development'),
@@ -680,162 +614,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const Divider(height: 1),
 
-                // Preferred Display Platform (THIRD)
                 _buildPreferredPlatformTile(),
 
+                // Biometrics: mobile only, safely hidden on web.
                 if (!kIsWeb) ...[
                   const Divider(height: 1),
-                
-                  // Biometric Authentication (FOURTH)
-                  FutureBuilder<bool>(
-                  future: _biometricService.isBiometricAvailable(),
-                  builder: (context, snapshot) {
-                    final isAvailable = snapshot.data ?? false;
-                    if (!isAvailable) {
-                      return const SizedBox.shrink();
-                    }
-                    
-                    return FutureBuilder<bool>(
-                      future: _biometricService.isBiometricEnabled(),
-                      builder: (context, enabledSnapshot) {
-                        final isEnabled = enabledSnapshot.data ?? false;
-                        
-                        return ListTile(
-                          leading: Icon(
-                            Icons.fingerprint,
-                            color: isEnabled ? accentSuccess : null,
-                          ),
-                          title: const Text('Biometric Lock'),
-                          subtitle: FutureBuilder<String>(
-                            future: _biometricService.getBiometricTypesDescription(),
-                            builder: (context, typeSnapshot) {
-                              final types = typeSnapshot.data ?? 'Loading...';
-                              return Text(isEnabled 
-                                ? 'Enabled ($types)' 
-                                : 'Require $types to unlock app'
-                              );
-                            },
-                          ),
-                          trailing: Switch(
-                            value: isEnabled,
-                            onChanged: (value) async {
-                              if (value) {
-                                // Step 1: Verify biometric first
-                                final bioResult = await _biometricService.authenticate(
-                                  reason: 'Verify your identity to enable biometric authentication',
-                                );
-                                
-                                if (!bioResult.success) {
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(bioResult.errorMessage ?? 'Authentication failed'),
-                                        backgroundColor: Colors.red,
-                                        duration: const Duration(seconds: 5),
-                                      ),
-                                    );
-                                  }
-                                  return;
-                                }
-                                
-                                // Step 2: Ask which sign-in method they use
-                                if (!mounted) return;
-                                final signInMethod = await showDialog<String>(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('How do you sign in?'),
-                                    content: const Text(
-                                      'Choose your sign-in method to set up biometric authentication:'
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context, 'oauth'),
-                                        child: const Text('Google / Apple'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context, 'email'),
-                                        child: const Text('Email & Password'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context),
-                                        child: const Text('Cancel'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                                
-                                if (signInMethod == null) return;
-                                
-                                if (signInMethod == 'email') {
-                                  // Email/Password - need to store credentials
-                                  final credentials = await _showCredentialDialog();
-                                  if (credentials == null) return;
-                                  
-                                  // Store credentials securely
-                                  await _biometricService.storeCredentials(
-                                    credentials['email']!,
-                                    credentials['password']!,
-                                  );
-                                  await _biometricService.setBiometricEnabled(true);
-                                  
-                                  if (mounted) {
-                                    setState(() {});
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in'),
-                                        backgroundColor: Colors.green,
-                                        duration: Duration(seconds: 3),
-                                      ),
-                                    );
-                                  }
-                                } else {
-                                  // OAuth - store refresh token for secure re-authentication
-                                  final session = Supabase.instance.client.auth.currentSession;
-                                  if (session != null && session.refreshToken != null) {
-                                    final expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
-                                    await _biometricService.storeRefreshToken(
-                                      refreshToken: session.refreshToken!,
-                                      userId: session.user.id,
-                                      expiresAt: expiresAt,
-                                    );
-                                  }
-                                  await _biometricService.setBiometricEnabled(true);
-                                  
-                                  if (mounted) {
-                                    setState(() {});
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in'),
-                                        backgroundColor: Colors.green,
-                                        duration: Duration(seconds: 3),
-                                      ),
-                                    );
-                                  }
-                                }
-                              } else {
-                                // Clear stored credentials when disabling
-                                await _biometricService.clearStoredCredentials();
-                                await _biometricService.setBiometricEnabled(false);
-                                if (mounted) {
-                                  setState(() {});
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Biometric disabled'),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                  _buildBiometricTile(),
+                ],
 
                 const Divider(height: 1),
 
-                // Contact Support (FIFTH)
+                // Contact Support
                 ListTile(
                   leading: const Icon(Icons.email_outlined),
                   title: const Text('Contact Support'),
@@ -843,32 +632,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   trailing: const Icon(Icons.open_in_new, size: 16),
                   onTap: () async {
                     const email = 'support@platovalabs.com';
-                    final Uri emailUri = Uri(
+                    final emailUri = Uri(
                       scheme: 'mailto',
                       path: email,
                       query: 'subject=StatusXP Support Request',
                     );
-                    
+
                     try {
-                      // Try to launch email directly (don't use canLaunchUrl for mailto - it's unreliable)
                       await launchUrl(emailUri);
-                    } catch (e) {
-                      // Fallback: copy email to clipboard
-                      if (mounted) {
-                        await Clipboard.setData(const ClipboardData(text: email));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Email copied to clipboard: support@platovalabs.com'),
-                            duration: Duration(seconds: 3),
-                          ),
-                        );
-                      }
+                    } catch (_) {
+                      if (!mounted) return;
+                      await Clipboard.setData(const ClipboardData(text: email));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Email copied to clipboard: support@platovalabs.com'),
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
                     }
                   },
                 ),
 
                 const Divider(height: 1),
-                
+
                 // About
                 ListTile(
                   leading: const Icon(Icons.info_outline),
@@ -879,12 +665,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       context: context,
                       applicationName: 'StatusXP',
                       applicationVersion: _appVersion,
-                      applicationLegalese: '© 2025 StatusXP\n\nThe ultimate cross-platform achievement tracker',
-                      children: [
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Track your gaming achievements across PlayStation, Xbox, and Steam in one unified app.',
-                        ),
+                      applicationLegalese:
+                          '© 2025 StatusXP\n\nThe ultimate cross-platform achievement tracker',
+                      children: const [
+                        SizedBox(height: 16),
+                        Text('Track your gaming achievements across PlayStation, Xbox, and Steam in one unified app.'),
                       ],
                     );
                   },
@@ -897,107 +682,222 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: const Icon(Icons.privacy_tip_outlined),
                   title: const Text('Privacy Policy'),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _openUrl('https://raw.githubusercontent.com/platinummorgan/statusxp/refs/heads/main/PRIVACY.md'),
+                  onTap: () => _openUrl(
+                    'https://raw.githubusercontent.com/platinummorgan/statusxp/refs/heads/main/PRIVACY.md',
+                  ),
                 ),
 
                 const Divider(height: 1),
 
-                // Terms of Service
+                // Terms
                 ListTile(
                   leading: const Icon(Icons.description_outlined),
                   title: const Text('Terms of Service'),
                   trailing: const Icon(Icons.open_in_new, size: 16),
-                  onTap: () => _openUrl('https://raw.githubusercontent.com/platinummorgan/statusxp/refs/heads/main/TERMS_OF_SERVICE.md'),
+                  onTap: () => _openUrl(
+                    'https://raw.githubusercontent.com/platinummorgan/statusxp/refs/heads/main/TERMS_OF_SERVICE.md',
+                  ),
                 ),
 
                 const Divider(height: 1),
 
-                // Leaderboard Privacy Toggle
+                // Leaderboard privacy
                 SwitchListTile(
                   secondary: const Icon(Icons.leaderboard),
                   title: const Text('Show on Leaderboards'),
                   subtitle: const Text('Allow your profile to appear on public leaderboards'),
                   value: _showOnLeaderboard,
-                  onChanged: _isLoadingProfile ? null : (value) async {
-                    setState(() => _showOnLeaderboard = value);
-                    
-                    try {
-                      final supabase = Supabase.instance.client;
-                      final userId = supabase.auth.currentUser?.id;
-                      
-                      if (userId != null) {
-                        await supabase
-                            .from('profiles')
-                            .update({'show_on_leaderboard': value})
-                            .eq('id', userId);
-                        
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(value 
-                                  ? 'You will now appear on leaderboards' 
-                                  : 'You are now hidden from leaderboards'),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        }
-                      }
-                    } catch (e) {
-                      // Revert on error
-                      setState(() => _showOnLeaderboard = !value);
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to update setting: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onChanged: _isLoadingProfile
+                      ? null
+                      : (value) async {
+                          setState(() => _showOnLeaderboard = value);
+
+                          try {
+                            final supabase = Supabase.instance.client;
+                            final userId = supabase.auth.currentUser?.id;
+
+                            if (userId != null) {
+                              await supabase.from('profiles').update({'show_on_leaderboard': value}).eq('id', userId);
+
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(value
+                                      ? 'You will now appear on leaderboards'
+                                      : 'You are now hidden from leaderboards'),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (!mounted) return;
+                            setState(() => _showOnLeaderboard = !value);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to update setting: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
                 ),
 
                 const Divider(height: 1),
 
-                // Log Out / Lock App
+                // Log Out / Lock
                 if (kIsWeb)
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.orange),
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(color: Colors.orange),
-                    ),
+                    title: const Text('Log Out', style: TextStyle(color: Colors.orange)),
                     subtitle: const Text('Sign out of this browser'),
                     onTap: _signOut,
                   )
                 else
                   ListTile(
                     leading: const Icon(Icons.lock_outline, color: Colors.orange),
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(color: Colors.orange),
-                    ),
+                    title: const Text('Log Out', style: TextStyle(color: Colors.orange)),
                     subtitle: const Text('Lock the app - use biometrics to get back in'),
                     onTap: _lockApp,
                   ),
-                
+
                 const Divider(height: 1),
 
-                // Delete Account
+                // Delete
                 ListTile(
                   leading: const Icon(Icons.delete_forever, color: Colors.red),
-                  title: const Text(
-                    'Delete Account',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  subtitle: const Text(
-                    'Permanently delete your account and all data',
-                    style: TextStyle(fontSize: 12),
-                  ),
+                  title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+                  subtitle: const Text('Permanently delete your account and all data', style: TextStyle(fontSize: 12)),
                   onTap: _deleteAccount,
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildBiometricTile() {
+    return FutureBuilder<bool>(
+      future: _biometricService.isBiometricAvailable(),
+      builder: (context, snapshot) {
+        final isAvailable = snapshot.data ?? false;
+        if (!isAvailable) return const SizedBox.shrink();
+
+        return FutureBuilder<bool>(
+          future: _biometricService.isBiometricEnabled(),
+          builder: (context, enabledSnapshot) {
+            final isEnabled = enabledSnapshot.data ?? false;
+
+            return ListTile(
+              leading: Icon(Icons.fingerprint, color: isEnabled ? accentSuccess : null),
+              title: const Text('Biometric Lock'),
+              subtitle: FutureBuilder<String>(
+                future: _biometricService.getBiometricTypesDescription(),
+                builder: (context, typeSnapshot) {
+                  final types = typeSnapshot.data ?? 'Loading...';
+                  return Text(isEnabled ? 'Enabled ($types)' : 'Require $types to unlock app');
+                },
+              ),
+              trailing: Switch(
+                value: isEnabled,
+                onChanged: (value) async {
+                  if (value) {
+                    final bioResult = await _biometricService.authenticate(
+                      reason: 'Verify your identity to enable biometric authentication',
+                    );
+
+                    if (!bioResult.success) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(bioResult.errorMessage ?? 'Authentication failed'),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 5),
+                        ),
+                      );
+                      return;
+                    }
+
+                    if (!mounted) return;
+                    final signInMethod = await showDialog<String>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('How do you sign in?'),
+                        content: const Text('Choose your sign-in method to set up biometric authentication:'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, 'oauth'),
+                            child: const Text('Google / Apple'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, 'email'),
+                            child: const Text('Email & Password'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (signInMethod == null) return;
+
+                    if (signInMethod == 'email') {
+                      final credentials = await _showCredentialDialog();
+                      if (credentials == null) return;
+
+                      await _biometricService.storeCredentials(
+                        credentials['email']!,
+                        credentials['password']!,
+                      );
+                      await _biometricService.setBiometricEnabled(true);
+
+                      if (!mounted) return;
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    } else {
+                      final session = Supabase.instance.client.auth.currentSession;
+                      if (session != null && session.refreshToken != null && session.expiresAt != null) {
+                        final expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+                        await _biometricService.storeRefreshToken(
+                          refreshToken: session.refreshToken!,
+                          userId: session.user.id,
+                          expiresAt: expiresAt,
+                        );
+                      }
+                      await _biometricService.setBiometricEnabled(true);
+
+                      if (!mounted) return;
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in'),
+                          backgroundColor: Colors.green,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  } else {
+                    await _biometricService.clearStoredCredentials();
+                    await _biometricService.setBiometricEnabled(false);
+
+                    if (!mounted) return;
+                    setState(() {});
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Biometric disabled')),
+                    );
+                  }
+                },
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -1022,7 +922,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String title,
     required String subtitle,
     required bool isConnected,
-    String? syncStatus,    DateTime? lastSyncAt,    bool isComingSoon = false,
+    String? syncStatus,
+    DateTime? lastSyncAt,
+    bool isComingSoon = false,
     required VoidCallback onTap,
     VoidCallback? onDisconnect,
   }) {
@@ -1038,12 +940,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       ),
       title: Row(
         children: [
-          Flexible(
-            child: Text(
-              title,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Flexible(child: Text(title, overflow: TextOverflow.ellipsis)),
           const SizedBox(width: 8),
           if (isConnected)
             Container(
@@ -1055,11 +952,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: const Text(
                 'Connected',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.green,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
               ),
             )
           else if (isComingSoon)
@@ -1072,11 +965,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: const Text(
                 'Coming Soon',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold),
               ),
             ),
         ],
@@ -1104,13 +993,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildPreferredPlatformTile() {
     final currentPlatform = _profile?['preferred_display_platform'] as String? ?? 'psn';
-    
+
     String platformName(String platform) {
       switch (platform) {
-        case 'psn': return 'PlayStation';
-        case 'xbox': return 'Xbox';
-        case 'steam': return 'Steam';
-        default: return platform;
+        case 'psn':
+          return 'PlayStation';
+        case 'xbox':
+          return 'Xbox';
+        case 'steam':
+          return 'Steam';
+        default:
+          return platform;
       }
     }
 
@@ -1134,9 +1027,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : const Text('Not connected'),
                   value: 'psn',
                   groupValue: currentPlatform,
-                  onChanged: _profile?['psn_online_id'] != null
-                      ? (value) => Navigator.pop(context, value)
-                      : null,
+                  onChanged: _profile?['psn_online_id'] != null ? (v) => Navigator.pop(context, v) : null,
                 ),
                 RadioListTile<String>(
                   title: const Text('Xbox Live'),
@@ -1145,9 +1036,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : const Text('Not connected'),
                   value: 'xbox',
                   groupValue: currentPlatform,
-                  onChanged: _profile?['xbox_gamertag'] != null
-                      ? (value) => Navigator.pop(context, value)
-                      : null,
+                  onChanged: _profile?['xbox_gamertag'] != null ? (v) => Navigator.pop(context, v) : null,
                 ),
                 RadioListTile<String>(
                   title: const Text('Steam'),
@@ -1156,73 +1045,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : const Text('Not connected'),
                   value: 'steam',
                   groupValue: currentPlatform,
-                  onChanged: _profile?['steam_display_name'] != null
-                      ? (value) => Navigator.pop(context, value)
-                      : null,
+                  onChanged: _profile?['steam_display_name'] != null ? (v) => Navigator.pop(context, v) : null,
                 ),
               ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-            ],
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel'))],
           ),
         );
 
-        if (selected != null && selected != currentPlatform) {
-          // Update preferred platform in database
-          try {
-            final supabase = Supabase.instance.client;
-            final userId = supabase.auth.currentUser?.id;
-            
-            if (userId != null) {
-              await supabase
-                  .from('profiles')
-                  .update({'preferred_display_platform': selected})
-                  .eq('id', userId);
-              
-              // Refresh profile and dashboard
-              await _loadProfile();
-              ref.invalidate(dashboardStatsProvider);
-              
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Display platform changed to ${platformName(selected)}'),
-                  ),
-                );
-              }
-            }
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Failed to update: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          }
+        if (selected == null || selected == currentPlatform) return;
+
+        try {
+          final supabase = Supabase.instance.client;
+          final userId = supabase.auth.currentUser?.id;
+          if (userId == null) return;
+
+          await supabase.from('profiles').update({'preferred_display_platform': selected}).eq('id', userId);
+
+          await _loadProfile();
+          ref.invalidate(dashboardStatsProvider);
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Display platform changed to ${platformName(selected)}')),
+          );
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
+          );
         }
       },
     );
   }
 
   Widget _buildSyncStatusChip(String status, DateTime? lastSyncAt) {
-    String formatLastSync(DateTime dateTime) {
+    String formatLastSync(DateTime dt) {
       final now = DateTime.now();
-      final difference = now.difference(dateTime);
-      
-      if (difference.inMinutes < 1) return 'Just now';
-      if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
-      if (difference.inHours < 24) return '${difference.inHours}h ago';
-      if (difference.inDays < 7) return '${difference.inDays}d ago';
-      
-      // Format as date
-      return '${dateTime.month}/${dateTime.day}/${dateTime.year}';
+      final diff = now.difference(dt);
+
+      if (diff.inMinutes < 1) return 'Just now';
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      if (diff.inDays < 7) return '${diff.inDays}d ago';
+      return '${dt.month}/${dt.day}/${dt.year}';
     }
+
     Color color;
     String text;
     IconData icon;
@@ -1255,24 +1123,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         Icon(icon, size: 12, color: color),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 11,
-            color: color,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(text, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500)),
       ],
     );
   }
-  
-  /// Show dialog to get credentials for biometric storage
+
   Future<Map<String, String>?> _showCredentialDialog() async {
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    
+
     return showDialog<Map<String, String>>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1282,48 +1142,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Enter your credentials to enable secure biometric sign-in.',
-                style: TextStyle(fontSize: 14),
-              ),
+              const Text('Enter your credentials to enable secure biometric sign-in.'),
               const SizedBox(height: 16),
               TextFormField(
                 controller: emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  return null;
-                },
+                validator: (value) => (value == null || value.isEmpty) ? 'Please enter your email' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
                 obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  return null;
-                },
+                validator: (value) => (value == null || value.isEmpty) ? 'Please enter your password' : null,
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {
