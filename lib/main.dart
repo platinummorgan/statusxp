@@ -294,61 +294,6 @@ bool _isOAuthFlowKey(String key) {
          key.contains('oauth-state');
 }
 
-void _sanitizeSupabaseAuthStorage() {
-  try {
-    final storage = html.window.localStorage;
-    final keys = storage.keys.toList(growable: false);
-
-    for (final key in keys) {
-      if (!_isSupabaseAuthStorageKey(key)) continue;
-      
-      // CRITICAL: Don't remove OAuth flow keys during active login
-      if (_isOAuthFlowKey(key)) {
-        _safeLog('Preserving OAuth flow key: $key');
-        continue;
-      }
-
-      final raw = storage[key];
-      if (raw == null || raw.isEmpty) {
-        storage.remove(key);
-        _safeLog('Removed empty auth storage key: $key');
-        continue;
-      }
-
-      final decoded = _tryDecodeMap(raw);
-      if (decoded == null) {
-        storage.remove(key);
-        _safeLog('Removed invalid auth storage key: $key');
-        continue;
-      }
-
-      final session = decoded['currentSession'];
-      final sessionMap = session is Map<String, dynamic> ? session : decoded;
-
-      final expiresAt = sessionMap['expires_at'] ?? sessionMap['expiresAt'];
-      final accessToken = sessionMap['access_token'] ?? sessionMap['accessToken'];
-      final refreshToken = sessionMap['refresh_token'] ?? sessionMap['refreshToken'];
-      final tokenType = sessionMap['token_type'] ?? sessionMap['tokenType'];
-
-      final user = sessionMap['user'];
-      final userId = user is Map<String, dynamic> ? user['id'] : null;
-
-      final valid = expiresAt != null &&
-          accessToken != null &&
-          refreshToken != null &&
-          tokenType != null &&
-          userId != null;
-
-      if (!valid) {
-        storage.remove(key);
-        _safeLog('Removed invalid auth storage key: $key');
-      }
-    }
-  } catch (e) {
-    _safeLog('Skipped auth storage sanitize: ${_safeStr(e)}');
-  }
-}
-
 Map<String, dynamic>? _tryDecodeMap(String raw) {
   try {
     final parsed = jsonDecode(raw);
