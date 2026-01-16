@@ -127,54 +127,54 @@ Future<void> _initializeApp() async {
       ),
       realtimeClientOptions: const RealtimeClientOptions(eventsPerSecond: 2),
     );
+    
+    if (kIsWeb) {
+      try {
+        if (Supabase.instance.client.auth.currentSession != null) {
+          html.window.localStorage.remove('statusxp_logged_out');
+        }
+      } catch (e) {
+        _safeLog('Error clearing logout flag: ${_safeStr(e)}');
+      }
+    }
+
+    authRefreshService = AuthRefreshService(Supabase.instance.client);
+
+    if (Supabase.instance.client.auth.currentSession != null) {
+      authRefreshService.startPeriodicRefresh();
+    }
+
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      try {
+        final event = data.event;
+        final session = data.session;
+
+        if (event == AuthChangeEvent.signedIn && session != null) {
+          authRefreshService.startPeriodicRefresh();
+          _syncBiometricSessionIfNeeded(session);
+        } else if (event == AuthChangeEvent.signedOut) {
+          authRefreshService.stopPeriodicRefresh();
+        }
+        // ignore tokenRefreshed to avoid loops
+      } catch (e, stack) {
+        _safeLog('⚠️ Error in auth state change listener: ${_safeStr(e)}');
+        _safeLog('Stack: ${_safeStr(stack)}');
+      }
+    });
   } catch (e) {
     _safeLog('Supabase initialization error (likely corrupt session): ${_safeStr(e)}');
     // Clear ALL storage and force clean restart
     if (kIsWeb) {
       try {
         html.window.localStorage.clear();
-        _safeLog('Cleared all storage due to initialization error - please refresh');
+        _safeLog('Cleared all storage due to initialization error - page will reload');
       } catch (clearError) {
         _safeLog('Failed to clear storage: ${_safeStr(clearError)}');
       }
     }
-    // Don't rethrow - app can continue without session
-    return;
+    // App will continue to load without authentication - user will see login screen
+    _safeLog('App loading without session - user will need to login');
   }
-
-  if (kIsWeb) {
-    try {
-      if (Supabase.instance.client.auth.currentSession != null) {
-        html.window.localStorage.remove('statusxp_logged_out');
-      }
-    } catch (e) {
-      _safeLog('Error clearing logout flag: ${_safeStr(e)}');
-    }
-  }
-
-  authRefreshService = AuthRefreshService(Supabase.instance.client);
-
-  if (Supabase.instance.client.auth.currentSession != null) {
-    authRefreshService.startPeriodicRefresh();
-  }
-
-  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-    try {
-      final event = data.event;
-      final session = data.session;
-
-      if (event == AuthChangeEvent.signedIn && session != null) {
-        authRefreshService.startPeriodicRefresh();
-        _syncBiometricSessionIfNeeded(session);
-      } else if (event == AuthChangeEvent.signedOut) {
-        authRefreshService.stopPeriodicRefresh();
-      }
-      // ignore tokenRefreshed to avoid loops
-    } catch (e, stack) {
-      _safeLog('⚠️ Error in auth state change listener: ${_safeStr(e)}');
-      _safeLog('Stack: ${_safeStr(stack)}');
-    }
-  });
 
   if (!kIsWeb) {
     await SubscriptionService().initialize();
