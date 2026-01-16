@@ -138,12 +138,15 @@ Future<void> _initializeApp() async {
         _safeLog('Failed to clear storage: ${_safeStr(clearError)}');
       }
     }
-    rethrow;
+    // Don't rethrow - app can continue without session
+    return;
   }
 
-  if (kIsWeb && Supabase.instance.client.auth.currentSession != null) {
+  if (kIsWeb) {
     try {
-      html.window.localStorage.remove('statusxp_logged_out');
+      if (Supabase.instance.client.auth.currentSession != null) {
+        html.window.localStorage.remove('statusxp_logged_out');
+      }
     } catch (e) {
       _safeLog('Error clearing logout flag: ${_safeStr(e)}');
     }
