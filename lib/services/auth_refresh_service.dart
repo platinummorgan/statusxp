@@ -90,6 +90,19 @@ class AuthRefreshService {
       } catch (e) {
         retryCount++;
         
+        // Check if it's an invalid/expired refresh token error
+        if (e.toString().contains('refresh_token_not_found') || 
+            e.toString().contains('Invalid Refresh Token') ||
+            e.toString().contains('invalid_grant')) {
+          print('Invalid refresh token detected, signing out...');
+          try {
+            await _client.auth.signOut();
+          } catch (signOutError) {
+            print('Error during forced sign out: $signOutError');
+          }
+          return;
+        }
+        
         // Check if it's a network error
         if (e.toString().contains('SocketException') || 
             e.toString().contains('Failed host lookup') ||

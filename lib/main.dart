@@ -137,6 +137,25 @@ Future<void> _initializeApp() async {
         _safeLog('Error clearing logout flag: ${_safeStr(e)}');
       }
     }
+    
+    // Check if we have a session but it's invalid (corrupt refresh token)
+    if (Supabase.instance.client.auth.currentSession != null) {
+      try {
+        // Try to refresh to validate the session
+        await Supabase.instance.client.auth.refreshSession();
+      } catch (e) {
+        // If refresh fails with invalid token error, clear the corrupt session
+        if (e.toString().contains('refresh_token_not_found') || 
+            e.toString().contains('Invalid Refresh Token')) {
+          _safeLog('🔄 Detected corrupt refresh token, clearing session...');
+          try {
+            await Supabase.instance.client.auth.signOut();
+          } catch (signOutError) {
+            _safeLog('Error during forced sign out: ${_safeStr(signOutError)}');
+          }
+        }
+      }
+    }
 
     authRefreshService = AuthRefreshService(Supabase.instance.client);
 
