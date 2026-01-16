@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:statusxp/ui/screens/auth/auth_gate.dart';
 import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
-import 'package:statusxp/ui/screens/dashboard_screen.dart';
 import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
 import 'package:statusxp/ui/screens/games_list_screen.dart';
 import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
@@ -56,18 +55,11 @@ final GoRouter appRouter = GoRouter(
     ShellRoute(
       builder: (context, state, child) => AuthGate(child: child),
       routes: [
-        // Dashboard - Home screen (NEW cross-platform version)
+        // Dashboard - Home screen
         GoRoute(
           path: '/',
           name: 'dashboard',
           builder: (context, state) => const NewDashboardScreen(),
-        ),
-
-        // Old Dashboard - Legacy single-platform view
-        GoRoute(
-          path: '/dashboard-legacy',
-          name: 'dashboard-legacy',
-          builder: (context, state) => const DashboardScreen(),
         ),
 
         // Games List - View all tracked games

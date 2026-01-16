@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
+import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
+import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,19 +24,126 @@ class NewDashboardScreen extends ConsumerStatefulWidget {
   ConsumerState<NewDashboardScreen> createState() => _NewDashboardScreenState();
 }
 
-class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
+class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
+    with TickerProviderStateMixin {
   bool _showStatusXPHint = false;
   bool _isAutoSyncing = false;
+  
+  // Animation controllers for counting effects
+  late AnimationController _statusXPController;
+  late AnimationController _platformsController;
+  late AnimationController _entranceController;
+  late AnimationController _shimmerController;
+  late Animation<double> _statusXPAnimation;
+  late Animation<double> _platformsAnimation;
+  late Animation<double> _userHeaderAnimation;
+  late Animation<double> _statusXPCircleAnimation;
+  late Animation<double> _platformCirclesAnimation;
+  late Animation<Offset> _userHeaderSlide;
+  late Animation<Offset> _statusXPCircleSlide;
+  late Animation<Offset> _platformCirclesSlide;
+  late Animation<double> _shimmerAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize animation controllers
+    _statusXPController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    
+    _platformsController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    
+    _entranceController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 4000),
+      vsync: this,
+    )..repeat(); // Continuously loop
+    
+    _statusXPAnimation = CurvedAnimation(
+      parent: _statusXPController,
+      curve: Curves.easeOutCubic,
+    );
+    
+    _platformsAnimation = CurvedAnimation(
+      parent: _platformsController,
+      curve: Curves.easeOutCubic,
+    );
+    
+    _shimmerAnimation = Tween<double>(
+      begin: -2.0,
+      end: 2.0,
+    ).animate(CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // Staggered entrance animations
+    _userHeaderAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+    );
+    
+    _statusXPCircleAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
+    );
+    
+    _platformCirclesAnimation = CurvedAnimation(
+      parent: _entranceController,
+      curve: const Interval(0.4, 0.7, curve: Curves.easeOut),
+    );
+    
+    // Slide animations
+    _userHeaderSlide = Tween<Offset>(
+      begin: const Offset(0, -0.3),
+      end: Offset.zero,
+    ).animate(_userHeaderAnimation);
+    
+    _statusXPCircleSlide = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(_statusXPCircleAnimation);
+    
+    _platformCirclesSlide = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(_platformCirclesAnimation);
+    
     _checkIfShouldShowHint();
     // Refresh data when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(dashboardStatsProvider);
       _checkAndTriggerAutoSync();
+      // Start animations after a short delay
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _entranceController.forward();
+          _statusXPController.forward();
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (mounted) _platformsController.forward();
+          });
+        }
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _statusXPController.dispose();
+    _platformsController.dispose();
+    _entranceController.dispose();
+    _shimmerController.dispose();
+    super.dispose();
   }
 
   @override
@@ -182,45 +292,150 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
     ThemeData theme,
     DashboardStats stats,
   ) {
-    return Container(
-      decoration: CyberpunkTheme.gradientBackground(),
-      child: RefreshIndicator(
-        onRefresh: () async {
-          ref.refreshCoreData();
-          await Future.delayed(const Duration(milliseconds: 500));
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Username header with avatar
-                  _buildUserHeader(context, theme, stats),
+    final gamesAsync = ref.watch(unifiedGamesProvider);
+    
+    return Stack(
+      children: [
+        // Dynamic background from latest game
+        _buildDynamicBackground(gamesAsync),
+        
+        // Content overlay
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.1),
+                Colors.black.withOpacity(0.2),
+                Colors.black.withOpacity(0.4),
+              ],
+            ),
+          ),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.refreshCoreData();
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Username header with avatar - animated entrance
+                      SlideTransition(
+                        position: _userHeaderSlide,
+                        child: FadeTransition(
+                          opacity: _userHeaderAnimation,
+                          child: _buildUserHeader(context, theme, stats),
+                        ),
+                      ),
 
-                  const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                  // StatusXP large circle (center top)
-                  _buildStatusXPCircle(stats.totalStatusXP),
+                      // StatusXP large circle (center top) - animated entrance
+                      SlideTransition(
+                        position: _statusXPCircleSlide,
+                        child: FadeTransition(
+                          opacity: _statusXPCircleAnimation,
+                          child: _buildStatusXPCircle(stats.totalStatusXP),
+                        ),
+                      ),
 
-                  const SizedBox(height: 32),
+                      const SizedBox(height: 32),
 
-                  // Platform circles row
-                  _buildPlatformCircles(stats),
+                      // Platform circles row - animated entrance
+                      SlideTransition(
+                        position: _platformCirclesSlide,
+                        child: FadeTransition(
+                          opacity: _platformCirclesAnimation,
+                          child: _buildPlatformCircles(stats),
+                        ),
+                      ),
 
-                  const SizedBox(height: 40),
+                      const SizedBox(height: 40),
 
-                  // Quick Actions
-                  _buildQuickActions(context),
-                ],
+                      // Quick Actions Dropdown
+                      _buildQuickActionsDropdown(context),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // My Games Section
+                      Text(
+                        'MY GAMES',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.55),
+                          letterSpacing: 2.5,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 18),
+                      
+                      // Embedded Games List
+                      _buildEmbeddedGamesList(context),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildDynamicBackground(AsyncValue<List<UnifiedGame>> gamesAsync) {
+    return gamesAsync.when(
+      loading: () => Container(color: const Color(0xFF0A0E27)),
+      error: (_, __) => Container(color: const Color(0xFF0A0E27)),
+      data: (games) {
+        if (games.isEmpty) {
+          return Container(color: const Color(0xFF0A0E27));
+        }
+
+        // Find the game with the most recent trophy/achievement
+        UnifiedGame? latestGame;
+        DateTime? latestTime;
+
+        for (final game in games) {
+          final gameTime = game.getMostRecentTrophyTime();
+          if (gameTime != null) {
+            if (latestTime == null || gameTime.isAfter(latestTime)) {
+              latestTime = gameTime;
+              latestGame = game;
+            }
+          }
+        }
+
+        // Use cover art if available
+        if (latestGame?.coverUrl != null) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.network(
+                latestGame!.coverUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0A0E27)),
+              ),
+              // Blur effect
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                child: Container(
+                  color: Colors.transparent,
+                ),
+              ),
+            ],
+          );
+        }
+
+        return Container(color: const Color(0xFF0A0E27));
+      },
     );
   }
 
@@ -302,51 +517,66 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Container(
-            width: 220,
-            height: 220,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: CyberpunkTheme.neonPurple, width: 4),
-              boxShadow: [
-                BoxShadow(
-                  color: CyberpunkTheme.neonPurple.withOpacity(0.5),
-                  blurRadius: 30,
-                  spreadRadius: 5,
+          Stack(
+            children: [
+              Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withOpacity(0.7),
+                  border: Border.all(color: CyberpunkTheme.neonPurple, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: CyberpunkTheme.neonPurple.withOpacity(0.6),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'StatusXP',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _formatNumber(totalStatusXP.toInt()),
-                  style: TextStyle(
-                    color: CyberpunkTheme.neonPurple,
-                    fontSize: 48,
-                    fontWeight: FontWeight.w900,
-                    height: 1.0,
-                    shadows: [
-                      ...CyberpunkTheme.neonGlow(
-                        color: CyberpunkTheme.neonPurple,
-                        blurRadius: 12,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'StatusXP',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.5,
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedBuilder(
+                      animation: _statusXPAnimation,
+                      builder: (context, child) {
+                    final animatedValue = (totalStatusXP * _statusXPAnimation.value).toInt();
+                    return Text(
+                      _formatNumber(animatedValue),
+                      style: TextStyle(
+                        color: CyberpunkTheme.neonPurple,
+                        fontSize: 48,
+                        fontWeight: FontWeight.w900,
+                        height: 1.0,
+                        shadows: [
+                          ...CyberpunkTheme.neonGlow(
+                            color: CyberpunkTheme.neonPurple,
+                            blurRadius: 12,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
           ),
+          // Shimmer effect overlay
+          Positioned.fill(
+            child: _buildShimmer(size: 220),
+          ),
+        ],
+      ),
           // One-time hint badge
           if (_showStatusXPHint)
             Positioned(
@@ -448,15 +678,18 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
   }) {
     return Column(
       children: [
-        Container(
-          width: 110,
-          height: 110,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: color, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.3),
+        Stack(
+          children: [
+            Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.7),
+                border: Border.all(color: color, width: 3),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.5),
                 blurRadius: 15,
                 spreadRadius: 2,
               ),
@@ -476,17 +709,24 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  height: 1.0,
-                  shadows: [
-                    Shadow(color: color.withOpacity(0.6), blurRadius: 8),
-                  ],
-                ),
+              AnimatedBuilder(
+                animation: _platformsAnimation,
+                builder: (context, child) {
+                  final numValue = int.tryParse(value.replaceAll(',', '')) ?? 0;
+                  final animatedValue = (numValue * _platformsAnimation.value).toInt();
+                  return Text(
+                    _formatNumber(animatedValue),
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      height: 1.0,
+                      shadows: [
+                        Shadow(color: color.withOpacity(0.6), blurRadius: 8),
+                      ],
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 2),
               Text(
@@ -500,44 +740,97 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
             ],
           ),
         ),
+            // Shimmer effect overlay
+            Positioned.fill(
+              child: _buildShimmer(size: 110),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
-        // AVG/GAME label below circle
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: color.withOpacity(0.3), width: 1),
-          ),
-          child: Column(
-            children: [
-              Text(
-                'AVG/GAME',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 8,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8,
+        // AVG/GAME label below circle with shimmer
+        Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: color.withOpacity(0.5), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'AVG/GAME',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 8,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  AnimatedBuilder(
+                    animation: _platformsAnimation,
+                    builder: (context, child) {
+                      final numValue = int.tryParse(bottomLabel.split(' ')[0]) ?? 0;
+                      final animatedValue = (numValue * _platformsAnimation.value).toInt();
+                      return Text(
+                        animatedValue.toString(),
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+            // Shimmer effect on the box
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: AnimatedBuilder(
+                  animation: _shimmerAnimation,
+                  builder: (context, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          stops: [
+                            _shimmerAnimation.value - 0.3,
+                            _shimmerAnimation.value,
+                            _shimmerAnimation.value + 0.3,
+                          ],
+                          colors: [
+                            Colors.transparent,
+                            Colors.white.withOpacity(0.15),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-              Text(
-                bottomLabel.split(' ')[0], // Just the number
-                style: TextStyle(
-                  color: color,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildQuickActionsDropdown(BuildContext context) {
+    return Row(
       children: [
         Text(
           'QUICK ACTIONS',
@@ -548,126 +841,463 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
-
-        const SizedBox(height: 16),
-
-        _buildActionButton(
-          label: 'View Games',
-          icon: Icons.videogame_asset,
-          onTap: () {
+        const Spacer(),
+        PopupMenuButton<String>(
+          onSelected: (String value) {
             HapticFeedback.lightImpact();
-            context.push('/unified-games');
+            context.push(value);
           },
-        ),
-
-        const SizedBox(height: 12),
-
-        _buildActionButton(
-          label: 'Browse All Games',
-          icon: Icons.explore,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push('/games/browse');
-          },
-        ),
-
-        const SizedBox(height: 12),
-
-        _buildActionButton(
-          label: 'Status Poster',
-          icon: Icons.image,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push('/poster');
-          },
-        ),
-
-        const SizedBox(height: 12),
-
-        _buildActionButton(
-          label: 'Flex Room',
-          icon: Icons.emoji_events,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push('/flex-room');
-          },
-        ),
-
-        const SizedBox(height: 12),
-
-        _buildActionButton(
-          label: 'Find Co-op Partners',
-          icon: Icons.handshake,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push('/coop-partners');
-          },
-        ),
-
-        const SizedBox(height: 12),
-
-        _buildActionButton(
-          label: 'Achievements',
-          icon: Icons.stars,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push('/achievements');
-          },
-        ),
-
-        const SizedBox(height: 12),
-
-        _buildActionButton(
-          label: 'Leaderboards',
-          icon: Icons.leaderboard,
-          onTap: () {
-            HapticFeedback.lightImpact();
-            context.push('/leaderboards');
-          },
+          color: const Color(0xFF0A0E27),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.5), width: 1),
+          ),
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: '/games/browse',
+              child: Row(
+                children: [
+                  Icon(Icons.explore, color: CyberpunkTheme.neonGreen, size: 20),
+                  SizedBox(width: 12),
+                  Text('Browse All Games', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/poster',
+              child: Row(
+                children: [
+                  Icon(Icons.image, color: CyberpunkTheme.neonPink, size: 20),
+                  SizedBox(width: 12),
+                  Text('Status Poster', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/flex-room',
+              child: Row(
+                children: [
+                  Icon(Icons.emoji_events, color: CyberpunkTheme.neonPurple, size: 20),
+                  SizedBox(width: 12),
+                  Text('Flex Room', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/coop-partners',
+              child: Row(
+                children: [
+                  Icon(Icons.handshake, color: CyberpunkTheme.neonOrange, size: 20),
+                  SizedBox(width: 12),
+                  Text('Find Co-op Partners', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/achievements',
+              child: Row(
+                children: [
+                  Icon(Icons.stars, color: CyberpunkTheme.neonOrange, size: 20),
+                  SizedBox(width: 12),
+                  Text('Achievements', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/leaderboards',
+              child: Row(
+                children: [
+                  Icon(Icons.leaderboard, color: CyberpunkTheme.neonCyan, size: 20),
+                  SizedBox(width: 12),
+                  Text('Leaderboards', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+          ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: CyberpunkTheme.neonCyan.withOpacity(0.5), width: 1.5),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.more_horiz, color: CyberpunkTheme.neonCyan, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'More',
+                  style: TextStyle(
+                    color: CyberpunkTheme.neonCyan,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: CyberpunkTheme.glassLight,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: CyberpunkTheme.neonCyan.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: CyberpunkTheme.neonCyan, size: 20),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: CyberpunkTheme.neonCyan.withOpacity(0.5),
-              size: 16,
-            ),
-          ],
+  Widget _buildEmbeddedGamesList(BuildContext context) {
+    final gamesAsync = ref.watch(unifiedGamesProvider);
+
+    return gamesAsync.when(
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32.0),
+          child: CircularProgressIndicator(),
         ),
       ),
+      error: (error, stack) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading games: $error',
+                style: const TextStyle(color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (games) {
+        if (games.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Text(
+                'No games yet. Sync your platforms to get started!',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        final displayGames = games.take(20).toList();
+
+        return Column(
+          children: [
+            ...displayGames.map((game) => _buildGameCard(context, game)),
+            if (games.length > 20)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: TextButton(
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    context.push('/unified-games');
+                  },
+                  child: Text(
+                    'View All ${games.length} Games →',
+                    style: const TextStyle(
+                      color: CyberpunkTheme.neonCyan,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildGameCard(BuildContext context, UnifiedGame game) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: const Color(0xFF0A0E27).withOpacity(0.8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => _handleGameTap(context, game),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: game.coverUrl != null
+                    ? Image.network(
+                        game.coverUrl!,
+                        width: 80,
+                        height: 80,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildPlaceholderCover(),
+                      )
+                    : _buildPlaceholderCover(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      game.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    _buildPlatformPills(game),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderCover() {
+    return Container(
+      width: 80,
+      height: 80,
+      color: Colors.black38,
+      child: const Icon(Icons.videogame_asset, color: Colors.white24, size: 40),
+    );
+  }
+
+  Widget _buildPlatformPills(UnifiedGame game) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: game.platforms.map((platform) {
+        return _buildPlatformPill(platform);
+      }).toList(),
+    );
+  }
+
+  Widget _buildPlatformPill(PlatformGameData platform) {
+    Color color;
+    String label;
+    
+    final platformLower = platform.platform.toLowerCase();
+    final platformOriginal = platform.platform;
+    
+    if (platformLower.contains('ps') || platformLower == 'playstation') {
+      color = const Color(0xFF00A8E1);
+      if (platformOriginal.toUpperCase().contains('PS4')) {
+        label = 'PS4';
+      } else if (platformOriginal.toUpperCase().contains('PS5')) {
+        label = 'PS5';
+      } else if (platformOriginal.toUpperCase().contains('PS3')) {
+        label = 'PS3';
+      } else if (platformOriginal.toUpperCase().contains('VITA')) {
+        label = 'PSVITA';
+      } else {
+        label = 'PS';
+      }
+    } else if (platformLower.contains('xbox')) {
+      color = const Color(0xFF107C10);
+      if (platformOriginal.toUpperCase().contains('360')) {
+        label = 'X360';
+      } else if (platformOriginal.toUpperCase().contains('ONE')) {
+        label = 'XONE';
+      } else if (platformOriginal.toUpperCase().contains('SERIES')) {
+        label = 'XSX';
+      } else {
+        label = 'XBOX';
+      }
+    } else if (platformLower.contains('steam')) {
+      color = const Color(0xFF66C0F4);
+      label = 'Steam';
+    } else {
+      color = Colors.grey;
+      label = platform.platform.toUpperCase();
+    }
+
+    final completion = platform.completion.toStringAsFixed(0);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color, width: 1.5),
+      ),
+      child: Text(
+        '$label ${platform.achievementsEarned}/${platform.achievementsTotal} • $completion%',
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  void _handleGameTap(BuildContext context, UnifiedGame game) {
+    if (game.platforms.length == 1) {
+      final platform = game.platforms.first;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => GameAchievementsScreen(
+            gameId: platform.gameId,
+            gameName: game.title,
+            platform: platform.platform,
+            coverUrl: game.coverUrl,
+          ),
+        ),
+      );
+    } else {
+      _showPlatformSelectionDialog(context, game);
+    }
+  }
+
+  void _showPlatformSelectionDialog(BuildContext context, UnifiedGame game) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: const Color(0xFF0A0E27),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: CyberpunkTheme.neonCyan, width: 2),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Select Platform',
+                  style: TextStyle(
+                    color: CyberpunkTheme.neonCyan,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  game.title,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 20),
+                ...game.platforms.map((platform) {
+                  Color platformColor;
+                  IconData platformIcon;
+                  String platformLabel;
+
+                  final platformCode = platform.platform.toLowerCase();
+                  if (platformCode.contains('ps') || platformCode == 'playstation') {
+                    platformColor = const Color(0xFF0070CC);
+                    platformIcon = Icons.sports_esports;
+                    platformLabel = 'PlayStation';
+                  } else if (platformCode.contains('xbox')) {
+                    platformColor = const Color(0xFF107C10);
+                    platformIcon = Icons.videogame_asset;
+                    platformLabel = 'Xbox';
+                  } else if (platformCode.contains('steam')) {
+                    platformColor = const Color(0xFF1B2838);
+                    platformIcon = Icons.store;
+                    platformLabel = 'Steam';
+                  } else {
+                    platformColor = Colors.grey;
+                    platformIcon = Icons.gamepad;
+                    platformLabel = platform.platform;
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => GameAchievementsScreen(
+                              gameId: platform.gameId,
+                              gameName: game.title,
+                              platform: platform.platform,
+                              coverUrl: game.coverUrl,
+                            ),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: platformColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: platformColor, width: 2),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(platformIcon, color: platformColor, size: 32),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    platformLabel,
+                                    style: TextStyle(
+                                      color: platformColor,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${platform.achievementsEarned}/${platform.achievementsTotal} • ${platform.completion.toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.arrow_forward_ios, color: platformColor, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: CyberpunkTheme.neonCyan,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -844,6 +1474,37 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+  
+  /// Shimmer effect overlay for circles
+  Widget _buildShimmer({required double size}) {
+    return AnimatedBuilder(
+      animation: _shimmerAnimation,
+      builder: (context, child) {
+        return ClipOval(
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: [
+                  _shimmerAnimation.value - 0.3,
+                  _shimmerAnimation.value,
+                  _shimmerAnimation.value + 0.3,
+                ],
+                colors: [
+                  Colors.transparent,
+                  Colors.white.withOpacity(0.15),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
