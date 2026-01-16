@@ -14,14 +14,12 @@ import 'package:statusxp/ui/screens/achievements_screen.dart';
 import 'package:statusxp/ui/screens/psn/psn_sync_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_sync_screen.dart';
 import 'package:statusxp/ui/screens/status_poster_screen.dart';
-import 'package:statusxp/ui/screens/trophy_room_screen.dart';
 import 'package:statusxp/ui/screens/settings_screen.dart';
 import 'package:statusxp/ui/screens/landing_page_screen.dart';
 import 'package:statusxp/ui/screens/premium_success_screen.dart';
 import 'package:statusxp/ui/screens/coop_partners_screen.dart';
 import 'package:statusxp/ui/screens/trophy_help_request_details_screen.dart';
 import 'package:statusxp/ui/screens/achievement_comments_screen.dart';
-import 'package:statusxp/features/display_case/screens/display_case_screen.dart';
 
 /// StatusXP App Router Configuration
 /// 
@@ -131,20 +129,6 @@ final GoRouter appRouter = GoRouter(
           path: '/xbox-sync',
           name: 'xbox-sync',
           builder: (context, state) => const XboxSyncScreen(),
-        ),
-
-        // Trophy Room - Achievement showcase
-        GoRoute(
-          path: '/trophy-room',
-          name: 'trophy-room',
-          builder: (context, state) => const TrophyRoomScreen(),
-        ),
-
-        // Display Case - Trophy showcase and achievements display
-        GoRoute(
-          path: '/display-case',
-          name: 'display-case',
-          builder: (context, state) => const DisplayCaseScreen(),
         ),
 
         // Flex Room - Cross-platform achievement showcase

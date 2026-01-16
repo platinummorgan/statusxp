@@ -1,12 +1,15 @@
 import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/unified_game.dart';
+import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
@@ -28,6 +31,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     with TickerProviderStateMixin {
   bool _showStatusXPHint = false;
   bool _isAutoSyncing = false;
+  String? _backgroundMode; // 'auto', 'shuffle', game title, or 'custom:url'
+  String? _customBackgroundUrl; // URL of custom uploaded image
+  int? _shuffleSeed; // Store shuffle seed to prevent changing on scroll
+  bool _isUploadingCustom = false;
+  
+  final SubscriptionService _subscriptionService = SubscriptionService();
+  
+  // Scroll controller for parallax effect
+  final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0.0;
   
   // Animation controllers for counting effects
   late AnimationController _statusXPController;
@@ -119,7 +132,17 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       end: Offset.zero,
     ).animate(_platformCirclesAnimation);
     
+    // Listen to scroll for parallax effect
+    _scrollController.addListener(() {
+      setState(() {
+        _scrollOffset = _scrollController.offset;
+      });
+    });
+    
     _checkIfShouldShowHint();
+    _loadBackgroundMode();
+    // Generate shuffle seed once on load
+    _shuffleSeed = DateTime.now().millisecondsSinceEpoch;
     // Refresh data when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(dashboardStatsProvider);
@@ -139,6 +162,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _statusXPController.dispose();
     _platformsController.dispose();
     _entranceController.dispose();
@@ -169,6 +193,34 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     if (mounted) {
       setState(() {
         _showStatusXPHint = false;
+      });
+    }
+  }
+  
+  Future<void> _loadBackgroundMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final mode = prefs.getString('background_mode') ?? 'auto';
+    final customUrl = prefs.getString('custom_background_url');
+    if (mounted) {
+      setState(() {
+        _backgroundMode = mode;
+        _customBackgroundUrl = customUrl;
+      });
+    }
+  }
+  
+  Future<void> _setBackgroundMode(String mode, {String? customUrl}) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('background_mode', mode);
+    if (customUrl != null) {
+      await prefs.setString('custom_background_url', customUrl);
+    }
+    if (mounted) {
+      setState(() {
+        _backgroundMode = mode;
+        if (customUrl != null) {
+          _customBackgroundUrl = customUrl;
+        }
       });
     }
   }
@@ -218,14 +270,58 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'StatusXP',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.5,
+        title: dashboardStatsAsync.maybeWhen(
+          data: (stats) => stats != null ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PsnAvatar(
+                avatarUrl: stats.avatarUrl,
+                isPsPlus: stats.displayPlatform == 'psn' ? stats.isPsPlus : false,
+                size: 32,
+                borderColor: CyberpunkTheme.neonCyan,
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    stats.displayName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    stats.displayPlatform.toUpperCase(),
+                    style: TextStyle(
+                      color: _getPlatformColor(stats.displayPlatform),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ) : const Text(
+            'StatusXP',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
+          ),
+          orElse: () => const Text(
+            'StatusXP',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
           ),
         ),
-        centerTitle: true,
+        centerTitle: false,
         actions: [
           if (kIsWeb) ...[
             Padding(
@@ -259,6 +355,13 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               ),
             ),
           ],
+          IconButton(
+            icon: const Icon(Icons.wallpaper_outlined),
+            tooltip: 'Change Background',
+            onPressed: () {
+              _showBackgroundPicker(context);
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             tooltip: 'Settings',
@@ -296,8 +399,13 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     
     return Stack(
       children: [
-        // Dynamic background from latest game
-        _buildDynamicBackground(gamesAsync),
+        // Dynamic background from latest game with parallax
+        Positioned.fill(
+          child: Transform.translate(
+            offset: Offset(0, -_scrollOffset * 0.5), // Move at half speed for parallax
+            child: _buildDynamicBackground(gamesAsync),
+          ),
+        ),
         
         // Content overlay
         Container(
@@ -314,10 +422,17 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           ),
           child: RefreshIndicator(
             onRefresh: () async {
+              // Generate new shuffle seed on manual refresh
+              if (_backgroundMode == 'shuffle') {
+                setState(() {
+                  _shuffleSeed = DateTime.now().millisecondsSinceEpoch;
+                });
+              }
               ref.refreshCoreData();
               await Future.delayed(const Duration(milliseconds: 500));
             },
             child: SingleChildScrollView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               child: SafeArea(
                 bottom: false,
@@ -326,16 +441,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Username header with avatar - animated entrance
-                      SlideTransition(
-                        position: _userHeaderSlide,
-                        child: FadeTransition(
-                          opacity: _userHeaderAnimation,
-                          child: _buildUserHeader(context, theme, stats),
-                        ),
-                      ),
-
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
 
                       // StatusXP large circle (center top) - animated entrance
                       SlideTransition(
@@ -359,20 +465,112 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
 
                       const SizedBox(height: 40),
 
-                      // Quick Actions Dropdown
-                      _buildQuickActionsDropdown(context),
-                      
-                      const SizedBox(height: 24),
-                      
-                      // My Games Section
-                      Text(
-                        'MY GAMES',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.55),
-                          letterSpacing: 2.5,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      // My Games Section with More dropdown
+                      Row(
+                        children: [
+                          Text(
+                            'MY GAMES',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.55),
+                              letterSpacing: 2.5,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          PopupMenuButton<String>(
+                            onSelected: (String value) {
+                              HapticFeedback.lightImpact();
+                              context.push(value);
+                            },
+                            color: const Color(0xFF0A0E27),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.5), width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'More',
+                                  style: TextStyle(
+                                    color: CyberpunkTheme.neonCyan,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_drop_down,
+                                  color: CyberpunkTheme.neonCyan,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
+                            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                              const PopupMenuItem<String>(
+                                value: '/games/browse',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.explore, color: CyberpunkTheme.neonGreen, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Browse All Games', style: TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: '/flex-room',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.workspace_premium, color: CyberpunkTheme.goldNeon, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Flex Room', style: TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: '/poster',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.image, color: CyberpunkTheme.neonPink, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Status Poster', style: TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: '/achievements',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.stars, color: CyberpunkTheme.neonOrange, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Achievements', style: TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: '/leaderboards',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.leaderboard, color: CyberpunkTheme.neonGreen, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Leaderboards', style: TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: '/coop-partners',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.group, color: CyberpunkTheme.neonCyan, size: 20),
+                                    SizedBox(width: 12),
+                                    Text('Co-op Partners', style: TextStyle(color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                       
                       const SizedBox(height: 18),
@@ -391,6 +589,40 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   }
 
   Widget _buildDynamicBackground(AsyncValue<List<UnifiedGame>> gamesAsync) {
+    // Handle none mode - plain background
+    if (_backgroundMode == 'none') {
+      return Container(color: const Color(0xFF0A0E27));
+    }
+    
+    // Handle custom background first
+    if (_backgroundMode == 'custom' && _customBackgroundUrl != null) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          // Custom image from device
+          if (kIsWeb)
+            Image.network(
+              _customBackgroundUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0A0E27)),
+            )
+          else
+            Image.file(
+              File(_customBackgroundUrl!),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0A0E27)),
+            ),
+          // Blur effect
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
+            child: Container(
+              color: Colors.transparent,
+            ),
+          ),
+        ],
+      );
+    }
+    
     return gamesAsync.when(
       loading: () => Container(color: const Color(0xFF0A0E27)),
       error: (_, __) => Container(color: const Color(0xFF0A0E27)),
@@ -399,33 +631,59 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           return Container(color: const Color(0xFF0A0E27));
         }
 
-        // Find the game with the most recent trophy/achievement
-        UnifiedGame? latestGame;
-        DateTime? latestTime;
-
-        for (final game in games) {
-          final gameTime = game.getMostRecentTrophyTime();
-          if (gameTime != null) {
-            if (latestTime == null || gameTime.isAfter(latestTime)) {
-              latestTime = gameTime;
-              latestGame = game;
+        UnifiedGame? backgroundGame;
+        
+        // Determine which game to show based on mode
+        if (_backgroundMode == 'shuffle') {
+          // Random game using consistent seed (doesn't change on scroll)
+          final random = (_shuffleSeed ?? 0) % games.length;
+          backgroundGame = games[random];
+        } else if (_backgroundMode == 'auto' || _backgroundMode == null) {
+          // Most recent game (default)
+          DateTime? latestTime;
+          for (final game in games) {
+            final gameTime = game.getMostRecentTrophyTime();
+            if (gameTime != null) {
+              if (latestTime == null || gameTime.isAfter(latestTime)) {
+                latestTime = gameTime;
+                backgroundGame = game;
+              }
+            }
+          }
+        } else {
+          // Specific pinned game
+          try {
+            backgroundGame = games.firstWhere(
+              (game) => game.title == _backgroundMode,
+            );
+          } catch (_) {
+            // Pinned game not found, fall back to most recent
+            DateTime? latestTime;
+            for (final game in games) {
+              final gameTime = game.getMostRecentTrophyTime();
+              if (gameTime != null) {
+                if (latestTime == null || gameTime.isAfter(latestTime)) {
+                  latestTime = gameTime;
+                  backgroundGame = game;
+                }
+              }
             }
           }
         }
 
         // Use cover art if available
-        if (latestGame?.coverUrl != null) {
+        if (backgroundGame?.coverUrl != null) {
           return Stack(
             fit: StackFit.expand,
             children: [
               Image.network(
-                latestGame!.coverUrl!,
+                backgroundGame!.coverUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0A0E27)),
               ),
               // Blur effect
               BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                filter: ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
                 child: Container(
                   color: Colors.transparent,
                 ),
@@ -832,15 +1090,6 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   Widget _buildQuickActionsDropdown(BuildContext context) {
     return Row(
       children: [
-        Text(
-          'QUICK ACTIONS',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.55),
-            letterSpacing: 2.5,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
         const Spacer(),
         PopupMenuButton<String>(
           onSelected: (String value) {
@@ -1503,6 +1752,415 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+  
+  Widget _buildModeButton({
+    required IconData icon,
+    required String label,
+    required String description,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? CyberpunkTheme.neonPurple.withOpacity(0.2)
+              : Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected 
+                ? CyberpunkTheme.neonPurple 
+                : Colors.white.withOpacity(0.2),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+              blurRadius: 8,
+            ),
+          ] : null,
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? CyberpunkTheme.neonPurple : Colors.white70,
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? CyberpunkTheme.neonPurple : Colors.white,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white.withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _uploadCustomBackground(BuildContext context) async {
+    // Check if user has premium
+    final isPremium = await _subscriptionService.isPremiumActive();
+    
+    if (!isPremium) {
+      // Show premium required dialog
+      if (!context.mounted) return;
+      
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1F3A),
+          title: Row(
+            children: [
+              const Icon(Icons.star, color: CyberpunkTheme.goldNeon),
+              const SizedBox(width: 8),
+              const Text(
+                'Premium Feature',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Custom background uploads are a Premium feature. Upgrade to Premium to use your own photos and screenshots as your dashboard background!',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Maybe Later'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.push('/premium-subscription');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: CyberpunkTheme.neonPurple,
+              ),
+              child: const Text('Upgrade to Premium'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    
+    // Premium user - proceed with image picker
+    setState(() => _isUploadingCustom = true);
+    
+    try {
+      final ImagePicker picker = ImagePicker();
+      
+      // Show bottom sheet for gallery vs camera
+      if (!context.mounted) return;
+      
+      final ImageSource? source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        backgroundColor: const Color(0xFF0A0E27),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Choose Image Source',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Optimal: 1080x1920 (9:16 portrait)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: CyberpunkTheme.neonPurple),
+                title: const Text('Gallery', style: TextStyle(color: Colors.white)),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              if (!kIsWeb) // Camera only available on mobile
+                ListTile(
+                  leading: const Icon(Icons.camera_alt, color: CyberpunkTheme.neonCyan),
+                  title: const Text('Camera', style: TextStyle(color: Colors.white)),
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                ),
+            ],
+          ),
+        ),
+      );
+      
+      if (source == null) {
+        setState(() => _isUploadingCustom = false);
+        return;
+      }
+      
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+      
+      if (image == null) {
+        setState(() => _isUploadingCustom = false);
+        return;
+      }
+      
+      // Save the image path locally
+      await _setBackgroundMode('custom', customUrl: image.path);
+      
+      setState(() => _isUploadingCustom = false);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Custom background set successfully!'),
+            backgroundColor: CyberpunkTheme.neonPurple,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isUploadingCustom = false);
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _showBackgroundPicker(BuildContext context) {
+    final gamesAsync = ref.read(unifiedGamesProvider);
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0A0E27),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return gamesAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => const Center(child: Text('Error loading games')),
+          data: (games) {
+            return Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.wallpaper, color: CyberpunkTheme.neonPurple),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Choose Background',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _backgroundMode == 'none'
+                        ? 'Plain background'
+                        : _backgroundMode == 'custom'
+                            ? 'Custom image selected'
+                            : _backgroundMode == 'shuffle' 
+                                ? 'Shuffling games randomly'
+                                : _backgroundMode == 'auto' || _backgroundMode == null
+                                    ? 'Showing most recent game'
+                                    : 'Specific game selected',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Mode selection buttons - First row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildModeButton(
+                          icon: Icons.block,
+                          label: 'None',
+                          description: 'Plain',
+                          isSelected: _backgroundMode == 'none',
+                          onTap: () {
+                            _setBackgroundMode('none');
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildModeButton(
+                          icon: Icons.history,
+                          label: 'Auto',
+                          description: 'Most Recent',
+                          isSelected: _backgroundMode == 'auto' || _backgroundMode == null,
+                          onTap: () {
+                            _setBackgroundMode('auto');
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildModeButton(
+                          icon: Icons.shuffle,
+                          label: 'Shuffle',
+                          description: 'Random',
+                          isSelected: _backgroundMode == 'shuffle',
+                          onTap: () {
+                            _setBackgroundMode('shuffle');
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Second row with Custom button
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildModeButton(
+                          icon: Icons.add_photo_alternate,
+                          label: 'Custom',
+                          description: 'Upload ⭐',
+                          isSelected: _backgroundMode == 'custom',
+                          onTap: () async {
+                            Navigator.pop(context);
+                            await _uploadCustomBackground(context);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(child: SizedBox()),
+                      const SizedBox(width: 12),
+                      const Expanded(child: SizedBox()),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Or pick a specific game:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.7,
+                      ),
+                      itemCount: games.length,
+                      itemBuilder: (context, index) {
+                        final game = games[index];
+                        final isSelected = game.title == _backgroundMode;
+                        
+                        return GestureDetector(
+                          onTap: () {
+                            _setBackgroundMode(game.title);
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isSelected 
+                                    ? CyberpunkTheme.neonPurple 
+                                    : Colors.white.withOpacity(0.2),
+                                width: isSelected ? 3 : 1,
+                              ),
+                              boxShadow: isSelected ? [
+                                BoxShadow(
+                                  color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                                  blurRadius: 12,
+                                ),
+                              ] : null,
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(11),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  if (game.coverUrl != null)
+                                    Image.network(
+                                      game.coverUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: Colors.grey.shade900,
+                                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                                      ),
+                                    )
+                                  else
+                                    Container(
+                                      color: Colors.grey.shade900,
+                                      child: const Icon(Icons.videogame_asset, color: Colors.grey),
+                                    ),
+                                  if (isSelected)
+                                    Container(
+                                      color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.check_circle,
+                                          color: Colors.white,
+                                          size: 40,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
