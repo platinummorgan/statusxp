@@ -894,6 +894,14 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               }
             }
             
+            // Still increment progress even on error
+            processedGames++;
+            const progress = Math.floor((processedGames / gamesWithProgress.length) * 100);
+            await supabase
+              .from('profiles')
+              .update({ xbox_sync_progress: progress })
+              .eq('id', userId);
+            
             // Continue with next game
           }
         }
