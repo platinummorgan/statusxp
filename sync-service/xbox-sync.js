@@ -589,7 +589,36 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
             }
             
-            const needsProcessing = isNewGame || countsChanged || needRarityRefresh || syncFailed;
+            // CRITICAL: Check if achievements are missing from user_achievements table
+            let missingAchievements = false;
+            if (!isNewGame && !countsChanged && !syncFailed && apiEarnedAchievements > 0) {
+              try {
+                const { data: gameAchievements } = await supabase
+                  .from('achievements')
+                  .select('id')
+                  .eq('game_title_id', gameTitle.id)
+                  .eq('platform', 'xbox');
+                
+                if (gameAchievements && gameAchievements.length > 0) {
+                  const achievementIds = gameAchievements.map(a => a.id);
+                  const { count: existingAchievementsCount } = await supabase
+                    .from('user_achievements')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', userId)
+                    .in('achievement_id', achievementIds);
+
+                  if (existingAchievementsCount === 0 || existingAchievementsCount < apiEarnedAchievements) {
+                    missingAchievements = true;
+                    console.log(`🔍 MISSING ACHIEVEMENTS: ${title.name} (DB: ${existingAchievementsCount}, API: ${apiEarnedAchievements})`);
+                  }
+                }
+              } catch (checkError) {
+                console.error(`⚠️ Error checking missing achievements for ${title.name}:`, checkError);
+                // Continue without the check - don't break the sync
+              }
+            }
+            
+            const needsProcessing = isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements;
             
             if (!needsProcessing) {
               console.log(`⏭️  Skip ${title.name} - no changes`);

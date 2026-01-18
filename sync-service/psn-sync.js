@@ -443,7 +443,36 @@ export async function syncPSNAchievements(
             needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
           }
           
-          const needTrophies = isNewGame || earnedChanged || needRarityRefresh || syncFailed;
+          // CRITICAL: Check if achievements are missing from user_achievements table
+          let missingAchievements = false;
+          if (!isNewGame && !earnedChanged && !syncFailed && apiEarnedTrophies > 0) {
+            try {
+              const { data: gameAchievements } = await supabase
+                .from('achievements')
+                .select('id')
+                .eq('game_title_id', gameTitle.id)
+                .eq('platform', 'psn');
+              
+              if (gameAchievements && gameAchievements.length > 0) {
+                const achievementIds = gameAchievements.map(a => a.id);
+                const { count: existingAchievementsCount } = await supabase
+                  .from('user_achievements')
+                  .select('*', { count: 'exact', head: true })
+                  .eq('user_id', userId)
+                  .in('achievement_id', achievementIds);
+
+                if (existingAchievementsCount === 0 || existingAchievementsCount < apiEarnedTrophies) {
+                  missingAchievements = true;
+                  console.log(`🔍 MISSING ACHIEVEMENTS: ${title.trophyTitleName} (DB: ${existingAchievementsCount}, API: ${apiEarnedTrophies})`);
+                }
+              }
+            } catch (checkError) {
+              console.error(`⚠️ Error checking missing achievements for ${title.trophyTitleName}:`, checkError);
+              // Continue without the check - don't break the sync
+            }
+          }
+          
+          const needTrophies = isNewGame || earnedChanged || needRarityRefresh || syncFailed || missingAchievements;
 
           if (!needTrophies) {
             console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
