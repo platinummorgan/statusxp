@@ -589,34 +589,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
             }
             
-            // CRITICAL: Check if achievements are missing from user_achievements table
-            // This catches cases where user_games exists but achievement records were deleted/missing
-            let missingAchievements = false;
-            if (!isNewGame && apiEarnedAchievements > 0) {
-              // First get achievement IDs for this game
-              const { data: gameAchievements } = await supabase
-                .from('achievements')
-                .select('id')
-                .eq('game_title_id', gameTitle.id)
-                .eq('platform', 'xbox');
-              
-              if (gameAchievements && gameAchievements.length > 0) {
-                const achievementIds = gameAchievements.map(a => a.id);
-                
-                const { count: existingAchievementsCount } = await supabase
-                  .from('user_achievements')
-                  .select('*', { count: 'exact', head: true })
-                  .eq('user_id', userId)
-                  .in('achievement_id', achievementIds);
-
-                if (existingAchievementsCount === 0 || existingAchievementsCount < apiEarnedAchievements) {
-                  missingAchievements = true;
-                  console.log(`🔍 MISSING ACHIEVEMENTS: ${title.name} (DB: ${existingAchievementsCount}, API: ${apiEarnedAchievements})`);
-                }
-              }
-            }
-            
-            const needsProcessing = isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements;
+            const needsProcessing = isNewGame || countsChanged || needRarityRefresh || syncFailed;
             
             if (!needsProcessing) {
               console.log(`⏭️  Skip ${title.name} - no changes`);
@@ -632,10 +605,6 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             if (syncFailed) {
               console.log(`🔄 RETRY FAILED SYNC: ${title.name} (previous sync failed)`);
-            }
-            
-            if (missingAchievements) {
-              console.log(`🔄 BACKFILL MISSING: ${title.name} (achievements missing from user_achievements table)`);
             }
 
             // Fetch ALL achievements for this title (handle pagination)

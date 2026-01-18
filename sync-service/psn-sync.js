@@ -443,34 +443,7 @@ export async function syncPSNAchievements(
             needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
           }
           
-          // CRITICAL: Check if achievements are missing from user_achievements table
-          // This catches cases where user_games exists but achievement records were deleted/missing
-          let missingAchievements = false;
-          if (!isNewGame && apiEarnedTrophies > 0) {
-            // First get achievement IDs for this game
-            const { data: gameAchievements } = await supabase
-              .from('achievements')
-              .select('id')
-              .eq('game_title_id', gameTitle.id)
-              .eq('platform', 'psn');
-            
-            if (gameAchievements && gameAchievements.length > 0) {
-              const achievementIds = gameAchievements.map(a => a.id);
-              
-              const { count: existingAchievementsCount } = await supabase
-                .from('user_achievements')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', userId)
-                .in('achievement_id', achievementIds);
-            
-              if (existingAchievementsCount === 0 || existingAchievementsCount < apiEarnedTrophies) {
-                missingAchievements = true;
-                console.log(`🔍 MISSING ACHIEVEMENTS: ${title.trophyTitleName} (DB: ${existingAchievementsCount}, API: ${apiEarnedTrophies})`);
-              }
-            }
-          }
-          
-          const needTrophies = isNewGame || earnedChanged || needRarityRefresh || syncFailed || missingAchievements;
+          const needTrophies = isNewGame || earnedChanged || needRarityRefresh || syncFailed;
 
           if (!needTrophies) {
             console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
@@ -487,13 +460,8 @@ export async function syncPSNAchievements(
           if (syncFailed) {
             console.log(`🔄 RETRY FAILED SYNC: ${title.trophyTitleName} (previous sync failed)`);
           }
-          
-          if (missingAchievements) {
-            console.log(`🔄 BACKFILL MISSING: ${title.trophyTitleName} (achievements missing from user_achievements table)`);
-          }
 
           console.log(`🔄 ${isNewGame ? 'NEW' : 'UPDATED'}: ${title.trophyTitleName} (earned: ${apiEarnedTrophies})`);
-
 
           if (!needTrophies) {
             // No changes detected - update user_games and skip trophy fetch
