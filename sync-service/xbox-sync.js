@@ -62,6 +62,56 @@ async function uploadExternalAvatar(externalUrl, userId, platform) {
   }
 }
 
+// Helper to download external achievement/game icon and upload to Supabase Storage
+async function uploadExternalIcon(externalUrl, iconId, platform, supabaseClient = supabase) {
+  if (!externalUrl) return null;
+  
+  try {
+    // Download the image from the external URL
+    const response = await fetch(externalUrl);
+    if (!response.ok) {
+      console.error(`[ICON STORAGE] Failed to download icon: ${response.status}`);
+      return externalUrl; // Return original URL as fallback
+    }
+
+    // Get the image data as a buffer
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Determine file extension from content type
+    const contentType = response.headers.get('content-type') || 'image/png';
+    let extension = 'png';
+    if (contentType.includes('jpeg') || contentType.includes('jpg')) extension = 'jpg';
+    else if (contentType.includes('gif')) extension = 'gif';
+    else if (contentType.includes('webp')) extension = 'webp';
+    
+    // Create a unique filename: platform/icons/iconId.ext
+    const filename = `${platform}/icons/${iconId}.${extension}`;
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabaseClient.storage
+      .from('game-assets')
+      .upload(filename, arrayBuffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (error) {
+      console.error('[ICON STORAGE] Upload error:', error);
+      return externalUrl; // Return original URL as fallback
+    }
+
+    // Get the public URL
+    const { data: { publicUrl } } = supabaseClient.storage
+      .from('game-assets')
+      .getPublicUrl(filename);
+
+    return publicUrl;
+  } catch (error) {
+    console.error('[ICON STORAGE] Exception:', error);
+    return externalUrl; // Return original URL as fallback
+  }
+}
+
 // Helper to safely update sync status with retries
 async function updateSyncStatus(userId, updates, retries = 3) {
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -792,20 +842,22 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
           } catch (error) {
             console.error(`Error processing title ${title.name}:`, error);
             
-            // Mark sync as failed for this game
-            try {
-              await supabase
-                .from('user_games')
-                .update({
-                  sync_failed: true,
-                  sync_error: (error.message || String(error)).substring(0, 255),
-                  last_sync_attempt: new Date().toISOString(),
-                })
-                .eq('user_id', userId)
-                .eq('game_title_id', gameTitle?.id)
-                .eq('platform_id', platform?.id);
-            } catch (updateErr) {
-              console.error('Failed to mark sync_failed:', updateErr);
+            // Mark sync as failed for this game (only if we have a gameTitle)
+            if (gameTitle?.id && platform?.id) {
+              try {
+                await supabase
+                  .from('user_games')
+                  .update({
+                    sync_failed: true,
+                    sync_error: (error.message || String(error)).substring(0, 255),
+                    last_sync_attempt: new Date().toISOString(),
+                  })
+                  .eq('user_id', userId)
+                  .eq('game_title_id', gameTitle.id)
+                  .eq('platform_id', platform.id);
+              } catch (updateErr) {
+                console.error('Failed to mark sync_failed:', updateErr);
+              }
             }
             
             // Continue with next game
