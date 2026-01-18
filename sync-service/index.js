@@ -10,6 +10,9 @@ function checkAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   const expectedSecret = process.env.SYNC_SERVICE_SECRET;
   
+  console.log('🔐 Auth check - Header received:', authHeader ? 'Bearer [REDACTED]' : '[MISSING]');
+  console.log('🔐 Auth check - Expected secret present:', !!expectedSecret);
+  
   if (!expectedSecret) {
     console.warn('⚠️ SYNC_SERVICE_SECRET not configured - endpoints are unsecured!');
     return next(); // Allow request if secret not configured (for backwards compatibility)
@@ -17,9 +20,12 @@ function checkAuth(req, res, next) {
   
   if (!authHeader || authHeader !== `Bearer ${expectedSecret}`) {
     console.error('❌ Unauthorized request to sync endpoint');
+    console.error('❌ Expected:', expectedSecret ? 'Bearer [REDACTED]' : '[NOT SET]');
+    console.error('❌ Received:', authHeader || '[MISSING]');
     return res.status(401).json({ error: 'Unauthorized' });
   }
   
+  console.log('✅ Auth check passed');
   next();
 }
 
@@ -44,6 +50,8 @@ console.log('Node version:', process.version);
 console.log('SUPABASE_URL present:', !!process.env.SUPABASE_URL);
 console.log('SUPABASE_SERVICE_ROLE_KEY present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 console.log('XBOX_CLIENT_ID present:', !!process.env.XBOX_CLIENT_ID);
+console.log('SYNC_SERVICE_SECRET present:', !!process.env.SYNC_SERVICE_SECRET);
+console.log('SYNC_SERVICE_SECRET value:', process.env.SYNC_SERVICE_SECRET ? '[SET]' : '[NOT SET]');
 
 // Health check
 app.get('/', (req, res) => {
