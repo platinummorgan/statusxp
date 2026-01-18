@@ -631,6 +631,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         console.log(`Processed ${processedGames}/${ownedGames.length} games (${progressPercent}%)`);
         // brief pause to yield to the event loop and let memory settle
         await new Promise((r) => setTimeout(r, 25));
+        
         } catch (error) {
           console.error(`Error processing game ${game.name}:`, error);
           
