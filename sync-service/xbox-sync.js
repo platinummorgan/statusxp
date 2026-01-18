@@ -480,29 +480,63 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Search for existing game_title by xbox_title_id using dedicated column
             let gameTitle = null;
             const trimmedName = title.name.trim();
-            const { data: existingGame } = await supabase
+            let existingGame = null;
+            
+            // First, try to find by xbox_title_id
+            const { data: gameByTitleId } = await supabase
               .from('game_titles')
-              .select('id, name, cover_url, metadata')
+              .select('id, name, cover_url, metadata, xbox_title_id')
               .eq('xbox_title_id', title.titleId)
               .maybeSingle();
             
+            if (gameByTitleId) {
+              existingGame = gameByTitleId;
+            } else {
+              // Fallback: search by exact name to catch games without xbox_title_id
+              const { data: gameByName } = await supabase
+                .from('game_titles')
+                .select('id, name, cover_url, metadata, xbox_title_id')
+                .eq('name', trimmedName)
+                .is('xbox_title_id', null)
+                .maybeSingle();
+              
+              if (gameByName) {
+                existingGame = gameByName;
+                console.log(`📝 Found existing game by name without xbox_title_id: "${trimmedName}" - will backfill`);
+              }
+            }
+            
             if (existingGame) {
-              // Update cover if we don't have one
+              // Update cover and xbox_title_id if missing
+              const updates = {};
               if (!existingGame.cover_url && title.displayImage) {
-                console.log('Attempting to update game_title:', { 
+                updates.cover_url = title.displayImage;
+              }
+              // Backfill xbox_title_id if it's missing (important for cross-platform games)
+              if (!existingGame.xbox_title_id) {
+                updates.xbox_title_id = title.titleId;
+              }
+              if (!existingGame.metadata?.xbox_title_id || existingGame.metadata.xbox_title_id !== title.titleId) {
+                updates.metadata = {
+                  ...(existingGame.metadata || {}),
+                  xbox_title_id: title.titleId,
+                };
+              }
+              
+              if (Object.keys(updates).length > 0) {
+                console.log('Updating game_title:', { 
                   name: title.name, 
                   id: existingGame.id, 
                   titleId: title.titleId,
-                  hasId: !!existingGame.id 
+                  updates: Object.keys(updates)
                 });
                 const { error: updateError } = await supabase
                   .from('game_titles')
-                  .update({ cover_url: title.displayImage })
+                  .update(updates)
                   .eq('id', existingGame.id);
                 
                 if (updateError) {
-                  console.error('❌ Failed to update game_title cover:', title.name, 'Error:', updateError);
-                  console.error('  - Game ID was:', existingGame.id);
+                  console.error('❌ Failed to update game_title:', title.name, 'Error:', updateError);
                 }
               }
               gameTitle = existingGame;
