@@ -186,8 +186,20 @@ async function refreshXboxToken(refreshToken, userId) {
     }),
   });
 
+  if (!xblResponse.ok) {
+    const xblBody = await xblResponse.text();
+    console.error('XBL auth failed. Status:', xblResponse.status, 'Body:', xblBody);
+    throw new Error(`XBL authentication failed: ${xblResponse.status}`);
+  }
+  
   const xblData = await xblResponse.json();
   console.log('XBL auth response (xblData) keys:', Object.keys(xblData));
+  
+  if (!xblData.DisplayClaims || !xblData.DisplayClaims.xui || !xblData.DisplayClaims.xui[0]) {
+    console.error('XBL response missing DisplayClaims:', JSON.stringify(xblData));
+    throw new Error('XBL response missing DisplayClaims');
+  }
+  
   const userHash = xblData.DisplayClaims.xui[0].uhs;
 
   // Exchange for XSTS token
@@ -204,8 +216,20 @@ async function refreshXboxToken(refreshToken, userId) {
     }),
   });
 
+  if (!xstsResponse.ok) {
+    const xstsBody = await xstsResponse.text();
+    console.error('XSTS auth failed. Status:', xstsResponse.status, 'Body:', xstsBody);
+    throw new Error(`XSTS authentication failed: ${xstsResponse.status}`);
+  }
+  
   const xstsData = await xstsResponse.json();
   console.log('XSTS response status:', xstsResponse.status);
+  
+  if (!xstsData.DisplayClaims || !xstsData.DisplayClaims.xui || !xstsData.DisplayClaims.xui[0]) {
+    console.error('XSTS response missing DisplayClaims:', JSON.stringify(xstsData));
+    throw new Error('XSTS response missing DisplayClaims');
+  }
+  
   const xuid = xstsData.DisplayClaims.xui[0].xid;
 
   // Fetch gamertag and avatar from Xbox Live profile
@@ -419,6 +443,23 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     let processedGames = 0;
     let totalAchievements = 0;
 
+    // Get platform once before processing games (performance optimization)
+    const { data: platform, error: platformError } = await supabase
+      .from('platforms')
+      .select('id')
+      .eq('code', 'XBOXONE')
+      .single();
+    
+    if (platformError || !platform) {
+      console.error(
+        '❌ Platform query failed for XBOXONE:',
+        platformError?.message || 'Platform not found'
+      );
+      throw new Error('Failed to resolve XBOXONE platform');
+    }
+    
+    console.log(`✅ Platform resolved: XBOXONE → ID ${platform.id}`);
+    
     // Process in batches to avoid OOM and reduce memory footprint
     // NOTE: BATCH_SIZE configurable via env var
     for (let i = 0; i < gamesWithProgress.length; i += BATCH_SIZE) {
@@ -489,24 +530,6 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
           
           try {
             console.log(`Processing game: ${title.name} (${title.titleId})`);
-            
-            // Get or create Xbox One platform
-            const { data: platform, error: platformError } = await supabase
-              .from('platforms')
-              .select('id')
-              .eq('code', 'XBOXONE')
-              .single();
-            
-            if (platformError || !platform) {
-              console.error(
-                '❌ Platform query failed for XBOXONE:',
-                platformError?.message || 'Platform not found'
-              );
-              console.error(`   Skipping game: ${title.name}`);
-              continue;
-            }
-
-            console.log(`✅ Platform resolved: XBOXONE → ID ${platform.id}`);
             
             // Search for existing game_title by xbox_title_id using dedicated column
             let gameTitle = null;
@@ -852,7 +875,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               }
 
               // Only update rarity if we fetched new data
-              if (needsRarityUpdate && rarityPercent !== null) {
+              if ((needsRarityUpdate || hasNullRarity) && rarityPercent !== null) {
                 achievementUpsert.rarity_global = rarityPercent;
                 achievementUpsert.rarity_last_updated_at = new Date().toISOString();
               }
@@ -861,7 +884,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const { data: existing } = await supabase
                 .from('achievements')
                 .select('id, proxied_icon_url')
-                .eq('game_title_id', title.gameTitleId)
+                .eq('game_title_id', gameTitle.id)
                 .eq('platform', 'xbox')
                 .eq('platform_achievement_id', achievement.id)
                 .maybeSingle();
