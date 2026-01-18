@@ -447,21 +447,26 @@ export async function syncPSNAchievements(
           // This catches cases where user_games exists but achievement records were deleted/missing
           let missingAchievements = false;
           if (!isNewGame && apiEarnedTrophies > 0) {
-            const { count: existingAchievementsCount } = await supabase
-              .from('user_achievements')
-              .select('*', { count: 'exact', head: true })
-              .eq('user_id', userId)
-              .in('achievement_id', 
-                supabase
-                  .from('achievements')
-                  .select('id')
-                  .eq('game_title_id', gameTitle.id)
-                  .eq('platform', 'psn')
-              );
+            // First get achievement IDs for this game
+            const { data: gameAchievements } = await supabase
+              .from('achievements')
+              .select('id')
+              .eq('game_title_id', gameTitle.id)
+              .eq('platform', 'psn');
             
-            if (existingAchievementsCount === 0 || existingAchievementsCount < apiEarnedTrophies) {
-              missingAchievements = true;
-              console.log(`🔍 MISSING ACHIEVEMENTS: ${title.trophyTitleName} (DB: ${existingAchievementsCount}, API: ${apiEarnedTrophies})`);
+            if (gameAchievements && gameAchievements.length > 0) {
+              const achievementIds = gameAchievements.map(a => a.id);
+              
+              const { count: existingAchievementsCount } = await supabase
+                .from('user_achievements')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .in('achievement_id', achievementIds);
+            
+              if (existingAchievementsCount === 0 || existingAchievementsCount < apiEarnedTrophies) {
+                missingAchievements = true;
+                console.log(`🔍 MISSING ACHIEVEMENTS: ${title.trophyTitleName} (DB: ${existingAchievementsCount}, API: ${apiEarnedTrophies})`);
+              }
             }
           }
           
