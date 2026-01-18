@@ -348,21 +348,21 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         const { data: platformData, error: platformError } = await supabase
           .from('platforms')
           .select('id')
-          .eq('code', 'STEAM')
+          .eq('code', 'Steam')
           .single();
         
         platform = platformData;
         
         if (platformError || !platformData) {
           console.error(
-            '❌ Platform query failed for STEAM:',
+            '❌ Platform query failed for Steam:',
             platformError?.message || 'Platform not found'
           );
           console.error(`   Skipping game: ${game.name}`);
           continue;
         }
 
-        console.log(`✅ Platform resolved: STEAM → ID ${platformData.id}`);
+        console.log(`✅ Platform resolved: Steam → ID ${platformData.id}`);
         
         // Search for existing game_title by steam_app_id using dedicated column
 
@@ -539,7 +539,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           const achievementData = {
             game_title_id: gameTitle.id,
             platform: 'steam',
-            platform_version: 'STEAM',
+            platform_version: 'Steam',
             platform_achievement_id: achievement.name,
             name: achievement.displayName || achievement.name,
             description: achievement.description || '',
