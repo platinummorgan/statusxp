@@ -564,16 +564,20 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
             if (!gameTitle) { console.log('Upserted game_title - no result'); continue; }
 
-            // Cheap diff: Check if game data changed
-            const apiTotalAchievements = title.achievement.totalAchievements || 0;
-            const apiEarnedAchievements = title.achievement.currentAchievements || 0;
-            
+            // Log the achievement data from Xbox API
+            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);
+
             const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
             const isNewGame = !existingUserGame;
-            const countsChanged = existingUserGame && 
-              (existingUserGame.xbox_total_achievements !== apiTotalAchievements || 
-               existingUserGame.xbox_achievements_earned !== apiEarnedAchievements);
             const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
+            
+            // For diff check: use current gamerscore since totalAchievements from Xbox API is often 0
+            const apiEarnedAchievements = title.achievement.currentAchievements || 0;
+            const apiGamerscore = title.achievement.currentGamerscore || 0;
+            
+            const countsChanged = existingUserGame && 
+              (existingUserGame.xbox_achievements_earned !== apiEarnedAchievements ||
+               existingUserGame.xbox_current_gamerscore !== apiGamerscore);
             
             // Check if rarity is stale (>30 days old)
             let needRarityRefresh = false;
@@ -600,9 +604,6 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             if (syncFailed) {
               console.log(`🔄 RETRY FAILED SYNC: ${title.name} (previous sync failed)`);
             }
-
-            // Log the achievement data from Xbox API
-            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);
 
             // Fetch ALL achievements for this title (handle pagination)
             const achievementsForTitle = [];
