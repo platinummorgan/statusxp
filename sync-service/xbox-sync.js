@@ -397,7 +397,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       return;
     }
 
-    const gamesWithProgress = titleHistory.titles.filter(t => t.achievement?.currentGamerscore > 0);
+    const gamesWithProgress = titleHistory.titles.filter(t => 
+      t.achievement?.currentGamerscore > 0 || t.achievement?.currentAchievements > 0
+    );
 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
     logMemory('After filtering gamesWithProgress');
