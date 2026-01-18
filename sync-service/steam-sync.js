@@ -217,7 +217,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         .from('profiles')
         .select('steam_sync_status')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (profileCheck?.steam_sync_status === 'cancelling') {
         console.log('Steam sync cancelled by user');
@@ -228,6 +228,14 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             steam_sync_progress: 0 
           })
           .eq('id', userId);
+        
+        await supabase
+          .from('steam_sync_logs')
+          .update({
+            status: 'cancelled',
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', syncLogId);
         
         return;
       }
@@ -256,26 +264,40 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 })
                 .eq('id', userId);
               
+              await supabase
+                .from('steam_sync_logs')
+                .update({
+                  status: 'cancelled',
+                  completed_at: new Date().toISOString(),
+                })
+                .eq('id', syncLogId);
+              
               return;
             }
           }
           
+        // Declare variables outside try block so catch can access them
+        let gameTitle = null;
+        let platform = null;
+        
         try {
         console.log(`Processing Steam app ${game.appid} - ${game.name}`);
         
         // Get app details to check if it's DLC
-        const appDetailsResponse = await fetch(
-          `https://store.steampowered.com/api/appdetails?appids=${game.appid}`
-        );
-        const appDetailsContentType = appDetailsResponse.headers.get('content-type');
-        if (!appDetailsResponse.ok || !appDetailsContentType?.includes('application/json')) {
-          console.log(`⚠️ App details fetch failed for ${game.appid} (status ${appDetailsResponse.status}) - treating as base game`);
-          const appDetailsData = { [game.appid]: { data: { type: 'game' } } };
-        } else {
-          var appDetailsData = await appDetailsResponse.json();
+        let appDetailsData;
+        try {
+          const appDetailsResponse = await fetch(
+            `https://store.steampowered.com/api/appdetails?appids=${game.appid}`
+          );
+          const appDetailsContentType = appDetailsResponse.headers.get('content-type');
+          if (appDetailsResponse.ok && appDetailsContentType?.includes('application/json')) {
+            appDetailsData = await appDetailsResponse.json();
+          }
+        } catch (e) {
+          console.log(`⚠️ App details fetch failed for ${game.appid}: ${e.message}`);
         }
         if (!appDetailsData) {
-          const appDetailsData = { [game.appid]: { data: { type: 'game' } } };
+          appDetailsData = { [game.appid]: { data: { type: 'game' } } };
         }
         const appDetails = appDetailsData?.[game.appid]?.data;
         const isDLC = appDetails?.type === 'dlc';
@@ -323,25 +345,27 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         const totalCount = achievements.length;
 
         // Get or create Steam platform
-        const { data: platform, error: platformError } = await supabase
+        const { data: platformData, error: platformError } = await supabase
           .from('platforms')
           .select('id')
-          .eq('code', 'Steam')
+          .eq('code', 'STEAM')
           .single();
         
-        if (platformError || !platform) {
+        platform = platformData;
+        
+        if (platformError || !platformData) {
           console.error(
-            '❌ Platform query failed for Steam:',
+            '❌ Platform query failed for STEAM:',
             platformError?.message || 'Platform not found'
           );
           console.error(`   Skipping game: ${game.name}`);
           continue;
         }
 
-        console.log(`✅ Platform resolved: Steam → ID ${platform.id}`);
+        console.log(`✅ Platform resolved: STEAM → ID ${platformData.id}`);
         
         // Search for existing game_title by steam_app_id using dedicated column
-        let gameTitle = null;
+
         const trimmedName = game.name.trim();
         const { data: existingGame } = await supabase
           .from('game_titles')
@@ -405,19 +429,26 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         // This happens if initial sync failed to process achievements
         let missingAchievements = false;
         if (!isNewGame && !countsChanged && !needRarityRefresh && existingUserGame?.earned_trophies > 0) {
-          const { count } = await supabase
-            .from('user_achievements')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .in('achievement_id', supabase
-              .from('achievements')
-              .select('id')
-              .eq('game_title_id', gameTitle.id)
-              .eq('platform', 'steam')
-            );
-          missingAchievements = count === 0;
-          if (missingAchievements) {
-            console.log(`🔄 MISSING ACHIEVEMENTS: ${game.name} shows ${unlockedCount} earned but 0 synced - reprocessing`);
+          // Query achievement IDs first (Supabase .in() doesn't support subqueries)
+          const { data: achRows } = await supabase
+            .from('achievements')
+            .select('id')
+            .eq('game_title_id', gameTitle.id)
+            .eq('platform', 'steam');
+          
+          const achievementIds = (achRows || []).map(r => r.id);
+          
+          if (achievementIds.length > 0) {
+            const { count: uaCount } = await supabase
+              .from('user_achievements')
+              .select('id', { count: 'exact', head: true })
+              .eq('user_id', userId)
+              .in('achievement_id', achievementIds);
+            
+            missingAchievements = (uaCount || 0) < unlockedCount;
+            if (missingAchievements) {
+              console.log(`🔄 MISSING ACHIEVEMENTS: ${game.name} shows ${unlockedCount} earned but ${uaCount || 0} synced - reprocessing`);
+            }
           }
         }
         
@@ -490,6 +521,10 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             onConflict: 'user_id,game_title_id,platform_id',
           });
 
+        // TODO OPTIMIZATION: This achievement processing loop is N+1 (2-3 DB calls per achievement)
+        // Should batch upsert achievements with unique constraint on (game_title_id, platform, platform_achievement_id)
+        // Then batch upsert user_achievements. Same issue as PSN/Xbox - major performance bottleneck.
+        // Current: 100 achievements = 200-300 DB calls. Batch: 100 achievements = 2 DB calls.
         // Process achievements
         for (let j = 0; j < achievements.length; j++) {
           const achievement = achievements[j];
