@@ -37,11 +37,22 @@ serve(async (req) => {
 
     // Forward to sync service to handle graceful cancellation
     const syncServiceUrl = Deno.env.get('SYNC_SERVICE_URL') || 'https://statusxp-sync-production.up.railway.app';
+    
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    
+    // Add auth header if SYNC_SERVICE_SECRET is configured
+    const syncSecret = Deno.env.get('SYNC_SERVICE_SECRET');
+    console.log('🔐 XBOX STOP SYNC_SERVICE_SECRET present:', !!syncSecret);
+    if (syncSecret) {
+      headers['Authorization'] = `Bearer ${syncSecret}`;
+      console.log('🔐 XBOX STOP Authorization header set');
+    } else {
+      console.log('🔐 XBOX STOP No SYNC_SERVICE_SECRET found - no auth header sent');
+    }
+    
     const response = await fetch(`${syncServiceUrl}/sync/xbox/stop`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ userId: user.id }),
     });
 

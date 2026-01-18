@@ -654,7 +654,6 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           // Continue with next game
         }
       }
-      }
       logMemory(`After processing Steam batch ${i / BATCH_SIZE + 1}`);
     }
 
