@@ -104,9 +104,17 @@ serve(async (req) => {
     console.log('Calling Railway /sync/xbox with payload size:', JSON.stringify(railwayPayload).length);
     let railwayResponse;
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      // Add auth header if SYNC_SERVICE_SECRET is configured
+      const syncSecret = Deno.env.get('SYNC_SERVICE_SECRET');
+      if (syncSecret) {
+        headers['Authorization'] = `Bearer ${syncSecret}`;
+      }
+      
       railwayResponse = await fetch(`${RAILWAY_URL}/sync/xbox`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(railwayPayload),
       });
     } catch (fetchError) {

@@ -235,7 +235,31 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       const batch = ownedGames.slice(i, i + BATCH_SIZE);
       logMemory(`Before processing Steam batch ${i / BATCH_SIZE + 1}`);
       if (MAX_CONCURRENT <= 1) {
-        for (const game of batch) {
+        for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
+          const game = batch[batchIndex];
+          
+          // Check for cancellation every 5 games within batch
+          if (batchIndex > 0 && batchIndex % 5 === 0) {
+            const { data: cancelCheck } = await supabase
+              .from('profiles')
+              .select('steam_sync_status')
+              .eq('id', userId)
+              .maybeSingle();
+            
+            if (cancelCheck?.steam_sync_status === 'cancelling') {
+              console.log('Steam sync cancelled by user (mid-batch)');
+              await supabase
+                .from('profiles')
+                .update({ 
+                  steam_sync_status: 'stopped',
+                  steam_sync_progress: 0 
+                })
+                .eq('id', userId);
+              
+              return;
+            }
+          }
+          
         try {
         console.log(`Processing Steam app ${game.appid} - ${game.name}`);
         

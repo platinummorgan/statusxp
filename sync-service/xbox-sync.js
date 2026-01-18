@@ -457,7 +457,36 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       // Process the batch with limited concurrency to reduce memory spikes
       // If MAX_CONCURRENT === 1 we'll process sequentially.
       if (MAX_CONCURRENT <= 1) {
-        for (const title of batch) {
+        for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
+          const title = batch[batchIndex];
+          
+          // Check for cancellation every 5 games within batch
+          if (batchIndex > 0 && batchIndex % 5 === 0) {
+            const { data: cancelCheck } = await supabase
+              .from('profiles')
+              .select('xbox_sync_status')
+              .eq('id', userId)
+              .maybeSingle();
+            
+            if (cancelCheck?.xbox_sync_status === 'cancelling') {
+              console.log('Xbox sync cancelled by user (mid-batch)');
+              await supabase
+                .from('profiles')
+                .update({ 
+                  xbox_sync_status: 'stopped',
+                  xbox_sync_progress: 0 
+                })
+                .eq('id', userId);
+              
+              await supabase
+                .from('xbox_sync_logs')
+                .update({ status: 'cancelled', error: 'Cancelled by user' })
+                .eq('id', syncLogId);
+              
+              return;
+            }
+          }
+          
           try {
             console.log(`Processing game: ${title.name} (${title.titleId})`);
             

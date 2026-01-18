@@ -4,6 +4,35 @@ import cors from 'cors';
 // (psn-api & other ESM/CJS modules can crash startup when required at top-level)
 
 const app = express();
+
+// Auth middleware - check for SYNC_SERVICE_SECRET
+function checkAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const expectedSecret = process.env.SYNC_SERVICE_SECRET;
+  
+  if (!expectedSecret) {
+    console.warn('⚠️ SYNC_SERVICE_SECRET not configured - endpoints are unsecured!');
+    return next(); // Allow request if secret not configured (for backwards compatibility)
+  }
+  
+  if (!authHeader || authHeader !== `Bearer ${expectedSecret}`) {
+    console.error('❌ Unauthorized request to sync endpoint');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  next();
+}
+
+// Validation helper
+function validateRequired(fields, body) {
+  const missing = [];
+  for (const field of fields) {
+    if (!body[field]) {
+      missing.push(field);
+    }
+  }
+  return missing;
+}
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
@@ -79,8 +108,15 @@ setInterval(() => {
 }, 60000);
 
 // Xbox sync endpoint - NO TIMEOUT LIMITS!
-app.post('/sync/xbox', async (req, res) => {
+app.post('/sync/xbox', checkAuth, async (req, res) => {
   const { userId, xuid, userHash, accessToken, refreshToken, syncLogId, batchSize, maxConcurrent } = req.body;
+
+  // Validate required fields
+  const missing = validateRequired(['userId', 'xuid', 'userHash', 'accessToken', 'refreshToken', 'syncLogId'], req.body);
+  if (missing.length > 0) {
+    console.error('❌ Xbox sync validation failed - missing fields:', missing);
+    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+  }
 
   // Respond immediately so the client doesn't wait
   res.json({ success: true, message: 'Xbox sync started in background' });
@@ -95,13 +131,42 @@ app.post('/sync/xbox', async (req, res) => {
       if (global.gc) global.gc();
     } catch (err) {
       console.error('Xbox sync error (lazy import):', err);
+      // Report error to sync log
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+        await supabase
+          .from('xbox_sync_logs')
+          .update({
+            status: 'failed',
+            error_message: err.message || String(err),
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', syncLogId);
+        await supabase
+          .from('profiles')
+          .update({ xbox_sync_status: 'error', xbox_sync_error: err.message || String(err) })
+          .eq('id', userId);
+      } catch (reportErr) {
+        console.error('Failed to report Xbox sync error to DB:', reportErr);
+      }
     }
   })();
 });
 
 // PSN sync endpoint - NO TIMEOUT LIMITS!
-app.post('/sync/psn', async (req, res) => {
+app.post('/sync/psn', checkAuth, async (req, res) => {
   const { userId, accountId, accessToken, refreshToken, syncLogId, batchSize, maxConcurrent } = req.body;
+
+  // Validate required fields
+  const missing = validateRequired(['userId', 'accountId', 'accessToken', 'refreshToken', 'syncLogId'], req.body);
+  if (missing.length > 0) {
+    console.error('❌ PSN sync validation failed - missing fields:', missing);
+    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+  }
 
   // Respond immediately
   res.json({ success: true, message: 'PSN sync started in background' });
@@ -116,13 +181,42 @@ app.post('/sync/psn', async (req, res) => {
       if (global.gc) global.gc();
     } catch (err) {
       console.error('PSN sync error (lazy import):', err);
+      // Report error to sync log
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+        await supabase
+          .from('psn_sync_logs')
+          .update({
+            status: 'failed',
+            error_message: err.message || String(err),
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', syncLogId);
+        await supabase
+          .from('profiles')
+          .update({ psn_sync_status: 'error', psn_sync_error: err.message || String(err) })
+          .eq('id', userId);
+      } catch (reportErr) {
+        console.error('Failed to report PSN sync error to DB:', reportErr);
+      }
     }
   })();
 });
 
 // Steam sync endpoint - NO TIMEOUT LIMITS!
-app.post('/sync/steam', async (req, res) => {
+app.post('/sync/steam', checkAuth, async (req, res) => {
   const { userId, steamId, apiKey, syncLogId, batchSize, maxConcurrent } = req.body;
+
+  // Validate required fields
+  const missing = validateRequired(['userId', 'steamId', 'apiKey', 'syncLogId'], req.body);
+  if (missing.length > 0) {
+    console.error('❌ Steam sync validation failed - missing fields:', missing);
+    return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
+  }
 
   // Respond immediately
   res.json({ success: true, message: 'Steam sync started in background' });
@@ -137,12 +231,34 @@ app.post('/sync/steam', async (req, res) => {
       if (global.gc) global.gc();
     } catch (err) {
       console.error('Steam sync error (lazy import):', err);
+      // Report error to sync log
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL,
+          process.env.SUPABASE_SERVICE_ROLE_KEY
+        );
+        await supabase
+          .from('steam_sync_logs')
+          .update({
+            status: 'failed',
+            error_message: err.message || String(err),
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', syncLogId);
+        await supabase
+          .from('profiles')
+          .update({ steam_sync_status: 'error', steam_sync_error: err.message || String(err) })
+          .eq('id', userId);
+      } catch (reportErr) {
+        console.error('Failed to report Steam sync error to DB:', reportErr);
+      }
     }
   })();
 });
 
 // Stop sync endpoints - set cancellation flag in database
-app.post('/sync/xbox/stop', async (req, res) => {
+app.post('/sync/xbox/stop', checkAuth, async (req, res) => {
   const { userId } = req.body;
   
   if (!userId) {
@@ -168,7 +284,7 @@ app.post('/sync/xbox/stop', async (req, res) => {
   }
 });
 
-app.post('/sync/psn/stop', async (req, res) => {
+app.post('/sync/psn/stop', checkAuth, async (req, res) => {
   const { userId } = req.body;
   
   if (!userId) {
@@ -194,7 +310,7 @@ app.post('/sync/psn/stop', async (req, res) => {
   }
 });
 
-app.post('/sync/steam/stop', async (req, res) => {
+app.post('/sync/steam/stop', checkAuth, async (req, res) => {
   const { userId } = req.body;
   
   if (!userId) {

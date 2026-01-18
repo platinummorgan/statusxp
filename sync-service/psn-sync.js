@@ -777,7 +777,36 @@ export async function syncPSNAchievements(
 
       if (MAX_CONCURRENT <= 1) {
         // sequential
-        for (const title of batch) {
+        for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
+          const title = batch[batchIndex];
+          
+          // Check for cancellation every 5 games within batch
+          if (batchIndex > 0 && batchIndex % 5 === 0) {
+            const { data: cancelCheck } = await supabase
+              .from('profiles')
+              .select('psn_sync_status')
+              .eq('id', userId)
+              .maybeSingle();
+            
+            if (cancelCheck?.psn_sync_status === 'cancelling') {
+              console.log('PSN sync cancelled by user (mid-batch)');
+              await supabase
+                .from('profiles')
+                .update({ 
+                  psn_sync_status: 'stopped',
+                  psn_sync_progress: 0 
+                })
+                .eq('id', userId);
+              
+              await supabase
+                .from('psn_sync_logs')
+                .update({ status: 'cancelled', error: 'Cancelled by user' })
+                .eq('id', syncLogId);
+              
+              return;
+            }
+          }
+          
           await processTitle(title);
         }
       } else {
