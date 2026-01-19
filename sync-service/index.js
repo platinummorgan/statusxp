@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 // Lazy-load sync handlers on-demand to avoid boot-time module errors
@@ -46,6 +47,7 @@ app.use(express.json());
 
 // Startup diagnostics
 console.log('Starting Sync Service');
+console.log('🚀🚀🚀 RUNNING FROM LOCAL D:\\Dev\\statusxp\\sync-service 🚀🚀🚀');
 console.log('Node version:', process.version);
 console.log('SUPABASE_URL present:', !!process.env.SUPABASE_URL);
 console.log('SUPABASE_SERVICE_ROLE_KEY present:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
