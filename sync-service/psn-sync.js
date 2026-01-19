@@ -211,7 +211,7 @@ export async function syncPSNAchievements(
       
       // Check if user previously had games - if so, 0 titles is an error
       const { count: existingGamesCount, error: countError } = await supabase
-        .from('user_games')
+        .from('user_progress')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .eq('platform_id', 1); // PSN platform_id
@@ -247,31 +247,23 @@ export async function syncPSNAchievements(
     console.log(`Found ${gamesWithTrophies.length} games with progress`);
     logMemory('After filtering gamesWithTrophies');
 
-    // Load PSN platforms ONCE into memory to avoid repeated DB queries
-    console.log('Loading PSN platforms into cache...');
-    const { data: platformsData } = await supabase
-      .from('platforms')
-      .select('id, code')
-      .in('code', ['PS3', 'PS4', 'PS5', 'PSVITA']);
-    
-    const platformCache = new Map();
-    (platformsData || []).forEach(p => {
-      platformCache.set(p.code, p);
-    });
-    console.log(`Loaded ${platformCache.size} PSN platforms into cache`);
+    // V2 Schema: Each PlayStation version has its own platform_id
+    // PS5=1, PS4=2, PS3=5, PSVITA=9
+    console.log('PSN sync: PS5=1, PS4=2, PS3=5, PSVITA=9');
 
-    // Load ALL user_games ONCE for fast lookup
-    console.log('Loading all user_games for comparison...');
+    // Load ALL user_progress ONCE for fast lookup (across all PSN platforms)
+    console.log('Loading all user_progress for comparison...');
     const { data: allUserGames } = await supabase
-      .from('user_games')
-      .select('game_title_id, platform_id, earned_trophies, total_trophies, completion_percent, last_rarity_sync, sync_failed')
-      .eq('user_id', userId);
+      .from('user_progress')
+      .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percent, last_rarity_sync, sync_failed')
+      .eq('user_id', userId)
+      .in('platform_id', [1, 2, 5, 9]); // All PSN platforms
     
     const userGamesMap = new Map();
     (allUserGames || []).forEach(ug => {
-      userGamesMap.set(`${ug.game_title_id}_${ug.platform_id}`, ug);
+      userGamesMap.set(`${ug.platform_game_id}_${ug.platform_id}`, ug);
     });
-    console.log(`Loaded ${userGamesMap.size} existing user_games into memory`);
+    console.log(`Loaded ${userGamesMap.size} existing user_progress records into memory`);
 
     let processedGames = 0;
     let totalTrophies = 0;
@@ -336,74 +328,76 @@ export async function syncPSNAchievements(
 
       const processTitle = async (title) => {
         let gameTitle;
-        let platform;
         
         try {
-          // Map PSN platform codes to our platform codes
-          let platformCode = 'PS5';
+          // Detect platform version and map to platform_id
+          // PS5=1, PS4=2, PS3=5, PSVITA=9
+          let platformVersion = 'PS5';
+          let platformId = 1; // Default PS5
+          
           if (title.trophyTitlePlatform) {
             const psnPlatform = title.trophyTitlePlatform.toUpperCase();
-            if (psnPlatform.includes('PS5')) platformCode = 'PS5';
-            else if (psnPlatform.includes('PS4')) platformCode = 'PS4';
-            else if (psnPlatform.includes('PS3')) platformCode = 'PS3';
-            else if (psnPlatform.includes('VITA')) platformCode = 'PSVITA';
+            if (psnPlatform.includes('PS5')) {
+              platformVersion = 'PS5';
+              platformId = 1;
+            } else if (psnPlatform.includes('PS4')) {
+              platformVersion = 'PS4';
+              platformId = 2;
+            } else if (psnPlatform.includes('PS3')) {
+              platformVersion = 'PS3';
+              platformId = 5;
+            } else if (psnPlatform.includes('VITA')) {
+              platformVersion = 'PSVITA';
+              platformId = 9;
+            }
           }
 
-          console.log(`📱 Platform detected: ${title.trophyTitlePlatform} → ${platformCode}`);
+          console.log(`📱 Platform detected: ${title.trophyTitlePlatform} → ${platformVersion} (ID ${platformId})`);
 
-          // Use cached platform instead of DB query
-          const platformData = platformCache.get(platformCode);
-          platform = platformData;
-
-          if (!platformData) {
-            console.error(
-              `❌ Platform not found in cache for code ${platformCode} (PSN: ${title.trophyTitlePlatform})`
-            );
-            console.error(`   Skipping game: ${title.trophyTitleName}`);
-            return;
-          }
-
-          console.log(`✅ Platform resolved from cache: ${platformCode} → ID ${platformData.id}`);
-
-          // Find or create game_title using unique PSN npCommunicationId
+          // Find or create game using unique PSN npCommunicationId
           const trimmedTitle = title.trophyTitleName.trim();
           
-          // First try to find by PSN npCommunicationId using dedicated column
+          // First try to find by PSN npCommunicationId (platform_game_id)
           const { data: existingGameById } = await supabase
-            .from('game_titles')
-            .select('id, cover_url, metadata')
-            .eq('psn_npwr_id', title.npCommunicationId)
+            .from('games')
+            .select('platform_game_id, cover_url, metadata')
+            .eq('platform_id', platformId)
+            .eq('platform_game_id', title.npCommunicationId)
             .maybeSingle();
           
           if (existingGameById) {
-            // Found by npCommunicationId - this is the exact game
+            // Found by composite key - this is the exact game
             if (!existingGameById.cover_url && title.trophyTitleIconUrl) {
-              console.log('Attempting to update PSN game_title:', { 
+              console.log('Attempting to update PSN game:', { 
                 name: title.trophyTitleName, 
-                id: existingGameById.id, 
-                npwr: title.npCommunicationId,
-                hasId: !!existingGameById.id 
+                platform_game_id: existingGameById.platform_game_id, 
+                npwr: title.npCommunicationId
               });
               const { error: updateError } = await supabase
-                .from('game_titles')
+                .from('games')
                 .update({ cover_url: title.trophyTitleIconUrl })
-                .eq('id', existingGameById.id);
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', existingGameById.platform_game_id);
               
               if (updateError) {
-                console.error('❌ Failed to update game_title cover:', title.trophyTitleName, 'Error:', updateError);
-                console.error('  - Game ID was:', existingGameById.id);
+                console.error('❌ Failed to update game cover:', title.trophyTitleName, 'Error:', updateError);
+                console.error('  - Platform Game ID was:', existingGameById.platform_game_id);
               }
             }
             gameTitle = existingGameById;
           } else {
-            // Not found by ID - create new game with npCommunicationId in dedicated column
+            // Not found - create new game with V2 composite key
             const { data: newGame, error: insertError } = await supabase
-              .from('game_titles')
+              .from('games')
               .insert({
+                platform_id: platformId,
+                platform_game_id: title.npCommunicationId,
                 name: trimmedTitle,
                 cover_url: title.trophyTitleIconUrl,
-                psn_npwr_id: title.npCommunicationId,
-                metadata: { psn_np_communication_id: title.npCommunicationId },
+                metadata: { 
+                  psn_np_communication_id: title.npCommunicationId,
+                  platform_version: platformVersion
+                },
               })
               .select()
               .single();
@@ -438,9 +432,9 @@ export async function syncPSNAchievements(
           const apiProgress = Number(title.progress || 0);
 
           // Simple lookup - is this game new or changed?
-          const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
+          const existingUserGame = userGamesMap.get(`${gameTitle.platform_game_id}_${platformId}`);
           const isNewGame = !existingUserGame;
-          const earnedChanged = existingUserGame && existingUserGame.earned_trophies !== apiEarnedTrophies;
+          const earnedChanged = existingUserGame && existingUserGame.achievements_earned !== apiEarnedTrophies;
           const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
           
           // Check if rarity is stale (>30 days old)
@@ -455,19 +449,19 @@ export async function syncPSNAchievements(
           let missingAchievements = false;
           if (!isNewGame && !earnedChanged && !syncFailed && apiEarnedTrophies > 0) {
             try {
-              const { data: gameAchievements } = await supabase
+              const { count: gameAchievementsCount } = await supabase
                 .from('achievements')
-                .select('id')
-                .eq('game_title_id', gameTitle.id)
-                .eq('platform', 'psn');
+                .select('*', { count: 'exact', head: true })
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle.platform_game_id);
               
-              if (gameAchievements && gameAchievements.length > 0) {
-                const achievementIds = gameAchievements.map(a => a.id);
+              if (gameAchievementsCount && gameAchievementsCount > 0) {
                 const { count: existingAchievementsCount } = await supabase
                   .from('user_achievements')
                   .select('*', { count: 'exact', head: true })
                   .eq('user_id', userId)
-                  .in('achievement_id', achievementIds);
+                  .eq('platform_id', platformId)
+                  .eq('platform_game_id', gameTitle.platform_game_id);
 
                 if (existingAchievementsCount === 0 || existingAchievementsCount < apiEarnedTrophies) {
                   missingAchievements = true;
@@ -527,7 +521,7 @@ export async function syncPSNAchievements(
           );
 
           if (!trophyMetadata?.trophies || trophyMetadata.trophies.length === 0) {
-            console.error(`❌ Failed to fetch trophies for ${title.trophyTitleName} - skipping user_games update to prevent data inconsistency`);
+            console.error(`❌ Failed to fetch trophies for ${title.trophyTitleName} - skipping user_progress update to prevent data inconsistency`);
             processedGames++;
             const progress = Math.floor(
               (processedGames / gamesWithTrophies.length) * 100
@@ -539,34 +533,36 @@ export async function syncPSNAchievements(
             return;
           }
 
-          // Now that we successfully fetched trophy data, update user_games
+          // Now that we successfully fetched trophy data, update user_progress
           const userGameData = {
             user_id: userId,
-            game_title_id: gameTitle.id,
-            platform_id: platform.id,
+            platform_id: platformId,
+            platform_game_id: gameTitle.platform_game_id,
             completion_percent: apiProgress,
-            total_trophies: apiTotalTrophies,
-            earned_trophies: apiEarnedTrophies,
+            total_achievements: apiTotalTrophies,
+            achievements_earned: apiEarnedTrophies,
             last_rarity_sync: new Date().toISOString(),
-            bronze_trophies: earned.bronze || 0,
-            silver_trophies: earned.silver || 0,
-            gold_trophies: earned.gold || 0,
-            platinum_trophies: earned.platinum || 0,
-            has_platinum: (earned.platinum || 0) > 0,
+            metadata: {
+              bronze_trophies: earned.bronze || 0,
+              silver_trophies: earned.silver || 0,
+              gold_trophies: earned.gold || 0,
+              platinum_trophies: earned.platinum || 0,
+              has_platinum: (earned.platinum || 0) > 0,
+            },
             last_played_at: title.lastUpdatedDateTime,
             sync_failed: false,
             sync_error: null,
             last_sync_attempt: new Date().toISOString(),
           };
           
-          // Preserve last_trophy_earned_at if it exists (will be updated later after processing trophies)
-          if (existingUserGame && existingUserGame.last_trophy_earned_at) {
-            userGameData.last_trophy_earned_at = existingUserGame.last_trophy_earned_at;
+          // Preserve last_achievement_earned_at if it exists (will be updated later after processing trophies)
+          if (existingUserGame && existingUserGame.last_achievement_earned_at) {
+            userGameData.last_achievement_earned_at = existingUserGame.last_achievement_earned_at;
           }
           
           await supabase
-            .from('user_games')
-            .upsert(userGameData, { onConflict: 'user_id,game_title_id,platform_id' });
+            .from('user_progress')
+            .upsert(userGameData, { onConflict: 'user_id,platform_id,platform_game_id' });
 
           // Create a map of user trophy data by trophyId for easy lookup
           const userTrophyMap = new Map();
@@ -585,7 +581,7 @@ export async function syncPSNAchievements(
           }
 
           // TODO OPTIMIZATION: This trophy processing loop is N+1 (2-3 DB calls per trophy)
-          // Should batch upsert achievements with unique constraint on (game_title_id, platform, platform_achievement_id)
+          // Should batch upsert achievements with unique constraint on (platform_id, platform_game_id, platform_achievement_id)
           // Then batch upsert user_achievements. This is the #1 performance bottleneck.
           // Current approach: 200 trophies = 400-600 DB calls. Batch approach: 200 trophies = 2 DB calls.
           for (const trophyMeta of trophyMetadata.trophies) {
@@ -625,20 +621,52 @@ export async function syncPSNAchievements(
               supabase
             );
 
+            // Calculate base_status_xp and rarity_multiplier from rarity_global
+            const isPlatinum = trophyMeta.trophyType === 'platinum';
+            const includeInScore = !isPlatinum;
+            
+            let baseStatusXP = 10; // Default for common (>25%)
+            let rarityMultiplier = 1.00;
+            
+            if (!includeInScore) {
+              baseStatusXP = 0; // Platinum trophies don't count
+            } else if (rarityPercent !== null) {
+              if (rarityPercent > 25) {
+                baseStatusXP = 10;
+                rarityMultiplier = 1.00;
+              } else if (rarityPercent > 10) {
+                baseStatusXP = 13;
+                rarityMultiplier = 1.25;
+              } else if (rarityPercent > 5) {
+                baseStatusXP = 18;
+                rarityMultiplier = 1.75;
+              } else if (rarityPercent > 1) {
+                baseStatusXP = 23;
+                rarityMultiplier = 2.25;
+              } else {
+                baseStatusXP = 30;
+                rarityMultiplier = 3.00;
+              }
+            }
+
             const achievementData = {
-              game_title_id: gameTitle.id,
-              platform: 'psn',
-              platform_version: platformCode, // PS3, PS4, PS5, PSVITA
+              platform_id: platformId,
+              platform_game_id: gameTitle.platform_game_id,
               platform_achievement_id: trophyMeta.trophyId.toString(),
               name: trophyMeta.trophyName,
               description: trophyMeta.trophyDetail,
               icon_url: trophyMeta.trophyIconUrl,
-              psn_trophy_type: trophyMeta.trophyType,
               rarity_global: rarityPercent,
-              is_platinum: trophyMeta.trophyType === 'platinum',
-              include_in_score: trophyMeta.trophyType !== 'platinum',
-              is_dlc: isDLC,
-              dlc_name: dlcName,
+              base_status_xp: baseStatusXP,
+              rarity_multiplier: rarityMultiplier,
+              is_platinum: isPlatinum,
+              include_in_score: includeInScore,
+              metadata: {
+                trophy_type: trophyMeta.trophyType,
+                platform_version: platformVersion, // PS3, PS4, PS5, PSVITA
+                is_dlc: isDLC,
+                dlc_name: dlcName,
+              },
             };
 
             // Only include proxied_icon_url if upload succeeded
@@ -649,9 +677,9 @@ export async function syncPSNAchievements(
             // Check if achievement exists
             const { data: existing } = await supabase
               .from('achievements')
-              .select('id, proxied_icon_url')
-              .eq('game_title_id', gameTitle.id)
-              .eq('platform', 'psn')
+              .select('platform_achievement_id, proxied_icon_url')
+              .eq('platform_id', platformId)
+              .eq('platform_game_id', gameTitle.platform_game_id)
               .eq('platform_achievement_id', trophyMeta.trophyId.toString())
               .maybeSingle();
 
@@ -661,7 +689,9 @@ export async function syncPSNAchievements(
               const { data } = await supabase
                 .from('achievements')
                 .update(achievementData)
-                .eq('id', existing.id)
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle.platform_game_id)
+                .eq('platform_achievement_id', trophyMeta.trophyId.toString())
                 .select()
                 .single();
               achievementRecord = data;
@@ -685,11 +715,13 @@ export async function syncPSNAchievements(
                 .upsert(
                   {
                     user_id: userId,
-                    achievement_id: achievementRecord.id,
+                    platform_id: platformId,
+                    platform_game_id: gameTitle.platform_game_id,
+                    platform_achievement_id: achievementRecord.platform_achievement_id,
                     earned_at: userTrophy.earnedDateTime,
                   },
                   {
-                    onConflict: 'user_id,achievement_id',
+                    onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id',
                   }
                 );
 
@@ -697,16 +729,16 @@ export async function syncPSNAchievements(
             }
           }
 
-          // Update user_games with the most recent trophy earned date
+          // Update user_progress with the most recent trophy earned date
           if (mostRecentTrophyDate) {
             await supabase
-              .from('user_games')
+              .from('user_progress')
               .update({
-                last_trophy_earned_at: mostRecentTrophyDate.toISOString(),
+                last_achievement_earned_at: mostRecentTrophyDate.toISOString(),
               })
               .eq('user_id', userId)
-              .eq('game_title_id', gameTitle.id)
-              .eq('platform_id', platform.id);
+              .eq('platform_id', platformId)
+              .eq('platform_game_id', gameTitle.platform_game_id);
           }
 
           processedGames++;
@@ -725,20 +757,20 @@ export async function syncPSNAchievements(
         } catch (error) {
           console.error(`❌ Error processing title ${title.trophyTitleName}:`, error);
           
-          // If trophy fetch/processing failed, mark the game with sync_failed flag if we have gameTitle/platform
-          // This prevents data inconsistency where user_games says has_platinum but no achievements exist
-          if (gameTitle?.id && platform?.id) {
+          // If trophy fetch/processing failed, mark the game with sync_failed flag if we have gameTitle
+          // This prevents data inconsistency where user_progress says has_platinum but no achievements exist
+          if (gameTitle?.platform_game_id && platformId) {
             try {
               await supabase
-                .from('user_games')
+                .from('user_progress')
                 .update({
                   sync_failed: true,
                   sync_error: error.message?.substring(0, 255),
                   last_sync_attempt: new Date().toISOString(),
                 })
                 .eq('user_id', userId)
-                .eq('game_title_id', gameTitle.id)
-                .eq('platform_id', platform.id);
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle.platform_game_id);
             } catch (updateError) {
               console.error('Failed to mark game as sync_failed:', updateError);
             }
