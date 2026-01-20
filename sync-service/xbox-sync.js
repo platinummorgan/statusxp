@@ -445,7 +445,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     console.log('Loading all user_progress for comparison...');
     const { data: existingUserGames } = await supabase
       .from('user_progress')
-      .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percent, last_rarity_sync, sync_failed, current_score')
+      .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percentage, metadata, synced_at, current_score')
       .eq('user_id', userId)
       .in('platform_id', [10, 11, 12]); // All Xbox platforms
     
@@ -681,7 +681,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
             const existingUserGame = userGamesMap.get(`${gameTitle.platform_game_id}_${platformId}`);
             const isNewGame = !existingUserGame;
-            const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
+            const syncFailed = existingUserGame && existingUserGame.metadata?.sync_failed === true;
             
             // For diff check: use current gamerscore/achievements
             const apiEarnedAchievements = title.achievement.currentAchievements || 0;
@@ -694,7 +694,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Check if rarity is stale (>30 days old)
             let needRarityRefresh = false;
             if (!isNewGame && !countsChanged && !syncFailed && existingUserGame) {
-              const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
+              const lastRaritySync = existingUserGame.metadata?.last_rarity_sync ? new Date(existingUserGame.metadata.last_rarity_sync) : null;
               const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
               needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
             }
@@ -860,18 +860,18 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               user_id: userId,
               platform_id: platformId,
               platform_game_id: gameTitle.platform_game_id,
-              completion_percent: title.achievement.progressPercentage,
+              completion_percentage: title.achievement.progressPercentage,
               total_achievements: totalAchievementsFromAPI,
               achievements_earned: title.achievement.currentAchievements,
               current_score: title.achievement.currentGamerscore,
-              last_rarity_sync: new Date().toISOString(),
               metadata: {
                 max_gamerscore: title.achievement.totalGamerscore,
                 platform_version: platformVersion,
+                last_rarity_sync: new Date().toISOString(),
+                sync_failed: false,
+                sync_error: null,
+                last_sync_attempt: new Date().toISOString(),
               },
-              sync_failed: false,
-              sync_error: null,
-              last_sync_attempt: new Date().toISOString(),
             };
             
             // Preserve last_achievement_earned_at if it exists (will be updated later after processing achievements)
@@ -1047,12 +1047,23 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // This prevents data inconsistency where user_progress says has achievements but no achievements exist
             if (gameTitle?.platform_game_id && platformId) {
               try {
+                const { data: existingGame } = await supabase
+                  .from('user_progress')
+                  .select('metadata')
+                  .eq('user_id', userId)
+                  .eq('platform_id', platformId)
+                  .eq('platform_game_id', gameTitle.platform_game_id)
+                  .single();
+                
                 await supabase
                   .from('user_progress')
                   .update({
-                    sync_failed: true,
-                    sync_error: error.message?.substring(0, 255),
-                    last_sync_attempt: new Date().toISOString(),
+                    metadata: {
+                      ...(existingGame?.metadata || {}),
+                      sync_failed: true,
+                      sync_error: error.message?.substring(0, 255),
+                      last_sync_attempt: new Date().toISOString(),
+                    }
                   })
                   .eq('user_id', userId)
                   .eq('platform_id', platformId)
