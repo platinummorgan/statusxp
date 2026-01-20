@@ -155,8 +155,25 @@ class IGDBValidator {
       return detectedPlatformId;
     }
 
-    // Detected platform NOT in IGDB filtered list - use oldest available
+    // Detected platform NOT in IGDB filtered list
     const correctPlatform = this.getOldestPlatform(filteredPlatforms, null);
+    
+    // Sanity check: Don't downgrade to older platforms when detected is newer
+    // (e.g., don't change PS4 → Vita, that's likely IGDB data quality issue)
+    const downgrades = {
+      1: [2, 5, 9],   // PS5 can downgrade to PS4, PS3, Vita
+      2: [5, 9],      // PS4 can downgrade to PS3, Vita (but Vita makes no sense!)
+      12: [11, 10],   // Series X can downgrade to One, 360
+      11: [10]        // Xbox One can downgrade to 360
+    };
+    
+    const allowedDowngrades = downgrades[detectedPlatformId] || [];
+    if (!allowedDowngrades.includes(correctPlatform)) {
+      console.log(`⚠️  IGDB: "${gameName}" found on ${correctPlatform}, but detected as ${detectedPlatformId} - likely IGDB data issue, using detected platform`);
+      console.log(`   IGDB platforms: ${filteredPlatforms.join(', ')}, Detected: ${detectedPlatformId}`);
+      return detectedPlatformId;
+    }
+    
     console.log(`⚠️  IGDB: "${gameName}" not found on platform ${detectedPlatformId}, correcting to ${correctPlatform}`);
     console.log(`   IGDB says ${platformFamily} platforms: ${filteredPlatforms.join(', ')}`);
     
