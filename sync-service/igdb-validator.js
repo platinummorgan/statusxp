@@ -150,13 +150,8 @@ class IGDBValidator {
     if (filteredPlatforms.includes(detectedPlatformId)) {
       console.log(`✅ IGDB: "${gameName}" confirmed on platform ${detectedPlatformId}`);
       
-      // But if there's an OLDER platform in the list, use that (backwards compat handling)
-      const oldestPlatform = this.getOldestPlatform(filteredPlatforms, detectedPlatformId);
-      if (oldestPlatform !== detectedPlatformId) {
-        console.log(`🔄 IGDB: "${gameName}" also exists on older platform ${oldestPlatform}, using that instead`);
-        return oldestPlatform;
-      }
-      
+      // Don't do backwards compat here - that's handled by the sync service
+      // Just confirm the game exists on the detected platform
       return detectedPlatformId;
     }
 
