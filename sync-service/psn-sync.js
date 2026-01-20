@@ -264,7 +264,7 @@ export async function syncPSNAchievements(
     console.log('Loading all user_progress for comparison...');
     const { data: allUserGames, error: loadError } = await supabase
       .from('user_progress')
-      .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percent, last_rarity_sync, sync_failed')
+      .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percentage, last_rarity_sync, sync_failed')
       .eq('user_id', userId)
       .in('platform_id', [1, 2, 5, 9]); // All PSN platforms
     
@@ -599,7 +599,7 @@ export async function syncPSNAchievements(
             user_id: userId,
             platform_id: platformId,
             platform_game_id: gameTitle.platform_game_id,
-            completion_percent: apiProgress,
+            completion_percentage: apiProgress,
             total_achievements: apiTotalTrophies,
             achievements_earned: apiEarnedTrophies,
             last_rarity_sync: new Date().toISOString(),
