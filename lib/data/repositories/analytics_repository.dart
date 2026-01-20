@@ -55,7 +55,7 @@ class AnalyticsRepository {
       while (offset < totalCount) {
         final batch = await _client
             .from('user_achievements')
-            .select('earned_at, achievements!inner(platform)')
+            .select('earned_at, achievements!inner(platform_id)')
             .eq('user_id', userId)
             .order('earned_at')
             .range(offset, offset + batchSize - 1);
@@ -74,7 +74,17 @@ class AnalyticsRepository {
       for (final row in allData) {
         final dateStr = row['earned_at'] as String;
         final date = DateTime.parse(dateStr);
-        final platform = row['achievements']['platform'] as String?;
+        final platformId = row['achievements']['platform_id'] as int?;
+        String? platform;
+        if (platformId != null) {
+          if ([1, 2, 4, 9].contains(platformId)) {
+            platform = 'psn';
+          } else if ([10, 11, 12].contains(platformId)) {
+            platform = 'xbox';
+          } else if (platformId == 5) {
+            platform = 'steam';
+          }
+        }
         
         firstDate ??= date;
         lastDate = date;
@@ -148,23 +158,23 @@ class AnalyticsRepository {
       // Query each platform separately using count (matches dashboard pattern)
       final psnResponse = await _client
           .from('user_achievements')
-          .select('id, achievements!inner(platform)')
+          .select('id')
           .eq('user_id', userId)
-          .eq('achievements.platform', 'psn')
+          .inFilter('platform_id', [1, 2, 4, 9])
           .count();
 
       final xboxResponse = await _client
           .from('user_achievements')
-          .select('id, achievements!inner(platform)')
+          .select('id')
           .eq('user_id', userId)
-          .eq('achievements.platform', 'xbox')
+          .inFilter('platform_id', [10, 11, 12])
           .count();
 
       final steamResponse = await _client
           .from('user_achievements')
-          .select('id, achievements!inner(platform)')
+          .select('id')
           .eq('user_id', userId)
-          .eq('achievements.platform', 'steam')
+          .eq('platform_id', 5)
           .count();
 
       return PlatformDistribution(
@@ -260,9 +270,9 @@ class AnalyticsRepository {
       // Get PSN count
       final countResponse = await _client
           .from('user_achievements')
-          .select('id, achievements!inner(platform)')
+          .select('id')
           .eq('user_id', userId)
-          .eq('achievements.platform', 'psn')
+          .inFilter('platform_id', [1, 2, 4, 9])
           .count();
       
       final psnCount = countResponse.count;
@@ -279,9 +289,9 @@ class AnalyticsRepository {
       while (offset < psnCount) {
         final batch = await _client
             .from('user_achievements')
-            .select('achievements!inner(platform, psn_trophy_type)')
+            .select('achievements!inner(psn_trophy_type)')
             .eq('user_id', userId)
-            .eq('achievements.platform', 'psn')
+            .inFilter('platform_id', [1, 2, 4, 9])
             .range(offset, offset + batchSize - 1);
 
         for (final row in batch as List) {
@@ -350,14 +360,24 @@ class AnalyticsRepository {
       while (offset < totalCount) {
         final batch = await _client
             .from('user_achievements')
-            .select('earned_at, achievements!inner(platform)')
+            .select('earned_at, platform_id')
             .eq('user_id', userId)
             .gte('earned_at', twelveMonthsAgo.toIso8601String())
             .range(offset, offset + batchSize - 1);
 
         for (final row in batch as List) {
           final date = DateTime.parse(row['earned_at'] as String);
-          final platform = row['achievements']['platform'] as String?;
+          final platformId = row['platform_id'] as int?;
+          String? platform;
+          if (platformId != null) {
+            if ([1, 2, 4, 9].contains(platformId)) {
+              platform = 'psn';
+            } else if ([10, 11, 12].contains(platformId)) {
+              platform = 'xbox';
+            } else if (platformId == 5) {
+              platform = 'steam';
+            }
+          }
           final key = '${date.year}-${date.month.toString().padLeft(2, '0')}';
           
           monthData[key] ??= {'psn': 0, 'xbox': 0, 'steam': 0};
