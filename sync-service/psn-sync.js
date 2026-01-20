@@ -367,10 +367,11 @@ export async function syncPSNAchievements(
           const trimmedTitle = title.trophyTitleName.trim();
           
           // 🎮 IGDB VALIDATION: Check authoritative platform data before proceeding
+          let validatedPlatformId = null; // Declare outside try-catch so backwards compat check can access it
           try {
             const validator = getIGDBValidator();
             if (validator) {
-              const validatedPlatformId = await validator.validatePlatform(trimmedTitle, platformId, 'playstation');
+              validatedPlatformId = await validator.validatePlatform(trimmedTitle, platformId, 'playstation');
               if (validatedPlatformId && validatedPlatformId !== platformId) {
                 const platformNames = { 1: 'PS5', 2: 'PS4', 5: 'PS3', 9: 'PSVITA' };
                 console.log(`🔧 IGDB Override: ${trimmedTitle} detected as ${platformNames[platformId]} but IGDB says ${platformNames[validatedPlatformId]} - using IGDB data`);
