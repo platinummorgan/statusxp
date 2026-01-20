@@ -178,7 +178,10 @@ class IGDBValidator {
 // Singleton instance
 let validator = null;
 
-export function initIGDBValidator(clientId, clientSecret) {
+export function initIGDBValidator() {
+  const clientId = process.env.IGDB_CLIENT_ID;
+  const clientSecret = process.env.IGDB_CLIENT_SECRET;
+  
   if (!clientId || !clientSecret) {
     console.warn('⚠️  IGDB credentials not provided, platform validation disabled');
     return null;
