@@ -264,7 +264,7 @@ export async function syncPSNAchievements(
     console.log('Loading all user_progress for comparison...');
     const { data: allUserGames, error: loadError } = await supabase
       .from('user_progress')
-      .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percentage, last_rarity_sync, sync_failed')
+      .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percentage, synced_at, metadata')
       .eq('user_id', userId)
       .in('platform_id', [1, 2, 5, 9]); // All PSN platforms
     
@@ -496,12 +496,12 @@ export async function syncPSNAchievements(
           }
           
           const earnedChanged = existingUserGame && existingUserGame.achievements_earned !== apiEarnedTrophies;
-          const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
+          const syncFailed = existingUserGame && existingUserGame.metadata?.sync_failed === true;
           
           // Check if rarity is stale (>30 days old)
           let needRarityRefresh = false;
           if (!isNewGame && !earnedChanged && !syncFailed && existingUserGame) {
-            const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
+            const lastRaritySync = existingUserGame.metadata?.last_rarity_sync ? new Date(existingUserGame.metadata.last_rarity_sync) : null;
             const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
             needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
           }
@@ -602,18 +602,18 @@ export async function syncPSNAchievements(
             completion_percentage: apiProgress,
             total_achievements: apiTotalTrophies,
             achievements_earned: apiEarnedTrophies,
-            last_rarity_sync: new Date().toISOString(),
+            last_played_at: title.lastUpdatedDateTime,
             metadata: {
               bronze_trophies: earned.bronze || 0,
               silver_trophies: earned.silver || 0,
               gold_trophies: earned.gold || 0,
               platinum_trophies: earned.platinum || 0,
               has_platinum: (earned.platinum || 0) > 0,
+              last_rarity_sync: new Date().toISOString(),
+              sync_failed: false,
+              sync_error: null,
+              last_sync_attempt: new Date().toISOString(),
             },
-            last_played_at: title.lastUpdatedDateTime,
-            sync_failed: false,
-            sync_error: null,
-            last_sync_attempt: new Date().toISOString(),
           };
           
           // Preserve last_achievement_earned_at if it exists (will be updated later after processing trophies)
@@ -832,12 +832,23 @@ export async function syncPSNAchievements(
           // This prevents data inconsistency where user_progress says has_platinum but no achievements exist
           if (gameTitle?.platform_game_id && platformId) {
             try {
+              const { data: existingGame } = await supabase
+                .from('user_progress')
+                .select('metadata')
+                .eq('user_id', userId)
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle.platform_game_id)
+                .single();
+              
               await supabase
                 .from('user_progress')
                 .update({
-                  sync_failed: true,
-                  sync_error: error.message?.substring(0, 255),
-                  last_sync_attempt: new Date().toISOString(),
+                  metadata: {
+                    ...(existingGame?.metadata || {}),
+                    sync_failed: true,
+                    sync_error: error.message?.substring(0, 255),
+                    last_sync_attempt: new Date().toISOString(),
+                  }
                 })
                 .eq('user_id', userId)
                 .eq('platform_id', platformId)
