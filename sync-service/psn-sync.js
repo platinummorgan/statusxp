@@ -1,6 +1,7 @@
 // Force redeploy after optimization fix - Dec 7, 2025
 import { createClient } from '@supabase/supabase-js';
 import { uploadExternalIcon } from './icon-proxy-utils.js';
+import { initIGDBValidator, getIGDBValidator } from './igdb-validator.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -65,6 +66,14 @@ export async function syncPSNAchievements(
   options = {}
 ) {
   console.log(`Starting PSN sync for user ${userId}`);
+
+  // Initialize IGDB validator for platform validation
+  try {
+    await initIGDBValidator();
+    console.log('✅ IGDB validator initialized');
+  } catch (igdbError) {
+    console.warn('⚠️  IGDB validator initialization failed, will use API-only detection:', igdbError.message);
+  }
 
   // CRITICAL: Validate profile exists before starting sync
   const { data: profileValidation, error: profileError } = await supabase
@@ -356,6 +365,41 @@ export async function syncPSNAchievements(
 
           // Find or create game using unique PSN npCommunicationId
           const trimmedTitle = title.trophyTitleName.trim();
+          
+          // 🎮 IGDB VALIDATION: Check authoritative platform data before proceeding
+          try {
+            const validator = getIGDBValidator();
+            if (validator) {
+              const validatedPlatformId = await validator.validatePlatform(trimmedTitle, platformId);
+              if (validatedPlatformId && validatedPlatformId !== platformId) {
+                const platformNames = { 1: 'PS5', 2: 'PS4', 5: 'PS3', 9: 'PSVITA' };
+                console.log(`🔧 IGDB Override: ${trimmedTitle} detected as ${platformNames[platformId]} but IGDB says ${platformNames[validatedPlatformId]} - using IGDB data`);
+                platformId = validatedPlatformId;
+                platformVersion = platformNames[validatedPlatformId];
+              } else if (validatedPlatformId) {
+                console.log(`✅ IGDB Confirmed: ${trimmedTitle} is correctly ${platformVersion}`);
+              }
+            }
+          } catch (igdbError) {
+            console.warn(`⚠️  IGDB validation failed for ${trimmedTitle}, falling back to API detection:`, igdbError.message);
+          }
+          
+          // 🔍 BACKWARDS COMPATIBILITY CHECK: See if this game_id exists on older platform
+          // PS4 games played on PS5 should stay as PS4 games
+          if (platformId === 1) { // If detected as PS5
+            const { data: ps4Version } = await supabase
+              .from('games')
+              .select('platform_id, platform_game_id')
+              .eq('platform_id', 2) // Check PS4
+              .eq('platform_game_id', title.npCommunicationId)
+              .maybeSingle();
+            
+            if (ps4Version) {
+              console.log(`⚠️  Backwards compat detected: ${trimmedTitle} exists on PS4, using PS4 platform instead of PS5`);
+              platformId = 2; // Override to PS4
+              platformVersion = 'PS4';
+            }
+          }
           
           // First try to find by PSN npCommunicationId (platform_game_id)
           const { data: existingGameById } = await supabase
