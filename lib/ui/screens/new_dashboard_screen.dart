@@ -488,7 +488,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                               borderRadius: BorderRadius.circular(12),
                               side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.5), width: 1),
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
@@ -499,7 +499,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4),
                                 Icon(
                                   Icons.arrow_drop_down,
                                   color: CyberpunkTheme.neonCyan,
@@ -528,6 +528,23 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                   ],
                                 ),
                               ),
+                              // TODO: Re-enable Analytics when premium feature is ready
+                              // const PopupMenuItem<String>(
+                              //   value: '/analytics',
+                              //   child: Row(
+                              //     children: [
+                              //       Icon(Icons.analytics, color: CyberpunkTheme.neonPurple, size: 20),
+                              //       SizedBox(width: 12),
+                              //       Row(
+                              //         children: [
+                              //           Text('Analytics', style: TextStyle(color: Colors.white)),
+                              //           SizedBox(width: 6),
+                              //           Icon(Icons.workspace_premium, color: CyberpunkTheme.goldNeon, size: 14),
+                              //         ],
+                              //       ),
+                              //     ],
+                              //   ),
+                              // ),
                               const PopupMenuItem<String>(
                                 value: '/poster',
                                 child: Row(
@@ -910,7 +927,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           value: (stats.xboxStats.gamerscore ?? 0).toString(),
           subtitle: '${stats.xboxStats.gamesCount ?? 0} Games',
           bottomLabel:
-              '${stats.xboxStats.achievementsUnlocked ?? 0} ACHIEVEMENTS',
+              '${(stats.xboxStats.averagePerGame ?? 0).toStringAsFixed(0)} AVG/GAME',
           color: const Color(0xFF107C10), // Xbox Green
         ),
 
@@ -1402,7 +1419,8 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => GameAchievementsScreen(
-            gameId: platform.gameId,
+            platformId: platform.platformId,
+            platformGameId: platform.platformGameId ?? platform.gameId,
             gameName: game.title,
             platform: platform.platform,
             coverUrl: game.coverUrl,
@@ -1481,7 +1499,8 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => GameAchievementsScreen(
-                              gameId: platform.gameId,
+                              platformId: platform.platformId,
+                              platformGameId: platform.platformGameId ?? platform.gameId,
                               gameName: game.title,
                               platform: platform.platform,
                               coverUrl: game.coverUrl,
@@ -1828,11 +1847,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: const Color(0xFF1A1F3A),
-          title: Row(
+          title: const Row(
             children: [
-              const Icon(Icons.star, color: CyberpunkTheme.goldNeon),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.star, color: CyberpunkTheme.goldNeon),
+              SizedBox(width: 8),
+              Text(
                 'Premium Feature',
                 style: TextStyle(color: Colors.white),
               ),
@@ -1979,11 +1998,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  const Row(
                     children: [
-                      const Icon(Icons.wallpaper, color: CyberpunkTheme.neonPurple),
-                      const SizedBox(width: 12),
-                      const Text(
+                      Icon(Icons.wallpaper, color: CyberpunkTheme.neonPurple),
+                      SizedBox(width: 12),
+                      Text(
                         'Choose Background',
                         style: TextStyle(
                           fontSize: 20,

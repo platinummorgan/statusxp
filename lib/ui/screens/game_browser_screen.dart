@@ -350,8 +350,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   void _showPlatformSelectionDialog(BuildContext context, Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
     final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [];
+    final platformIds = game['platform_ids'] as List<dynamic>? ?? [];
+    final platformGameIds = game['platform_game_ids'] as List<dynamic>? ?? [];
     final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
-    final gameId = game['id'];
 
     showDialog(
       context: context,
@@ -387,7 +388,14 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 20),
-                ...allPlatforms.map((platformCode) {
+                ...allPlatforms.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final platformCode = entry.value;
+                  
+                  // Get platform_id and platform_game_id for this platform
+                  final platformId = index < platformIds.length ? platformIds[index] : null;
+                  final platformGameId = index < platformGameIds.length ? platformGameIds[index] : null;
+                  
                   Color platformColor;
                   IconData platformIcon;
                   String platformLabel;
@@ -419,7 +427,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => GameAchievementsScreen(
-                              gameId: gameId.toString(),
+                              platformId: platformId,
+                              platformGameId: platformGameId?.toString(),
                               gameName: name,
                               platform: platformCode.toString(),
                               coverUrl: coverUrl,
@@ -501,14 +510,15 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   Widget _buildGameCard(Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
     final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
-    final gameId = game['id'];
+    final platformId = game['platform_id'];
+    final platformGameId = game['platform_game_id'];
     final platformData = game['platforms'] as Map<String, dynamic>?;
     final platformCode = platformData?['code'] as String? ?? '';
     final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [platformCode];
 
     return GestureDetector(
       onTap: () {
-        if (gameId != null) {
+        if (platformGameId != null) {
           // If game has multiple platforms and no filter is active, show platform selector
           if (allPlatforms.length > 1 && _platformFilter == null) {
             _showPlatformSelectionDialog(context, game);
@@ -517,7 +527,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => GameAchievementsScreen(
-                  gameId: gameId.toString(),
+                  platformId: platformId,
+                  platformGameId: platformGameId?.toString(),
                   gameName: name,
                   platform: _platformFilter ?? platformCode,
                   coverUrl: coverUrl,
@@ -644,7 +655,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   Widget _buildGameListItem(Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
     final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
-    final gameId = game['id'];
+    final platformId = game['platform_id'];
+    final platformGameId = game['platform_game_id'];
     final platformData = game['platforms'] as Map<String, dynamic>?;
     final platformCode = platformData?['code'] as String? ?? '';
     final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [platformCode];
@@ -653,7 +665,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
         onTap: () {
-          if (gameId != null) {
+          if (platformGameId != null) {
             // If game has multiple platforms and no filter is active, show platform selector
             if (allPlatforms.length > 1 && _platformFilter == null) {
               _showPlatformSelectionDialog(context, game);
@@ -662,7 +674,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => GameAchievementsScreen(
-                    gameId: gameId.toString(),
+                    platformId: platformId,
+                    platformGameId: platformGameId?.toString(),
                     gameName: name,
                     platform: _platformFilter ?? platformCode,
                     coverUrl: coverUrl,

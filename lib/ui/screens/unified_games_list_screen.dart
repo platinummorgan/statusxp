@@ -660,7 +660,8 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => GameAchievementsScreen(
-          gameId: platform.gameId,
+          platformId: platform.platformId,
+          platformGameId: platform.platformGameId ?? platform.gameId,
           gameName: game.title,
           platform: platform.platform,
           coverUrl: game.coverUrl,

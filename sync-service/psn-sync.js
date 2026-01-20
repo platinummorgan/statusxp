@@ -625,26 +625,26 @@ export async function syncPSNAchievements(
             const isPlatinum = trophyMeta.trophyType === 'platinum';
             const includeInScore = !isPlatinum;
             
-            let baseStatusXP = 10; // Default for common (>25%)
+            let baseStatusXP = 0.5; // Default for common (>25%)
             let rarityMultiplier = 1.00;
             
             if (!includeInScore) {
               baseStatusXP = 0; // Platinum trophies don't count
             } else if (rarityPercent !== null) {
               if (rarityPercent > 25) {
-                baseStatusXP = 10;
+                baseStatusXP = 0.5;  // Common: 0.5 × 1.00 = 0.50
                 rarityMultiplier = 1.00;
               } else if (rarityPercent > 10) {
-                baseStatusXP = 13;
+                baseStatusXP = 0.7;  // Uncommon: 0.7 × 1.25 = 0.875
                 rarityMultiplier = 1.25;
               } else if (rarityPercent > 5) {
-                baseStatusXP = 18;
+                baseStatusXP = 0.9;  // Rare: 0.9 × 1.75 = 1.575
                 rarityMultiplier = 1.75;
               } else if (rarityPercent > 1) {
-                baseStatusXP = 23;
+                baseStatusXP = 1.2;  // Very Rare: 1.2 × 2.25 = 2.70
                 rarityMultiplier = 2.25;
               } else {
-                baseStatusXP = 30;
+                baseStatusXP = 1.5;  // Ultra Rare: 1.5 × 3.00 = 4.50
                 rarityMultiplier = 3.00;
               }
             }
@@ -662,10 +662,13 @@ export async function syncPSNAchievements(
               is_platinum: isPlatinum,
               include_in_score: includeInScore,
               metadata: {
-                trophy_type: trophyMeta.trophyType,
+                psn_trophy_type: trophyMeta.trophyType, // FIXED: was trophy_type, must be psn_trophy_type
                 platform_version: platformVersion, // PS3, PS4, PS5, PSVITA
                 is_dlc: isDLC,
                 dlc_name: dlcName,
+                is_platinum: isPlatinum, // Add is_platinum to metadata too
+                steam_hidden: false, // PSN doesn't have hidden trophies
+                xbox_is_secret: false, // PSN doesn't use Xbox secret flag
               },
             };
 
@@ -828,8 +831,7 @@ export async function syncPSNAchievements(
     // Calculate StatusXP for all achievements and games
     console.log('Calculating StatusXP values...');
     try {
-      await supabase.rpc('calculate_user_achievement_statusxp');
-      await supabase.rpc('calculate_user_game_statusxp');
+      await supabase.rpc('refresh_statusxp_leaderboard');
       console.log('✅ StatusXP calculation complete');
     } catch (calcError) {
       console.error('⚠️ StatusXP calculation failed:', calcError);

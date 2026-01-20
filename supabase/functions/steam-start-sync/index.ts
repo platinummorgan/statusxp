@@ -104,8 +104,13 @@ serve(async (req) => {
       
       // Add auth header if SYNC_SERVICE_SECRET is configured
       const syncSecret = Deno.env.get('SYNC_SERVICE_SECRET');
+      console.log('🔐 SYNC_SERVICE_SECRET present:', !!syncSecret);
+      console.log('🔐 SYNC_SERVICE_SECRET value:', syncSecret ? '[SET]' : '[NOT SET]');
       if (syncSecret) {
         headers['Authorization'] = `Bearer ${syncSecret}`;
+        console.log('🔐 Authorization header set:', `Bearer ${syncSecret.substring(0, 3)}...`);
+      } else {
+        console.log('🔐 No SYNC_SERVICE_SECRET found - no auth header sent');
       }
       
       railwayResponse = await fetch(`${RAILWAY_URL}/sync/steam`, {

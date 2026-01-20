@@ -22,10 +22,10 @@ class AchievementCheckerService {
         _getCrossStats(userId),
       ]);
       
-      final psnStats = results[0] as Map<String, dynamic>;
-      final xboxStats = results[1] as Map<String, dynamic>;
-      final steamStats = results[2] as Map<String, dynamic>;
-      final crossStats = results[3] as Map<String, dynamic>;
+      final psnStats = results[0];
+      final xboxStats = results[1];
+      final steamStats = results[2];
+      final crossStats = results[3];
       
       // Check PSN achievements
       await _checkPSNAchievements(userId, psnStats, unlockedIds, newlyUnlocked);

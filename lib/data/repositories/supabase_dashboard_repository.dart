@@ -1,7 +1,7 @@
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Repository for fetching dashboard statistics from Supabase
+/// Repository for fetching dashboard statistics from Supabase (V2 Schema)
 class SupabaseDashboardRepository {
   final SupabaseClient _client;
 
@@ -14,9 +14,9 @@ class SupabaseDashboardRepository {
     // Fetch all data in parallel for performance
     final results = await Future.wait([
       _getStatusXPTotal(userId),
-      _getPlatformStats(userId, 'psn'),
-      _getPlatformStats(userId, 'xbox'),
-      _getPlatformStats(userId, 'steam'),
+      _getPlatformStats(userId, 1, psnPlatforms: [1, 2, 4, 9]), // PSN (PS5=1, PS3=2, PS4=4, PSVITA=9)
+      _getPlatformStats(userId, 2, xboxPlatforms: [10, 11, 12]), // Xbox (360=10, One=11, Series X=12)
+      _getPlatformStats(userId, 5), // Steam (platform_id=5)
       _getUserProfile(userId),
     ]);
 
@@ -54,69 +54,120 @@ class SupabaseDashboardRepository {
   }
 
   /// Gets platform-specific stats
-  Future<PlatformStats> _getPlatformStats(String userId, String platform) async {
-    // Get achievement count for platform - need to join with achievements table
+  Future<PlatformStats> _getPlatformStats(
+    String userId, 
+    int platformId, 
+    {List<int>? xboxPlatforms, List<int>? psnPlatforms}
+  ) async {
+    // Determine which platform IDs to query
+    final platformIds = psnPlatforms ?? xboxPlatforms ?? [platformId];
+    
+    // Get achievement count for platform using V2 schema
     final achievementsResponse = await _client
         .from('user_achievements')
-        .select('id, achievements!inner(platform)')
+        .select('platform_achievement_id')
         .eq('user_id', userId)
-        .eq('achievements.platform', platform)
+        .inFilter('platform_id', platformIds)
         .count();
 
     final achievementsCount = achievementsResponse.count;
 
-    // Get game count for platform by joining with platforms table
-    // Map platform codes: psn -> PS3,PS4,PS5,PSVITA,PSVR,PSVR2
-    List<String> platformCodes;
-    if (platform == 'psn') {
-      platformCodes = ['PS3', 'PS4', 'PS5', 'PSVITA', 'PSVR', 'PSVR2'];
-    } else if (platform == 'xbox') {
-      platformCodes = ['XBOX360', 'XBOXONE', 'XBOXSERIESX'];
-    } else {
-      platformCodes = ['Steam'];
-    }
-    
-    // Get game count and StatusXP for platform by joining with platforms table
-    final gamesResponse = await _client
-        .from('user_games')
-        .select('id, statusxp_effective, platforms!inner(code)')
+    // Get game count for platform using V2 user_progress  
+    final gamesResponseList = await _client
+        .from('user_progress')
+        .select('platform_game_id, current_score, metadata, platform_id')
         .eq('user_id', userId)
-        .inFilter('platforms.code', platformCodes);
+        .inFilter('platform_id', platformIds);
 
-    final gamesCount = (gamesResponse as List).length;
+    print('[DASHBOARD] Platform IDs queried: $platformIds');
+    print('[DASHBOARD] Games returned: ${gamesResponseList.length}');
+    if (gamesResponseList.isEmpty) {
+      print('[DASHBOARD] WARNING: No games found for user_id=$userId, platform_ids=$platformIds');
+    }
     
-    // Sum statusXP for this platform
+    final gamesCount = gamesResponseList.length;
+    
+    // Calculate StatusXP using V2 function with stack multipliers
     double platformStatusXP = 0.0;
-    for (final game in gamesResponse) {
-      platformStatusXP += ((game['statusxp_effective'] as num?)?.toDouble() ?? 0.0);
-    }
-
-    // Get platinum count (PSN only) - need to join with achievements table
     int platinums = 0;
-    if (platform == 'psn') {
-      final platinumResponse = await _client
-          .from('user_achievements')
-          .select('id, achievements!inner(platform, psn_trophy_type)')
-          .eq('user_id', userId)
-          .eq('achievements.platform', 'psn')
-          .eq('achievements.psn_trophy_type', 'platinum')
-          .count();
-
-      platinums = platinumResponse.count;
-    }
-
-    // Get gamerscore (Xbox only)
     int gamerscore = 0;
-    if (platform == 'xbox') {
-      final gamerscoreResponse = await _client
-          .from('user_games')
-          .select('xbox_current_gamerscore, platforms!inner(code)')
-          .eq('user_id', userId)
-          .inFilter('platforms.code', platformCodes);
+    
+    try {
+      // Get StatusXP from V2 calculation function
+      final statusxpResponse = await _client.rpc('calculate_statusxp_with_stacks', params: {
+        'p_user_id': userId,
+      });
       
-      for (final game in (gamerscoreResponse as List)) {
-        gamerscore += (game['xbox_current_gamerscore'] as int?) ?? 0;
+      print('Dashboard StatusXP response: $statusxpResponse');
+      
+      if (statusxpResponse is List) {
+        print('Dashboard StatusXP response is List with ${statusxpResponse.length} items');
+        for (final game in statusxpResponse) {
+          final gamePlatformId = game['platform_id'] as int?;
+          final effectiveXp = game['statusxp_effective'] as int?;
+          
+          print('Game: platform_id=$gamePlatformId, effective_xp=$effectiveXp');
+          
+          if (gamePlatformId != null && effectiveXp != null) {
+            if (psnPlatforms != null && psnPlatforms.contains(gamePlatformId)) {
+              platformStatusXP += effectiveXp.toDouble();
+              print('Added $effectiveXp to PSN StatusXP, total now: $platformStatusXP');
+            } else if (xboxPlatforms != null && xboxPlatforms.contains(gamePlatformId)) {
+              platformStatusXP += effectiveXp.toDouble();
+              print('Added $effectiveXp to Xbox StatusXP, total now: $platformStatusXP');
+            } else if (platformId == gamePlatformId) {
+              platformStatusXP += effectiveXp.toDouble();
+              print('Added $effectiveXp to Steam StatusXP, total now: $platformStatusXP');
+            }
+          }
+        }
+      } else {
+        print('Dashboard StatusXP response is not a List: ${statusxpResponse.runtimeType}');
       }
+    } catch (e) {
+      print('Error calling calculate_statusxp_with_stacks: $e');
+      // Fallback to old calculation
+      platformStatusXP = await _calculateStatusXPFallback(userId, platformIds);
+    }
+    
+    // Get StatusXP from main leaderboard_cache (all platforms)
+    print('[DASHBOARD] Fetching stats from leaderboard cache');
+    final statusxpCache = await _client
+        .from('leaderboard_cache')
+        .select('total_statusxp')
+        .eq('user_id', userId)
+        .maybeSingle();
+    
+    if (statusxpCache != null) {
+      // Get total StatusXP from main cache (includes all platforms)
+      final totalStatusXP = ((statusxpCache['total_statusxp'] as int?) ?? 0).toDouble();
+      
+      // For now, use full StatusXP for any platform query
+      // TODO: Calculate per-platform StatusXP from calculate_statusxp_with_stacks results
+      platformStatusXP = totalStatusXP;
+      print('[DASHBOARD] StatusXP from cache: $platformStatusXP');
+    }
+    
+    // Get platform-specific stats
+    if (psnPlatforms != null) {
+      // PSN: Get platinum count from psn_leaderboard_cache
+      final psnCache = await _client
+          .from('psn_leaderboard_cache')
+          .select('platinum_count')
+          .eq('user_id', userId)
+          .maybeSingle();
+      
+      if (psnCache != null) {
+        platinums = (psnCache['platinum_count'] as int?) ?? 0;
+        print('[DASHBOARD] PSN platinums: $platinums');
+      }
+    } else if (xboxPlatforms != null) {
+      // Xbox: Calculate gamerscore from user_progress
+      for (final game in gamesResponseList) {
+        final score = (game['current_score'] as int?) ?? 0;
+        gamerscore += score;
+      }
+      print('[DASHBOARD] Xbox gamerscore: $gamerscore');
     }
 
     return PlatformStats(
@@ -133,7 +184,7 @@ class SupabaseDashboardRepository {
     // Get profile data from profiles table
     final profile = await _client
         .from('profiles')
-        .select('psn_online_id, psn_avatar_url, psn_is_plus, steam_display_name, steam_avatar_url, xbox_gamertag, xbox_avatar_url, preferred_display_platform')
+        .select('psn_online_id, psn_avatar_url, psn_is_plus, steam_display_name, steam_avatar_url, xbox_gamertag, xbox_avatar_url, preferred_display_platform, display_name, username')
         .eq('id', userId)
         .maybeSingle();
 
@@ -147,51 +198,39 @@ class SupabaseDashboardRepository {
     }
 
     final preferredPlatform = profile['preferred_display_platform'] as String? ?? 'psn';
-
-    // Determine display name based on preferred platform
-    String displayName = 'Player';
-    if (preferredPlatform == 'psn' && profile['psn_online_id'] != null) {
-      displayName = profile['psn_online_id'] as String;
-    } else if (preferredPlatform == 'steam' && profile['steam_display_name'] != null) {
-      displayName = profile['steam_display_name'] as String;
-    } else if (preferredPlatform == 'xbox' && profile['xbox_gamertag'] != null) {
-      displayName = profile['xbox_gamertag'] as String;
-    } else if (profile['psn_online_id'] != null) {
-      // Fallback to PSN if preferred platform not available
-      displayName = profile['psn_online_id'] as String;
-    } else if (profile['steam_display_name'] != null) {
-      // Fallback to Steam if PSN not available
-      displayName = profile['steam_display_name'] as String;
-    } else if (profile['xbox_gamertag'] != null) {
-      // Fallback to Xbox if others not available
-      displayName = profile['xbox_gamertag'] as String;
-    }
     
-    // If still "Player" (all names are NULL), try to use email
-    if (displayName == 'Player') {
-      try {
-        final user = _client.auth.currentUser;
-        final email = user?.email;
-        if (email != null && email.isNotEmpty) {
-          // Use first part of email before @
-          displayName = email.split('@').first;
-        }
-      } catch (e) {
-        // Ignore error, keep "Player" as fallback
-      }
-    }
-
-    // Get avatar URL based on preferred platform
+    String displayName;
     String? avatarUrl;
-    if (preferredPlatform == 'psn') {
-      avatarUrl = profile['psn_avatar_url'] as String?;
-    } else if (preferredPlatform == 'xbox') {
-      avatarUrl = profile['xbox_avatar_url'] as String?;
-    } else if (preferredPlatform == 'steam') {
-      avatarUrl = profile['steam_avatar_url'] as String?;
+    
+    // Determine display name and avatar based on preferred platform
+    switch (preferredPlatform) {
+      case 'psn':
+        displayName = profile['psn_online_id'] as String? ?? 
+                      profile['display_name'] as String? ?? 
+                      profile['username'] as String? ?? 
+                      'Player';
+        avatarUrl = profile['psn_avatar_url'] as String?;
+        break;
+      case 'xbox':
+        displayName = profile['xbox_gamertag'] as String? ?? 
+                      profile['display_name'] as String? ?? 
+                      profile['username'] as String? ?? 
+                      'Player';
+        avatarUrl = profile['xbox_avatar_url'] as String?;
+        break;
+      case 'steam':
+        displayName = profile['steam_display_name'] as String? ?? 
+                      profile['display_name'] as String? ?? 
+                      profile['username'] as String? ?? 
+                      'Player';
+        avatarUrl = profile['steam_avatar_url'] as String?;
+        break;
+      default:
+        displayName = profile['display_name'] as String? ?? 
+                      profile['username'] as String? ?? 
+                      'Player';
+        avatarUrl = null;
     }
-    // Fallback to PSN avatar if preferred platform avatar not available
-    avatarUrl ??= profile['psn_avatar_url'] as String?;
 
     return {
       'displayName': displayName,
@@ -199,5 +238,22 @@ class SupabaseDashboardRepository {
       'avatarUrl': avatarUrl,
       'isPsPlus': profile['psn_is_plus'] as bool? ?? false,
     };
+  }
+
+  Future<double> _calculateStatusXPFallback(String userId, List<int> platformIds) async {
+    // Fallback: sum base_status_xp from earned achievements (old method)
+    final statusxpResult = await _client
+        .from('user_achievements')
+        .select('achievements!inner(base_status_xp)')
+        .eq('user_id', userId)
+        .inFilter('platform_id', platformIds);
+    
+    double totalXP = 0.0;
+    for (final row in (statusxpResult as List)) {
+      final achievement = row['achievements'] as Map<String, dynamic>;
+      final baseXp = (achievement['base_status_xp'] as int?) ?? 0;
+      totalXP += baseXp.toDouble();
+    }
+    return totalXP;
   }
 }

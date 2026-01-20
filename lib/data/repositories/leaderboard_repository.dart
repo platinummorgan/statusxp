@@ -196,25 +196,30 @@ class LeaderboardRepository {
       // Query from pre-computed cache table (fast!)
       final response = await _client
           .from('xbox_leaderboard_cache')
-          .select('user_id, display_name, avatar_url, achievement_count, total_games')
-          .order('achievement_count', ascending: false)
+          .select('user_id, display_name, avatar_url, gamerscore, achievement_count, total_games')
+          .order('gamerscore', ascending: false)
           .order('total_games', ascending: false)
           .limit(limit);
 
       if ((response as List).isEmpty) {
+        print('⚠️ Xbox leaderboard cache is empty');
         return [];
       }
 
+      print('✅ Xbox leaderboard: ${response.length} entries loaded');
       return response.map((row) {
+        final gamerscore = row['gamerscore'];
+        print('DEBUG: ${row['display_name']} - gamerscore value: $gamerscore (type: ${gamerscore.runtimeType})');
         return LeaderboardEntry.fromJson({
           'user_id': row['user_id'],
           'display_name': row['display_name'],
           'avatar_url': row['avatar_url'],
-          'score': row['achievement_count'],
+          'score': gamerscore,
           'games_count': row['total_games'],
         });
       }).toList();
     } catch (e) {
+      print('❌ Xbox leaderboard error: $e');
       // Fallback to complex query if cache doesn't exist yet
       return _getXboxLeaderboardFallback(limit: limit);
     }

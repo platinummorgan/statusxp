@@ -36,7 +36,11 @@ class UnifiedGamesRepository {
           final platform = platformData['code'] as String? ?? 'unknown';
           final completion = (platformData['completion'] as num?)?.toDouble() ?? 0.0;
           final statusXP = ((platformData['statusxp'] as num?)?.toDouble() ?? 0.0).toInt();
-          final gameTitleId = (platformData['game_title_id'] as int?)?.toString() ?? '';
+          final gameTitleId = platformData['game_title_id']?.toString() ?? '';
+          
+          // V2 composite keys
+          final platformId = platformData['platform_id'] as int?;
+          final platformGameId = platformData['platform_game_id']?.toString();
           
           // Get trophy/achievement counts based on platform
           final int bronze = (platformData['bronze_trophies'] as int?) ?? 0;
@@ -80,6 +84,8 @@ class UnifiedGamesRepository {
           platforms.add(PlatformGameData(
             platform: platform,
             gameId: gameTitleId,
+            platformId: platformId,
+            platformGameId: platformGameId,
             achievementsEarned: earnedCount,
             achievementsTotal: totalCount,
             completion: completion,

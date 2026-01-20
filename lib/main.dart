@@ -70,13 +70,11 @@ void main() async {
         _safeLog('Error: $errStr');
         _safeLog('Error type: ${error.runtimeType}');
         _safeLog('Stack trace:');
-        if (stack != null) {
-          final stackLines = stack.toString().split('\n');
-          for (int i = 0; i < stackLines.length && i < 15; i++) {
-            _safeLog('  $i: ${stackLines[i]}');
-          }
+        final stackLines = stack.toString().split('\n');
+        for (int i = 0; i < stackLines.length && i < 15; i++) {
+          _safeLog('  $i: ${stackLines[i]}');
         }
-        
+              
         // Try to capture additional runtime context
         _safeLog('Runtime context:');
         _safeLog('  - kIsWeb: $kIsWeb');

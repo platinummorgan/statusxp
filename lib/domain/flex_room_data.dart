@@ -115,6 +115,9 @@ class FlexTile {
   final String achievementName;
   final String gameName;
   final String? gameId;
+  final int? platformId; // V2 composite key part 1
+  final String? platformGameId; // V2 composite key part 2
+  final String? platformAchievementId; // V2 composite key part 3
   final String? gameCoverUrl;
   final String platform; // 'psn', 'xbox', 'steam'
   final double? rarityPercent;
@@ -128,6 +131,9 @@ class FlexTile {
     required this.achievementName,
     required this.gameName,
     this.gameId,
+    this.platformId,
+    this.platformGameId,
+    this.platformAchievementId,
     this.gameCoverUrl,
     required this.platform,
     this.rarityPercent,
@@ -143,6 +149,9 @@ class FlexTile {
       achievementName: json['achievement_name'] as String,
       gameName: json['game_name'] as String,
       gameId: json['game_id'] as String?,
+      platformId: json['platform_id'] as int?,
+      platformGameId: json['platform_game_id'] as String?,
+      platformAchievementId: json['platform_achievement_id'] as String?,
       gameCoverUrl: json['game_cover_url'] as String?,
       platform: json['platform'] as String,
       rarityPercent: (json['rarity_percent'] as num?)?.toDouble(),
@@ -161,6 +170,10 @@ class FlexTile {
       'achievement_name': achievementName,
       'game_name': gameName,
       'game_id': gameId,
+      'platform_id': platformId,
+      'platform_game_id': platformGameId,
+      'platform_achievement_id': platformAchievementId,
+      'platform_game_id': platformGameId,
       'game_cover_url': gameCoverUrl,
       'platform': platform,
       'rarity_percent': rarityPercent,

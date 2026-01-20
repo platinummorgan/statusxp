@@ -38,28 +38,111 @@ class FlexRoomRepository {
     }
   }
 
-  /// Helper to convert achievement response to FlexTile with game data
-  Future<FlexTile?> _buildFlexTile(Map<String, dynamic> userAchievementRow) async {
+  /// Helper to convert RPC response to FlexTile with game data already included
+  Future<FlexTile?> _buildFlexTile(Map<String, dynamic> rpcRow) async {
     try {
-      final achievement = userAchievementRow['achievements'] as Map<String, dynamic>;
-      final gameId = achievement['game_title_id'];
-      final rarityPercent = achievement['rarity_global']?.toDouble();
+      final platformId = rpcRow['platform_id'] as int?;
+      final platformGameId = rpcRow['platform_game_id'] as String?;
+      final platformAchievementId = rpcRow['platform_achievement_id'] as String?;
       
-      // Extract game data from nested response (no separate query needed)
-      final gameData = achievement['game_titles'] as Map<String, dynamic>?;
+      if (platformId == null || platformGameId == null || platformAchievementId == null) {
+        return null;
+      }
+
+      final rarityPercent = (rpcRow['rarity_global'] as num?)?.toDouble();
+
+      // Get platform code from platform_id
+      String platform;
+      if (platformId == 1) {
+        platform = 'psn';
+      } else if (platformId == 5) {
+        platform = 'steam';
+      } else if (platformId >= 10 && platformId <= 12) {
+        platform = 'xbox';
+      } else {
+        platform = 'unknown';
+      }
 
       return FlexTile(
-        achievementId: achievement['id'],
-        achievementName: achievement['name'],
-        gameName: gameData?['name'] ?? 'Unknown Game',
-        gameId: gameId?.toString(),
-        gameCoverUrl: gameData?['proxied_cover_url'] ?? gameData?['cover_url'],
-        platform: achievement['platform'],
+        achievementId: 0, // Legacy field, not used in V2
+        achievementName: rpcRow['achievement_name'] ?? 'Unknown Achievement',
+        gameName: rpcRow['game_name'] ?? 'Unknown Game',
+        gameId: platformGameId,
+        platformId: platformId,
+        platformGameId: platformGameId,
+        platformAchievementId: platformAchievementId,
+        gameCoverUrl: rpcRow['game_cover_url'],
+        platform: platform,
+        rarityPercent: rarityPercent,
+        rarityBand: _getRarityBand(rarityPercent),
+        statusXP: _getStatusXP(rarityPercent),
+        earnedAt: DateTime.parse(rpcRow['earned_at']),
+        iconUrl: rpcRow['achievement_icon_url'],
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Helper to build FlexTile from user_achievement row (requires additional queries)
+  Future<FlexTile?> _buildFlexTileFromUserAchievement(Map<String, dynamic> userAchievementRow) async {
+    try {
+      final platformId = userAchievementRow['platform_id'] as int?;
+      final platformGameId = userAchievementRow['platform_game_id'] as String?;
+      final platformAchievementId = userAchievementRow['platform_achievement_id'] as String?;
+      
+      if (platformId == null || platformGameId == null || platformAchievementId == null) {
+        return null;
+      }
+
+      // Query achievement data using V2 composite keys
+      final achievementResponse = await _client
+          .from('achievements')
+          .select('name, icon_url, rarity_global, metadata')
+          .eq('platform_id', platformId)
+          .eq('platform_game_id', platformGameId)
+          .eq('platform_achievement_id', platformAchievementId)
+          .maybeSingle();
+
+      if (achievementResponse == null) return null;
+
+      // Query game data using V2 composite keys
+      final gameResponse = await _client
+          .from('games')
+          .select('name, cover_url')
+          .eq('platform_id', platformId)
+          .eq('platform_game_id', platformGameId)
+          .maybeSingle();
+
+      final rarityPercent = (achievementResponse['rarity_global'] as num?)?.toDouble();
+
+      // Get platform code from platform_id
+      String platform;
+      if (platformId == 1) {
+        platform = 'psn';
+      } else if (platformId == 5) {
+        platform = 'steam';
+      } else if (platformId >= 10 && platformId <= 12) {
+        platform = 'xbox';
+      } else {
+        platform = 'unknown';
+      }
+
+      return FlexTile(
+        achievementId: 0, // Legacy field, not used in V2
+        achievementName: achievementResponse['name'],
+        gameName: gameResponse?['name'] ?? 'Unknown Game',
+        gameId: platformGameId,
+        platformId: platformId,
+        platformGameId: platformGameId,
+        platformAchievementId: platformAchievementId,
+        gameCoverUrl: gameResponse?['cover_url'],
+        platform: platform,
         rarityPercent: rarityPercent,
         rarityBand: _getRarityBand(rarityPercent),
         statusXP: _getStatusXP(rarityPercent),
         earnedAt: DateTime.parse(userAchievementRow['earned_at']),
-        iconUrl: achievement['proxied_icon_url'] ?? achievement['icon_url'],
+        iconUrl: achievementResponse['icon_url'],
       );
     } catch (e) {
       return null;
@@ -96,7 +179,7 @@ class FlexRoomRepository {
           mostTimeSunk: results[1] as FlexTile?,
           sweattiestPlatinum: results[2] as FlexTile?,
           superlatives: {},
-          recentFlexes: (results[3] as List).map((e) => RecentFlex.fromJson(e as Map<String, dynamic>)).toList(),
+          recentFlexes: results[3] as List<RecentFlex>,
         );
       }
 
@@ -104,39 +187,68 @@ class FlexRoomRepository {
       final data = response;
       final featuredQueries = <Future>[];
       
-      // Featured tiles queries
+      // Featured tiles queries using composite keys
       featuredQueries.add(
-        data['flex_of_all_time_id'] != null
-            ? _getAchievementTile(data['flex_of_all_time_id'], userId)
+        data['flex_of_all_time_platform_id'] != null &&
+        data['flex_of_all_time_platform_game_id'] != null &&
+        data['flex_of_all_time_platform_achievement_id'] != null
+            ? _getAchievementTileV2(
+                data['flex_of_all_time_platform_id'],
+                data['flex_of_all_time_platform_game_id'],
+                data['flex_of_all_time_platform_achievement_id'],
+                userId)
             : Future.value(null)
       );
       
       featuredQueries.add(
-        data['rarest_flex_id'] != null
-            ? _getAchievementTile(data['rarest_flex_id'], userId)
+        data['rarest_flex_platform_id'] != null &&
+        data['rarest_flex_platform_game_id'] != null &&
+        data['rarest_flex_platform_achievement_id'] != null
+            ? _getAchievementTileV2(
+                data['rarest_flex_platform_id'],
+                data['rarest_flex_platform_game_id'],
+                data['rarest_flex_platform_achievement_id'],
+                userId)
             : _getRarestAchievement(userId)
       );
       
       featuredQueries.add(
-        data['most_time_sunk_id'] != null
-            ? _getAchievementTile(data['most_time_sunk_id'], userId)
+        data['most_time_sunk_platform_id'] != null &&
+        data['most_time_sunk_platform_game_id'] != null &&
+        data['most_time_sunk_platform_achievement_id'] != null
+            ? _getAchievementTileV2(
+                data['most_time_sunk_platform_id'],
+                data['most_time_sunk_platform_game_id'],
+                data['most_time_sunk_platform_achievement_id'],
+                userId)
             : _getMostTimeSunkGame(userId)
       );
       
       featuredQueries.add(
-        data['sweatiest_platinum_id'] != null
-            ? _getAchievementTile(data['sweatiest_platinum_id'], userId)
+        data['sweatiest_platinum_platform_id'] != null &&
+        data['sweatiest_platinum_platform_game_id'] != null &&
+        data['sweatiest_platinum_platform_achievement_id'] != null
+            ? _getAchievementTileV2(
+                data['sweatiest_platinum_platform_id'],
+                data['sweatiest_platinum_platform_game_id'],
+                data['sweatiest_platinum_platform_achievement_id'],
+                userId)
             : _getSweattiestPlatinum(userId)
       );
 
-      // Add superlatives queries
+      // Add superlatives queries using composite keys
       final superlativesJson = data['superlatives'] as Map<String, dynamic>? ?? {};
       final superlativeKeys = <String>[];
       
       for (final entry in superlativesJson.entries) {
-        if (entry.value != null) {
+        if (entry.value != null && entry.value is Map) {
+          final compositeKey = entry.value as Map<String, dynamic>;
           superlativeKeys.add(entry.key);
-          featuredQueries.add(_getAchievementTile(entry.value as int, userId));
+          featuredQueries.add(_getAchievementTileV2(
+            compositeKey['platform_id'],
+            compositeKey['platform_game_id'],
+            compositeKey['platform_achievement_id'],
+            userId));
         }
       }
 
@@ -174,30 +286,57 @@ class FlexRoomRepository {
         superlatives: superlatives,
         recentFlexes: recentFlexes,
       );
-    } catch (e) {
-      return null;
+    } catch (e, stackTrace) {
+      print('❌ Flex Room Error: $e');
+      print('Stack trace: $stackTrace');
+      rethrow;
     }
   }
 
   /// Update or create flex room data
   Future<bool> updateFlexRoomData(FlexRoomData data) async {
     try {
-      // Convert superlatives to JSONB format (category_id -> achievement_id)
-      final superlativesJson = <String, int>{};
+      // Convert superlatives to JSONB format with composite keys
+      final superlativesJson = <String, Map<String, dynamic>>{};
       for (final entry in data.superlatives.entries) {
-        superlativesJson[entry.key] = entry.value.achievementId;
+        superlativesJson[entry.key] = {
+          'platform_id': entry.value.platformId,
+          'platform_game_id': entry.value.platformGameId,
+          'platform_achievement_id': entry.value.platformAchievementId,
+        };
       }
 
       final payload = {
         'user_id': data.userId,
         'tagline': data.tagline,
         'last_updated': data.lastUpdated.toIso8601String(),
-        'flex_of_all_time_id': data.flexOfAllTime?.achievementId,
-        'rarest_flex_id': data.rarestFlex?.achievementId,
-        'most_time_sunk_id': data.mostTimeSunk?.achievementId,
-        'sweatiest_platinum_id': data.sweattiestPlatinum?.achievementId,
+        
+        // Flex of all time
+        'flex_of_all_time_platform_id': data.flexOfAllTime?.platformId,
+        'flex_of_all_time_platform_game_id': data.flexOfAllTime?.platformGameId,
+        'flex_of_all_time_platform_achievement_id': data.flexOfAllTime?.platformAchievementId,
+        
+        // Rarest flex
+        'rarest_flex_platform_id': data.rarestFlex?.platformId,
+        'rarest_flex_platform_game_id': data.rarestFlex?.platformGameId,
+        'rarest_flex_platform_achievement_id': data.rarestFlex?.platformAchievementId,
+        
+        // Most time sunk
+        'most_time_sunk_platform_id': data.mostTimeSunk?.platformId,
+        'most_time_sunk_platform_game_id': data.mostTimeSunk?.platformGameId,
+        'most_time_sunk_platform_achievement_id': data.mostTimeSunk?.platformAchievementId,
+        
+        // Sweatiest platinum
+        'sweatiest_platinum_platform_id': data.sweattiestPlatinum?.platformId,
+        'sweatiest_platinum_platform_game_id': data.sweattiestPlatinum?.platformGameId,
+        'sweatiest_platinum_platform_achievement_id': data.sweattiestPlatinum?.platformAchievementId,
+        
         'superlatives': superlativesJson,
       };
+      
+      print('💾 Saving flex room with composite keys:');
+      print('  - flexOfAllTime: ${data.flexOfAllTime?.platformId}/${data.flexOfAllTime?.platformGameId}/${data.flexOfAllTime?.platformAchievementId}');
+      
       await _client.from('flex_room_data').upsert(payload);
       print('✅ Flex Room data saved successfully for user: ${data.userId}');
       return true;
@@ -207,101 +346,45 @@ class FlexRoomRepository {
     }
   }
 
-  /// Get achievement tile details by ID
-  Future<FlexTile?> _getAchievementTile(int achievementId, String userId) async {
+  /// Get achievement tile details by composite key (V2)
+  Future<FlexTile?> _getAchievementTileV2(int platformId, String platformGameId, String platformAchievementId, String userId) async {
     try {
       final response = await _client
           .from('user_achievements')
-          .select('''
-            id,
-            achievement_id,
-            user_id,
-            earned_at,
-            achievements!inner(
-              id,
-              name,
-              description,
-              platform,
-              icon_url,
-              proxied_icon_url,
-              rarity_global,
-              game_title_id,
-              psn_trophy_type,
-              game_titles!inner(
-                id,
-                name,
-                cover_url,
-                proxied_cover_url
-              )
-            )
-          ''')
-          .eq('achievement_id', achievementId)
+          .select('user_id, platform_id, platform_game_id, platform_achievement_id, earned_at')
+          .eq('platform_id', platformId)
+          .eq('platform_game_id', platformGameId)
+          .eq('platform_achievement_id', platformAchievementId)
           .eq('user_id', userId)
           .maybeSingle();
 
       if (response == null) return null;
 
-      return await _buildFlexTile(response);
+      return await _buildFlexTileFromUserAchievement(response);
     } catch (e) {
       return null;
     }
   }
 
+  /// DEPRECATED: Get achievement tile by V1 achievement_id (for backwards compatibility with saved flex_room_data)
+  /// This is only used when loading saved flex room configurations that still reference V1 achievement_id
+  Future<FlexTile?> _getAchievementTile(int achievementId, String userId) async {
+    // For now, return null - saved flex room data will need to be regenerated
+    // TODO: Either migrate flex_room_data table to V2 composite keys or implement V1->V2 lookup
+    return null;
+  }
+
   /// Get user's rarest achievement (auto-suggestion)
   Future<FlexTile?> _getRarestAchievement(String userId) async {
     try {
-      // Query from achievements table to enable sorting on rarity
       final response = await _client
-          .from('achievements')
-          .select('''
-            id,
-            name,
-            description,
-            platform,
-            icon_url,
-            proxied_icon_url,
-            rarity_global,
-            game_title_id,
-            psn_trophy_type,
-            game_titles!inner(
-              id,
-              name,
-              cover_url,
-              proxied_cover_url
-            ),
-            user_achievements!inner(
-              id,
-              user_id,
-              earned_at
-            )
-          ''')
-          .eq('user_achievements.user_id', userId)
-          .not('rarity_global', 'is', null)
-          .order('rarity_global', ascending: true)
-          .limit(1)
+          .rpc('get_rarest_achievement_v2', params: {'p_user_id': userId})
           .maybeSingle();
 
       if (response == null) return null;
 
-      // Get game data from nested response (already joined)
-      final gameData = response['game_titles'] as Map<String, dynamic>?;
-
-      final userAchievement = (response['user_achievements'] as List).first as Map<String, dynamic>;
-      final rarityPercent = response['rarity_global']?.toDouble();
-
-      return FlexTile(
-        achievementId: response['id'],
-        achievementName: response['name'],
-        gameName: gameData?['name'] ?? 'Unknown Game',
-        gameId: response['game_title_id']?.toString(),
-        gameCoverUrl: gameData?['proxied_cover_url'] ?? gameData?['cover_url'],
-        platform: response['platform'],
-        rarityPercent: rarityPercent,
-        rarityBand: _getRarityBand(rarityPercent),
-        statusXP: _getStatusXP(rarityPercent),
-        earnedAt: DateTime.parse(userAchievement['earned_at']),
-        iconUrl: response['proxied_icon_url'] ?? response['icon_url'],
-      );
+      // RPC returns complete data with JOINs - use it directly
+      return _buildFlexTile(response);
     } catch (e) {
       return null;
     }
@@ -310,42 +393,14 @@ class FlexRoomRepository {
   /// Get game with most achievements (time-sunk)
   Future<FlexTile?> _getMostTimeSunkGame(String userId) async {
     try {
-      // Find game with most achievements earned
-      final gameResponse = await _client
-          .rpc('get_most_time_sunk_game', params: {'p_user_id': userId})
+      final response = await _client
+          .rpc('get_most_time_sunk_game_v2', params: {'p_user_id': userId})
           .maybeSingle();
 
-      if (gameResponse == null) return null;
+      if (response == null) return null;
 
-      final gameId = gameResponse['game_title_id'] as int;
-
-      // Get a representative achievement from that game (preferably a platinum or 100%)
-      final achievementResponse = await _client
-          .from('user_achievements')
-          .select('''
-            id,
-            achievement_id,
-            user_id,
-            earned_at,
-            achievements!inner(
-              id,
-              name,
-              description,
-              platform,
-              icon_url,
-              rarity_global,
-              game_title_id,
-              psn_trophy_type
-            )
-          ''')
-          .eq('user_id', userId)
-          .eq('achievements.game_title_id', gameId)
-          .limit(1)
-          .maybeSingle();
-
-      if (achievementResponse == null) return null;
-
-      return await _buildFlexTile(achievementResponse);
+      // RPC now returns complete achievement and game data with JOINs
+      return _buildFlexTile(response);
     } catch (e) {
       return null;
     }
@@ -355,57 +410,13 @@ class FlexRoomRepository {
   Future<FlexTile?> _getSweattiestPlatinum(String userId) async {
     try {
       final response = await _client
-          .from('achievements')
-          .select('''
-            id,
-            name,
-            description,
-            platform,
-            icon_url,
-            proxied_icon_url,
-            rarity_global,
-            game_title_id,
-            psn_trophy_type,
-            game_titles!inner(
-              id,
-              name,
-              cover_url,
-              proxied_cover_url
-            ),
-            user_achievements!inner(
-              id,
-              user_id,
-              earned_at
-            )
-          ''')
-          .eq('user_achievements.user_id', userId)
-          .eq('platform', 'psn')
-          .eq('psn_trophy_type', 'platinum')
-          .not('rarity_global', 'is', null)
-          .order('rarity_global', ascending: true)
-          .limit(1)
+          .rpc('get_sweatiest_platinum_v2', params: {'p_user_id': userId})
           .maybeSingle();
 
       if (response == null) return null;
 
-      // Get game data from nested response (already joined)
-      final gameData = response['game_titles'] as Map<String, dynamic>?;
-
-      final userAchievement = (response['user_achievements'] as List).first as Map<String, dynamic>;
-
-      return FlexTile(
-        achievementId: response['id'],
-        achievementName: response['name'],
-        gameName: gameData?['name'] ?? 'Unknown Game',
-        gameId: response['game_title_id']?.toString(),
-        gameCoverUrl: gameData?['proxied_cover_url'] ?? gameData?['cover_url'],
-        platform: response['platform'],
-        rarityPercent: response['rarity_global']?.toDouble(),
-        rarityBand: _getRarityBand(response['rarity_global']?.toDouble()),
-        statusXP: _getStatusXP(response['rarity_global']?.toDouble()),
-        earnedAt: DateTime.parse(userAchievement['earned_at']),
-        iconUrl: response['proxied_icon_url'] ?? response['icon_url'],
-      );
+      // RPC returns complete data with JOINs - use it directly
+      return _buildFlexTile(response);
     } catch (e) {
       return null;
     }
@@ -415,50 +426,17 @@ class FlexRoomRepository {
   Future<List<RecentFlex>> _getRecentNotableAchievements(String userId) async {
     try {
       final response = await _client
-          .from('user_achievements')
-          .select('''
-            id,
-            achievement_id,
-            user_id,
-            earned_at,
-            achievements!inner(
-              id,
-              name,
-              description,
-              platform,
-              icon_url,
-              rarity_global,
-              game_title_id,
-              psn_trophy_type,
-              game_titles!inner(
-                id,
-                name,
-                cover_url
-              )
-            )
-          ''')
-          .eq('user_id', userId)
-          .order('earned_at', ascending: false)
-          .limit(20);
+          .rpc('get_recent_notable_achievements_v2', params: {
+            'p_user_id': userId,
+            'p_limit': 5
+          });
 
       final recentFlexes = <RecentFlex>[];
 
       for (final item in response as List) {
-        final achievement = item['achievements'] as Map<String, dynamic>;
-        final gameId = achievement['game_title_id'];
-        final rarityPercent = achievement['rarity_global']?.toDouble() ?? 100.0;
-        
-        // Filter: only platinums or ultra-rares (< 5% rarity)
-        final isPlatinum = achievement['psn_trophy_type'] == 'platinum';
-        final isUltraRare = rarityPercent < 5.0;
-        
-        if (!isPlatinum && !isUltraRare) continue;
-        
-        // Stop when we have 5
-        if (recentFlexes.length >= 5) break;
-        
-        // Get game data from nested response (already joined)
-        final gameData = achievement['game_titles'] as Map<String, dynamic>?;
+        final platformId = item['platform_id'] as int;
+        final rarityPercent = (item['rarity_global'] as num?)?.toDouble() ?? 100.0;
+        final isPlatinum = item['is_platinum'] as bool? ?? false;
 
         // Determine flex type
         String type = 'ultra_rare';
@@ -468,11 +446,23 @@ class FlexRoomRepository {
           type = 'ultra_rare';
         }
 
+        // Get platform code from platform_id
+        String platform;
+        if (platformId == 1) {
+          platform = 'psn';
+        } else if (platformId == 5) {
+          platform = 'steam';
+        } else if (platformId >= 10 && platformId <= 12) {
+          platform = 'xbox';
+        } else {
+          platform = 'unknown';
+        }
+
         recentFlexes.add(
           RecentFlex(
-            gameName: gameData?['name'] ?? 'Unknown Game',
-            achievementName: achievement['name'],
-            platform: achievement['platform'],
+            gameName: item['game_name'] ?? 'Unknown Game',
+            achievementName: item['achievement_name'] ?? 'Unknown Achievement',
+            platform: platform,
             rarityPercent: rarityPercent,
             rarityBand: _getRarityBand(rarityPercent),
             earnedAt: DateTime.parse(item['earned_at']),
@@ -529,65 +519,31 @@ class FlexRoomRepository {
   }) async {
     try {
       var query = _client
-          .from('achievements')
-          .select('''
-            id,
-            name,
-            description,
-            platform,
-            icon_url,
-            rarity_global,
-            game_title_id,
-            psn_trophy_type,
-            user_achievements!inner(
-              id,
-              user_id,
-              earned_at
-            )
-          ''')
-          .eq('user_achievements.user_id', userId)
-          .not('rarity_global', 'is', null);
+          .from('user_achievements')
+          .select('user_id, platform_id, platform_game_id, platform_achievement_id, earned_at')
+          .eq('user_id', userId);
 
-      if (minRarity != null) {
-        query = query.gte('rarity_global', minRarity);
-      }
-      if (maxRarity != null) {
-        query = query.lte('rarity_global', maxRarity);
-      }
-
+      // Note: We'll need to filter by rarity in a separate query or join
+      // For now, get all and filter client-side (not ideal, but works)
       final response = await query
-          .order('rarity_global', ascending: true)
-          .limit(5);
+          .order('earned_at', ascending: false)
+          .limit(50);
 
       final suggestions = <FlexTile>[];
 
       for (final item in response as List) {
-        final achievementData = item as Map<String, dynamic>;
-        
-        // Get game data
-        final gameData = await _client
-            .from('game_titles')
-            .select('name, cover_url, proxied_cover_url')
-            .eq('id', achievementData['game_title_id'])
-            .maybeSingle();
-
-        final userAchievement = (achievementData['user_achievements'] as List).first as Map<String, dynamic>;
-
-        suggestions.add(
-          FlexTile(
-            achievementId: achievementData['id'],
-            achievementName: achievementData['name'],
-            gameName: gameData?['name'] ?? 'Unknown Game',
-            gameId: achievementData['game_title_id']?.toString(),
-            gameCoverUrl: gameData?['proxied_cover_url'] ?? gameData?['cover_url'],
-            platform: achievementData['platform'],
-            rarityPercent: achievementData['rarity_global']?.toDouble(),
-            rarityBand: _getRarityBand(achievementData['rarity_global']?.toDouble()),
-            statusXP: _getStatusXP(achievementData['rarity_global']?.toDouble()),
-            earnedAt: DateTime.parse(userAchievement['earned_at']),
-            iconUrl: achievementData['icon_url'],
-          ),
-        );
+        final tile = await _buildFlexTileFromUserAchievement(item);
+        if (tile != null) {
+          final rarity = tile.rarityPercent;
+          if (rarity != null) {
+            final passesMin = minRarity == null || rarity >= minRarity;
+            final passesMax = maxRarity == null || rarity <= maxRarity;
+            if (passesMin && passesMax) {
+              suggestions.add(tile);
+              if (suggestions.length >= 5) break;
+            }
+          }
+        }
       }
 
       return suggestions;
@@ -617,27 +573,20 @@ class FlexRoomRepository {
     try {
       var query = _client
           .from('user_achievements')
-          .select('''
-            id,
-            achievement_id,
-            user_id,
-            earned_at,
-            achievements!inner(
-              id,
-              name,
-              description,
-              platform,
-              icon_url,
-              rarity_global,
-              game_title_id,
-              psn_trophy_type
-            )
-          ''')
+          .select('user_id, platform_id, platform_game_id, platform_achievement_id, earned_at')
           .eq('user_id', userId);
 
       // Apply platform filter if specified
       if (platformFilter != null && platformFilter.isNotEmpty) {
-        query = query.eq('achievements.platform', platformFilter);
+        // Map platform code to platform_id
+        int? targetPlatformId;
+        if (platformFilter == 'psn') targetPlatformId = 1;
+        else if (platformFilter == 'steam') targetPlatformId = 5;
+        else if (platformFilter == 'xbox') targetPlatformId = 10; // or 11, 12 for Xbox One, Series
+        
+        if (targetPlatformId != null) {
+          query = query.eq('platform_id', targetPlatformId);
+        }
       }
 
       // Order by earned date (most recent first), limit to 50 for performance
@@ -648,7 +597,7 @@ class FlexRoomRepository {
       final achievements = <FlexTile>[];
 
       for (final item in response as List) {
-        final tile = await _buildFlexTile(item);
+        final tile = await _buildFlexTileFromUserAchievement(item);
         if (tile != null) {
           achievements.add(tile);
         }
@@ -667,212 +616,134 @@ class FlexRoomRepository {
     String? searchQuery,
   }) async {
     try {
-      // Use exact same query as unified_games_repository
-      final response = await _client
-          .from('user_games')
-          .select('''
-            id,
-            game_title_id,
-            total_trophies,
-            earned_trophies,
-            xbox_total_achievements,
-            xbox_achievements_earned,
-            game_titles!inner(
-              id,
-              name,
-              cover_url
-            ),
-            platforms(code)
-          ''')
-          .eq('user_id', userId);
+      // Map platform name to platform_id
+      int? targetPlatformId;
+      switch (platform.toLowerCase()) {
+        case 'psn':
+        case 'playstation':
+          targetPlatformId = 1;
+          break;
+        case 'steam':
+          targetPlatformId = 5;
+          break;
+        case 'xbox':
+          targetPlatformId = 10;
+          break;
+      }
 
-      final List<dynamic> data = response as List;
-      if (data.isEmpty) {
+      if (targetPlatformId == null) {
         return [];
       }
 
-      // Filter by platform and build game list
-      final Map<String, Map<String, dynamic>> gamesMap = {};
-      
-      for (final row in data) {
-        final platformData = row['platforms'] as Map<String, dynamic>?;
-        final platformCode = (platformData?['code'] as String? ?? '').toLowerCase();
-        // Check if this matches the requested platform
-        bool matchesPlatform = false;
-        switch (platform.toLowerCase()) {
-          case 'psn':
-          case 'playstation':
-            matchesPlatform = platformCode.contains('ps') || platformCode == 'vita';
-            break;
-          case 'xbox':
-            matchesPlatform = platformCode.contains('xbox');
-            break;
-          case 'steam':
-            matchesPlatform = platformCode == 'steam';
-            break;
-        }
-        if (!matchesPlatform) continue;
-        
-        final gameTitle = row['game_titles'] as Map<String, dynamic>?;
-        if (gameTitle == null) continue;
-        
-        final gameId = gameTitle['id'].toString();
-        final gameName = gameTitle['name'] as String;
-        
-        // Apply search filter
-        if (searchQuery != null && !gameName.toLowerCase().contains(searchQuery.toLowerCase())) {
-          continue;
-        }
+      // Single efficient query with JOIN and aggregation
+      final response = await _client
+          .rpc('get_user_games_for_platform', params: {
+            'p_user_id': userId,
+            'p_platform_id': targetPlatformId,
+            'p_search_query': searchQuery
+          });
 
-        // Get achievement count
-        int totalAchievements = row['total_trophies'] as int? ?? 0;
-        if (totalAchievements == 0 && platformCode.contains('xbox')) {
-          totalAchievements = row['xbox_total_achievements'] as int? ?? 0;
-        }
-
-        // Use unique key combining game_title_id and platform_id
-        final uniqueKey = '${gameId}_${row['id']}';
-        
-        if (!gamesMap.containsKey(uniqueKey)) {
-          gamesMap[uniqueKey] = {
-            'game_id': gameId,
-            'game_name': gameName,
-            'game_cover_url': gameTitle['cover_url'],
-            'achievement_count': totalAchievements,
-          };
-        }
+      final games = <Map<String, dynamic>>[];
+      for (final row in response as List) {
+        games.add({
+          'platform_id': row['platform_id'],
+          'platform_game_id': row['platform_game_id'],
+          'game_id': row['platform_game_id'],
+          'game_name': row['game_name'],
+          'game_cover_url': row['cover_url'],
+          'achievement_count': row['achievement_count'],
+        });
       }
-      // Convert to list and sort by game name
-      final games = gamesMap.values.toList();
-      games.sort((a, b) => 
-          (a['game_name'] as String).compareTo(b['game_name'] as String));
 
       return games;
     } catch (e) {
+      print('❌ Error in getGamesForPlatform: $e');
       return [];
     }
   }
 
-  /// Get all achievements for a specific game
+  /// Get all achievements for a specific game (V2 with composite keys)
   Future<List<FlexTile>> getAchievementsForGame(
     String userId,
     String? gameId,
     String platform, {
     String? searchQuery,
+    int? platformId,
+    String? platformGameId,
   }) async {
     try {
-      // Map platform codes to achievement platform identifiers (same as GameAchievementsScreen)
-      String achievementPlatform;
-      if (platform.toUpperCase().startsWith('PS') || platform.toLowerCase() == 'psn' || platform.toLowerCase() == 'playstation') {
-        achievementPlatform = 'psn';
-      } else if (platform.toUpperCase().startsWith('XBOX') || platform.toLowerCase() == 'xbox') {
-        achievementPlatform = 'xbox';
-      } else if (platform.toUpperCase().startsWith('STEAM') || platform.toLowerCase() == 'steam') {
-        achievementPlatform = 'steam';
-      } else {
-        achievementPlatform = platform.toLowerCase();
+      // Map platform name to platform_id
+      int? targetPlatformId = platformId;
+      String? targetGameId = platformGameId ?? gameId;
+
+      if (targetPlatformId == null) {
+        switch (platform.toLowerCase()) {
+          case 'psn':
+          case 'playstation':
+            targetPlatformId = 1;
+            break;
+          case 'steam':
+            targetPlatformId = 5;
+            break;
+          case 'xbox':
+            targetPlatformId = 10;
+            break;
+        }
       }
-      if (gameId == null) {
+
+      if (targetPlatformId == null || targetGameId == null) {
         return [];
       }
 
-      // Get achievements from the achievements table
-      final achievementsResponse = await _client
-          .from('achievements')
-          .select('''
-            id,
-            name,
-            description,
-            icon_url,
-            proxied_icon_url,
-            rarity_global,
-            rarity_band,
-            base_status_xp,
-            psn_trophy_type,
-            xbox_gamerscore,
-            is_platinum,
-            is_dlc,
-            dlc_name,
-            game_title_id
-          ''')
-          .eq('game_title_id', gameId)
-          .eq('platform', achievementPlatform)
-          .order('is_platinum', ascending: false)
-          .order('psn_trophy_type', ascending: true, nullsFirst: false)
-          .order('id', ascending: true);
-
-      print('📊 Found ${(achievementsResponse as List).length} achievements');
-
-      // Get user's earned achievements FOR THIS GAME ONLY
-      final achievementIds = (achievementsResponse as List)
-          .map((a) => a['id'] as int)
-          .toList();
-      
-      final userAchievementsResponse = await _client
-          .from('user_achievements')
-          .select('achievement_id, earned_at')
-          .eq('user_id', userId)
-          .inFilter('achievement_id', achievementIds);
-
-      print('🏆 User has earned ${(userAchievementsResponse as List).length} of these achievements');
-
-      final earnedAchievementIds = <int>{};
-      final Map<int, DateTime> earnedDates = {};
-      
-      for (final ua in userAchievementsResponse as List) {
-        final achId = ua['achievement_id'] as int;
-        earnedAchievementIds.add(achId);
-        if (ua['earned_at'] != null) {
-          earnedDates[achId] = DateTime.parse(ua['earned_at'] as String);
-        }
-      }
-
-      // Get game details for cover image
-      final gameResponse = await _client
-          .from('game_titles')
-          .select('name, cover_url, proxied_cover_url')
-          .eq('id', gameId)
-          .single();
-
-      final gameName = gameResponse['name'] as String;
-      final gameCoverUrl = (gameResponse['proxied_cover_url'] ?? gameResponse['cover_url']) as String?;
+      // Single efficient query with JOIN
+      final response = await _client
+          .rpc('get_user_achievements_for_game', params: {
+            'p_user_id': userId,
+            'p_platform_id': targetPlatformId,
+            'p_platform_game_id': targetGameId,
+            'p_search_query': searchQuery
+          });
 
       final achievements = <FlexTile>[];
+      
+      // Get platform code from platform_id
+      String platformCode;
+      if (targetPlatformId == 1) {
+        platformCode = 'psn';
+      } else if (targetPlatformId == 5) {
+        platformCode = 'steam';
+      } else if (targetPlatformId >= 10 && targetPlatformId <= 12) {
+        platformCode = 'xbox';
+      } else {
+        platformCode = 'unknown';
+      }
 
-      for (final achievement in achievementsResponse) {
-        final achId = achievement['id'] as int;
-        final achName = achievement['name'] as String;
+      for (final row in response as List) {
+        final rarityPercent = (row['rarity_global'] as num?)?.toDouble();
         
-        // Apply search filter
-        if (searchQuery != null && !achName.toLowerCase().contains(searchQuery.toLowerCase())) {
-          continue;
-        }
-
-        // Only include earned achievements
-        if (!earnedAchievementIds.contains(achId)) {
-          continue;
-        }
-
         final tile = FlexTile(
-          achievementId: achId,
-          achievementName: achName,
-          gameName: gameName,
-          gameId: gameId,
-          gameCoverUrl: gameCoverUrl,
-          platform: achievementPlatform,
-          rarityPercent: (achievement['rarity_global'] as num?)?.toDouble(),
-          rarityBand: achievement['rarity_band'] as String?,
-          statusXP: achievement['base_status_xp'] != null 
-              ? (achievement['base_status_xp'] as num).round() // Database stores 10-30 directly
-              : _getStatusXP((achievement['rarity_global'] as num?)?.toDouble()),
-          earnedAt: earnedDates[achId],
-          iconUrl: achievement['icon_url'] as String?,
+          achievementId: 0,
+          achievementName: row['achievement_name'],
+          gameName: row['game_name'],
+          gameId: targetGameId,
+          platformId: targetPlatformId,
+          platformGameId: targetGameId,
+          platformAchievementId: row['platform_achievement_id'],
+          gameCoverUrl: row['cover_url'],
+          platform: platformCode,
+          rarityPercent: rarityPercent,
+          rarityBand: _getRarityBand(rarityPercent),
+          statusXP: _getStatusXP(rarityPercent),
+          earnedAt: row['earned_at'] != null ? DateTime.parse(row['earned_at']) : null,
+          iconUrl: row['icon_url'],
         );
 
         achievements.add(tile);
       }
+
       return achievements;
     } catch (e) {
+      print('❌ Error in getAchievementsForGame: $e');
       return [];
     }
   }

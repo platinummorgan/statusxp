@@ -106,8 +106,14 @@ class PlatformGameData extends Equatable {
   /// Platform identifier ('psn', 'xbox', 'steam')
   final String platform;
   
-  /// Game ID for this platform
+  /// Game ID for this platform (V1 compatibility - same as platform_game_id)
   final String gameId;
+  
+  /// Platform ID (V2 schema)
+  final int? platformId;
+  
+  /// Platform game ID (V2 schema)
+  final String? platformGameId;
   
   /// Achievements/trophies earned
   final int achievementsEarned;
@@ -145,6 +151,8 @@ class PlatformGameData extends Equatable {
   const PlatformGameData({
     required this.platform,
     required this.gameId,
+    this.platformId,
+    this.platformGameId,
     required this.achievementsEarned,
     required this.achievementsTotal,
     required this.completion,
@@ -164,6 +172,8 @@ class PlatformGameData extends Equatable {
   List<Object?> get props => [
     platform,
     gameId,
+    platformId,
+    platformGameId,
     achievementsEarned,
     achievementsTotal,
     completion,

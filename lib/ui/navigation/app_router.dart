@@ -20,6 +20,7 @@ import 'package:statusxp/ui/screens/premium_success_screen.dart';
 import 'package:statusxp/ui/screens/coop_partners_screen.dart';
 import 'package:statusxp/ui/screens/trophy_help_request_details_screen.dart';
 import 'package:statusxp/ui/screens/achievement_comments_screen.dart';
+import 'package:statusxp/ui/screens/premium_analytics_screen.dart';
 
 /// StatusXP App Router Configuration
 /// 
@@ -100,9 +101,18 @@ final GoRouter appRouter = GoRouter(
             final gameName = state.uri.queryParameters['name'] ?? 'Game';
             final platform = state.uri.queryParameters['platform'] ?? 'unknown';
             final coverUrl = state.uri.queryParameters['cover'];
+            final platformIdStr = state.uri.queryParameters['platform_id'];
+            final platformGameId = state.uri.queryParameters['platform_game_id'];
+            
+            // Parse platform_id if provided
+            int? platformId;
+            if (platformIdStr != null) {
+              platformId = int.tryParse(platformIdStr);
+            }
             
             return GameAchievementsScreen(
-              gameId: gameId,
+              platformId: platformId,
+              platformGameId: platformGameId ?? gameId, // Fallback to gameId for V1 compatibility
               gameName: gameName,
               platform: platform,
               coverUrl: coverUrl,
@@ -190,6 +200,13 @@ final GoRouter appRouter = GoRouter(
           path: '/settings',
           name: 'settings',
           builder: (context, state) => const SettingsScreen(),
+        ),
+
+        // Premium Analytics - Comprehensive statistics and insights
+        GoRoute(
+          path: '/analytics',
+          name: 'analytics',
+          builder: (context, state) => const PremiumAnalyticsScreen(),
         ),
       ],
     ),

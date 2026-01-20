@@ -706,8 +706,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
               
-              final suggestions =
-                  await repository.getSmartSuggestions(userId, categoryId);
+              // TODO: Re-enable when SQL functions are executed
+              // final suggestions =
+              //     await repository.getSmartSuggestions(userId, categoryId);
 
               if (!mounted) return;
 
@@ -720,7 +721,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                   userId: userId,
                   categoryId: categoryId,
                   categoryLabel: label,
-                  suggestions: suggestions,
+                  suggestions: [], // Disabled for performance
                 ),
               );
 
@@ -939,8 +940,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
               
-              final suggestions =
-                  await repository.getSmartSuggestions(userId, categoryId);
+              // TODO: Re-enable when SQL functions are executed
+              // final suggestions =
+              //     await repository.getSmartSuggestions(userId, categoryId);
 
               if (!mounted) return;
 
@@ -953,7 +955,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                   userId: userId,
                   categoryId: categoryId,
                   categoryLabel: label,
-                  suggestions: suggestions,
+                  suggestions: [], // Disabled for performance
                 ),
               );
 
@@ -1577,11 +1579,12 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context); // Close dialog
-                      if (tile.gameId != null) {
+                      if (tile.gameId != null || tile.platformGameId != null) {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (context) => GameAchievementsScreen(
-                              gameId: tile.gameId!,
+                              platformId: tile.platformId,
+                              platformGameId: tile.platformGameId ?? tile.gameId,
                               gameName: tile.gameName,
                               platform: tile.platform,
                               coverUrl: tile.gameCoverUrl,

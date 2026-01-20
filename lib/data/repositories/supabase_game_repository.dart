@@ -243,31 +243,46 @@ class SupabaseGameRepository {
 
       final games = (response as List).map((game) {
         final platforms = (game['platforms'] as List?)?.cast<String>() ?? [];
+        final platformIds = (game['platform_ids'] as List?)?.cast<int>() ?? [];
+        final platformGameIds = (game['platform_game_ids'] as List?)?.cast<String>() ?? [];
         
         // Determine primary platform for display
         String? primaryPlatform;
+        int? primaryPlatformId;
+        String? primaryPlatformGameId;
+        
         if (platforms.isNotEmpty) {
           if (platformFilter != null && platforms.contains(platformFilter)) {
+            final index = platforms.indexOf(platformFilter);
             primaryPlatform = platformFilter;
-          } else if (platforms.contains('steam')) {
-            primaryPlatform = 'steam';
-          } else if (platforms.contains('xbox')) {
-            primaryPlatform = 'xbox';
+            primaryPlatformId = platformIds.isNotEmpty ? platformIds[index] : null;
+            primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds[index] : null;
           } else {
-            primaryPlatform = 'psn';
+            // Use first platform as default
+            primaryPlatform = platforms.first;
+            primaryPlatformId = platformIds.isNotEmpty ? platformIds.first : null;
+            primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds.first : null;
           }
         }
 
+        // Use values from RPC function if available, otherwise use derived values
+        final finalPlatformId = game['primary_platform_id'] ?? primaryPlatformId;
+        final finalGameId = game['primary_game_id'] ?? primaryPlatformGameId;
+
         return {
-          'id': game['primary_game_id'], // Use primary game ID from group
+          'id': finalGameId, // Keep for backwards compatibility
+          'platform_id': finalPlatformId, // V2 composite key part 1
+          'platform_game_id': finalGameId, // V2 composite key part 2
           'group_id': game['group_id'],
           'name': game['name'],
-          'cover_url': game['proxied_cover_url'] ?? game['cover_url'],
+          'cover_url': game['cover_url'],
+          'proxied_cover_url': game['proxied_cover_url'] ?? game['cover_url'],
           'platforms': primaryPlatform != null 
               ? {'code': primaryPlatform, 'name': primaryPlatform}
               : null,
           'all_platforms': platforms,
-          'game_title_ids': game['game_title_ids'], // All game_title IDs in group
+          'platform_ids': platformIds, // All platform IDs in group
+          'platform_game_ids': platformGameIds, // All game IDs in group
           'total_achievements': game['total_achievements'],
         };
       }).toList();
@@ -284,9 +299,9 @@ class SupabaseGameRepository {
     String? platformFilter,
   }) async {
     try {
-      dynamic query = _client
-          .from('game_titles')
-          .select('*');
+      PostgrestFilterBuilder query = _client
+          .from('games')
+          .select('platform_id');
 
       if (searchQuery != null && searchQuery.isNotEmpty) {
         query = query.ilike('name', '%$searchQuery%');

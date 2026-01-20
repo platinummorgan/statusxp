@@ -33,6 +33,8 @@ class _AchievementPickerModalState
   String? _selectedPlatform;
   String? _selectedGameId;
   String? _selectedGameName;
+  int? _selectedPlatformId;
+  String? _selectedPlatformGameId;
   String _searchQuery = '';
 
   @override
@@ -117,6 +119,8 @@ class _AchievementPickerModalState
                       _currentView = PickerView.gameSelect;
                       _selectedGameId = null;
                       _selectedGameName = null;
+                      _selectedPlatformId = null;
+                      _selectedPlatformGameId = null;
                       break;
                     default:
                       break;
@@ -355,6 +359,16 @@ class _AchievementPickerModalState
   }
 
   Widget _buildGameSelectView() {
+    // Safety check - if platform not selected, go back to platform select
+    if (_selectedPlatform == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _currentView = PickerView.platformSelect);
+        }
+      });
+      return const Center(child: CircularProgressIndicator(color: CyberpunkTheme.neonPurple));
+    }
+
     return Column(
       children: [
         // Search bar
@@ -408,10 +422,25 @@ class _AchievementPickerModalState
               }
 
               if (snapshot.hasError) {
+                print('❌ FutureBuilder error in getGamesForPlatform: ${snapshot.error}');
+                print('Stack trace: ${snapshot.stackTrace}');
                 return Center(
-                  child: Text(
-                    'Error loading games',
-                    style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.withOpacity(0.8), size: 48),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading games',
+                        style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${snapshot.error}',
+                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 );
               }
@@ -420,9 +449,16 @@ class _AchievementPickerModalState
 
               if (games.isEmpty) {
                 return Center(
-                  child: Text(
-                    _searchQuery.isNotEmpty ? 'No games found' : 'No games yet',
-                    style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.videogame_asset_off, color: Colors.white.withOpacity(0.4), size: 48),
+                      const SizedBox(height: 16),
+                      Text(
+                        _searchQuery.isNotEmpty ? 'No games found' : 'No games yet',
+                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -445,6 +481,8 @@ class _AchievementPickerModalState
   Widget _buildGameCard(Map<String, dynamic> game) {
     final gameName = game['game_name'] as String;
     final gameId = game['game_id'] as String?;
+    final platformId = game['platform_id'] as int?;
+    final platformGameId = game['platform_game_id'] as String?;
     final gameCoverUrl = game['game_cover_url'] as String?;
     final achievementCount = game['achievement_count'] as int? ?? 0;
 
@@ -463,6 +501,8 @@ class _AchievementPickerModalState
           setState(() {
             _selectedGameId = gameId;
             _selectedGameName = gameName;
+            _selectedPlatformId = platformId;
+            _selectedPlatformGameId = platformGameId;
             _currentView = PickerView.achievementSelect;
           });
         },
@@ -591,6 +631,8 @@ class _AchievementPickerModalState
                   _selectedGameId,
                   _selectedPlatform!,
                   searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+                  platformId: _selectedPlatformId,
+                  platformGameId: _selectedPlatformGameId,
                 ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -600,10 +642,25 @@ class _AchievementPickerModalState
               }
 
               if (snapshot.hasError) {
+                print('❌ FutureBuilder error in getAchievementsForGame: ${snapshot.error}');
+                print('Stack trace: ${snapshot.stackTrace}');
                 return Center(
-                  child: Text(
-                    'Error loading achievements',
-                    style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.withOpacity(0.8), size: 48),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading achievements',
+                        style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${snapshot.error}',
+                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 );
               }

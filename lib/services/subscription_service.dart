@@ -343,6 +343,7 @@ class SubscriptionService {
     description: 'Monthly Subscription',
     price: _products.isNotEmpty ? _products[0].price : '\$4.99',
     features: [
+      '📊 Premium Analytics Dashboard',
       '∞ Unlimited AI Achievement Guides',
       '⚡ Faster Sync Cooldowns',
       '🎯 12 PSN syncs/day (vs 3 free)',

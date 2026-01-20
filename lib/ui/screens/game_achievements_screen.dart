@@ -14,14 +14,16 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Game Achievements Screen - Shows achievements/trophies for a specific game on a platform
 class GameAchievementsScreen extends ConsumerStatefulWidget {
-  final String gameId;
+  final int? platformId;
+  final String? platformGameId;
   final String gameName;
   final String platform;
   final String? coverUrl;
 
   const GameAchievementsScreen({
     super.key,
-    required this.gameId,
+    required this.platformId,
+    required this.platformGameId,
     required this.gameName,
     required this.platform,
     this.coverUrl,
@@ -61,138 +63,112 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
 
       final supabase = Supabase.instance.client;
       final userId = supabase.auth.currentUser!.id;
-      // Map specific platform codes to generic achievement platform identifiers
-      String achievementPlatform;
-      if (widget.platform.toUpperCase().startsWith('PS')) {
-        achievementPlatform = 'psn';
-      } else if (widget.platform.toUpperCase().startsWith('XBOX')) {
-        achievementPlatform = 'xbox';
-      } else if (widget.platform.toUpperCase().startsWith('STEAM')) {
-        achievementPlatform = 'steam';
-      } else {
-        achievementPlatform = widget.platform.toLowerCase();
+      
+      // Validate V2 composite keys
+      if (widget.platformId == null || widget.platformGameId == null) {
+        throw Exception('Missing platform_id or platform_game_id for V2 schema');
       }
-      // Get achievements for this game - check both tables
-      PostgrestList achievementsResponse;
-      try {
-        // Try achievements table first (Xbox/Steam/new PSN format)
-        achievementsResponse = await supabase
-            .from('achievements')
-            .select('''
-              id,
-              name,
-              description,
-              icon_url,
-              proxied_icon_url,
-              rarity_global,
-              rarity_band,
-              base_status_xp,
-              psn_trophy_type,
-              xbox_gamerscore,
-              xbox_is_secret,
-              steam_hidden,
-              is_platinum,
-              is_dlc,
-              dlc_name
-            ''')
-            .eq('game_title_id', widget.gameId)
-            .eq('platform', achievementPlatform)
-            .order('is_platinum', ascending: false)
-            .order('psn_trophy_type', ascending: true, nullsFirst: false)
-            .order('id', ascending: true);
-        
-        print('[GameAchievements] Found ${(achievementsResponse as List).length} achievements');
-      } catch (e) {
-        // If achievements table fails, try trophies table (old PSN format)
-        try {
-          achievementsResponse = await supabase
-              .from('trophies')
-              .select('''
-                id,
-                name,
-                description,
-                icon_url,
-                proxied_icon_url,
-                rarity_global,
-                tier,
-                hidden
-              ''')
-              .eq('game_title_id', widget.gameId);
-          
-          print('[GameAchievements] Found ${(achievementsResponse as List).length} trophies');
-        } catch (e2) {
-          throw Exception('Could not load achievements from either table');
-        }
-      }
+      
+      print('[GameAchievements] Loading for platform_id=${widget.platformId}, platform_game_id=${widget.platformGameId}');
+      
+      // Get achievements for this game (V2 schema - uses composite keys)
+      final achievementsResponse = await supabase
+          .from('achievements')
+          .select('''
+            platform_achievement_id,
+            name,
+            description,
+            icon_url,
+            proxied_icon_url,
+            rarity_global,
+            base_status_xp,
+            rarity_multiplier,
+            include_in_score,
+            score_value,
+            metadata
+          ''')
+          .eq('platform_id', widget.platformId!)
+          .eq('platform_game_id', widget.platformGameId!);
+      
+      print('[GameAchievements] Found ${(achievementsResponse as List).length} achievements');
 
-      // Get user's earned achievements/trophies separately
-      // We need to filter by game to avoid getting all 1000+ user achievements
-      List userEarnedResponse;
-      try {
-        // Get earned achievements for THIS specific game using a join
-        userEarnedResponse = await supabase
-            .from('user_achievements')
-            .select('''
-              achievement_id,
-              earned_at,
-              achievements!inner(game_title_id, platform)
-            ''')
-            .eq('user_id', userId)
-            .eq('achievements.game_title_id', widget.gameId)
-            .eq('achievements.platform', achievementPlatform);
-      } catch (e) {
-        // Try user_trophies for PSN
-        try {
-          userEarnedResponse = await supabase
-              .from('user_trophies')
-              .select('''
-                trophy_id,
-                unlocked_at,
-                trophies!inner(game_title_id)
-              ''')
-              .eq('user_id', userId)
-              .eq('trophies.game_title_id', widget.gameId);
-        } catch (e2) {
-          userEarnedResponse = [];
-        }
-      }
+      // Get user's earned achievements for this game using V2 schema
+      final userEarnedResponse = await supabase
+          .from('user_achievements')
+          .select('platform_achievement_id, earned_at')
+          .eq('user_id', userId)
+          .eq('platform_id', widget.platformId!)
+          .eq('platform_game_id', widget.platformGameId!);
 
-      // Create a map of earned achievements
+      // Create a map of earned achievements (platform_achievement_id -> earned_at)
       final earnedMap = <String, String>{};
       for (final ua in userEarnedResponse) {
-        final id = (ua['achievement_id'] ?? ua['trophy_id'])?.toString() ?? '';
-        final date = (ua['earned_at'] ?? ua['unlocked_at']) as String;
-        if (id.isNotEmpty) {
-          earnedMap[id] = date;
+        final achId = ua['platform_achievement_id'] as String?;
+        final date = ua['earned_at'] as String?;
+        if (achId != null && date != null) {
+          earnedMap[achId] = date;
         }
       }
-      print('[GameAchievements] First 5 earned IDs: ${earnedMap.keys.take(5).toList()}');
+      print('[GameAchievements] User has earned ${earnedMap.length} achievements');
 
       // Merge the data
       final achievements = (achievementsResponse).map((ach) {
-        final achievementId = (ach['id'] ?? '').toString();
+        final achievementId = ach['platform_achievement_id'] as String;
         final earnedAt = earnedMap[achievementId];
+        final metadata = ach['metadata'] as Map<String, dynamic>? ?? {};
         
-        if (earnedAt != null) {
-          print('[GameAchievements] Achievement ${ach['name']} (ID: $achievementId) is earned at $earnedAt');
+        // Extract platform-specific fields from metadata
+        String? trophyType;
+        int? gamerscore;
+        bool isSecret = false;
+        bool isHidden = false;
+        bool isPlatinum = false;
+        
+        // PSN fields
+        trophyType = metadata['psn_trophy_type'] as String?;
+        isPlatinum = trophyType?.toLowerCase() == 'platinum';
+        
+        // Xbox fields
+        gamerscore = metadata['xbox_gamerscore'] as int?;
+        isSecret = metadata['xbox_is_secret'] as bool? ?? false;
+        
+        // Steam fields
+        isHidden = metadata['steam_hidden'] as bool? ?? false;
+        
+        // Calculate rarity band from rarity_global
+        final rarityGlobal = (ach['rarity_global'] as num?)?.toDouble();
+        String? rarityBand;
+        if (rarityGlobal != null) {
+          if (rarityGlobal < 1.0) {
+            rarityBand = 'ULTRA_RARE';
+          } else if (rarityGlobal < 5.0) {
+            rarityBand = 'VERY_RARE';
+          } else if (rarityGlobal < 15.0) {
+            rarityBand = 'RARE';
+          } else if (rarityGlobal < 50.0) {
+            rarityBand = 'UNCOMMON';
+          } else {
+            rarityBand = 'COMMON';
+          }
         }
         
-        // Normalize field names
         return {
-          'id': ach['id'],
+          'id': ach['platform_achievement_id'],
           'name': ach['name'],
           'description': ach['description'],
-          'icon_url': ach['icon_url'],
-          'rarity_global': ach['rarity_global'],
-          'rarity_band': ach['rarity_band'],
+          'icon_url': ach['proxied_icon_url'] ?? ach['icon_url'],
+          'proxied_icon_url': ach['proxied_icon_url'],
+          'rarity_global': rarityGlobal,
+          'rarity_band': rarityBand,
           'base_status_xp': ach['base_status_xp'],
-          'trophy_tier': ach['psn_trophy_type'] ?? ach['tier'], // psn_trophy_type from achievements, tier from trophies
-          'xbox_gamerscore': ach['xbox_gamerscore'],
-          'xbox_is_secret': ach['xbox_is_secret'],
-          'steam_hidden': ach['steam_hidden'] ?? ach['hidden'],
-          'is_platinum': ach['is_platinum'],
-          'is_dlc': ach['is_dlc'] ?? false,
-          'dlc_name': ach['dlc_name'],
+          'psn_trophy_type': trophyType,
+          'xbox_gamerscore': gamerscore,
+          'xbox_is_secret': isSecret,
+          'steam_hidden': isHidden,
+          'is_platinum': isPlatinum,
+          'include_in_score': ach['include_in_score'],
+          'is_dlc': metadata['is_dlc'] as bool? ?? false,
+          'dlc_name': metadata['dlc_name'],
           'earned_at': earnedAt,
           'is_earned': earnedAt != null,
         };
@@ -464,7 +440,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
     String? earnedAt,
     Color platformColor,
   ) {
-    final trophyType = achievement['trophy_tier'] as String?;
+    final trophyType = achievement['psn_trophy_type'] as String?;
     final trophyColor = _getTrophyColor(trophyType);
     final rarityGlobal = achievement['rarity_global'] as num?;
     final rarityBand = achievement['rarity_band'] as String?;
@@ -677,7 +653,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                       final result = await showDialog<bool>(
                         context: context,
                         builder: (context) => CreateTrophyRequestDialog(
-                          gameId: widget.gameId,
+                          gameId: widget.platformGameId ?? '',
                           gameTitle: widget.gameName,
                           achievementId: achievement['id'].toString(),
                           achievementName: achievement['name'],

@@ -523,23 +523,23 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               const rarityPercent = globalStats[achievement.name] || 0;
 
               // Calculate StatusXP based on rarity (V2 unified tiers)
-              let baseStatusXP = 10;
+              let baseStatusXP = 0.5;
               let rarityMultiplier = 1.00;
               
               if (rarityPercent > 25) {
-                baseStatusXP = 10;
+                baseStatusXP = 0.5;  // Common: 0.5 × 1.00 = 0.50
                 rarityMultiplier = 1.00;
               } else if (rarityPercent > 10) {
-                baseStatusXP = 13;
+                baseStatusXP = 0.7;  // Uncommon: 0.7 × 1.25 = 0.875
                 rarityMultiplier = 1.25;
               } else if (rarityPercent > 5) {
-                baseStatusXP = 18;
+                baseStatusXP = 0.9;  // Rare: 0.9 × 1.75 = 1.575
                 rarityMultiplier = 1.75;
               } else if (rarityPercent > 1) {
-                baseStatusXP = 23;
+                baseStatusXP = 1.2;  // Very Rare: 1.2 × 2.25 = 2.70
                 rarityMultiplier = 2.25;
               } else {
-                baseStatusXP = 30;
+                baseStatusXP = 1.5;  // Ultra Rare: 1.5 × 3.00 = 4.50
                 rarityMultiplier = 3.00;
               }
 

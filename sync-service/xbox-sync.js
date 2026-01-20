@@ -428,37 +428,26 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
     logMemory('After filtering gamesWithProgress');
 
-    // Load existing user_games to enable cheap diff
+    // V2 Schema: Each Xbox version has its own platform_id
+    // Xbox360=10, XboxOne=11, XboxSeriesX=12
+    console.log('Xbox sync: Xbox360=10, XboxOne=11, XboxSeriesX=12');
+
+    // Load ALL user_progress ONCE for fast lookup (across all Xbox platforms)
+    console.log('Loading all user_progress for comparison...');
     const { data: existingUserGames } = await supabase
-      .from('user_games')
-      .select('game_title_id, platform_id, xbox_total_achievements, xbox_achievements_earned, last_rarity_sync, sync_failed')
-      .eq('user_id', userId);
+      .from('user_progress')
+      .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percent, last_rarity_sync, sync_failed, current_score')
+      .eq('user_id', userId)
+      .in('platform_id', [10, 11, 12]); // All Xbox platforms
     
     const userGamesMap = new Map();
     for (const ug of existingUserGames || []) {
-      userGamesMap.set(`${ug.game_title_id}_${ug.platform_id}`, ug);
+      userGamesMap.set(`${ug.platform_game_id}_${ug.platform_id}`, ug);
     }
-    console.log(`Loaded ${userGamesMap.size} existing user_games for diff check`);
+    console.log(`Loaded ${userGamesMap.size} existing user_progress records into memory`);
 
     let processedGames = 0;
     let totalAchievements = 0;
-
-    // Get platform once before processing games (performance optimization)
-    const { data: platform, error: platformError } = await supabase
-      .from('platforms')
-      .select('id')
-      .eq('code', 'XBOXONE')
-      .single();
-    
-    if (platformError || !platform) {
-      console.error(
-        '❌ Platform query failed for XBOXONE:',
-        platformError?.message || 'Platform not found'
-      );
-      throw new Error('Failed to resolve XBOXONE platform');
-    }
-    
-    console.log(`✅ Platform resolved: XBOXONE → ID ${platform.id}`);
     
     // Process in batches to avoid OOM and reduce memory footprint
     // NOTE: BATCH_SIZE configurable via env var
@@ -531,107 +520,100 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
           try {
             console.log(`Processing game: ${title.name} (${title.titleId})`);
             
-            // Search for existing game_title by xbox_title_id using dedicated column
-            let gameTitle = null;
-            const trimmedName = title.name.trim();
-            let existingGame = null;
+            // Detect platform version and map to platform_id
+            // Xbox360=10, XboxOne=11, XboxSeriesX=12
+            let platformVersion = 'XboxOne';
+            let platformId = 11; // Default XboxOne
             
-            // First, try to find by xbox_title_id
-            const { data: gameByTitleId } = await supabase
-              .from('game_titles')
-              .select('id, name, cover_url, metadata, xbox_title_id')
-              .eq('xbox_title_id', title.titleId)
-              .maybeSingle();
-            
-            if (gameByTitleId) {
-              existingGame = gameByTitleId;
-            } else {
-              // Fallback: search by exact name to catch games without xbox_title_id
-              const { data: gameByName } = await supabase
-                .from('game_titles')
-                .select('id, name, cover_url, metadata, xbox_title_id')
-                .eq('name', trimmedName)
-                .is('xbox_title_id', null)
-                .maybeSingle();
-              
-              if (gameByName) {
-                existingGame = gameByName;
-                console.log(`📝 Found existing game by name without xbox_title_id: "${trimmedName}" - will backfill`);
+            // Xbox API provides device types in title.devices array
+            if (title.devices && Array.isArray(title.devices)) {
+              const deviceTypes = title.devices.map(d => d.toLowerCase());
+              if (deviceTypes.includes('xboxseriess') || deviceTypes.includes('xboxseriesx')) {
+                platformVersion = 'XboxSeriesX';
+                platformId = 12;
+              } else if (deviceTypes.includes('xboxone')) {
+                platformVersion = 'XboxOne';
+                platformId = 11;
+              } else if (deviceTypes.includes('xbox360')) {
+                platformVersion = 'Xbox360';
+                platformId = 10;
               }
             }
             
-            if (existingGame) {
-              // Update cover and xbox_title_id if missing
-              const updates = {};
-              if (!existingGame.cover_url && title.displayImage) {
-                updates.cover_url = title.displayImage;
-              }
-              // Backfill xbox_title_id if it's missing (important for cross-platform games)
-              if (!existingGame.xbox_title_id) {
-                updates.xbox_title_id = title.titleId;
-              }
-              if (!existingGame.metadata?.xbox_title_id || existingGame.metadata.xbox_title_id !== title.titleId) {
-                updates.metadata = {
-                  ...(existingGame.metadata || {}),
-                  xbox_title_id: title.titleId,
-                };
-              }
-              
-              if (Object.keys(updates).length > 0) {
-                console.log('Updating game_title:', { 
+            console.log(`📱 Platform detected: ${title.devices?.join(', ')} → ${platformVersion} (ID ${platformId})`);
+            
+            // Find or create game using unique Xbox titleId
+            const trimmedName = title.name.trim();
+            
+            // First try to find by Xbox titleId (platform_game_id) with composite key
+            const { data: existingGameById } = await supabase
+              .from('games')
+              .select('platform_game_id, cover_url, metadata')
+              .eq('platform_id', platformId)
+              .eq('platform_game_id', title.titleId)
+              .maybeSingle();
+            
+            let gameTitle;
+            if (existingGameById) {
+              // Found by composite key - this is the exact game
+              if (!existingGameById.cover_url && title.displayImage) {
+                console.log('Attempting to update Xbox game:', { 
                   name: title.name, 
-                  id: existingGame.id, 
-                  titleId: title.titleId,
-                  updates: Object.keys(updates)
+                  platform_game_id: existingGameById.platform_game_id, 
+                  titleId: title.titleId
                 });
                 const { error: updateError } = await supabase
-                  .from('game_titles')
-                  .update(updates)
-                  .eq('id', existingGame.id);
+                  .from('games')
+                  .update({ cover_url: title.displayImage })
+                  .eq('platform_id', platformId)
+                  .eq('platform_game_id', existingGameById.platform_game_id);
                 
                 if (updateError) {
-                  console.error('❌ Failed to update game_title:', title.name, 'Error:', updateError);
+                  console.error('❌ Failed to update game cover:', title.name, 'Error:', updateError);
+                  console.error('  - Platform Game ID was:', existingGameById.platform_game_id);
                 }
               }
-              gameTitle = existingGame;
+              gameTitle = existingGameById;
             } else {
-              // Create new game_title with xbox_title_id in dedicated column
+              // Not found - create new game with V2 composite key
               const { data: newGame, error: insertError } = await supabase
-                .from('game_titles')
+                .from('games')
                 .insert({
+                  platform_id: platformId,
+                  platform_game_id: title.titleId,
                   name: trimmedName,
                   cover_url: title.displayImage,
-                  xbox_title_id: title.titleId,
-                  metadata: {
+                  metadata: { 
                     xbox_title_id: title.titleId,
+                    platform_version: platformVersion
                   },
                 })
                 .select()
                 .single();
               
               if (insertError) {
-                console.error('❌ Failed to insert game_title:', title.name, 'Error:', insertError);
+                console.error('❌ Failed to insert game:', title.name, 'Error:', insertError);
                 continue;
               }
               gameTitle = newGame;
             }
 
-            if (!gameTitle) { console.log('Upserted game_title - no result'); continue; }
+            if (!gameTitle) continue;
 
             // Log the achievement data from Xbox API
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);
 
-            const existingUserGame = userGamesMap.get(`${gameTitle.id}_${platform.id}`);
+            const existingUserGame = userGamesMap.get(`${gameTitle.platform_game_id}_${platformId}`);
             const isNewGame = !existingUserGame;
             const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
             
-            // For diff check: use current gamerscore since totalAchievements from Xbox API is often 0
+            // For diff check: use current gamerscore/achievements
             const apiEarnedAchievements = title.achievement.currentAchievements || 0;
             const apiGamerscore = title.achievement.currentGamerscore || 0;
             
             const countsChanged = existingUserGame && 
-              (existingUserGame.xbox_achievements_earned !== apiEarnedAchievements ||
-               existingUserGame.xbox_current_gamerscore !== apiGamerscore);
+              (existingUserGame.achievements_earned !== apiEarnedAchievements ||
+               existingUserGame.current_score !== apiGamerscore);
             
             // Check if rarity is stale (>30 days old)
             let needRarityRefresh = false;
@@ -645,19 +627,19 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             let missingAchievements = false;
             if (!isNewGame && !countsChanged && !syncFailed && apiEarnedAchievements > 0) {
               try {
-                const { data: gameAchievements } = await supabase
+                const { count: gameAchievementsCount } = await supabase
                   .from('achievements')
-                  .select('id')
-                  .eq('game_title_id', gameTitle.id)
-                  .eq('platform', 'xbox');
+                  .select('*', { count: 'exact', head: true })
+                  .eq('platform_id', platformId)
+                  .eq('platform_game_id', gameTitle.platform_game_id);
                 
-                if (gameAchievements && gameAchievements.length > 0) {
-                  const achievementIds = gameAchievements.map(a => a.id);
+                if (gameAchievementsCount && gameAchievementsCount > 0) {
                   const { count: existingAchievementsCount } = await supabase
                     .from('user_achievements')
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', userId)
-                    .in('achievement_id', achievementIds);
+                    .eq('platform_id', platformId)
+                    .eq('platform_game_id', gameTitle.platform_game_id);
 
                   if (existingAchievementsCount === 0 || existingAchievementsCount < apiEarnedAchievements) {
                     missingAchievements = true;
@@ -795,34 +777,36 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
 
             // Upsert user_games
+            // Update user_progress with game progress
             // Use totalAchievementsFromAPI (the count we actually fetched) since we now paginate and get all achievements
             // title.achievement.totalAchievements from Xbox API can sometimes be 0 or incorrect
             const userGameData = {
               user_id: userId,
-              game_title_id: gameTitle.id,
-              platform_id: platform.id,
-              total_trophies: totalAchievementsFromAPI,
-              earned_trophies: title.achievement.currentAchievements,
+              platform_id: platformId,
+              platform_game_id: gameTitle.platform_game_id,
               completion_percent: title.achievement.progressPercentage,
-              xbox_current_gamerscore: title.achievement.currentGamerscore,
-              xbox_max_gamerscore: title.achievement.totalGamerscore,
-              xbox_achievements_earned: title.achievement.currentAchievements,
-              xbox_total_achievements: totalAchievementsFromAPI,
-              xbox_last_updated_at: new Date().toISOString(),
+              total_achievements: totalAchievementsFromAPI,
+              achievements_earned: title.achievement.currentAchievements,
+              current_score: title.achievement.currentGamerscore,
+              last_rarity_sync: new Date().toISOString(),
+              metadata: {
+                max_gamerscore: title.achievement.totalGamerscore,
+                platform_version: platformVersion,
+              },
               sync_failed: false,
               sync_error: null,
               last_sync_attempt: new Date().toISOString(),
             };
             
-            // Preserve last_trophy_earned_at if it exists (will be updated later after processing achievements)
-            if (existingUserGame && existingUserGame.last_trophy_earned_at) {
-              userGameData.last_trophy_earned_at = existingUserGame.last_trophy_earned_at;
+            // Preserve last_achievement_earned_at if it exists (will be updated later after processing achievements)
+            if (existingUserGame && existingUserGame.last_achievement_earned_at) {
+              userGameData.last_achievement_earned_at = existingUserGame.last_achievement_earned_at;
             }
             
             await supabase
-              .from('user_games')
+              .from('user_progress')
               .upsert(userGameData, {
-                onConflict: 'user_id,game_title_id,platform_id',
+                onConflict: 'user_id,platform_id,platform_game_id',
               });
 
             // Process achievements for this title
@@ -853,39 +837,64 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 supabase
               );
               
-              // Build upsert object
-              const achievementUpsert = {
-                game_title_id: gameTitle.id,
-                platform: 'xbox',
-                platform_version: 'XBOXONE',
+              // Calculate base_status_xp and rarity_multiplier from rarity_global
+              const includeInScore = true; // All Xbox achievements count
+              
+              let baseStatusXP = 0.5; // Default for common (>25%)
+              let rarityMultiplier = 1.00;
+              
+              if (rarityPercent !== null) {
+                if (rarityPercent > 25) {
+                  baseStatusXP = 0.5;  // Common: 0.5 × 1.00 = 0.50
+                  rarityMultiplier = 1.00;
+                } else if (rarityPercent > 10) {
+                  baseStatusXP = 0.7;  // Uncommon: 0.7 × 1.25 = 0.875
+                  rarityMultiplier = 1.25;
+                } else if (rarityPercent > 5) {
+                  baseStatusXP = 0.9;  // Rare: 0.9 × 1.75 = 1.575
+                  rarityMultiplier = 1.75;
+                } else if (rarityPercent > 1) {
+                  baseStatusXP = 1.2;  // Very Rare: 1.2 × 2.25 = 2.70
+                  rarityMultiplier = 2.25;
+                } else {
+                  baseStatusXP = 1.5;  // Ultra Rare: 1.5 × 3.00 = 4.50
+                  rarityMultiplier = 3.00;
+                }
+              }
+              
+              // Build achievement data object
+              const achievementData = {
+                platform_id: platformId,
+                platform_game_id: gameTitle.platform_game_id,
                 platform_achievement_id: achievement.id,
                 name: achievement.name,
                 description: achievement.description,
                 icon_url: iconUrl,
-                xbox_gamerscore: achievement.rewards?.[0]?.value || 0,
-                xbox_is_secret: achievement.isSecret || false,
+                rarity_global: rarityPercent,
+                base_status_xp: baseStatusXP,
+                rarity_multiplier: rarityMultiplier,
                 is_platinum: false, // Xbox doesn't have platinums
-                is_dlc: isDLC,
-                dlc_name: null,
+                include_in_score: includeInScore,
+                metadata: {
+                  gamerscore: achievement.rewards?.[0]?.value || 0,
+                  is_secret: achievement.isSecret || false,
+                  platform_version: platformVersion,
+                  is_dlc: isDLC,
+                  dlc_name: null,
+                },
               };
 
               // Only include proxied_icon_url if upload succeeded
               if (proxiedIconUrl) {
-                achievementUpsert.proxied_icon_url = proxiedIconUrl;
-              }
-
-              // Only update rarity if we fetched new data
-              if ((needsRarityUpdate || hasNullRarity) && rarityPercent !== null) {
-                achievementUpsert.rarity_global = rarityPercent;
-                achievementUpsert.rarity_last_updated_at = new Date().toISOString();
+                achievementData.proxied_icon_url = proxiedIconUrl;
               }
               
               // Check if achievement exists
               const { data: existing } = await supabase
                 .from('achievements')
-                .select('id, proxied_icon_url')
-                .eq('game_title_id', gameTitle.id)
-                .eq('platform', 'xbox')
+                .select('platform_achievement_id, proxied_icon_url')
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle.platform_game_id)
                 .eq('platform_achievement_id', achievement.id)
                 .maybeSingle();
 
@@ -894,8 +903,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 // Update existing
                 const { data } = await supabase
                   .from('achievements')
-                  .update(achievementUpsert)
-                  .eq('id', existing.id)
+                  .update(achievementData)
+                  .eq('platform_id', platformId)
+                  .eq('platform_game_id', gameTitle.platform_game_id)
+                  .eq('platform_achievement_id', achievement.id)
                   .select()
                   .single();
                 achievementRecord = data;
@@ -903,7 +914,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 // Insert new
                 const { data } = await supabase
                   .from('achievements')
-                  .insert(achievementUpsert)
+                  .insert(achievementData)
                   .select()
                   .single();
                 achievementRecord = data;
@@ -913,36 +924,32 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
               // Upsert user_achievement if unlocked
               if (achievement.progressState === 'Achieved') {
-                // SAFETY: Xbox should never have platinums
-                if (achievementRecord.is_platinum) {
-                  console.log(`⚠️ [VALIDATION BLOCKED] Xbox achievement marked as platinum: ${achievement.name}`);
-                  continue;
-                }
-
                 await supabase
                   .from('user_achievements')
                   .upsert({
                     user_id: userId,
-                    achievement_id: achievementRecord.id,
+                    platform_id: platformId,
+                    platform_game_id: gameTitle.platform_game_id,
+                    platform_achievement_id: achievementRecord.platform_achievement_id,
                     earned_at: achievement.progression?.timeUnlocked,
                   }, {
-                    onConflict: 'user_id,achievement_id',
+                    onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id',
                   });
                 
                 totalAchievements++;
               }
             }
 
-            // Update user_games with the most recent achievement earned date
+            // Update user_progress with the most recent achievement earned date
             if (mostRecentAchievementDate) {
               await supabase
-                .from('user_games')
+                .from('user_progress')
                 .update({
-                  last_trophy_earned_at: mostRecentAchievementDate.toISOString(),
+                  last_achievement_earned_at: mostRecentAchievementDate.toISOString(),
                 })
                 .eq('user_id', userId)
-                .eq('game_title_id', gameTitle.id)
-                .eq('platform_id', platform.id);
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle.platform_game_id);
             }
 
             processedGames++;
@@ -958,27 +965,28 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Briefly yield to the event loop to reduce temporary memory spikes
             await new Promise((r) => setTimeout(r, 25));
           } catch (error) {
-            console.error(`Error processing title ${title.name}:`, error);
+            console.error(`❌ Error processing title ${title.name}:`, error);
             
-            // Mark sync as failed for this game (only if we have a gameTitle)
-            if (gameTitle?.id && platform?.id) {
+            // If achievement fetch/processing failed, mark the game with sync_failed flag if we have gameTitle
+            // This prevents data inconsistency where user_progress says has achievements but no achievements exist
+            if (gameTitle?.platform_game_id && platformId) {
               try {
                 await supabase
-                  .from('user_games')
+                  .from('user_progress')
                   .update({
                     sync_failed: true,
-                    sync_error: (error.message || String(error)).substring(0, 255),
+                    sync_error: error.message?.substring(0, 255),
                     last_sync_attempt: new Date().toISOString(),
                   })
                   .eq('user_id', userId)
-                  .eq('game_title_id', gameTitle.id)
-                  .eq('platform_id', platform.id);
-              } catch (updateErr) {
-                console.error('Failed to mark sync_failed:', updateErr);
+                  .eq('platform_id', platformId)
+                  .eq('platform_game_id', gameTitle.platform_game_id);
+              } catch (updateError) {
+                console.error('Failed to mark game as sync_failed:', updateError);
               }
+            } else {
+              console.log(`⚠️ Skipping sync_failed update - game not yet in database (${title.name})`);
             }
-            
-            // Still increment progress even on error
             processedGames++;
             const progress = Math.floor((processedGames / gamesWithProgress.length) * 100);
             await supabase
@@ -1109,8 +1117,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     // Calculate StatusXP for all achievements and games
     console.log('Calculating StatusXP values...');
     try {
-      await supabase.rpc('calculate_user_achievement_statusxp');
-      await supabase.rpc('calculate_user_game_statusxp');
+      await supabase.rpc('refresh_statusxp_leaderboard');
       console.log('✅ StatusXP calculation complete');
     } catch (calcError) {
       console.error('⚠️ StatusXP calculation failed:', calcError);
