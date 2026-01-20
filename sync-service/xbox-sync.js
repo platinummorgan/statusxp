@@ -555,18 +555,18 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const trimmedName = title.name.trim();
             
             // 🎮 IGDB VALIDATION: Check authoritative platform data before proceeding
+            let validatedPlatformId = null; // Declare outside try-catch so backwards compat check can access it
             try {
               const validator = getIGDBValidator();
               if (validator) {
-                const validatedPlatformId = await validator.validatePlatform(trimmedName, platformId, 'xbox');
+                validatedPlatformId = await validator.validatePlatform(trimmedName, platformId, 'xbox');
                 if (validatedPlatformId && validatedPlatformId !== platformId) {
                   const platformNames = { 10: 'Xbox360', 11: 'XboxOne', 12: 'XboxSeriesX' };
                   console.log(`🔧 IGDB Override: ${trimmedName} detected as ${platformNames[platformId]} but IGDB says ${platformNames[validatedPlatformId]} - using IGDB data`);
                   platformId = validatedPlatformId;
                   platformVersion = platformNames[validatedPlatformId];
-                } else if (validatedPlatformId) {
-                  console.log(`✅ IGDB Confirmed: ${trimmedName} is correctly ${platformVersion}`);
                 }
+                // Note: When validatedPlatformId === platformId, IGDB validator already logged confirmation or fallback message
               }
             } catch (igdbError) {
               console.warn(`⚠️  IGDB validation failed for ${trimmedName}, falling back to API detection:`, igdbError.message);
@@ -574,7 +574,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             // 🔍 BACKWARDS COMPATIBILITY CHECK: See if this game_id exists on older platform
             // Xbox 360/One games played on Series X should stay on their original platform
-            if (platformId === 12) { // If detected as Xbox Series X
+            // BUT: Only downgrade if IGDB didn't explicitly confirm this as a native newer-platform release
+            const igdbConfirmedNativePlatform = validatedPlatformId === platformId;
+            
+            if (platformId === 12 && !igdbConfirmedNativePlatform) { // If detected as Xbox Series X and IGDB didn't confirm native Series X
               // Check Xbox One first (most common backwards compat)
               const { data: xboxOneVersion } = await supabase
                 .from('games')
@@ -602,7 +605,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                   platformVersion = 'Xbox360';
                 }
               }
-            } else if (platformId === 11) { // If detected as Xbox One
+            } else if (platformId === 11 && !igdbConfirmedNativePlatform) { // If detected as Xbox One and IGDB didn't confirm native Xbox One
               // Check Xbox 360
               const { data: xbox360Version } = await supabase
                 .from('games')
