@@ -479,8 +479,16 @@ export async function syncPSNAchievements(
           const apiProgress = Number(title.progress || 0);
 
           // Simple lookup - is this game new or changed?
-          const existingUserGame = userGamesMap.get(`${gameTitle.platform_game_id}_${platformId}`);
+          const lookupKey = `${gameTitle.platform_game_id}_${platformId}`;
+          const existingUserGame = userGamesMap.get(lookupKey);
           const isNewGame = !existingUserGame;
+          
+          // DEBUG: Log lookup details
+          if (!existingUserGame) {
+            console.log(`[DEBUG] Game NOT found in map. Key: "${lookupKey}", Title: "${title.trophyTitleName}"`);
+            console.log(`[DEBUG] Map has ${userGamesMap.size} entries. First 5 keys:`, Array.from(userGamesMap.keys()).slice(0, 5));
+          }
+          
           const earnedChanged = existingUserGame && existingUserGame.achievements_earned !== apiEarnedTrophies;
           const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
           
