@@ -1,9 +1,10 @@
 // Quick monitoring script for PSN sync progress
 const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config();
 
 const supabase = createClient(
-  'https://ksriqcmumjkemtfjuedm.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzcmlxY211bWprZW10Zmp1ZWRtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDcxNDE4NCwiZXhwIjoyMDgwMjkwMTg0fQ.tGA4TM9AjAomtriuotavNlr6RGllgin_9AVEAS5HDOE'
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 const userId = '84b60ad6-cb2c-484f-8953-bf814551fd7a';
