@@ -158,18 +158,18 @@ class IGDBValidator {
     // Detected platform NOT in IGDB filtered list
     const correctPlatform = this.getOldestPlatform(filteredPlatforms, null);
     
-    // Sanity check: Don't downgrade to older platforms when detected is newer
-    // (e.g., don't change PS4 → Vita, that's likely IGDB data quality issue)
-    const downgrades = {
-      1: [2, 5, 9],   // PS5 can downgrade to PS4, PS3, Vita
-      2: [5, 9],      // PS4 can downgrade to PS3, Vita (but Vita makes no sense!)
-      12: [11, 10],   // Series X can downgrade to One, 360
-      11: [10]        // Xbox One can downgrade to 360
+    // Sanity check: Only allow platform changes that represent ACTUAL backwards compatibility
+    // PS4/PS3/Vita have NO backwards compat with each other (different architectures)
+    const allowedBackwardsCompat = {
+      1: [2],         // PS5 can play PS4 games (native backwards compat)
+      12: [11, 10],   // Series X can play One and 360 games
+      11: [10]        // Xbox One can play 360 games
+      // PS4, PS3, Vita: NO entries = NO backwards compat allowed
     };
     
-    const allowedDowngrades = downgrades[detectedPlatformId] || [];
-    if (!allowedDowngrades.includes(correctPlatform)) {
-      console.log(`⚠️  IGDB: "${gameName}" found on ${correctPlatform}, but detected as ${detectedPlatformId} - likely IGDB data issue, using detected platform`);
+    const validBackwardsCompatPlatforms = allowedBackwardsCompat[detectedPlatformId] || [];
+    if (!validBackwardsCompatPlatforms.includes(correctPlatform)) {
+      console.log(`⚠️  IGDB: "${gameName}" found on ${correctPlatform}, but detected as ${detectedPlatformId} - NOT a valid backwards compat platform, using detected platform`);
       console.log(`   IGDB platforms: ${filteredPlatforms.join(', ')}, Detected: ${detectedPlatformId}`);
       return detectedPlatformId;
     }
