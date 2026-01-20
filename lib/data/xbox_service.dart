@@ -123,15 +123,42 @@ class XboxService {
     // Don't refresh session here - it's handled by AuthRefreshService
     // Polling this every 2-10 seconds causes refresh spam
 
-    final response = await _client.functions.invoke('xbox-sync-status');
+    // Retry logic for DNS/network failures when app resumes from background
+    int retries = 0;
+    const maxRetries = 3;
+    Exception? lastError;
 
-    if (response.status != 200) {
-      final error = response.data['error'] ?? 'Failed to get sync status';
-      throw Exception('Status ${response.status}: $error');
+    while (retries < maxRetries) {
+      try {
+        final response = await _client.functions.invoke('xbox-sync-status');
+
+        if (response.status != 200) {
+          final error = response.data['error'] ?? 'Failed to get sync status';
+          throw Exception('Status ${response.status}: $error');
+        }
+
+        final data = response.data as Map<String, dynamic>;
+        return XboxSyncStatus.fromJson(data);
+      } catch (e) {
+        lastError = e is Exception ? e : Exception(e.toString());
+        
+        // Only retry on DNS/network errors
+        if (e.toString().contains('SocketException') || 
+            e.toString().contains('Failed host lookup') ||
+            e.toString().contains('No address associated')) {
+          retries++;
+          if (retries < maxRetries) {
+            // Exponential backoff: 500ms, 1s, 2s
+            await Future.delayed(Duration(milliseconds: 500 * (1 << (retries - 1))));
+            continue;
+          }
+        }
+        // Non-network errors or max retries reached
+        throw lastError;
+      }
     }
 
-    final data = response.data as Map<String, dynamic>;
-    return XboxSyncStatus.fromJson(data);
+    throw lastError ?? Exception('Failed to get sync status after $maxRetries retries');
   }
 
   /// Stream sync status updates (polls every 2 seconds during sync)
