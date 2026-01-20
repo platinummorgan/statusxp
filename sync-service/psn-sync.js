@@ -376,9 +376,8 @@ export async function syncPSNAchievements(
                 console.log(`🔧 IGDB Override: ${trimmedTitle} detected as ${platformNames[platformId]} but IGDB says ${platformNames[validatedPlatformId]} - using IGDB data`);
                 platformId = validatedPlatformId;
                 platformVersion = platformNames[validatedPlatformId];
-              } else if (validatedPlatformId) {
-                console.log(`✅ IGDB Confirmed: ${trimmedTitle} is correctly ${platformVersion}`);
               }
+              // Note: When validatedPlatformId === platformId, IGDB validator already logged confirmation or fallback message
             }
           } catch (igdbError) {
             console.warn(`⚠️  IGDB validation failed for ${trimmedTitle}, falling back to API detection:`, igdbError.message);
@@ -386,7 +385,10 @@ export async function syncPSNAchievements(
           
           // 🔍 BACKWARDS COMPATIBILITY CHECK: See if this game_id exists on older platform
           // PS4 games played on PS5 should stay as PS4 games
-          if (platformId === 1) { // If detected as PS5
+          // BUT: Only downgrade if IGDB didn't explicitly confirm this as a native newer-platform release
+          const igdbConfirmedNativePlatform = validatedPlatformId === platformId;
+          
+          if (platformId === 1 && !igdbConfirmedNativePlatform) { // If detected as PS5 and IGDB didn't confirm native PS5
             const { data: ps4Version } = await supabase
               .from('games')
               .select('platform_id, platform_game_id')
