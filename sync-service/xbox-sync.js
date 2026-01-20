@@ -558,7 +558,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             try {
               const validator = getIGDBValidator();
               if (validator) {
-                const validatedPlatformId = await validator.validatePlatform(trimmedName, platformId);
+                const validatedPlatformId = await validator.validatePlatform(trimmedName, platformId, 'xbox');
                 if (validatedPlatformId && validatedPlatformId !== platformId) {
                   const platformNames = { 10: 'Xbox360', 11: 'XboxOne', 12: 'XboxSeriesX' };
                   console.log(`🔧 IGDB Override: ${trimmedName} detected as ${platformNames[platformId]} but IGDB says ${platformNames[validatedPlatformId]} - using IGDB data`);

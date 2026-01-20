@@ -18,9 +18,13 @@ const IGDB_PLATFORM_MAP = {
   49: 11,  // Xbox One → platform_id 11
   169: 12, // Xbox Series X|S → platform_id 12
   
-  // PC
-  6: 5,    // PC (Windows) → platform_id 5 (Steam)
+  // NOTE: PC (IGDB ID 6) intentionally NOT mapped to avoid conflicts with PS3 (platform_id 5)
+  // PC platforms are filtered out during PlayStation/Xbox syncs
 };
+
+// Platform families for filtering IGDB results
+const PLAYSTATION_PLATFORMS = [1, 2, 5, 9]; // PS5, PS4, PS3, Vita
+const XBOX_PLATFORMS = [10, 11, 12]; // 360, One, Series X
 
 const PLATFORM_PRIORITY = {
   // Lower number = older platform (prioritize older for backwards compat)
@@ -121,8 +125,11 @@ class IGDBValidator {
   /**
    * Validates if a platform_id is correct for a game
    * Returns the correct platform_id to use (oldest available if multiple)
+   * @param {string} gameName - Name of the game
+   * @param {number} detectedPlatformId - Platform detected by sync service
+   * @param {string} platformFamily - 'playstation' or 'xbox' to filter results
    */
-  async validatePlatform(gameName, detectedPlatformId) {
+  async validatePlatform(gameName, detectedPlatformId, platformFamily = 'playstation') {
     const igdbResult = await this.queryGame(gameName);
     
     if (!igdbResult || igdbResult.ourPlatforms.length === 0) {
@@ -130,12 +137,21 @@ class IGDBValidator {
       return detectedPlatformId; // Fallback to detected platform
     }
 
-    // Check if detected platform is in IGDB's list
-    if (igdbResult.ourPlatforms.includes(detectedPlatformId)) {
+    // Filter platforms by family (remove PC/other consoles)
+    const familyPlatforms = platformFamily === 'playstation' ? PLAYSTATION_PLATFORMS : XBOX_PLATFORMS;
+    const filteredPlatforms = igdbResult.ourPlatforms.filter(id => familyPlatforms.includes(id));
+    
+    if (filteredPlatforms.length === 0) {
+      console.log(`⚠️  IGDB: "${gameName}" has no ${platformFamily} platforms in IGDB, using detected ${detectedPlatformId}`);
+      return detectedPlatformId;
+    }
+
+    // Check if detected platform is in filtered list
+    if (filteredPlatforms.includes(detectedPlatformId)) {
       console.log(`✅ IGDB: "${gameName}" confirmed on platform ${detectedPlatformId}`);
       
       // But if there's an OLDER platform in the list, use that (backwards compat handling)
-      const oldestPlatform = this.getOldestPlatform(igdbResult.ourPlatforms, detectedPlatformId);
+      const oldestPlatform = this.getOldestPlatform(filteredPlatforms, detectedPlatformId);
       if (oldestPlatform !== detectedPlatformId) {
         console.log(`🔄 IGDB: "${gameName}" also exists on older platform ${oldestPlatform}, using that instead`);
         return oldestPlatform;
@@ -144,10 +160,10 @@ class IGDBValidator {
       return detectedPlatformId;
     }
 
-    // Detected platform NOT in IGDB list - use oldest available platform
-    const correctPlatform = this.getOldestPlatform(igdbResult.ourPlatforms, null);
+    // Detected platform NOT in IGDB filtered list - use oldest available
+    const correctPlatform = this.getOldestPlatform(filteredPlatforms, null);
     console.log(`⚠️  IGDB: "${gameName}" not found on platform ${detectedPlatformId}, correcting to ${correctPlatform}`);
-    console.log(`   IGDB says platforms: ${igdbResult.ourPlatforms.join(', ')}`);
+    console.log(`   IGDB says ${platformFamily} platforms: ${filteredPlatforms.join(', ')}`);
     
     return correctPlatform;
   }
