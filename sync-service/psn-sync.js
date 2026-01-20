@@ -262,11 +262,17 @@ export async function syncPSNAchievements(
 
     // Load ALL user_progress ONCE for fast lookup (across all PSN platforms)
     console.log('Loading all user_progress for comparison...');
-    const { data: allUserGames } = await supabase
+    const { data: allUserGames, error: loadError } = await supabase
       .from('user_progress')
       .select('platform_game_id, platform_id, achievements_earned, total_achievements, completion_percent, last_rarity_sync, sync_failed')
       .eq('user_id', userId)
       .in('platform_id', [1, 2, 5, 9]); // All PSN platforms
+    
+    if (loadError) {
+      console.error('❌ ERROR loading user_progress:', loadError);
+    }
+    
+    console.log(`[DEBUG] Query returned ${allUserGames?.length || 0} records for user_id: ${userId}`);
     
     const userGamesMap = new Map();
     (allUserGames || []).forEach(ug => {
@@ -615,9 +621,16 @@ export async function syncPSNAchievements(
             userGameData.last_achievement_earned_at = existingUserGame.last_achievement_earned_at;
           }
           
-          await supabase
+          const { error: upsertError } = await supabase
             .from('user_progress')
             .upsert(userGameData, { onConflict: 'user_id,platform_id,platform_game_id' });
+          
+          if (upsertError) {
+            console.error(`❌ ERROR upserting user_progress for ${title.trophyTitleName}:`, upsertError);
+            console.error(`[DEBUG] Failed data:`, JSON.stringify(userGameData, null, 2));
+          } else {
+            console.log(`✅ Successfully upserted user_progress for ${title.trophyTitleName}`);
+          }
 
           // Create a map of user trophy data by trophyId for easy lookup
           const userTrophyMap = new Map();
