@@ -199,7 +199,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     // Load existing user_progress to enable cheap diff
     const { data: existingUserGames } = await supabase
       .from('user_progress')
-      .select('platform_game_id, platform_id, total_achievements, achievements_earned, last_rarity_sync, sync_failed')
+      .select('platform_game_id, platform_id, total_achievements, achievements_earned, metadata, synced_at')
       .eq('user_id', userId)
       .eq('platform_id', platformId);
     
@@ -410,12 +410,12 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             const isNewGame = !existingUserGame;
             const countsChanged = existingUserGame && 
               (existingUserGame.total_achievements !== totalCount || existingUserGame.achievements_earned !== unlockedCount);
-            const syncFailed = existingUserGame && existingUserGame.sync_failed === true;
+            const syncFailed = existingUserGame && existingUserGame.metadata?.sync_failed === true;
             
             // Check if rarity is stale (>30 days old)
             let needRarityRefresh = false;
             if (!isNewGame && !countsChanged && !syncFailed && existingUserGame) {
-              const lastRaritySync = existingUserGame.last_rarity_sync ? new Date(existingUserGame.last_rarity_sync) : null;
+              const lastRaritySync = existingUserGame.metadata?.last_rarity_sync ? new Date(existingUserGame.metadata.last_rarity_sync) : null;
               const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
               needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
             }
@@ -497,16 +497,17 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 platform_game_id: gameTitle.platform_game_id,
                 total_achievements: achievements.length,
                 achievements_earned: unlockedCount,
-                completion_percent: progress,
+                completion_percentage: progress,
                 last_trophy_earned_at: lastTrophyEarnedAt ? lastTrophyEarnedAt.toISOString() : null,
-                sync_failed: false,
-                sync_error: null,
-                last_sync_attempt: new Date().toISOString(),
                 metadata: {
                   platform_version: 'Steam',
                   is_dlc: isDLC,
                   dlc_name: dlcName,
                   base_game_app_id: baseGameAppId,
+                  last_rarity_sync: new Date().toISOString(),
+                  sync_failed: false,
+                  sync_error: null,
+                  last_sync_attempt: new Date().toISOString(),
                 },
               }, {
                 onConflict: 'user_id,platform_id,platform_game_id',
@@ -631,12 +632,23 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             
             // Mark sync as failed for this game
             try {
+              const { data: existingGame } = await supabase
+                .from('user_progress')
+                .select('metadata')
+                .eq('user_id', userId)
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle?.platform_game_id)
+                .single();
+              
               await supabase
                 .from('user_progress')
                 .update({
-                  sync_failed: true,
-                  sync_error: (error.message || String(error)).substring(0, 255),
-                  last_sync_attempt: new Date().toISOString(),
+                  metadata: {
+                    ...(existingGame?.metadata || {}),
+                    sync_failed: true,
+                    sync_error: (error.message || String(error)).substring(0, 255),
+                    last_sync_attempt: new Date().toISOString(),
+                  }
                 })
                 .eq('user_id', userId)
                 .eq('platform_id', platformId)
