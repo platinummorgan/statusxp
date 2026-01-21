@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- PlayStation Plus logo shapes -->
+  <g fill="#FFD700">
+    <!-- Triangle -->
+    <polygon points="20,15 30,35 10,35"/>
+    <!-- Circle -->
+    <circle cx="45" cy="25" r="10"/>
+    <!-- Cross (X) -->
+    <path d="M 60 15 L 70 35 M 70 15 L 60 35"/>
+    <!-- Square -->
+    <rect x="75" y="15" width="15" height="20"/>
+    <!-- Plus sign -->
+    <rect x="43" y="50" width="14" height="40"/>
+    <rect x="33" y="65" width="34" height="10"/>
+  </g>
+</svg>
