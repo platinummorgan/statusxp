@@ -385,42 +385,21 @@ export async function syncPSNAchievements(
           // Find or create game using unique PSN npCommunicationId
           const trimmedTitle = title.trophyTitleName.trim();
           
-          // 🎮 IGDB VALIDATION: Check authoritative platform data before proceeding
-          let validatedPlatformId = null; // Declare outside try-catch so backwards compat check can access it
-          try {
-            const validator = getIGDBValidator();
-            if (validator) {
-              validatedPlatformId = await validator.validatePlatform(trimmedTitle, platformId, 'playstation');
-              if (validatedPlatformId && validatedPlatformId !== platformId) {
-                const platformNames = { 1: 'PS5', 2: 'PS4', 5: 'PS3', 9: 'PSVITA' };
-                console.log(`🔧 IGDB Override: ${trimmedTitle} detected as ${platformNames[platformId]} but IGDB says ${platformNames[validatedPlatformId]} - using IGDB data`);
-                platformId = validatedPlatformId;
-                platformVersion = platformNames[validatedPlatformId];
-              }
-              // Note: When validatedPlatformId === platformId, IGDB validator already logged confirmation or fallback message
-            }
-          } catch (igdbError) {
-            console.warn(`⚠️  IGDB validation failed for ${trimmedTitle}, falling back to API detection:`, igdbError.message);
-          }
+          // 🔍 DUPLICATE PREVENTION: Check if this game_id already exists on ANY platform
+          // Use the existing platform instead of creating duplicates
+          const { data: existingOnAnyPlatform } = await supabase
+            .from('games')
+            .select('platform_id, platform_game_id, name')
+            .eq('platform_game_id', title.npCommunicationId)
+            .maybeSingle();
           
-          // 🔍 BACKWARDS COMPATIBILITY CHECK: See if this game_id exists on older platform
-          // PS4 games played on PS5 should stay as PS4 games
-          // BUT: Only downgrade if IGDB didn't explicitly confirm this as a native newer-platform release
-          const igdbConfirmedNativePlatform = validatedPlatformId === platformId;
-          
-          if (platformId === 1 && !igdbConfirmedNativePlatform) { // If detected as PS5 and IGDB didn't confirm native PS5
-            const { data: ps4Version } = await supabase
-              .from('games')
-              .select('platform_id, platform_game_id')
-              .eq('platform_id', 2) // Check PS4
-              .eq('platform_game_id', title.npCommunicationId)
-              .maybeSingle();
-            
-            if (ps4Version) {
-              console.log(`⚠️  Backwards compat detected: ${trimmedTitle} exists on PS4, using PS4 platform instead of PS5`);
-              platformId = 2; // Override to PS4
-              platformVersion = 'PS4';
-            }
+          if (existingOnAnyPlatform) {
+            const platformNames = { 1: 'PS5', 2: 'PS4', 5: 'PS3', 9: 'PSVITA' };
+            console.log(`⚠️  Game already exists: ${trimmedTitle} (${title.npCommunicationId})`);
+            console.log(`   Found on ${platformNames[existingOnAnyPlatform.platform_id]}, Sony says ${platformVersion}`);
+            console.log(`   Using existing ${platformNames[existingOnAnyPlatform.platform_id]} entry to prevent duplicate`);
+            platformId = existingOnAnyPlatform.platform_id;
+            platformVersion = platformNames[existingOnAnyPlatform.platform_id];
           }
 
           console.log('[PSN_PLATFORM_FINAL]', JSON.stringify({
