@@ -194,7 +194,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     // V2 Schema: Steam has single platform_id
     // Steam=4
     console.log('Steam sync: Steam=4');
-    const platformId = 4; // Steam platform ID
+    let platformId = 4; // Steam platform ID
 
     // Load existing user_progress to enable cheap diff
     const { data: existingUserGames } = await supabase
