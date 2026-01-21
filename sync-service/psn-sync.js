@@ -406,7 +406,6 @@ export async function syncPSNAchievements(
             trophyTitleName: trimmedTitle,
             npCommunicationId: title.npCommunicationId,
             detectedFromApi: title.trophyTitlePlatform,
-            validatedPlatformId,
             finalPlatformId: platformId,
             finalPlatformVersion: platformVersion,
           }, null, 0));
