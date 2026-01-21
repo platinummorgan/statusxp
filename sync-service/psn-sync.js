@@ -47,21 +47,22 @@ function mapPsnPlatformToPlatformId(trophyTitlePlatformRaw) {
 function validatePlatformMapping(trophyTitlePlatform, platformId, gameName, npCommunicationId) {
   const s = (trophyTitlePlatform || '').toUpperCase();
   
-  const expectedMappings = [
-    { contains: 'PS5', expectedId: 1, name: 'PS5' },
-    { contains: 'PS4', expectedId: 2, name: 'PS4' },
-    { contains: 'PS3', expectedId: 5, name: 'PS3' },
-    { contains: 'VITA', expectedId: 9, name: 'PSVITA' }
-  ];
+  // For cross-platform games, we pick the newest platform
+  // So validation should check if assigned platform exists in the string, not exact match
+  const platformMap = {
+    1: 'PS5',
+    2: 'PS4', 
+    5: 'PS3',
+    9: 'VITA'
+  };
   
-  for (const mapping of expectedMappings) {
-    if (s.includes(mapping.contains) && platformId !== mapping.expectedId) {
-      console.error(
-        `🚨 PLATFORM MISMATCH: PSN says ${mapping.name} but platformId=${platformId} | ` +
-        `game="${gameName}" | npId=${npCommunicationId}`
-      );
-      return false;
-    }
+  const assignedPlatformName = platformMap[platformId];
+  if (assignedPlatformName && !s.includes(assignedPlatformName)) {
+    console.error(
+      `🚨 PLATFORM MISMATCH: Assigned ${assignedPlatformName} (id=${platformId}) but not in PSN list "${trophyTitlePlatform}" | ` +
+      `game="${gameName}" | npId=${npCommunicationId}`
+    );
+    return false;
   }
   
   return true;
