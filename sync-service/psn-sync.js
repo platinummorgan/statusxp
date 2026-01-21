@@ -214,6 +214,7 @@ export async function syncPSNAchievements(
     }
 
     console.log(`Total PSN titles fetched: ${allTitles.length}`);
+    console.log('[DUMP_TITLE_0]', JSON.stringify(allTitles[0], null, 2));
 
     if (!allTitles || allTitles.length === 0) {
       console.log('No PSN titles found - checking if this is expected...');
@@ -575,6 +576,9 @@ export async function syncPSNAchievements(
             'all',
             { npServiceName: title.npServiceName }
           );
+          
+          console.log('[DUMP_TROPHY_META_0]', JSON.stringify(trophyMetadata?.trophies?.[0], null, 2));
+          console.log('[DUMP_USER_TROPHY_0]', JSON.stringify(userTrophyData?.trophies?.[0], null, 2));
           
           console.log(
             'Fetched trophies count:',
