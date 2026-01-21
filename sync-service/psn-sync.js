@@ -283,9 +283,12 @@ export async function syncPSNAchievements(
   console.log(`Starting PSN sync for user ${userId}`);
 
   try {
-    await initIGDBValidator().catch((e) =>
-      console.warn('⚠️ IGDB validator init failed (continuing):', e.message)
-    );
+    try {
+      await initIGDBValidator();
+      console.log('✅ IGDB validator initialized');
+    } catch (err) {
+      console.warn('⚠️ IGDB init failed, continuing without it:', err?.message || err);
+    }
 
     // Validate profile exists
     const { data: profileValidation, error: profileError } = await supabase
