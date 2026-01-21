@@ -721,7 +721,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                   userId: userId,
                   categoryId: categoryId,
                   categoryLabel: label,
-                  suggestions: [], // Disabled for performance
+                  suggestions: const [], // Disabled for performance
                 ),
               );
 
@@ -955,7 +955,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                   userId: userId,
                   categoryId: categoryId,
                   categoryLabel: label,
-                  suggestions: [], // Disabled for performance
+                  suggestions: const [], // Disabled for performance
                 ),
               );
 

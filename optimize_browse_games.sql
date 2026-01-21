@@ -14,14 +14,27 @@ CREATE INDEX IF NOT EXISTS idx_games_composite ON games (platform_id, platform_g
 DROP MATERIALIZED VIEW IF EXISTS grouped_games_cache CASCADE;
 
 CREATE MATERIALIZED VIEW grouped_games_cache AS
-WITH game_groups AS (
-  SELECT 
+WITH distinct_game_platforms AS (
+  -- First get distinct combinations of game name and platform
+  SELECT DISTINCT ON (LOWER(TRIM(g.name)), g.platform_id)
     LOWER(TRIM(g.name)) as normalized_name,
-    MIN(g.name) as display_name,  -- Use first alphabetically for consistency
-    -- Pick primary game (prefer PS5 > Xbox One > Steam > others)
-    (ARRAY_AGG(
-      g ORDER BY 
-        CASE g.platform_id 
+    g.name,
+    g.platform_id,
+    g.platform_game_id,
+    g.cover_url,
+    p.code as platform_code,
+    p.name as platform_name
+  FROM games g
+  JOIN platforms p ON p.id = g.platform_id
+  ORDER BY LOWER(TRIM(g.name)), g.platform_id, g.name
+),
+game_groups AS (
+  SELECT 
+    dgp.normalized_name,
+    MIN(dgp.name) as display_name,  -- Use first alphabetically for consistency
+    -- Pick primary game fields (prefer PS5 > Xbox One > Steam > others)
+    (ARRAY_AGG(dgp.platform_id ORDER BY 
+        CASE dgp.platform_id 
           WHEN 1 THEN 1   -- PS5
           WHEN 11 THEN 2  -- Xbox One
           WHEN 5 THEN 3   -- Steam
@@ -29,15 +42,37 @@ WITH game_groups AS (
           WHEN 12 THEN 5  -- Xbox Series X
           ELSE 99
         END,
-        g.platform_id
-    ))[1] as primary_game,
-    -- Aggregate all platforms
-    ARRAY_AGG(DISTINCT p.code ORDER BY p.code) as platforms,
-    ARRAY_AGG(DISTINCT g.platform_id ORDER BY g.platform_id) as platform_ids,
-    ARRAY_AGG(DISTINCT g.platform_game_id ORDER BY g.platform_game_id) as platform_game_ids
-  FROM games g
-  JOIN platforms p ON p.id = g.platform_id
-  GROUP BY LOWER(TRIM(g.name))
+        dgp.platform_id
+    ))[1] as primary_platform_id,
+    (ARRAY_AGG(dgp.platform_game_id ORDER BY 
+        CASE dgp.platform_id 
+          WHEN 1 THEN 1   -- PS5
+          WHEN 11 THEN 2  -- Xbox One
+          WHEN 5 THEN 3   -- Steam
+          WHEN 2 THEN 4   -- PS4
+          WHEN 12 THEN 5  -- Xbox Series X
+          ELSE 99
+        END,
+        dgp.platform_id
+    ))[1] as primary_game_id,
+    (ARRAY_AGG(dgp.cover_url ORDER BY 
+        CASE dgp.platform_id 
+          WHEN 1 THEN 1   -- PS5
+          WHEN 11 THEN 2  -- Xbox One
+          WHEN 5 THEN 3   -- Steam
+          WHEN 2 THEN 4   -- PS4
+          WHEN 12 THEN 5  -- Xbox Series X
+          ELSE 99
+        END,
+        dgp.platform_id
+    ))[1] as primary_cover_url,
+    -- Aggregate platform data together to maintain alignment (ordered by platform_id)
+    ARRAY_AGG(dgp.platform_code ORDER BY dgp.platform_id) as platforms,
+    ARRAY_AGG(dgp.platform_name ORDER BY dgp.platform_id) as platform_names,
+    ARRAY_AGG(dgp.platform_id ORDER BY dgp.platform_id) as platform_ids,
+    ARRAY_AGG(dgp.platform_game_id ORDER BY dgp.platform_id) as platform_game_ids
+  FROM distinct_game_platforms dgp
+  GROUP BY dgp.normalized_name
 ),
 achievement_counts AS (
   SELECT 
@@ -51,10 +86,11 @@ achievement_counts AS (
 SELECT 
   gg.normalized_name,
   gg.display_name as name,
-  (gg.primary_game).cover_url as cover_url,
-  (gg.primary_game).platform_id as primary_platform_id,
-  (gg.primary_game).platform_game_id as primary_game_id,
+  gg.primary_cover_url as cover_url,
+  gg.primary_platform_id,
+  gg.primary_game_id,
   gg.platforms,
+  gg.platform_names,
   gg.platform_ids,
   gg.platform_game_ids,
   COALESCE(ac.total_achievements, 0)::INT as total_achievements
@@ -81,6 +117,7 @@ RETURNS TABLE (
   name TEXT,
   cover_url TEXT,
   platforms TEXT[],
+  platform_names TEXT[],
   platform_ids BIGINT[],
   platform_game_ids TEXT[],
   total_achievements INT,
@@ -113,6 +150,7 @@ BEGIN
     ggc.name,
     ggc.cover_url,
     ggc.platforms,
+    ggc.platform_names,
     ggc.platform_ids,
     ggc.platform_game_ids,
     ggc.total_achievements,
@@ -158,6 +196,7 @@ SELECT
   name,
   primary_platform_id,
   primary_game_id,
+  platform_names,
   platforms,
   total_achievements
 FROM get_grouped_games_fast(NULL, 'xbox', 10, 0)

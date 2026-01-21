@@ -518,7 +518,7 @@ class FlexRoomRepository {
     double? maxRarity,
   }) async {
     try {
-      var query = _client
+      final query = _client
           .from('user_achievements')
           .select('user_id, platform_id, platform_game_id, platform_achievement_id, earned_at')
           .eq('user_id', userId);
@@ -580,8 +580,9 @@ class FlexRoomRepository {
       if (platformFilter != null && platformFilter.isNotEmpty) {
         // Map platform code to platform_id
         int? targetPlatformId;
-        if (platformFilter == 'psn') targetPlatformId = 1;
-        else if (platformFilter == 'steam') targetPlatformId = 5;
+        if (platformFilter == 'psn') {
+          targetPlatformId = 1;
+        } else if (platformFilter == 'steam') targetPlatformId = 5;
         else if (platformFilter == 'xbox') targetPlatformId = 10; // or 11, 12 for Xbox One, Series
         
         if (targetPlatformId != null) {
@@ -674,7 +675,7 @@ class FlexRoomRepository {
     try {
       // Map platform name to platform_id
       int? targetPlatformId = platformId;
-      String? targetGameId = platformGameId ?? gameId;
+      final String? targetGameId = platformGameId ?? gameId;
 
       if (targetPlatformId == null) {
         switch (platform.toLowerCase()) {

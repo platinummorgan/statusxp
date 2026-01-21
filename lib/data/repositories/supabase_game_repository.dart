@@ -243,6 +243,7 @@ class SupabaseGameRepository {
 
       final games = (response as List).map((game) {
         final platforms = (game['platforms'] as List?)?.cast<String>() ?? [];
+        final platformNames = (game['platform_names'] as List?)?.cast<String>() ?? [];
         final platformIds = (game['platform_ids'] as List?)?.cast<int>() ?? [];
         final platformGameIds = (game['platform_game_ids'] as List?)?.cast<String>() ?? [];
         
@@ -281,6 +282,7 @@ class SupabaseGameRepository {
               ? {'code': primaryPlatform, 'name': primaryPlatform}
               : null,
           'all_platforms': platforms,
+          'platform_names': platformNames,
           'platform_ids': platformIds, // All platform IDs in group
           'platform_game_ids': platformGameIds, // All game IDs in group
           'total_achievements': game['total_achievements'],

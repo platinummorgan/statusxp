@@ -350,6 +350,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   void _showPlatformSelectionDialog(BuildContext context, Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
     final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [];
+    final platformNames = game['platform_names'] as List<dynamic>? ?? [];
     final platformIds = game['platform_ids'] as List<dynamic>? ?? [];
     final platformGameIds = game['platform_game_ids'] as List<dynamic>? ?? [];
     final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
@@ -395,28 +396,24 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                   // Get platform_id and platform_game_id for this platform
                   final platformId = index < platformIds.length ? platformIds[index] : null;
                   final platformGameId = index < platformGameIds.length ? platformGameIds[index] : null;
+                  final platformName = index < platformNames.length ? platformNames[index].toString() : platformCode.toString();
                   
                   Color platformColor;
                   IconData platformIcon;
-                  String platformLabel;
 
                   final code = platformCode.toString().toLowerCase();
                   if (code.contains('ps') || code == 'playstation') {
                     platformColor = const Color(0xFF0070CC);
                     platformIcon = Icons.sports_esports;
-                    platformLabel = 'PlayStation';
                   } else if (code.contains('xbox')) {
                     platformColor = const Color(0xFF107C10);
                     platformIcon = Icons.videogame_asset;
-                    platformLabel = 'Xbox';
                   } else if (code.contains('steam')) {
                     platformColor = const Color(0xFF1B2838);
                     platformIcon = Icons.store;
-                    platformLabel = 'Steam';
                   } else {
                     platformColor = Colors.grey;
                     platformIcon = Icons.gamepad;
-                    platformLabel = platformCode.toString();
                   }
 
                   return Padding(
@@ -451,12 +448,14 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                           children: [
                             Icon(platformIcon, color: platformColor, size: 32),
                             const SizedBox(width: 16),
-                            Text(
-                              platformLabel,
-                              style: TextStyle(
-                                color: platformColor,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Text(
+                                platformName,
+                                style: TextStyle(
+                                  color: platformColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -519,11 +518,11 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
     return GestureDetector(
       onTap: () {
         if (platformGameId != null) {
-          // If game has multiple platforms and no filter is active, show platform selector
-          if (allPlatforms.length > 1 && _platformFilter == null) {
+          // Show platform selector if game has multiple platforms
+          if (allPlatforms.length > 1) {
             _showPlatformSelectionDialog(context, game);
           } else {
-            // Navigate directly to achievements
+            // Navigate directly to achievements for single-platform games
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => GameAchievementsScreen(
@@ -666,11 +665,11 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
       child: GestureDetector(
         onTap: () {
           if (platformGameId != null) {
-            // If game has multiple platforms and no filter is active, show platform selector
-            if (allPlatforms.length > 1 && _platformFilter == null) {
+            // Show platform selector if game has multiple platforms
+            if (allPlatforms.length > 1) {
               _showPlatformSelectionDialog(context, game);
             } else {
-              // Navigate directly to achievements
+              // Navigate directly to achievements for single-platform games
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => GameAchievementsScreen(

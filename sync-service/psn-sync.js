@@ -369,6 +369,19 @@ export async function syncPSNAchievements(
 
           console.log(`📱 Platform detected: ${title.trophyTitlePlatform} → ${platformVersion} (ID ${platformId})`);
 
+          console.log('[PSN_TITLE_SNAPSHOT]', JSON.stringify({
+            trophyTitleName: title.trophyTitleName,
+            trophyTitlePlatform: title.trophyTitlePlatform,
+            npCommunicationId: title.npCommunicationId,
+            npServiceName: title.npServiceName,
+            progress: title.progress,
+            definedTrophies: title.definedTrophies,
+            earnedTrophies: title.earnedTrophies,
+            lastUpdatedDateTime: title.lastUpdatedDateTime,
+            trophyTitleId: title.trophyTitleId,
+
+          }, null, 0));
+
           // Find or create game using unique PSN npCommunicationId
           const trimmedTitle = title.trophyTitleName.trim();
           
@@ -409,6 +422,15 @@ export async function syncPSNAchievements(
               platformVersion = 'PS4';
             }
           }
+
+          console.log('[PSN_PLATFORM_FINAL]', JSON.stringify({
+            trophyTitleName: trimmedTitle,
+            npCommunicationId: title.npCommunicationId,
+            detectedFromApi: title.trophyTitlePlatform,
+            validatedPlatformId,
+            finalPlatformId: platformId,
+            finalPlatformVersion: platformVersion,
+          }, null, 0));
           
           // First try to find by PSN npCommunicationId (platform_game_id)
           const { data: existingGameById } = await supabase
