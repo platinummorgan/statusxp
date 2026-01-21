@@ -63,7 +63,7 @@ serve(async (req) => {
     
     // 3. Delete display case and flex room
     await supabaseAdmin.from('display_case_items').delete().eq('user_id', userId);
-    await supabaseAdmin.from('flex_room_data').delete().eq('user_id', userId);
+    await supabaseAdmin.from('flex_room_data').delete().eq('profile_id', userId); // Use profile_id
     
     // 4. Delete meta achievements
     await supabaseAdmin.from('user_meta_achievements').delete().eq('user_id', userId);

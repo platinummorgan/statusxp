@@ -41,7 +41,7 @@ class TrophyHelpService {
     final row = await _supabase
         .from('trophy_help_requests')
         .insert({
-          'user_id': userId,
+          'profile_id': userId, // Use profile_id (profiles.id == auth.users.id)
           'game_id': gameId,
           'game_title': gameTitle,
           'achievement_id': achievementId,
@@ -54,6 +54,9 @@ class TrophyHelpService {
         })
         .select()
         .single();
+
+    // Dev verification: ensure profile_id was saved
+    assert(row['profile_id'] != null, 'MIGRATION ERROR: profile_id is null after insert');
 
     // New data exists; open list is now stale
     _invalidateOpenCache();
@@ -113,7 +116,7 @@ class TrophyHelpService {
     final rows = await _supabase
         .from('trophy_help_requests')
         .select()
-        .eq('user_id', user.id)
+        .eq('profile_id', user.id) // Use profile_id for filtering
         .order('created_at', ascending: false);
 
     return _mapList(rows, TrophyHelpRequest.fromJson);
@@ -155,12 +158,15 @@ class TrophyHelpService {
         .from('trophy_help_responses')
         .insert({
           'request_id': requestId,
-          'helper_user_id': userId,
+          'helper_profile_id': userId, // Use helper_profile_id (profiles.id == auth.users.id)
           'message': message,
           'status': 'pending',
         })
         .select()
         .single();
+
+    // Dev verification: ensure helper_profile_id was saved
+    assert(row['helper_profile_id'] != null, 'MIGRATION ERROR: helper_profile_id is null after insert');
 
     return TrophyHelpResponse.fromJson(row);
   }
@@ -195,7 +201,7 @@ class TrophyHelpService {
     final responseRows = await _supabase
         .from('trophy_help_responses')
         .select('request_id')
-        .eq('helper_user_id', userId);
+        .eq('helper_profile_id', userId); // Use helper_profile_id for filtering
 
     final ids = _mapList(responseRows, (r) => r['request_id'] as String);
     if (ids.isEmpty) return <TrophyHelpRequest>[];

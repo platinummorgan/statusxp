@@ -36,10 +36,17 @@ BEGIN
   -- Map platform filter string to platform_id
   IF platform_filter IS NOT NULL THEN
     CASE LOWER(platform_filter)
-      WHEN 'psn' THEN filter_platform_id := 1;
+      WHEN 'psn' THEN filter_platform_id := 1;  -- PS5 (default PSN)
       WHEN 'playstation' THEN filter_platform_id := 1;
-      WHEN 'steam' THEN filter_platform_id := 5;
-      WHEN 'xbox' THEN filter_platform_id := 11;  -- Default to Xbox One
+      WHEN 'ps5' THEN filter_platform_id := 1;
+      WHEN 'ps4' THEN filter_platform_id := 2;
+      WHEN 'ps3' THEN filter_platform_id := 5;
+      WHEN 'psvita' THEN filter_platform_id := 9;
+      WHEN 'steam' THEN filter_platform_id := 4;
+      WHEN 'xbox' THEN filter_platform_id := 11;  -- Xbox One (default)
+      WHEN 'xbox360' THEN filter_platform_id := 10;
+      WHEN 'xboxone' THEN filter_platform_id := 11;
+      WHEN 'xboxseriesx' THEN filter_platform_id := 12;
       ELSE filter_platform_id := NULL;
     END CASE;
   END IF;

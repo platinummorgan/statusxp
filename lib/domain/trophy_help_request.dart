@@ -1,6 +1,7 @@
 class TrophyHelpRequest {
   final String id;
-  final String userId;
+  final String userId; // Keep for backwards compatibility, use profileId for new code
+  final String? profileId; // New canonical field (profiles.id)
   final String gameId;
   final String gameTitle;
   final String achievementId;
@@ -16,6 +17,7 @@ class TrophyHelpRequest {
   TrophyHelpRequest({
     required this.id,
     required this.userId,
+    this.profileId,
     required this.gameId,
     required this.gameTitle,
     required this.achievementId,
@@ -30,9 +32,14 @@ class TrophyHelpRequest {
   });
 
   factory TrophyHelpRequest.fromJson(Map<String, dynamic> json) {
+    // Prefer profile_id if present, fallback to user_id for backwards compatibility
+    final profileId = json['profile_id'] as String?;
+    final userId = json['user_id'] as String? ?? profileId ?? '';
+    
     return TrophyHelpRequest(
       id: json['id'] as String,
-      userId: json['user_id'] as String,
+      userId: userId,
+      profileId: profileId ?? userId, // Ensure profileId is always set
       gameId: json['game_id'] as String,
       gameTitle: json['game_title'] as String,
       achievementId: json['achievement_id'] as String,
@@ -51,6 +58,7 @@ class TrophyHelpRequest {
     return {
       'id': id,
       'user_id': userId,
+      'profile_id': profileId ?? userId, // Always include profile_id
       'game_id': gameId,
       'game_title': gameTitle,
       'achievement_id': achievementId,
@@ -68,6 +76,7 @@ class TrophyHelpRequest {
   TrophyHelpRequest copyWith({
     String? id,
     String? userId,
+    String? profileId,
     String? gameId,
     String? gameTitle,
     String? achievementId,
@@ -83,6 +92,7 @@ class TrophyHelpRequest {
     return TrophyHelpRequest(
       id: id ?? this.id,
       userId: userId ?? this.userId,
+      profileId: profileId ?? this.profileId,
       gameId: gameId ?? this.gameId,
       gameTitle: gameTitle ?? this.gameTitle,
       achievementId: achievementId ?? this.achievementId,
@@ -101,7 +111,8 @@ class TrophyHelpRequest {
 class TrophyHelpResponse {
   final String id;
   final String requestId;
-  final String helperUserId;
+  final String helperUserId; // Keep for backwards compatibility, use helperProfileId for new code
+  final String? helperProfileId; // New canonical field (profiles.id)
   final String? message;
   final String status; // 'pending', 'accepted', 'declined'
   final DateTime createdAt;
@@ -110,16 +121,22 @@ class TrophyHelpResponse {
     required this.id,
     required this.requestId,
     required this.helperUserId,
+    this.helperProfileId,
     this.message,
     required this.status,
     required this.createdAt,
   });
 
   factory TrophyHelpResponse.fromJson(Map<String, dynamic> json) {
+    // Prefer helper_profile_id if present, fallback to helper_user_id for backwards compatibility
+    final helperProfileId = json['helper_profile_id'] as String?;
+    final helperUserId = json['helper_user_id'] as String? ?? helperProfileId ?? '';
+    
     return TrophyHelpResponse(
       id: json['id'] as String,
       requestId: json['request_id'] as String,
-      helperUserId: json['helper_user_id'] as String,
+      helperUserId: helperUserId,
+      helperProfileId: helperProfileId ?? helperUserId, // Ensure helperProfileId is always set
       message: json['message'] as String?,
       status: json['status'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -131,6 +148,7 @@ class TrophyHelpResponse {
       'id': id,
       'request_id': requestId,
       'helper_user_id': helperUserId,
+      'helper_profile_id': helperProfileId ?? helperUserId, // Always include helper_profile_id
       'message': message,
       'status': status,
       'created_at': createdAt.toIso8601String(),

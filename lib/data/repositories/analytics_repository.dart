@@ -77,11 +77,11 @@ class AnalyticsRepository {
         final platformId = row['achievements']['platform_id'] as int?;
         String? platform;
         if (platformId != null) {
-          if ([1, 2, 4, 9].contains(platformId)) {
+          if ([1, 2, 5, 9].contains(platformId)) { // PS5=1, PS4=2, PS3=5, Vita=9
             platform = 'psn';
           } else if ([10, 11, 12].contains(platformId)) {
             platform = 'xbox';
-          } else if (platformId == 5) {
+          } else if (platformId == 4) { // Steam=4
             platform = 'steam';
           }
         }
@@ -155,32 +155,37 @@ class AnalyticsRepository {
   /// Get platform distribution
   Future<PlatformDistribution> _getPlatformDistribution(String userId) async {
     try {
-      // Query each platform separately using count (matches dashboard pattern)
-      final psnResponse = await _client
-          .from('user_achievements')
-          .select('id')
-          .eq('user_id', userId)
-          .inFilter('platform_id', [1, 2, 4, 9])
-          .count();
+      // Single query with JOIN to get platform names
+      final response = await _client
+          .rpc('get_platform_achievement_counts', params: {
+            'p_user_id': userId,
+          });
 
-      final xboxResponse = await _client
-          .from('user_achievements')
-          .select('id')
-          .eq('user_id', userId)
-          .inFilter('platform_id', [10, 11, 12])
-          .count();
-
-      final steamResponse = await _client
-          .from('user_achievements')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('platform_id', 5)
-          .count();
+      // Parse results - response contains platform_code and earned_rows
+      final platforms = response as List<dynamic>;
+      
+      int psnCount = 0;
+      int xboxCount = 0;
+      int steamCount = 0;
+      
+      for (final platform in platforms) {
+        final code = (platform['platform_code'] as String).toUpperCase();
+        final count = platform['earned_rows'] as int;
+        
+        // Map platform codes to categories
+        if (['PS5', 'PS4', 'PS3', 'PSVITA'].contains(code)) {
+          psnCount += count;
+        } else if (['XBOX360', 'XBOXONE', 'XBOXSERIESX'].contains(code)) {
+          xboxCount += count;
+        } else if (code == 'STEAM') {
+          steamCount += count;
+        }
+      }
 
       return PlatformDistribution(
-        psnCount: psnResponse.count,
-        xboxCount: xboxResponse.count,
-        steamCount: steamResponse.count,
+        psnCount: psnCount,
+        xboxCount: xboxCount,
+        steamCount: steamCount,
       );
     } catch (e) {
       return const PlatformDistribution(
@@ -272,7 +277,7 @@ class AnalyticsRepository {
           .from('user_achievements')
           .select('id')
           .eq('user_id', userId)
-          .inFilter('platform_id', [1, 2, 4, 9])
+          .inFilter('platform_id', [1, 2, 5, 9])
           .count();
       
       final psnCount = countResponse.count;
@@ -291,7 +296,7 @@ class AnalyticsRepository {
             .from('user_achievements')
             .select('achievements!inner(psn_trophy_type)')
             .eq('user_id', userId)
-            .inFilter('platform_id', [1, 2, 4, 9])
+            .inFilter('platform_id', [1, 2, 5, 9])
             .range(offset, offset + batchSize - 1);
 
         for (final row in batch as List) {
@@ -370,11 +375,11 @@ class AnalyticsRepository {
           final platformId = row['platform_id'] as int?;
           String? platform;
           if (platformId != null) {
-            if ([1, 2, 4, 9].contains(platformId)) {
+            if ([1, 2, 5, 9].contains(platformId)) { // PS5=1, PS4=2, PS3=5, Vita=9
               platform = 'psn';
             } else if ([10, 11, 12].contains(platformId)) {
               platform = 'xbox';
-            } else if (platformId == 5) {
+            } else if (platformId == 4) { // Steam=4
               platform = 'steam';
             }
           }

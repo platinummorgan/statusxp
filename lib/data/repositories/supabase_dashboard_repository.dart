@@ -14,9 +14,9 @@ class SupabaseDashboardRepository {
     // Fetch all data in parallel for performance
     final results = await Future.wait([
       _getStatusXPTotal(userId),
-      _getPlatformStats(userId, 1, psnPlatforms: [1, 2, 4, 9]), // PSN (PS5=1, PS3=2, PS4=4, PSVITA=9)
+      _getPlatformStats(userId, 1, psnPlatforms: [1, 2, 5, 9]), // PSN (PS5=1, PS4=2, PS3=5, PSVITA=9)
       _getPlatformStats(userId, 2, xboxPlatforms: [10, 11, 12]), // Xbox (360=10, One=11, Series X=12)
-      _getPlatformStats(userId, 5), // Steam (platform_id=5)
+      _getPlatformStats(userId, 4), // Steam (platform_id=4)
       _getUserProfile(userId),
     ]);
 

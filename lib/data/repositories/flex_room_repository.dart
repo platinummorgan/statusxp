@@ -53,9 +53,9 @@ class FlexRoomRepository {
 
       // Get platform code from platform_id
       String platform;
-      if (platformId == 1) {
-        platform = 'psn';
-      } else if (platformId == 5) {
+      if (platformId == 1 || platformId == 2 || platformId == 5 || platformId == 9) {
+        platform = 'psn'; // PS5=1, PS4=2, PS3=5, Vita=9
+      } else if (platformId == 4) {
         platform = 'steam';
       } else if (platformId >= 10 && platformId <= 12) {
         platform = 'xbox';
@@ -118,9 +118,9 @@ class FlexRoomRepository {
 
       // Get platform code from platform_id
       String platform;
-      if (platformId == 1) {
-        platform = 'psn';
-      } else if (platformId == 5) {
+      if (platformId == 1 || platformId == 2 || platformId == 5 || platformId == 9) {
+        platform = 'psn'; // PS5=1, PS4=2, PS3=5, Vita=9
+      } else if (platformId == 4) {
         platform = 'steam';
       } else if (platformId >= 10 && platformId <= 12) {
         platform = 'xbox';
@@ -157,7 +157,7 @@ class FlexRoomRepository {
       final response = await _client
           .from('flex_room_data')
           .select()
-          .eq('user_id', userId)
+          .eq('profile_id', userId) // Use profile_id (profiles.id == auth.users.id)
           .maybeSingle();
 
       if (response == null) {
@@ -307,7 +307,7 @@ class FlexRoomRepository {
       }
 
       final payload = {
-        'user_id': data.userId,
+        'profile_id': data.userId, // Use profile_id (profiles.id == auth.users.id)
         'tagline': data.tagline,
         'last_updated': data.lastUpdated.toIso8601String(),
         
@@ -448,9 +448,9 @@ class FlexRoomRepository {
 
         // Get platform code from platform_id
         String platform;
-        if (platformId == 1) {
-          platform = 'psn';
-        } else if (platformId == 5) {
+        if (platformId == 1 || platformId == 2 || platformId == 5 || platformId == 9) {
+          platform = 'psn'; // PS5=1, PS4=2, PS3=5, Vita=9
+        } else if (platformId == 4) {
           platform = 'steam';
         } else if (platformId >= 10 && platformId <= 12) {
           platform = 'xbox';
@@ -709,9 +709,9 @@ class FlexRoomRepository {
       
       // Get platform code from platform_id
       String platformCode;
-      if (targetPlatformId == 1) {
-        platformCode = 'psn';
-      } else if (targetPlatformId == 5) {
+      if (targetPlatformId == 1 || targetPlatformId == 2 || targetPlatformId == 5 || targetPlatformId == 9) {
+        platformCode = 'psn'; // PS5=1, PS4=2, PS3=5, Vita=9
+      } else if (targetPlatformId == 4) {
         platformCode = 'steam';
       } else if (targetPlatformId >= 10 && targetPlatformId <= 12) {
         platformCode = 'xbox';
