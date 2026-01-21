@@ -151,6 +151,73 @@ function logMemory(label) {
   }
 }
 
+function mapXboxPlatformToPlatformId(devices) {
+  if (!devices || !Array.isArray(devices) || devices.length === 0) {
+    return { platformId: 11, platformVersion: 'XboxOne' }; // Default to Xbox One
+  }
+  
+  const deviceTypes = devices.map(d => d.toLowerCase());
+  
+  // Check in order: newest to oldest (same as PSN)
+  if (deviceTypes.includes('xboxseriess') || deviceTypes.includes('xboxseriesx')) {
+    return { platformId: 12, platformVersion: 'XboxSeriesX' };
+  }
+  if (deviceTypes.includes('xboxone')) {
+    return { platformId: 11, platformVersion: 'XboxOne' };
+  }
+  if (deviceTypes.includes('xbox360')) {
+    return { platformId: 10, platformVersion: 'Xbox360' };
+  }
+  
+  // Default to Xbox One
+  return { platformId: 11, platformVersion: 'XboxOne' };
+}
+
+function validateXboxPlatformMapping(devices, platformId, gameName, titleId) {
+  if (!devices || !Array.isArray(devices)) {
+    // No device info available, skip validation
+    return true;
+  }
+  
+  const deviceTypes = devices.map(d => d.toLowerCase());
+  
+  // For cross-platform games, we pick the newest platform
+  // So validation should check if assigned platform exists in the devices array, not exact match
+  const platformMap = {
+    10: 'xbox360',
+    11: 'xboxone',
+    12: ['xboxseriess', 'xboxseriesx']
+  };
+  
+  const assignedPlatformDevices = platformMap[platformId];
+  if (!assignedPlatformDevices) {
+    console.error(
+      `🚨 INVALID PLATFORM ID: ${platformId} | ` +
+      `game="${gameName}" | titleId=${titleId}`
+    );
+    return false;
+  }
+  
+  // Check if assigned platform exists in devices array
+  const platformDeviceArray = Array.isArray(assignedPlatformDevices) 
+    ? assignedPlatformDevices 
+    : [assignedPlatformDevices];
+  
+  const platformExists = platformDeviceArray.some(device => 
+    deviceTypes.includes(device)
+  );
+  
+  if (!platformExists) {
+    console.error(
+      `🚨 PLATFORM MISMATCH: Assigned ${platformMap[platformId]} (id=${platformId}) but not in Xbox devices [${devices.join(', ')}] | ` +
+      `game="${gameName}" | titleId=${titleId}`
+    );
+    return false;
+  }
+  
+  return true;
+}
+
 async function refreshXboxToken(refreshToken, userId) {
   const tokenResponse = await fetch('https://login.live.com/oauth20_token.srf', {
     method: 'POST',
@@ -522,25 +589,17 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             // Detect platform version and map to platform_id
             // Xbox360=10, XboxOne=11, XboxSeriesX=12
-            let platformVersion = 'XboxOne';
-            let platformId = 11; // Default XboxOne
-            
-            // Xbox API provides device types in title.devices array
-            if (title.devices && Array.isArray(title.devices)) {
-              const deviceTypes = title.devices.map(d => d.toLowerCase());
-              if (deviceTypes.includes('xboxseriess') || deviceTypes.includes('xboxseriesx')) {
-                platformVersion = 'XboxSeriesX';
-                platformId = 12;
-              } else if (deviceTypes.includes('xboxone')) {
-                platformVersion = 'XboxOne';
-                platformId = 11;
-              } else if (deviceTypes.includes('xbox360')) {
-                platformVersion = 'Xbox360';
-                platformId = 10;
-              }
-            }
+            const platformMapping = mapXboxPlatformToPlatformId(title.devices);
+            let platformId = platformMapping.platformId;
+            let platformVersion = platformMapping.platformVersion;
             
             console.log(`📱 Platform detected: ${title.devices?.join(', ')} → ${platformVersion} (ID ${platformId})`);
+            
+            // Validate platform mapping
+            if (!validateXboxPlatformMapping(title.devices, platformId, title.name, title.titleId)) {
+              console.error(`⚠️  Skipping game due to platform mismatch: ${title.name}`);
+              continue;
+            }
             
             // Find or create game using unique Xbox titleId
             const trimmedName = title.name.trim();
