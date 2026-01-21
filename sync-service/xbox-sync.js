@@ -591,10 +591,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               }
               gameTitle = existingGameById;
             } else {
-              // Not found - create new game with V2 composite key
+              // Not found - upsert game with V2 composite key (race-condition safe)
               const { data: newGame, error: insertError } = await supabase
                 .from('games')
-                .insert({
+                .upsert({
                   platform_id: platformId,
                   platform_game_id: title.titleId,
                   name: trimmedName,
@@ -603,12 +603,14 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                     xbox_title_id: title.titleId,
                     platform_version: platformVersion
                   },
+                }, {
+                  onConflict: 'platform_id,platform_game_id'
                 })
                 .select()
                 .single();
               
               if (insertError) {
-                console.error('❌ Failed to insert game:', title.name, 'Error:', insertError);
+                console.error('❌ Failed to upsert game:', title.name, 'Error:', insertError);
                 continue;
               }
               gameTitle = newGame;
@@ -905,38 +907,19 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 achievementData.proxied_icon_url = proxiedIconUrl;
               }
               
-              // Check if achievement exists
-              const { data: existing } = await supabase
+              // Upsert achievement (race-condition safe)
+              const { data: achievementRecord, error: achError } = await supabase
                 .from('achievements')
-                .select('platform_achievement_id, proxied_icon_url')
-                .eq('platform_id', platformId)
-                .eq('platform_game_id', gameTitle.platform_game_id)
-                .eq('platform_achievement_id', achievement.id)
-                .maybeSingle();
+                .upsert(achievementData, {
+                  onConflict: 'platform_id,platform_game_id,platform_achievement_id'
+                })
+                .select()
+                .single();
 
-              let achievementRecord;
-              if (existing) {
-                // Update existing
-                const { data } = await supabase
-                  .from('achievements')
-                  .update(achievementData)
-                  .eq('platform_id', platformId)
-                  .eq('platform_game_id', gameTitle.platform_game_id)
-                  .eq('platform_achievement_id', achievement.id)
-                  .select()
-                  .single();
-                achievementRecord = data;
-              } else {
-                // Insert new
-                const { data } = await supabase
-                  .from('achievements')
-                  .insert(achievementData)
-                  .select()
-                  .single();
-                achievementRecord = data;
+              if (achError || !achievementRecord) {
+                console.error(`❌ Failed to upsert achievement ${achievement.name}:`, achError?.message);
+                continue;
               }
-
-              if (!achievementRecord) continue;
 
               // Upsert user_achievement if unlocked
               if (achievement.progressState === 'Achieved') {

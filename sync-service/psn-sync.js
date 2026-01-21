@@ -439,10 +439,10 @@ export async function syncPSNAchievements(
             }
             gameTitle = existingGameById;
           } else {
-            // Not found - create new game with V2 composite key
+            // Not found - upsert game with V2 composite key (race-condition safe)
             const { data: newGame, error: insertError } = await supabase
               .from('games')
-              .insert({
+              .upsert({
                 platform_id: platformId,
                 platform_game_id: title.npCommunicationId,
                 name: trimmedTitle,
@@ -451,13 +451,15 @@ export async function syncPSNAchievements(
                   psn_np_communication_id: title.npCommunicationId,
                   platform_version: platformVersion
                 },
+              }, {
+                onConflict: 'platform_id,platform_game_id'
               })
               .select()
               .single();
 
             if (insertError) {
               console.error(
-                '❌ Failed to insert game_title:',
+                '❌ Failed to upsert game_title:',
                 title.trophyTitleName,
                 'Error:',
                 insertError
@@ -745,38 +747,19 @@ export async function syncPSNAchievements(
               achievementData.proxied_icon_url = proxiedIconUrl;
             }
 
-            // Check if achievement exists
-            const { data: existing } = await supabase
+            // Upsert achievement (race-condition safe)
+            const { data: achievementRecord, error: achError } = await supabase
               .from('achievements')
-              .select('platform_achievement_id, proxied_icon_url')
-              .eq('platform_id', platformId)
-              .eq('platform_game_id', gameTitle.platform_game_id)
-              .eq('platform_achievement_id', trophyMeta.trophyId.toString())
-              .maybeSingle();
+              .upsert(achievementData, {
+                onConflict: 'platform_id,platform_game_id,platform_achievement_id'
+              })
+              .select()
+              .single();
 
-            let achievementRecord;
-            if (existing) {
-              // Update existing
-              const { data } = await supabase
-                .from('achievements')
-                .update(achievementData)
-                .eq('platform_id', platformId)
-                .eq('platform_game_id', gameTitle.platform_game_id)
-                .eq('platform_achievement_id', trophyMeta.trophyId.toString())
-                .select()
-                .single();
-              achievementRecord = data;
-            } else {
-              // Insert new
-              const { data } = await supabase
-                .from('achievements')
-                .insert(achievementData)
-                .select()
-                .single();
-              achievementRecord = data;
+            if (achError || !achievementRecord) {
+              console.error(`❌ Failed to upsert achievement ${trophyMeta.trophyName}:`, achError?.message);
+              continue;
             }
-
-            if (!achievementRecord) continue;
 
             if (userTrophy?.earned) {
               // Trust the individual trophy earned status from PSN API

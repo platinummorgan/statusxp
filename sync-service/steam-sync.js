@@ -391,10 +391,10 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               }
               gameTitle = existingGame;
             } else {
-              // Create new game with V2 composite key
+              // Upsert game with V2 composite key (race-condition safe)
               const { data: newGame, error: insertError } = await supabase
                 .from('games')
-                .insert({
+                .upsert({
                   platform_id: platformId,
                   platform_game_id: game.appid.toString(),
                   name: trimmedName,
@@ -406,12 +406,14 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                     dlc_name: dlcName,
                     base_game_app_id: baseGameAppId,
                   },
+                }, {
+                  onConflict: 'platform_id,platform_game_id'
                 })
                 .select()
                 .single();
               
               if (insertError) {
-                console.error('❌ Failed to insert game:', game.name, 'Error:', insertError);
+                console.error('❌ Failed to upsert game:', game.name, 'Error:', insertError);
                 continue;
               }
               gameTitle = newGame;
