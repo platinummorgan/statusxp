@@ -147,6 +147,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(dashboardStatsProvider);
       _checkAndTriggerAutoSync();
+      _checkAndShowSystemAnnouncement();
       // Start animations after a short delay
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {
@@ -194,6 +195,149 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       setState(() {
         _showStatusXPHint = false;
       });
+    }
+  }
+  
+  Future<void> _checkAndShowSystemAnnouncement() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenAnnouncement = prefs.getBool('has_seen_full_sync_announcement_jan2026') ?? false;
+    
+    if (!hasSeenAnnouncement && mounted) {
+      // Wait a bit for the screen to load fully
+      await Future.delayed(const Duration(milliseconds: 800));
+      
+      if (!mounted) return;
+      
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF00D9FF), width: 2),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00D9FF).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.construction_rounded,
+                  color: Color(0xFF00D9FF),
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'System Maintenance Notice',
+                  style: TextStyle(
+                    color: Color(0xFF00D9FF),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'We discovered issues with the database cache that was calculating StatusXP, Trophies, and Achievements incorrectly.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00D9FF).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF00D9FF).withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.autorenew,
+                          color: Color(0xFF00FF94),
+                          size: 20,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Automatic Fix in Progress',
+                          style: TextStyle(
+                            color: Color(0xFF00FF94),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'We\'re running full syncs for PlayStation, Xbox, and Steam to repair all entries. Your data will be corrected automatically over the next few days.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'No action needed from you! Thank you for your patience.',
+                style: TextStyle(
+                  color: Colors.white60,
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFF00D9FF),
+                foregroundColor: const Color(0xFF0F0F23),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Got It',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+      
+      // Mark as seen after dialog is dismissed
+      await prefs.setBool('has_seen_full_sync_announcement_jan2026', true);
     }
   }
   
