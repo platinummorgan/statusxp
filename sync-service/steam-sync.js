@@ -351,6 +351,20 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
             console.log(`📱 Platform: Steam (ID ${platformId})`);
             
+            // Check if game already exists on ANY platform to prevent duplicates
+            const { data: existingOnAnyPlatform } = await supabase
+              .from('games')
+              .select('platform_id, platform_game_id, name')
+              .eq('platform_game_id', game.appid.toString())
+              .maybeSingle();
+            
+            if (existingOnAnyPlatform && existingOnAnyPlatform.platform_id !== platformId) {
+              console.log(`⚠️  Game already exists: ${game.name} (${game.appid})`);
+              console.log(`   Found on platform ${existingOnAnyPlatform.platform_id}, Steam API detected platform ${platformId}`);
+              console.log(`   Using existing entry to prevent duplicate`);
+              platformId = existingOnAnyPlatform.platform_id;
+            }
+            
             // Find or create game using Steam appid
             const trimmedName = game.name.trim();
             const { data: existingGame } = await supabase

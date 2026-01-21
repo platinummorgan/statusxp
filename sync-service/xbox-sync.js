@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { initIGDBValidator, getIGDBValidator } from './igdb-validator.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -322,14 +321,6 @@ async function refreshXboxToken(refreshToken, userId) {
 export async function syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId, options = {}) {
   console.log(`Starting Xbox sync for user ${userId}, syncLogId=${syncLogId}`);
   
-  // Initialize IGDB validator for platform validation
-  try {
-    await initIGDBValidator();
-    console.log('✅ IGDB validator initialized');
-  } catch (igdbError) {
-    console.warn('⚠️  IGDB validator initialization failed, will use API-only detection:', igdbError.message);
-  }
-  
   // CRITICAL: Validate profile exists before starting sync
   const { data: profileValidation, error: profileError } = await supabase
     .from('profiles')
@@ -554,71 +545,20 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Find or create game using unique Xbox titleId
             const trimmedName = title.name.trim();
             
-            // 🎮 IGDB VALIDATION: Check authoritative platform data before proceeding
-            let validatedPlatformId = null; // Declare outside try-catch so backwards compat check can access it
-            try {
-              const validator = getIGDBValidator();
-              if (validator) {
-                validatedPlatformId = await validator.validatePlatform(trimmedName, platformId, 'xbox');
-                if (validatedPlatformId && validatedPlatformId !== platformId) {
-                  const platformNames = { 10: 'Xbox360', 11: 'XboxOne', 12: 'XboxSeriesX' };
-                  console.log(`🔧 IGDB Override: ${trimmedName} detected as ${platformNames[platformId]} but IGDB says ${platformNames[validatedPlatformId]} - using IGDB data`);
-                  platformId = validatedPlatformId;
-                  platformVersion = platformNames[validatedPlatformId];
-                }
-                // Note: When validatedPlatformId === platformId, IGDB validator already logged confirmation or fallback message
-              }
-            } catch (igdbError) {
-              console.warn(`⚠️  IGDB validation failed for ${trimmedName}, falling back to API detection:`, igdbError.message);
-            }
+            // Check if game already exists on ANY platform to prevent duplicates
+            const { data: existingOnAnyPlatform } = await supabase
+              .from('games')
+              .select('platform_id, platform_game_id, name')
+              .eq('platform_game_id', title.titleId)
+              .maybeSingle();
             
-            // 🔍 BACKWARDS COMPATIBILITY CHECK: See if this game_id exists on older platform
-            // Xbox 360/One games played on Series X should stay on their original platform
-            // BUT: Only downgrade if IGDB didn't explicitly confirm this as a native newer-platform release
-            const igdbConfirmedNativePlatform = validatedPlatformId === platformId;
-            
-            if (platformId === 12 && !igdbConfirmedNativePlatform) { // If detected as Xbox Series X and IGDB didn't confirm native Series X
-              // Check Xbox One first (most common backwards compat)
-              const { data: xboxOneVersion } = await supabase
-                .from('games')
-                .select('platform_id, platform_game_id')
-                .eq('platform_id', 11) // Check Xbox One
-                .eq('platform_game_id', title.titleId)
-                .maybeSingle();
-              
-              if (xboxOneVersion) {
-                console.log(`⚠️  Backwards compat detected: ${trimmedName} exists on Xbox One, using Xbox One platform instead of Series X`);
-                platformId = 11; // Override to Xbox One
-                platformVersion = 'XboxOne';
-              } else {
-                // Check Xbox 360
-                const { data: xbox360Version } = await supabase
-                  .from('games')
-                  .select('platform_id, platform_game_id')
-                  .eq('platform_id', 10) // Check Xbox 360
-                  .eq('platform_game_id', title.titleId)
-                  .maybeSingle();
-                
-                if (xbox360Version) {
-                  console.log(`⚠️  Backwards compat detected: ${trimmedName} exists on Xbox 360, using Xbox 360 platform instead of Series X`);
-                  platformId = 10; // Override to Xbox 360
-                  platformVersion = 'Xbox360';
-                }
-              }
-            } else if (platformId === 11 && !igdbConfirmedNativePlatform) { // If detected as Xbox One and IGDB didn't confirm native Xbox One
-              // Check Xbox 360
-              const { data: xbox360Version } = await supabase
-                .from('games')
-                .select('platform_id, platform_game_id')
-                .eq('platform_id', 10) // Check Xbox 360
-                .eq('platform_game_id', title.titleId)
-                .maybeSingle();
-              
-              if (xbox360Version) {
-                console.log(`⚠️  Backwards compat detected: ${trimmedName} exists on Xbox 360, using Xbox 360 platform instead of Xbox One`);
-                platformId = 10; // Override to Xbox 360
-                platformVersion = 'Xbox360';
-              }
+            if (existingOnAnyPlatform) {
+              const platformNames = { 10: 'Xbox 360', 11: 'Xbox One', 12: 'Xbox Series X|S' };
+              console.log(`⚠️  Game already exists: ${trimmedName} (${title.titleId})`);
+              console.log(`   Found on ${platformNames[existingOnAnyPlatform.platform_id]}, Xbox API detected ${platformNames[platformId]}`);
+              console.log(`   Using existing ${platformNames[existingOnAnyPlatform.platform_id]} entry to prevent duplicate`);
+              platformId = existingOnAnyPlatform.platform_id;
+              platformVersion = platformNames[existingOnAnyPlatform.platform_id];
             }
             
             // First try to find by Xbox titleId (platform_game_id) with composite key
