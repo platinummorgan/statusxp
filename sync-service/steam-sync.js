@@ -439,17 +439,21 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               }
             }
             
-            const needsProcessing = isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed;
+            // 🚨 TEMPORARY: FORCE FULL SYNC MODE (enabled for ~1 week to fix data corruption)
+            // Disabled skip logic - all games will be reprocessed to fix any corrupted total_achievements
+            const needsProcessing = true; // FORCE: was: isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed;
             if (syncFailed) {
               console.log(`🔄 RETRY FAILED SYNC: ${game.name} (previous sync failed)`);
             }
-            if (!needsProcessing) {
-              console.log(`⏭️  Skip ${game.name} - no changes`);
-              processedGames++;
-              const progressPercent = Math.floor((processedGames / ownedGames.length) * 100);
-              await supabase.from('profiles').update({ steam_sync_progress: progressPercent }).eq('id', userId);
-              continue;
-            }
+            // SKIP LOGIC DISABLED FOR FULL SYNC
+            // if (!needsProcessing) {
+            //   console.log(`⏭️  Skip ${game.name} - no changes`);
+            //   processedGames++;
+            //   const progressPercent = Math.floor((processedGames / ownedGames.length) * 100);
+            //   await supabase.from('profiles').update({ steam_sync_progress: progressPercent }).eq('id', userId);
+            //   continue;
+            // }
+            console.log(`🔄 FULL SYNC MODE: ${game.name} - reprocessing to fix data`);
             
             if (needRarityRefresh) {
               console.log(`🔄 RARITY REFRESH: ${game.name} (>30 days since last rarity sync)`);

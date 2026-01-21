@@ -729,15 +729,19 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               }
             }
             
-            const needsProcessing = isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements;
+            // 🚨 TEMPORARY: FORCE FULL SYNC MODE (enabled for ~1 week to fix data corruption)
+            // Disabled skip logic - all games will be reprocessed to fix any corrupted total_achievements
+            const needsProcessing = true; // FORCE: was: isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements;
             
-            if (!needsProcessing) {
-              console.log(`⏭️  Skip ${title.name} - no changes`);
-              processedGames++;
-              const progressPercent = Math.floor((processedGames / gamesWithProgress.length) * 100);
-              await supabase.from('profiles').update({ xbox_sync_progress: progressPercent }).eq('id', userId);
-              continue;
-            }
+            // SKIP LOGIC DISABLED FOR FULL SYNC
+            // if (!needsProcessing) {
+            //   console.log(`⏭️  Skip ${title.name} - no changes`);
+            //   processedGames++;
+            //   const progressPercent = Math.floor((processedGames / gamesWithProgress.length) * 100);
+            //   await supabase.from('profiles').update({ xbox_sync_progress: progressPercent }).eq('id', userId);
+            //   continue;
+            // }
+            console.log(`🔄 FULL SYNC MODE: ${title.name} - reprocessing to fix data`);
             
             if (needRarityRefresh) {
               console.log(`🔄 RARITY REFRESH: ${title.name} (>30 days since last rarity sync)`);
