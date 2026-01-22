@@ -7,11 +7,18 @@
   "routes": [
     {
       "src": "/robots.txt",
-      "dest": "/robots.txt"
+      "headers": {
+        "Content-Type": "text/plain"
+      }
     },
     {
       "src": "/sitemap.xml",
-      "dest": "/sitemap.xml"
+      "headers": {
+        "Content-Type": "application/xml"
+      }
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
