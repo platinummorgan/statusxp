@@ -307,7 +307,8 @@ class FlexRoomRepository {
       }
 
       final payload = {
-        'profile_id': data.userId, // Use profile_id (profiles.id == auth.users.id)
+        'user_id': data.userId, // Primary key (deprecated but still required)
+        'profile_id': data.userId, // New column (profiles.id == auth.users.id)
         'tagline': data.tagline,
         'last_updated': data.lastUpdated.toIso8601String(),
         
