@@ -38,6 +38,55 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
   - Mobile: Native iOS/Android apps via App Store/Google Play
   - Assets: Supabase Storage for avatars and achievement icons
 
+**Game System Mapping**
+[
+  {
+    "id": 1,
+    "name": "PlayStation 5",
+    "code": "PS5"
+  },
+  {
+    "id": 2,
+    "name": "PlayStation 4",
+    "code": "PS4"
+  },
+  {
+    "id": 3,
+    "name": "Xbox Series X|S",
+    "code": "Xbox"
+  },
+  {
+    "id": 4,
+    "name": "Steam",
+    "code": "Steam"
+  },
+  {
+    "id": 5,
+    "name": "PlayStation 3",
+    "code": "PS3"
+  },
+  {
+    "id": 9,
+    "name": "PlayStation Vita",
+    "code": "PSVITA"
+  },
+  {
+    "id": 10,
+    "name": "Xbox 360",
+    "code": "XBOX360"
+  },
+  {
+    "id": 11,
+    "name": "Xbox One",
+    "code": "XBOXONE"
+  },
+  {
+    "id": 12,
+    "name": "Xbox Series X|S",
+    "code": "XBOXSERIESX"
+  }
+]
+
 **Key Dependencies:**
 - flutter_riverpod ^2.5.1 (state management)
 - go_router ^14.6.2 (routing)

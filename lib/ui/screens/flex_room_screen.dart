@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -505,7 +506,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       child: Stack(
         children: [
           Container(
-            width: 160,
+            width: kIsWeb ? 120 : 160,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               color: const Color(0xFF0A0E27).withOpacity(0.8),
