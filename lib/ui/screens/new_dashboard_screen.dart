@@ -1501,6 +1501,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   Widget _buildPlatformPill(PlatformGameData platform) {
     Color color;
     String label;
+    String displayText;
     
     final platformLower = platform.platform.toLowerCase();
     final platformOriginal = platform.platform;
@@ -1518,6 +1519,24 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       } else {
         label = 'PS';
       }
+      
+      // PlayStation: Show trophy breakdown if available
+      final completion = platform.completion.toStringAsFixed(0);
+      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%';
+      
+      // Add trophy breakdown if trophy data is available
+      if (platform.platinumCount > 0 || platform.goldCount > 0 || 
+          platform.silverCount > 0 || platform.bronzeCount > 0) {
+        final trophyParts = <String>[];
+        if (platform.platinumCount > 0) trophyParts.add('Platinum ${platform.platinumCount}');
+        if (platform.goldCount > 0) trophyParts.add('Gold ${platform.goldCount}');
+        if (platform.silverCount > 0) trophyParts.add('Silver ${platform.silverCount}');
+        if (platform.bronzeCount > 0) trophyParts.add('Bronze ${platform.bronzeCount}');
+        
+        if (trophyParts.isNotEmpty) {
+          displayText = '$displayText 🥈 ${trophyParts.join(' | ')}';
+        }
+      }
     } else if (platformLower.contains('xbox')) {
       color = const Color(0xFF107C10);
       if (platformOriginal.toUpperCase().contains('360')) {
@@ -1529,15 +1548,25 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       } else {
         label = 'XBOX';
       }
+      
+      // Xbox: Show achievement points (gamerscore)
+      final completion = platform.completion.toStringAsFixed(0);
+      final gamerscore = platform.totalScore > 0 
+          ? '${platform.currentScore}/${platform.totalScore}'
+          : '${platform.currentScore}';
+      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion% Achievement Points $gamerscore';
     } else if (platformLower.contains('steam')) {
       color = const Color(0xFF66C0F4);
       label = 'Steam';
+      
+      // Steam: Simple count without percentage
+      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal}';
     } else {
       color = Colors.grey;
       label = platform.platform.toUpperCase();
+      final completion = platform.completion.toStringAsFixed(0);
+      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} • $completion%';
     }
-
-    final completion = platform.completion.toStringAsFixed(0);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1547,7 +1576,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         border: Border.all(color: color, width: 1.5),
       ),
       child: Text(
-        '$label ${platform.achievementsEarned}/${platform.achievementsTotal} • $completion%',
+        displayText,
         style: TextStyle(
           color: color,
           fontSize: 10,
@@ -2139,86 +2168,87 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           data: (games) {
             return Container(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.wallpaper, color: CyberpunkTheme.neonPurple),
-                      SizedBox(width: 12),
-                      Text(
-                        'Choose Background',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.wallpaper, color: CyberpunkTheme.neonPurple),
+                        SizedBox(width: 12),
+                        Text(
+                          'Choose Background',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _backgroundMode == 'none'
-                        ? 'Plain background'
-                        : _backgroundMode == 'custom'
-                            ? 'Custom image selected'
-                            : _backgroundMode == 'shuffle' 
-                                ? 'Shuffling games randomly'
-                                : _backgroundMode == 'auto' || _backgroundMode == null
-                                    ? 'Showing most recent game'
-                                    : 'Specific game selected',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withOpacity(0.6),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Mode selection buttons - First row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildModeButton(
-                          icon: Icons.block,
-                          label: 'None',
-                          description: 'Plain',
-                          isSelected: _backgroundMode == 'none',
-                          onTap: () {
-                            _setBackgroundMode('none');
-                            Navigator.pop(context);
-                          },
-                        ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _backgroundMode == 'none'
+                          ? 'Plain background'
+                          : _backgroundMode == 'custom'
+                              ? 'Custom image selected'
+                              : _backgroundMode == 'shuffle' 
+                                  ? 'Shuffling games randomly'
+                                  : _backgroundMode == 'auto' || _backgroundMode == null
+                                      ? 'Showing most recent game'
+                                      : 'Specific game selected',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.6),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildModeButton(
-                          icon: Icons.history,
-                          label: 'Auto',
-                          description: 'Most Recent',
-                          isSelected: _backgroundMode == 'auto' || _backgroundMode == null,
-                          onTap: () {
-                            _setBackgroundMode('auto');
-                            Navigator.pop(context);
-                          },
+                    ),
+                    const SizedBox(height: 16),
+                    // Mode selection buttons - First row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildModeButton(
+                            icon: Icons.block,
+                            label: 'None',
+                            description: 'Plain',
+                            isSelected: _backgroundMode == 'none',
+                            onTap: () {
+                              _setBackgroundMode('none');
+                              Navigator.pop(context);
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildModeButton(
-                          icon: Icons.shuffle,
-                          label: 'Shuffle',
-                          description: 'Random',
-                          isSelected: _backgroundMode == 'shuffle',
-                          onTap: () {
-                            _setBackgroundMode('shuffle');
-                            Navigator.pop(context);
-                          },
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildModeButton(
+                            icon: Icons.history,
+                            label: 'Auto',
+                            description: 'Most Recent',
+                            isSelected: _backgroundMode == 'auto' || _backgroundMode == null,
+                            onTap: () {
+                              _setBackgroundMode('auto');
+                              Navigator.pop(context);
+                            },
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Second row with Custom button
-                  Row(
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildModeButton(
+                            icon: Icons.shuffle,
+                            label: 'Shuffle',
+                            description: 'Random',
+                            isSelected: _backgroundMode == 'shuffle',
+                            onTap: () {
+                              _setBackgroundMode('shuffle');
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Second row with Custom button
+                    Row(
                     children: [
                       Expanded(
                         child: _buildModeButton(
@@ -2248,8 +2278,14 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Expanded(
+                  // Calculate grid height based on number of games
+                  // Each row is approximately 170px (120 / 0.7 aspect ratio + 12 spacing)
+                  // Add 20px padding for safety
+                  SizedBox(
+                    height: ((games.length / 3).ceil() * 182.0) + 20,
                     child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
                         crossAxisSpacing: 12,
@@ -2322,10 +2358,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-}
+            ),
+          );
+        },
+      );
+    },
+  );
+}}

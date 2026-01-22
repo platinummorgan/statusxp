@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:statusxp/domain/dashboard_stats.dart';
+import 'package:statusxp/domain/user_stats.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -27,53 +29,6 @@ class StatusPosterScreen extends ConsumerStatefulWidget {
 
 class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
   final ScreenshotController _screenshotController = ScreenshotController();
-  int? _globalRank;
-  double? _percentile;
-  bool _isLoadingRank = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadGlobalRank();
-  }
-
-  Future<void> _loadGlobalRank() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) return;
-
-      final response = await supabase
-          .from('leaderboard_global_cache')
-          .select('rank')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (response != null && mounted) {
-        setState(() {
-          _globalRank = response['rank'] as int?;
-          _isLoadingRank = false;
-        });
-
-        // Calculate percentile
-        if (_globalRank != null) {
-          final totalUsersResponse = await supabase
-              .from('leaderboard_global_cache')
-              .select('user_id')
-              .count(CountOption.exact);
-          final total = totalUsersResponse.count;
-          if (total > 0) {
-            _percentile = ((_globalRank! / total) * 100);
-            if (mounted) setState(() {});
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingRank = false);
-      }
-    }
-  }
 
   Future<void> _sharePoster() async {
     HapticFeedback.lightImpact();
@@ -111,6 +66,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
     final theme = Theme.of(context);
     final dashboardStatsAsync = ref.watch(dashboardStatsProvider);
     final userStatsAsync = ref.watch(userStatsProvider);
+    final ranksAsync = ref.watch(leaderboardRanksProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -142,7 +98,29 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
             error: (error, stack) => Center(
               child: Text('Error loading highlights: $error'),
             ),
-            data: (userStats) => Container(
+            data: (userStats) => ranksAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) {
+                print('Error loading ranks: $error');
+                // Continue with null ranks if there's an error
+                return _buildPosterContent(context, theme, dashboardStats, userStats, null);
+              },
+              data: (ranks) => _buildPosterContent(context, theme, dashboardStats, userStats, ranks),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPosterContent(
+    BuildContext context,
+    ThemeData theme,
+    DashboardStats dashboardStats,
+    UserStats userStats,
+    Map<String, int?>? ranks,
+  ) {
+    return Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -293,6 +271,47 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
+                                if (ranks?['global'] != null) ...[
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          CyberpunkTheme.neonPurple.withValues(alpha: 0.3),
+                                          CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: CyberpunkTheme.neonPurple.withValues(alpha: 0.7),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.emoji_events,
+                                          color: CyberpunkTheme.neonPurple,
+                                          size: 18,
+                                          shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.neonPurple),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'RANK #${_formatNumber(ranks!['global']!)}',
+                                          style: theme.textTheme.labelMedium?.copyWith(
+                                            color: CyberpunkTheme.neonPurple,
+                                            fontSize: 14,
+                                            letterSpacing: 2,
+                                            fontWeight: FontWeight.w900,
+                                            shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.neonPurple),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -303,105 +322,42 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _PlatformStat(
-                                label: 'PSN',
-                                games: dashboardStats.psnStats.gamesCount,
-                                achievements: dashboardStats.psnStats.achievementsUnlocked,
-                                achievementLabel: 'TROPH',
-                                color: CyberpunkTheme.neonCyan,
+                              Expanded(
+                                child: _PlatformStat(
+                                  label: 'PSN',
+                                  games: dashboardStats.psnStats.gamesCount,
+                                  achievements: dashboardStats.psnStats.achievementsUnlocked,
+                                  achievementLabel: 'TROPH',
+                                  color: CyberpunkTheme.neonCyan,
+                                  rank: ranks?['psn'],
+                                ),
                               ),
-                              _PlatformStat(
-                                label: 'XBOX',
-                                games: dashboardStats.xboxStats.gamesCount,
-                                achievements: dashboardStats.xboxStats.gamerscore,
-                                achievementLabel: 'GAMER',
-                                color: CyberpunkTheme.neonGreen,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _PlatformStat(
+                                  label: 'XBOX',
+                                  games: dashboardStats.xboxStats.gamesCount,
+                                  achievements: dashboardStats.xboxStats.gamerscore,
+                                  achievementLabel: 'GAMER',
+                                  color: CyberpunkTheme.neonGreen,
+                                  rank: ranks?['xbox'],
+                                ),
                               ),
-                              _PlatformStat(
-                                label: 'STEAM',
-                                games: dashboardStats.steamStats.gamesCount,
-                                achievements: dashboardStats.steamStats.achievementsUnlocked,
-                                achievementLabel: 'ACHV',
-                                color: accentSecondary,
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _PlatformStat(
+                                  label: 'STEAM',
+                                  games: dashboardStats.steamStats.gamesCount,
+                                  achievements: dashboardStats.steamStats.achievementsUnlocked,
+                                  achievementLabel: 'ACHV',
+                                  color: accentSecondary,
+                                  rank: ranks?['steam'],
+                                ),
                               ),
                             ],
                           ),
 
                           const SizedBox(height: 24),
-
-                          // Rank & Percentile badges
-                          if (_globalRank != null || _percentile != null)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (_globalRank != null) ...[                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
-                                          CyberpunkTheme.neonCyan.withValues(alpha: 0.05),
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.5),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.emoji_events,
-                                          size: 16,
-                                          color: CyberpunkTheme.neonCyan,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'RANK #${_formatNumber(_globalRank!)}',
-                                          style: theme.textTheme.labelMedium?.copyWith(
-                                            color: CyberpunkTheme.neonCyan,
-                                            fontWeight: FontWeight.w800,
-                                            letterSpacing: 1.5,
-                                            shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.neonCyan),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (_percentile != null) const SizedBox(width: 12),
-                                ],
-                                if (_percentile != null && _percentile! <= 25)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          CyberpunkTheme.goldNeon.withValues(alpha: 0.2),
-                                          CyberpunkTheme.goldNeon.withValues(alpha: 0.05),
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: CyberpunkTheme.goldNeon.withValues(alpha: 0.5),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'TOP ${(_percentile ?? 0).toStringAsFixed(0)}%',
-                                      style: theme.textTheme.labelMedium?.copyWith(
-                                        color: CyberpunkTheme.goldNeon,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 1.5,
-                                        shadows: CyberpunkTheme.neonGlow(color: CyberpunkTheme.goldNeon),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          if (_globalRank != null || _percentile != null)
-                            const SizedBox(height: 16),
 
                           // Call to action
                           Container(
@@ -682,10 +638,6 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
           ),
         ),
       ),
-        ),
-          ),
-        );
-        },
       ),
     );
   }
@@ -716,6 +668,7 @@ class _PlatformStat extends StatelessWidget {
   final int achievements;
   final String achievementLabel;
   final Color color;
+  final int? rank;
 
   const _PlatformStat({
     required this.label,
@@ -723,6 +676,7 @@ class _PlatformStat extends StatelessWidget {
     required this.achievements,
     required this.achievementLabel,
     required this.color,
+    this.rank,
   });
 
   @override
@@ -747,6 +701,7 @@ class _PlatformStat extends StatelessWidget {
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             label,
@@ -804,6 +759,49 @@ class _PlatformStat extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (rank != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: color.withValues(alpha: 0.6),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'RANK',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: color.withValues(alpha: 0.7),
+                      fontSize: 8,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '#$rank',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: color,
+                      fontSize: 12,
+                      letterSpacing: 1,
+                      fontWeight: FontWeight.w900,
+                      shadows: [
+                        Shadow(
+                          color: color.withValues(alpha: 0.5),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -41,7 +41,8 @@ class TrophyHelpService {
     final row = await _supabase
         .from('trophy_help_requests')
         .insert({
-          'profile_id': userId, // Use profile_id (profiles.id == auth.users.id)
+          'user_id': userId, // Primary key (deprecated but still required)
+          'profile_id': userId, // New column (profiles.id == auth.users.id)
           'game_id': gameId,
           'game_title': gameTitle,
           'achievement_id': achievementId,
@@ -158,7 +159,8 @@ class TrophyHelpService {
         .from('trophy_help_responses')
         .insert({
           'request_id': requestId,
-          'helper_profile_id': userId, // Use helper_profile_id (profiles.id == auth.users.id)
+          'helper_user_id': userId, // Deprecated but still required
+          'helper_profile_id': userId, // New column (profiles.id == auth.users.id)
           'message': message,
           'status': 'pending',
         })
@@ -174,11 +176,27 @@ class TrophyHelpService {
   Future<List<TrophyHelpResponse>> getRequestResponses(String requestId) async {
     final rows = await _supabase
         .from('trophy_help_responses')
-        .select()
+        .select('''
+          *,
+          helper_username:profiles!helper_profile_id(username, psn_online_id, xbox_gamertag, steam_id)
+        ''')
         .eq('request_id', requestId)
         .order('created_at', ascending: false);
 
-    return _mapList(rows, TrophyHelpResponse.fromJson);
+    // Extract profile data from nested object and flatten it
+    final flattenedRows = rows.map((row) {
+      final Map<String, dynamic> flatRow = Map.from(row);
+      final helperProfile = row['helper_username'];
+      if (helperProfile != null && helperProfile is Map) {
+        flatRow['helper_username'] = helperProfile['username'] as String?;
+        flatRow['helper_psn_online_id'] = helperProfile['psn_online_id'] as String?;
+        flatRow['helper_xbox_gamertag'] = helperProfile['xbox_gamertag'] as String?;
+        flatRow['helper_steam_id'] = helperProfile['steam_id'] as String?;
+      }
+      return flatRow;
+    }).toList();
+
+    return _mapList(flattenedRows, TrophyHelpResponse.fromJson);
   }
 
   Future<void> acceptHelper(String responseId) async {

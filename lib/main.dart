@@ -14,6 +14,7 @@ import 'package:statusxp/config/supabase_config.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/services/auth_refresh_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/services/sync_resume_service.dart';
 import 'package:statusxp/theme/theme.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
 import 'package:statusxp/utils/html.dart' as html;
@@ -212,6 +213,7 @@ class StatusXPApp extends ConsumerStatefulWidget {
 class _StatusXPAppState extends ConsumerState<StatusXPApp> {
   AppLinks? _appLinks;
   StreamSubscription<Uri>? _sub;
+  bool _hasCheckedInterruptedSyncs = false;
 
   @override
   void initState() {
@@ -221,6 +223,29 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
       _handleWebAuthCallback();
     } else {
       _initDeepLinks();
+    }
+    
+    // Check for interrupted syncs after a short delay to allow providers to initialize
+    Future.delayed(const Duration(seconds: 2), () {
+      _checkForInterruptedSyncs();
+    });
+  }
+  
+  Future<void> _checkForInterruptedSyncs() async {
+    if (_hasCheckedInterruptedSyncs) return;
+    _hasCheckedInterruptedSyncs = true;
+    
+    try {
+      // Only check if user is authenticated
+      if (Supabase.instance.client.auth.currentSession == null) {
+        return;
+      }
+      
+      final syncResumeService = ref.read(syncResumeServiceProvider);
+      await syncResumeService.checkAndResumeInterruptedSyncs();
+    } catch (e) {
+      _safeLog('Error checking for interrupted syncs: ${_safeStr(e)}');
+      // Don't crash the app if sync resume fails
     }
   }
 

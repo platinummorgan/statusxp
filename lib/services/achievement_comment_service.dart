@@ -129,6 +129,9 @@ class AchievementCommentService {
   Future<AchievementComment> postComment({
     required int achievementId,
     required String commentText,
+    required int platformId,
+    required String platformGameId,
+    required String platformAchievementId,
   }) async {
     // Get current user
     final userId = _supabase.auth.currentUser?.id;
@@ -146,9 +149,12 @@ class AchievementCommentService {
     final response = await _supabase
         .from('achievement_comments')
         .insert({
-          'achievement_id': achievementId,
+          'achievement_id': achievementId, // Legacy field
           'user_id': userId,
           'comment_text': commentText,
+          'platform_id': platformId,
+          'platform_game_id': platformGameId,
+          'platform_achievement_id': platformAchievementId,
         })
         .select('''
           id,

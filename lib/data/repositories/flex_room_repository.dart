@@ -179,7 +179,7 @@ class FlexRoomRepository {
           mostTimeSunk: results[1] as FlexTile?,
           sweattiestPlatinum: results[2] as FlexTile?,
           superlatives: {},
-          recentFlexes: results[3] as List<RecentFlex>,
+          recentFlexes: (results[3] as List?)?.cast<RecentFlex>() ?? [],
         );
       }
 
@@ -336,13 +336,28 @@ class FlexRoomRepository {
       };
       
       print('💾 Saving flex room with composite keys:');
+      print('  - userId: ${data.userId}');
       print('  - flexOfAllTime: ${data.flexOfAllTime?.platformId}/${data.flexOfAllTime?.platformGameId}/${data.flexOfAllTime?.platformAchievementId}');
+      print('  - payload: $payload');
       
-      await _client.from('flex_room_data').upsert(payload);
+      await _client.from('flex_room_data').upsert(
+        payload,
+        onConflict: 'user_id', // Specify primary key for conflict resolution
+      );
+      
+      // Verify the save by fetching it back
+      final verify = await _client
+          .from('flex_room_data')
+          .select()
+          .eq('user_id', data.userId)
+          .maybeSingle();
+      
       print('✅ Flex Room data saved successfully for user: ${data.userId}');
+      print('📋 Verification: ${verify != null ? "Found saved data" : "WARNING: Data not found after save!"}');
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('❌ Error saving flex room data: $e');
+      print('Stack trace: $stackTrace');
       return false;
     }
   }

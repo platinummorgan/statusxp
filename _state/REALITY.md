@@ -83,12 +83,19 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
   - ✅ iOS and Android apps in production
 
 - **What is broken/needs attention:**
-  - ⚠️ Sorting on the MyGames List, Can't sort by last trophy again.
+  - None currently
+
 
 ## Last known good commit
-- **Commit hash:** c5bb71bf31bd25d6373207b81cd34a4f597ea898
-- **Date:** January 21, 2026, 17:16:56
-- **Notes:** Latest commit on main branch - includes recent migrations and feature updates
+- **Commit hash:** 95e533109e04a8eb9e21ed47bdc6d4e6fa8a9f90
+- **Date:** January 22, 2026
+- **Notes:** Fixed critical issues #6, #7, #8:
+  - Issue #6: My Games achievement navigation (missing platform_id/platform_game_id)
+  - Issue #7: Flex Room save persistence (premature cache invalidation)
+  - Issue #8: Xbox leaderboard gamerscore calculation (multiplication bug)
+  - Migration: 20260122000001_fix_get_user_grouped_games_include_ids.sql
+  - Migration: 20260122000002_fix_xbox_leaderboard_gamerscore_calculation.sql
+  - Code fix: lib/ui/screens/flex_room_screen.dart (removed early invalidation)
 
 ## Critical Files to Know
 - `DATABASE_SCHEMA_LIVE.sql` - Complete live database schema dump (source of truth)
@@ -174,30 +181,23 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
   - Web: Stripe payment integration
 - **Price:** Check TERMS_OF_SERVICE.md for current pricing
 
-## Critical TODOs (From CRITICAL_AUDIT.md)
+**UX UPGRADES**
+- None currently - all requested upgrades completed!
 
-**FIXED:**
-1. ✅ Hardcoded user ID - NOW FIXED! Uses `currentUserIdProvider` which pulls from Supabase auth
-   - `lib/state/statusxp_providers.dart` correctly uses `authService.currentUser?.id`
-   - All screens (flex_room, leaderboard, achievements) use this provider
-2. ✅ Edge function `delete-account` - DEPLOYED and working (integrated in auth_service.dart)
-   - Called from Settings → Delete Account
-   - Required for Apple App Store compliance
+**REMAINING ISSUES (CRITICAL)**
+- None currently
+
+**COMPLETED ISSUES:**
+1. ✅ Status Poster optimization and ranks (Jan 22, 2026) - Parallel loading, accurate rank display, centered rank badges
+2. ✅ Choose Background scrolling (Jan 22, 2026) - Dynamic GridView height calculation for full scrolling
+3. ✅ Sync restart function (Jan 22, 2026) - SyncResumeService with timestamp-based detection and 409 conflict handling
+4. ✅ My Games Last Trophy sorting (Jan 22, 2026) - Fixed get_user_grouped_games function. Migration: 20260122000006_fix_last_trophy_sorting.sql
+5. ✅ Updates section in settings (Jan 22, 2026) - Created app_updates table and UpdatesScreen. Migration: 20260122000007_create_app_updates_table.sql
 
 **REMAINING ISSUES (Non-Critical):**
-3. ⚠️ 50+ debug print statements in production code (cleanup item, not a blocker)
-4. ⚠️ Deep link configuration for password reset (UX improvement)
-5. ⚠️ No email verification on signup (acceptable with OAuth, can add later)
-
-**RECENTLY FIXED (Jan 22, 2026):**
-6. ✅ My Games achievements not loading - FIXED! Added platform_id and platform_game_id to get_user_grouped_games function
-   - Migration: 20260122000001_fix_get_user_grouped_games_include_ids.sql
-7. ✅ Flex Room not saving state - FIXED! Removed premature provider invalidation after successful save
-   - File: lib/ui/screens/flex_room_screen.dart
-8. ✅ Xbox Leaderboard impossible Gamerscores - FIXED! Rewrote view to prevent gamerscore multiplication bug
-   - Migration: 20260122000002_fix_xbox_leaderboard_gamerscore_calculation.sql
-   - Root cause: View was multiplying each game's total score by number of achievements earned
-   - Solution: Use CTEs to separately count achievements and sum per-game scores
+1. ⚠️ 50+ debug print statements in production code (cleanup item, not a blocker)
+2. ⚠️ Deep link configuration for password reset (UX improvement)
+3. ⚠️ No email verification on signup (acceptable with OAuth, can add later)
 
 ## Common Pitfalls & Gotchas
 

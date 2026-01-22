@@ -127,9 +127,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
         statusColor = CyberpunkTheme.neonCyan;
         statusText = 'Open';
         break;
-      case 'matched':
+      case 'assigned':
         statusColor = Colors.orange;
-        statusText = 'Matched';
+        statusText = 'Helper Assigned';
         break;
       case 'completed':
         statusColor = Colors.green;
@@ -138,6 +138,10 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
       case 'cancelled':
         statusColor = Colors.red;
         statusText = 'Cancelled';
+        break;
+      case 'closed':
+        statusColor = Colors.grey;
+        statusText = 'Closed';
         break;
       default:
         statusColor = Colors.grey;
@@ -514,7 +518,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
 
             return Column(
               children: responses.map((response) {
-                return _buildResponseCard(context, response, isOwner, ref);
+                return _buildResponseCard(context, request, response, isOwner, ref);
               }).toList(),
             );
           },
@@ -544,6 +548,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
 
   Widget _buildResponseCard(
     BuildContext context,
+    TrophyHelpRequest request,
     TrophyHelpResponse response,
     bool isOwner,
     WidgetRef ref,
@@ -593,7 +598,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Helper ${response.helperUserId.substring(0, 8)}',
+                'Helper ${response.helperUsername ?? response.helperUserId.substring(0, 8)}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 14,
@@ -647,6 +652,57 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
             ),
           ),
 
+          // Show helper's platform contact info if accepted
+          if (response.status == 'accepted') ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.contact_page,
+                        size: 16,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Contact Info',
+                        style: TextStyle(
+                          color: Colors.green.shade300,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (request.platform.toLowerCase().contains('ps') && response.helperPsnOnlineId != null)
+                    _buildContactRow(context, 'PSN ID', response.helperPsnOnlineId!)
+                  else if (request.platform.toLowerCase().contains('xbox') && response.helperXboxGamertag != null)
+                    _buildContactRow(context, 'Xbox Gamertag', response.helperXboxGamertag!)
+                  else if (request.platform.toLowerCase().contains('steam') && response.helperSteamId != null)
+                    _buildContactRow(context, 'Steam ID', response.helperSteamId!)
+                  else
+                    Text(
+                      'No platform username available',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+
           // Owner actions for pending responses
           if (isOwner && response.status == 'pending') ...[
             const SizedBox(height: 12),
@@ -658,13 +714,59 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                       try {
                         final service = TrophyHelpService(ref.read(supabaseClientProvider));
                         await service.acceptHelper(response.id);
+                        // Update request status to assigned
+                        await service.updateRequestStatus(request.id, 'assigned');
                         ref.invalidate(requestResponsesProvider(requestId));
                         ref.invalidate(requestDetailsProvider(requestId));
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Helper accepted!'),
-                              backgroundColor: Colors.green,
+                          // Show helper's contact info
+                          String contactInfo = 'Helper accepted!';
+                          final platform = request.platform.toLowerCase();
+                          if (platform.contains('ps') && response.helperPsnOnlineId != null) {
+                            contactInfo += '\n\nPSN: ${response.helperPsnOnlineId}';
+                          } else if (platform.contains('xbox') && response.helperXboxGamertag != null) {
+                            contactInfo += '\n\nXbox: ${response.helperXboxGamertag}';
+                          } else if (platform.contains('steam') && response.helperSteamId != null) {
+                            contactInfo += '\n\nSteam ID: ${response.helperSteamId}';
+                          }
+                          
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Helper Accepted!'),
+                              content: Text(contactInfo),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    if (platform.contains('ps') && response.helperPsnOnlineId != null) {
+                                      Clipboard.setData(ClipboardData(text: response.helperPsnOnlineId!));
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('PSN ID copied to clipboard')),
+                                      );
+                                    } else if (platform.contains('xbox') && response.helperXboxGamertag != null) {
+                                      Clipboard.setData(ClipboardData(text: response.helperXboxGamertag!));
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Gamertag copied to clipboard')),
+                                      );
+                                    } else if (platform.contains('steam') && response.helperSteamId != null) {
+                                      Clipboard.setData(ClipboardData(text: response.helperSteamId!));
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Steam ID copied to clipboard')),
+                                      );
+                                    } else {
+                                      Navigator.pop(context);
+                                    }
+                                  },
+                                  child: const Text('Copy & Close'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Close'),
+                                ),
+                              ],
                             ),
                           );
                         }
@@ -719,6 +821,41 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildContactRow(BuildContext context, String label, String value) {
+    return Row(
+      children: [
+        Text(
+          '$label: ',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.6),
+            fontSize: 12,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: value));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$label copied to clipboard')),
+            );
+          },
+          icon: const Icon(Icons.copy, size: 14),
+          color: CyberpunkTheme.neonCyan,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ],
     );
   }
 }

@@ -113,6 +113,10 @@ class TrophyHelpResponse {
   final String requestId;
   final String helperUserId; // Keep for backwards compatibility, use helperProfileId for new code
   final String? helperProfileId; // New canonical field (profiles.id)
+  final String? helperUsername; // Helper's username from profiles table
+  final String? helperPsnOnlineId; // Helper's PSN username
+  final String? helperXboxGamertag; // Helper's Xbox gamertag
+  final String? helperSteamId; // Helper's Steam ID
   final String? message;
   final String status; // 'pending', 'accepted', 'declined'
   final DateTime createdAt;
@@ -122,6 +126,10 @@ class TrophyHelpResponse {
     required this.requestId,
     required this.helperUserId,
     this.helperProfileId,
+    this.helperUsername,
+    this.helperPsnOnlineId,
+    this.helperXboxGamertag,
+    this.helperSteamId,
     this.message,
     required this.status,
     required this.createdAt,
@@ -137,6 +145,10 @@ class TrophyHelpResponse {
       requestId: json['request_id'] as String,
       helperUserId: helperUserId,
       helperProfileId: helperProfileId ?? helperUserId, // Ensure helperProfileId is always set
+      helperUsername: json['helper_username'] as String?,
+      helperPsnOnlineId: json['helper_psn_online_id'] as String?,
+      helperXboxGamertag: json['helper_xbox_gamertag'] as String?,
+      helperSteamId: json['helper_steam_id'] as String?,
       message: json['message'] as String?,
       status: json['status'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -149,6 +161,7 @@ class TrophyHelpResponse {
       'request_id': requestId,
       'helper_user_id': helperUserId,
       'helper_profile_id': helperProfileId ?? helperUserId, // Always include helper_profile_id
+      'helper_username': helperUsername,
       'message': message,
       'status': status,
       'created_at': createdAt.toIso8601String(),

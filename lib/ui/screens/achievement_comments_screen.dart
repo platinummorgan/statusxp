@@ -26,12 +26,18 @@ class AchievementCommentsScreen extends ConsumerWidget {
   final int achievementId;
   final String achievementName;
   final String? achievementIconUrl;
+  final int platformId;
+  final String platformGameId;
+  final String platformAchievementId;
 
   const AchievementCommentsScreen({
     super.key,
     required this.achievementId,
     required this.achievementName,
     this.achievementIconUrl,
+    required this.platformId,
+    required this.platformGameId,
+    required this.platformAchievementId,
   });
 
   @override
@@ -188,7 +194,12 @@ class AchievementCommentsScreen extends ConsumerWidget {
           ),
 
           // Comment input
-          _CommentInput(achievementId: achievementId),
+          _CommentInput(
+            achievementId: achievementId,
+            platformId: platformId,
+            platformGameId: platformGameId,
+            platformAchievementId: platformAchievementId,
+          ),
         ],
       ),
     );
@@ -456,8 +467,16 @@ class _CommentCard extends ConsumerWidget {
 
 class _CommentInput extends ConsumerStatefulWidget {
   final int achievementId;
+  final int platformId;
+  final String platformGameId;
+  final String platformAchievementId;
 
-  const _CommentInput({required this.achievementId});
+  const _CommentInput({
+    required this.achievementId,
+    required this.platformId,
+    required this.platformGameId,
+    required this.platformAchievementId,
+  });
 
   @override
   ConsumerState<_CommentInput> createState() => _CommentInputState();
@@ -487,6 +506,9 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
       await service.postComment(
         achievementId: widget.achievementId,
         commentText: text,
+        platformId: widget.platformId,
+        platformGameId: widget.platformGameId,
+        platformAchievementId: widget.platformAchievementId,
       );
 
       // Clear input

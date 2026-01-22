@@ -180,10 +180,16 @@ final GoRouter appRouter = GoRouter(
             final achievementId = int.parse(state.pathParameters['achievementId']!);
             final achievementName = state.uri.queryParameters['name'] ?? 'Achievement';
             final achievementIconUrl = state.uri.queryParameters['icon'];
+            final platformId = int.parse(state.uri.queryParameters['platformId'] ?? '0');
+            final platformGameId = state.uri.queryParameters['platformGameId'] ?? '';
+            final platformAchievementId = state.uri.queryParameters['platformAchievementId'] ?? '';
             return AchievementCommentsScreen(
               achievementId: achievementId,
               achievementName: achievementName,
               achievementIconUrl: achievementIconUrl,
+              platformId: platformId,
+              platformGameId: platformGameId,
+              platformAchievementId: platformAchievementId,
             );
           },
         ),

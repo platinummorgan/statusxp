@@ -37,6 +37,8 @@ class UnifiedGamesRepository {
           final completion = (platformData['completion'] as num?)?.toDouble() ?? 0.0;
           final statusXP = ((platformData['statusxp'] as num?)?.toDouble() ?? 0.0).toInt();
           final gameTitleId = platformData['game_title_id']?.toString() ?? '';
+          final currentScore = ((platformData['current_score'] as num?)?.toDouble() ?? 0.0).toInt();
+          final totalScore = ((platformData['total_score'] as num?)?.toDouble() ?? 0.0).toInt();
           
           // V2 composite keys
           final platformId = platformData['platform_id'] as int?;
@@ -96,6 +98,8 @@ class UnifiedGamesRepository {
             goldCount: gold,
             platinumCount: platinum,
             statusXP: statusXP,
+            currentScore: currentScore,
+            totalScore: totalScore,
             lastPlayedAt: lastPlayedAt,
             lastTrophyEarnedAt: lastTrophyEarnedAt,
           ));

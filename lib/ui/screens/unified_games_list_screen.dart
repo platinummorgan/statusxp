@@ -337,12 +337,22 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: games.length,
-      itemBuilder: (context, index) {
-        return _buildGameCard(context, games[index]);
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Invalidate the provider to trigger a fresh fetch
+        ref.invalidate(unifiedGamesProvider);
+        // Wait for the provider to finish loading
+        await ref.read(unifiedGamesProvider.future);
       },
+      color: CyberpunkTheme.neonCyan,
+      backgroundColor: const Color(0xFF0A0E27),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: games.length,
+        itemBuilder: (context, index) {
+          return _buildGameCard(context, games[index]);
+        },
+      ),
     );
   }
 
@@ -499,6 +509,35 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     }
 
     final completion = platform.completion.toStringAsFixed(0);
+    
+    // Build platform-specific display text
+    String displayText;
+    if (platformLower.contains('xbox')) {
+      // Xbox: Show achievements and gamerscore
+      // Format: "XBOX 10/30 30% Achievement Points 300/1000"
+      final gamerscore = platform.totalScore > 0 
+        ? '${platform.currentScore}/${platform.totalScore}'
+        : '${platform.currentScore}';
+      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion% Achievement Points $gamerscore';
+    } else if (platformLower.contains('ps') || platformLower == 'playstation') {
+      // PlayStation: Show trophy breakdown
+      // Format: "PS5 10/30 30% 🥈 Platinum 1 | Gold 2 | Silver 3 | Bronze 4"
+      final List<String> trophyParts = [];
+      if (platform.platinumCount > 0) trophyParts.add('Platinum ${platform.platinumCount}');
+      if (platform.goldCount > 0) trophyParts.add('Gold ${platform.goldCount}');
+      if (platform.silverCount > 0) trophyParts.add('Silver ${platform.silverCount}');
+      if (platform.bronzeCount > 0) trophyParts.add('Bronze ${platform.bronzeCount}');
+      
+      final trophyBreakdown = trophyParts.isNotEmpty ? ' 🥈 ${trophyParts.join(' | ')}' : '';
+      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%$trophyBreakdown';
+    } else if (platformLower.contains('steam')) {
+      // Steam: Show achievement count
+      // Format: "Steam 10/30"
+      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal}';
+    } else {
+      // Default: Standard display
+      displayText = '$label: ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%';
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -508,7 +547,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
         border: Border.all(color: color, width: 1.5),
       ),
       child: Text(
-        '$label: ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%',
+        displayText,
         style: TextStyle(
           color: color,
           fontSize: 11,

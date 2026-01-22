@@ -142,6 +142,12 @@ class PlatformGameData extends Equatable {
   /// StatusXP earned for this game
   final int statusXP;
   
+  /// Current score (gamerscore for Xbox, trophy points for PSN, achievement count for Steam)
+  final int currentScore;
+  
+  /// Total possible score (max gamerscore for Xbox, max trophy points for PSN)
+  final int totalScore;
+  
   /// Last played/synced timestamp
   final DateTime? lastPlayedAt;
   
@@ -164,6 +170,8 @@ class PlatformGameData extends Equatable {
     this.goldCount = 0,
     this.platinumCount = 0,
     this.statusXP = 0,
+    this.currentScore = 0,
+    this.totalScore = 0,
     this.lastPlayedAt,
     this.lastTrophyEarnedAt,
   });
@@ -185,6 +193,8 @@ class PlatformGameData extends Equatable {
     goldCount,
     platinumCount,
     statusXP,
+    currentScore,
+    totalScore,
     lastPlayedAt,
     lastTrophyEarnedAt,
   ];

@@ -154,6 +154,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         
         return {
           'id': ach['platform_achievement_id'],
+          'platform_achievement_id': ach['platform_achievement_id'], // Keep for V2 composite keys
           'name': ach['name'],
           'description': ach['description'],
           'icon_url': ach['proxied_icon_url'] ?? ach['icon_url'],
@@ -582,10 +583,23 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 children: [
                   TextButton.icon(
                     onPressed: () {
+                      // Only navigate if we have all required V2 composite keys
+                      if (widget.platformId == null || 
+                          widget.platformGameId == null || 
+                          achievement['platform_achievement_id'] == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Comments not available for this achievement')),
+                        );
+                        return;
+                      }
+                      
                       context.push(
                         '/achievement-comments/${achievement['id']}'
-                        '?name=${Uri.encodeComponent(achievement['name'])}'
-                        '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}',
+                        '?name=${Uri.encodeComponent(achievement['name'] ?? 'Achievement')}'
+                        '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}'
+                        '&platformId=${widget.platformId}'
+                        '&platformGameId=${Uri.encodeComponent(widget.platformGameId!)}'
+                        '&platformAchievementId=${Uri.encodeComponent(achievement['platform_achievement_id'])}',
                       );
                     },
                     icon: const Icon(Icons.chat_bubble_outline, size: 14),

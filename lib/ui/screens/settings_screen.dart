@@ -15,6 +15,7 @@ import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
 import 'package:statusxp/ui/screens/psn/psn_connect_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
+import 'package:statusxp/ui/screens/updates_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
 
 /// Settings Screen - Platform connections and app configuration
@@ -740,6 +741,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             );
                           }
                         },
+                ),
+
+                const Divider(height: 1),
+
+                // Updates
+                ListTile(
+                  leading: const Icon(Icons.history, color: Colors.white70),
+                  title: const Text('Updates'),
+                  subtitle: const Text('View app changelog and recent updates'),
+                  trailing: const Icon(Icons.chevron_right, color: Colors.white30),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const UpdatesScreen()),
+                    );
+                  },
                 ),
 
                 const Divider(height: 1),

@@ -269,6 +269,73 @@ final gameEditServiceProvider = Provider<SupabaseGameEditService?>((ref) {
   );
 });
 
+/// Provider for loading all leaderboard ranks (global, PSN, Xbox, Steam) in parallel
+/// Returns a map with rank data for efficient Status Poster loading
+final leaderboardRanksProvider = FutureProvider<Map<String, int?>>((ref) async {
+  final client = ref.watch(supabaseClientProvider);
+  final userId = client.auth.currentUser?.id;
+  
+  if (userId == null) {
+    return {
+      'global': null,
+      'psn': null,
+      'xbox': null,
+      'steam': null,
+    };
+  }
+  
+  // Fetch all ranks in parallel for optimal performance
+  final results = await Future.wait([
+    // Global rank - use leaderboard_cache table (same as leaderboard screen)
+    client.from('leaderboard_cache').select('user_id,total_statusxp').order('total_statusxp', ascending: false),
+    // PSN leaderboard - fetch all to calculate rank client-side
+    client.from('psn_leaderboard_cache').select('user_id,platinum_count,gold_count,silver_count,bronze_count').order('platinum_count', ascending: false).order('gold_count', ascending: false).order('silver_count', ascending: false).order('bronze_count', ascending: false),
+    // Xbox leaderboard - fetch all to calculate rank client-side  
+    client.from('xbox_leaderboard_cache').select('user_id,gamerscore,achievement_count').order('gamerscore', ascending: false).order('achievement_count', ascending: false),
+    // Steam leaderboard - fetch all to calculate rank client-side
+    client.from('steam_leaderboard_cache').select('user_id,achievement_count').order('achievement_count', ascending: false),
+  ]);
+  
+  // Calculate Global rank
+  int? globalRank;
+  if (results[0] is List) {
+    final globalList = results[0] as List;
+    final globalIndex = globalList.indexWhere((row) => row['user_id'] == userId);
+    globalRank = globalIndex >= 0 ? globalIndex + 1 : null;
+  }
+  
+  // Calculate PSN rank
+  int? psnRank;
+  if (results[1] is List) {
+    final psnList = results[1] as List;
+    final psnIndex = psnList.indexWhere((row) => row['user_id'] == userId);
+    psnRank = psnIndex >= 0 ? psnIndex + 1 : null;
+  }
+  
+  // Calculate Xbox rank
+  int? xboxRank;
+  if (results[2] is List) {
+    final xboxList = results[2] as List;
+    final xboxIndex = xboxList.indexWhere((row) => row['user_id'] == userId);
+    xboxRank = xboxIndex >= 0 ? xboxIndex + 1 : null;
+  }
+  
+  // Calculate Steam rank
+  int? steamRank;
+  if (results[3] is List) {
+    final steamList = results[3] as List;
+    final steamIndex = steamList.indexWhere((row) => row['user_id'] == userId);
+    steamRank = steamIndex >= 0 ? steamIndex + 1 : null;
+  }
+  
+  return {
+    'global': globalRank,
+    'psn': psnRank,
+    'xbox': xboxRank,
+    'steam': steamRank,
+  };
+});
+
 /// Extension to refresh core data providers after mutations.
 extension StatusXPRefresh on WidgetRef {
   void refreshCoreData() {
