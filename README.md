@@ -1,3 +1,6 @@
+## Source of Truth
+Operational state for this project lives in `_state/*.md`.
+
 # StatusXP
 
 **Gaming Achievement Tracker & Identity Platform**

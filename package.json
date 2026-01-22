@@ -5,5 +5,8 @@
   },
   "scripts": {
     "start": "serve build/web -p ${PORT:-8080}"
+  },
+  "devDependencies": {
+    "supabase": "^2.72.8"
   }
 }
