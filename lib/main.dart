@@ -314,12 +314,24 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
+    final app = MaterialApp.router(
       title: 'StatusXP',
       debugShowCheckedModeBanner: false,
       theme: statusXPTheme,
       routerConfig: appRouter,
     );
+
+    // Web: Center app with max-width constraint (looks like mobile app in browser)
+    if (kIsWeb) {
+      return Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: app,
+        ),
+      );
+    }
+
+    return app;
   }
 }
 
