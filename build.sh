@@ -52,8 +52,22 @@ flutter build web --release --no-tree-shake-icons \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
 # Copy static files to build output
-echo "Copying static files (robots.txt, sitemap.xml)..."
-cp web/robots.txt build/web/robots.txt 2>/dev/null || echo "Warning: robots.txt not found"
-cp web/sitemap.xml build/web/sitemap.xml 2>/dev/null || echo "Warning: sitemap.xml not found"
+echo "Copying static files..."
+if [ -f "web/robots.txt" ]; then
+  cp web/robots.txt build/web/robots.txt
+  echo "✓ Copied robots.txt"
+else
+  echo "✗ robots.txt not found in web/"
+fi
+
+if [ -f "web/sitemap.xml" ]; then
+  cp web/sitemap.xml build/web/sitemap.xml
+  echo "✓ Copied sitemap.xml"
+else
+  echo "✗ sitemap.xml not found in web/"
+fi
+
+echo "Verifying files in build/web..."
+ls -la build/web/robots.txt build/web/sitemap.xml 2>&1
 
 echo "Build completed successfully!"
