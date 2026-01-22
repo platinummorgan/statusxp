@@ -323,10 +323,13 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
 
     // Web: Center app with max-width constraint (looks like mobile app in browser)
     if (kIsWeb) {
-      return Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: app,
+      return Container(
+        color: const Color(0xFF0A0A0F), // backgroundDark
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: app,
+          ),
         ),
       );
     }
