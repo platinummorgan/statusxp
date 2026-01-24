@@ -79,6 +79,8 @@ class SupabaseDashboardRepository {
         .eq('user_id', userId)
         .inFilter('platform_id', platformIds);
 
+    print('[DASHBOARD] Platform $platformId query returned: ${gamesResponse?.length ?? 0} games');
+    
     final games = gamesResponse as List;
     final gamesCount = games.length;
     
@@ -95,8 +97,11 @@ class SupabaseDashboardRepository {
         final gold = (game['gold_trophies'] as int?) ?? 0;
         final platinum = (game['platinum_trophies'] as int?) ?? 0;
         
-        platformStatusXP += (bronze * 25) + (silver * 50) + (gold * 100) + (platinum * 1000);
+        final gameXP = (bronze * 25) + (silver * 50) + (gold * 100) + (platinum * 1000);
+        platformStatusXP += gameXP;
         platinums += platinum;
+        
+        print('[DASHBOARD] PSN Game: B=$bronze S=$silver G=$gold P=$platinum => XP=$gameXP (Total: $platformStatusXP)');
       } else {
         // Xbox/Steam: Use current_score (gamerscore or achievement points)
         final score = (game['current_score'] as int?) ?? 0;
@@ -104,8 +109,12 @@ class SupabaseDashboardRepository {
         if (xboxPlatforms != null) {
           gamerscore += score;
         }
+        
+        print('[DASHBOARD] Platform $platformId Game: score=$score (Total: $platformStatusXP)');
       }
     }
+    
+    print('[DASHBOARD] Platform $platformId FINAL StatusXP: $platformStatusXP');
 
     return PlatformStats(
       platinums: platinums,
