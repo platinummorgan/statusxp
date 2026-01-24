@@ -243,10 +243,16 @@ class AuthService {
     // On web, use OAuth flow instead of native Sign In with Apple
     if (kIsWeb) {
       final redirectUrl = 'https://statusxp.com/login-callback';
-      return await _client.auth.signInWithOAuth(
+      final success = await _client.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: redirectUrl,
       );
+      if (!success) {
+        throw const AuthException('Apple Sign-In failed on web');
+      }
+      // OAuth redirects away, so we never actually reach here in success case
+      // This is just for type safety
+      return AuthResponse();
     }
     
     // Native flow for iOS/Android
