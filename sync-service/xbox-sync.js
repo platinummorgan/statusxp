@@ -793,8 +793,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               try {
                 const openXBLKey = process.env.OPENXBL_API_KEY;
                 if (openXBLKey) {
+                  // Use title endpoint (requires paid tier) for complete rarity data
                   const rarityResponse = await fetch(
-                    `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
+                    `https://xbl.io/api/v2/achievements/title/${title.titleId}`,
                     {
                       headers: {
                         'x-authorization': openXBLKey,
@@ -810,7 +811,29 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                         openXBLRarityMap.set(ach.id, ach.rarity.currentPercentage);
                       }
                     }
-                    console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements`);
+                    console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements (title endpoint)`);
+                  } else {
+                    console.log(`[OPENXBL] Title endpoint failed (${rarityResponse.status}), trying player endpoint fallback`);
+                    // Fallback to player endpoint if title endpoint fails
+                    const playerRarityResponse = await fetch(
+                      `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
+                      {
+                        headers: {
+                          'x-authorization': openXBLKey,
+                        },
+                      }
+                    );
+                    
+                    if (playerRarityResponse.ok) {
+                      const playerRarityData = await playerRarityResponse.json();
+                      const playerAchievements = playerRarityData?.achievements || [];
+                      for (const ach of playerAchievements) {
+                        if (ach.rarity?.currentPercentage !== undefined) {
+                          openXBLRarityMap.set(ach.id, ach.rarity.currentPercentage);
+                        }
+                      }
+                      console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements (player endpoint fallback)`);
+                    }
                   }
                 }
               } catch (error) {
