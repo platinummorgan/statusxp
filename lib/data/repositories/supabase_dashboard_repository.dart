@@ -130,22 +130,23 @@ class SupabaseDashboardRepository {
       platformStatusXP = await _calculateStatusXPFallback(userId, platformIds);
     }
     
-    // Get StatusXP from main leaderboard_cache (all platforms)
-    print('[DASHBOARD] Fetching stats from leaderboard cache');
-    final statusxpCache = await _client
-        .from('leaderboard_cache')
-        .select('total_statusxp')
-        .eq('user_id', userId)
-        .maybeSingle();
+    print('[DASHBOARD] Calculated platformStatusXP for platform $platformId: $platformStatusXP');
     
-    if (statusxpCache != null) {
-      // Get total StatusXP from main cache (includes all platforms)
-      final totalStatusXP = ((statusxpCache['total_statusxp'] as int?) ?? 0).toDouble();
+    // Don't overwrite with cache if we got a valid calculation
+    if (platformStatusXP == 0.0) {
+      // Get StatusXP from main leaderboard_cache as fallback only
+      print('[DASHBOARD] Using leaderboard cache as fallback');
+      final statusxpCache = await _client
+          .from('leaderboard_cache')
+          .select('total_statusxp')
+          .eq('user_id', userId)
+          .maybeSingle();
       
-      // For now, use full StatusXP for any platform query
-      // TODO: Calculate per-platform StatusXP from calculate_statusxp_with_stacks results
-      platformStatusXP = totalStatusXP;
-      print('[DASHBOARD] StatusXP from cache: $platformStatusXP');
+      if (statusxpCache != null) {
+        final totalStatusXP = ((statusxpCache['total_statusxp'] as int?) ?? 0).toDouble();
+        platformStatusXP = totalStatusXP;
+        print('[DASHBOARD] StatusXP from cache: $platformStatusXP');
+      }
     }
     
     // Get platform-specific stats
