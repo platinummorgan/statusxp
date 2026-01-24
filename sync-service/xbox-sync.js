@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { uploadGameCover } from './icon-proxy-utils.js';
+import { uploadGameCover, uploadExternalIcon } from './icon-proxy-utils.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -60,56 +60,6 @@ async function uploadExternalAvatar(externalUrl, userId, platform) {
   } catch (error) {
     console.error('[AVATAR STORAGE] Exception:', error);
     return null;
-  }
-}
-
-// Helper to download external achievement/game icon and upload to Supabase Storage
-async function uploadExternalIcon(externalUrl, iconId, platform, supabaseClient = supabase) {
-  if (!externalUrl) return null;
-  
-  try {
-    // Download the image from the external URL
-    const response = await fetch(externalUrl);
-    if (!response.ok) {
-      console.error(`[ICON STORAGE] Failed to download icon: ${response.status}`);
-      return externalUrl; // Return original URL as fallback
-    }
-
-    // Get the image data as a buffer
-    const arrayBuffer = await response.arrayBuffer();
-    
-    // Determine file extension from content type
-    const contentType = response.headers.get('content-type') || 'image/png';
-    let extension = 'png';
-    if (contentType.includes('jpeg') || contentType.includes('jpg')) extension = 'jpg';
-    else if (contentType.includes('gif')) extension = 'gif';
-    else if (contentType.includes('webp')) extension = 'webp';
-    
-    // Create a unique filename: platform/icons/iconId.ext
-    const filename = `${platform}/icons/${iconId}.${extension}`;
-    
-    // Upload to Supabase Storage
-    const { data, error } = await supabaseClient.storage
-      .from('game-assets')
-      .upload(filename, arrayBuffer, {
-        contentType,
-        upsert: true,
-      });
-
-    if (error) {
-      console.error('[ICON STORAGE] Upload error:', error);
-      return externalUrl; // Return original URL as fallback
-    }
-
-    // Get the public URL
-    const { data: { publicUrl } } = supabaseClient.storage
-      .from('game-assets')
-      .getPublicUrl(filename);
-
-    return publicUrl;
-  } catch (error) {
-    console.error('[ICON STORAGE] Exception:', error);
-    return externalUrl; // Return original URL as fallback
   }
 }
 
