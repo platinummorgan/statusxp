@@ -99,24 +99,23 @@ function computeStatusXpFields({ rarityPercent, isPlatinum }) {
   const includeInScore = !isPlatinum;
 
   if (!includeInScore) {
-    return { base_status_xp: 0, rarity_multiplier: 1.0, include_in_score: false, is_platinum: true };
+    return { base_status_xp: 0, include_in_score: false, is_platinum: true };
   }
 
-  let baseStatusXP = 0.5;
-  let rarityMultiplier = 1.0;
+  // Default for NULL rarity (median value)
+  let baseStatusXP = 5;
 
-  if (rarityPercent == null || Number.isNaN(Number(rarityPercent))) {
-    return { base_status_xp: baseStatusXP, rarity_multiplier: rarityMultiplier, include_in_score: true, is_platinum: false };
+  if (rarityPercent != null && !Number.isNaN(Number(rarityPercent))) {
+    const r = Number(rarityPercent);
+    // Convert rarity % to decimal (0-1 range)
+    const p = Math.max(0.0001, Math.min(0.90, r / 100.0));
+    // Apply logarithmic formula: round(clamp(10 * ln(1/p) / ln(1/0.0001), 1, 10))
+    baseStatusXP = Math.round(
+      Math.max(1, Math.min(10, (10 * Math.log(1 / p)) / Math.log(1 / 0.0001)))
+    );
   }
 
-  const r = Number(rarityPercent);
-  if (r > 25) { baseStatusXP = 0.5; rarityMultiplier = 1.0; }
-  else if (r > 10) { baseStatusXP = 0.7; rarityMultiplier = 1.25; }
-  else if (r > 5) { baseStatusXP = 0.9; rarityMultiplier = 1.75; }
-  else if (r > 1) { baseStatusXP = 1.2; rarityMultiplier = 2.25; }
-  else { baseStatusXP = 1.5; rarityMultiplier = 3.0; }
-
-  return { base_status_xp: baseStatusXP, rarity_multiplier: rarityMultiplier, include_in_score: true, is_platinum: false };
+  return { base_status_xp: baseStatusXP, include_in_score: true, is_platinum: false };
 }
 
 async function upsertGame({ platformId, platformVersion, title }) {
@@ -183,7 +182,6 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
       rarity_global: rarityPercent,
       score_value: 0,
       base_status_xp: statusFields.base_status_xp,
-      rarity_multiplier: statusFields.rarity_multiplier,
       include_in_score: statusFields.include_in_score,
       is_platinum: statusFields.is_platinum,
       metadata: {

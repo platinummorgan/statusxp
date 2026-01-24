@@ -533,27 +533,18 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             for (let j = 0; j < achievements.length; j++) {
               const achievement = achievements[j];
               const playerAchievement = playerAchievements.find(a => a.apiname === achievement.name);
-              const rarityPercent = globalStats[achievement.name] || 0;
+              const rarityPercent = globalStats[achievement.name] || null;
 
-              // Calculate StatusXP based on rarity (V2 unified tiers)
-              let baseStatusXP = 0.5;
-              let rarityMultiplier = 1.00;
+              // Calculate base_status_xp using NEW 1-10 integer scale
+              let baseStatusXP = 5; // Default for NULL rarity (median value)
               
-              if (rarityPercent > 25) {
-                baseStatusXP = 0.5;  // Common: 0.5 × 1.00 = 0.50
-                rarityMultiplier = 1.00;
-              } else if (rarityPercent > 10) {
-                baseStatusXP = 0.7;  // Uncommon: 0.7 × 1.25 = 0.875
-                rarityMultiplier = 1.25;
-              } else if (rarityPercent > 5) {
-                baseStatusXP = 0.9;  // Rare: 0.9 × 1.75 = 1.575
-                rarityMultiplier = 1.75;
-              } else if (rarityPercent > 1) {
-                baseStatusXP = 1.2;  // Very Rare: 1.2 × 2.25 = 2.70
-                rarityMultiplier = 2.25;
-              } else {
-                baseStatusXP = 1.5;  // Ultra Rare: 1.5 × 3.00 = 4.50
-                rarityMultiplier = 3.00;
+              if (rarityPercent !== null) {
+                // Convert rarity % to decimal (0-1 range)
+                const p = Math.max(0.0001, Math.min(0.90, rarityPercent / 100.0));
+                // Apply logarithmic formula: round(clamp(10 * ln(1/p) / ln(1/0.0001), 1, 10))
+                baseStatusXP = Math.round(
+                  Math.max(1, Math.min(10, (10 * Math.log(1 / p)) / Math.log(1 / 0.0001)))
+                );
               }
 
               // Proxy the icon if available
@@ -570,7 +561,6 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 icon_url: iconUrl,
                 rarity_global: rarityPercent,
                 base_status_xp: baseStatusXP,
-                rarity_multiplier: rarityMultiplier,
                 is_platinum: false, // Steam doesn't have platinums
                 include_in_score: true, // All Steam achievements count
                 metadata: {
