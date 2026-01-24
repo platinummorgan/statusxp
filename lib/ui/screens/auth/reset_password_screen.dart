@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
 
@@ -64,11 +65,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           const SnackBar(
             content: Text('Password changed! Sign in with your new password.'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
           ),
         );
         
-        // Pop back to AuthGate which will show sign in
-        Navigator.of(context).pop();
+        // Navigate to root (sign in screen) using GoRouter
+        context.go('/');
       }
     } catch (e) {
       if (mounted) {
