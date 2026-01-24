@@ -42,10 +42,13 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    final redirectUrl = kIsWeb 
+        ? 'https://statusxp.com/login-callback'
+        : 'com.statusxp.statusxp://login-callback';
     return await _client.auth.signUp(
       email: email,
       password: password,
-      emailRedirectTo: 'com.statusxp.statusxp://login-callback',
+      emailRedirectTo: redirectUrl,
     );
   }
   
@@ -237,6 +240,16 @@ class AuthService {
   /// Throws [AuthException] if sign in fails or is cancelled.
   /// Only available on iOS 13+ and macOS 10.15+.
   Future<AuthResponse> signInWithApple() async {
+    // On web, use OAuth flow instead of native Sign In with Apple
+    if (kIsWeb) {
+      final redirectUrl = 'https://statusxp.com/login-callback';
+      return await _client.auth.signInWithOAuth(
+        OAuthProvider.apple,
+        redirectTo: redirectUrl,
+      );
+    }
+    
+    // Native flow for iOS/Android
     try {
       // Generate nonce for security
       final rawNonce = _generateNonce();
@@ -331,7 +344,9 @@ class AuthService {
 
   Future<AuthResponse> _signInWithGoogleOAuth() async {
     final currentUser = _client.auth.currentUser;
-    const redirectTo = 'com.statusxp.statusxp://login-callback';
+    final redirectTo = kIsWeb 
+        ? 'https://statusxp.com/login-callback'
+        : 'com.statusxp.statusxp://login-callback';
     
     if (currentUser != null) {
       // Link Google via Supabase OAuth flow to avoid token nonce issues on iOS.

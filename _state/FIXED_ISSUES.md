@@ -1,6 +1,82 @@
 # Fixed Issues Archive
 
 This document tracks issues that have been resolved, providing historical context for fixes and debugging patterns.
+
+## January 24, 2026
+
+### Critical Issue #1: Steam User Not Appearing on Leaderboard ✅
+**Problem:** New user uploaded Steam profile but doesn't appear on StatusXP leaderboard (Steam-only user).
+
+**Root Cause:** Leaderboard population requires:
+- `show_on_leaderboard = true` flag (default for new users)
+- `merged_into_user_id IS NULL`
+- Achievements with `include_in_score = true`
+- `refresh_statusxp_leaderboard()` must be called after sync
+
+**Status:** System already configured correctly. Sync services automatically call `refresh_statusxp_leaderboard()` after syncing. User should appear on leaderboard after their first successful Steam sync completes.
+
+---
+
+### Critical Issue #2: Steam Sync Screen Text Visibility ✅
+**Problem:** Light text on white background in Steam API instruction section was unreadable.
+
+**Solution:** 
+- Updated `lib/ui/widgets/platform_sync_widget.dart`
+- Changed text color to `Colors.grey[800]` for high contrast
+- Added explicit font size (14px) and line height (1.4)
+- Made bullet points bold and more visible
+
+**Files Modified:**
+- `lib/ui/widgets/platform_sync_widget.dart` (line 222-236)
+
+---
+
+### Critical Issue #3: Password Reset Feature ✅
+**Problem:** No password reset functionality for users who forgot their password.
+
+**Solution Implemented:**
+1. **UI Enhancement:**
+   - Added "Forgot your password?" link on main sign-in screen (visible to all users including OAuth users)
+   - Added "Forgot Password?" link in email/password sheet (for convenience)
+   - Shows dialog to collect email address and send reset link
+
+2. **Backend Already Existed:**
+   - `lib/data/auth/auth_service.dart` has `resetPassword()` method
+   - Uses Supabase's `resetPasswordForEmail`
+   - Deep link configured: `com.statusxp.statusxp://reset-password`
+
+3. **Password Reset Screen:**
+   - `lib/ui/screens/auth/reset_password_screen.dart` (already existed)
+   - Complete password reset UI with validation
+   - Password visibility toggles
+   - Proper error handling
+
+4. **Deep Link Configuration:**
+   - iOS: `com.statusxp.statusxp` scheme in Info.plist ✅
+   - Android: Intent filters in AndroidManifest.xml ✅
+   - Supabase: Redirect URL configured ✅
+   - Router: `/reset-password` route in app_router.dart ✅
+   - Main.dart: Deep link handling implemented ✅
+
+**Files Modified:**
+- `lib/ui/screens/auth/sign_in_screen.dart` (added forgot password UI and dialog method)
+
+**Configuration Verified:**
+- Supabase redirect URLs include `com.statusxp.statusxp://reset-password`
+- iOS Info.plist has URL scheme configured
+- Android AndroidManifest.xml has intent filters
+- Deep link handling works on iOS, Android, and Web
+
+**User Flow:**
+1. User clicks "Forgot your password?" on sign-in screen
+2. Enters email in dialog
+3. Receives password reset email from Supabase
+4. Clicks link in email → App opens to reset screen (deep link)
+5. Enters new password → Password updated
+6. User signs out → Signs back in with new password
+
+---
+
 ## January 21, 2026
 **FIXED:**
 ✅ Hardcoded user ID - NOW FIXED! Uses `currentUserIdProvider` which pulls from Supabase auth
@@ -138,3 +214,9 @@ Many of these fixes follow a common pattern related to the V2 schema migration:
  1. ✅ **Sync restart function** (Jan 22, 2026) - Implemented SyncResumeService that automatically detects and resumes interrupted syncs on app startup. Uses 5-minute timestamp threshold to distinguish truly interrupted syncs from active ones. Handles 409 conflicts by resetting sync status with helpful error message. File: lib/services/sync_resume_service.dart
 2. ✅ **My Games Last Trophy sorting** (Jan 22, 2026) - Fixed get_user_grouped_games function to include last_played_at and last_trophy_earned_at in platforms JSON. Migration: 20260122000006_fix_last_trophy_sorting.sql
  
+ 1. ✅ Status Poster optimization and ranks (Jan 22, 2026) - Parallel loading, accurate rank display, centered rank badges
+2. ✅ Choose Background scrolling (Jan 22, 2026) - Dynamic GridView height calculation for full scrolling
+3. ✅ Sync restart function (Jan 22, 2026) - SyncResumeService with timestamp-based detection and 409 conflict handling
+4. ✅ My Games Last Trophy sorting (Jan 22, 2026) - Fixed get_user_grouped_games function. Migration: 20260122000006_fix_last_trophy_sorting.sql
+5. ✅ Updates section in settings (Jan 22, 2026) - Created app_updates table and UpdatesScreen. Migration: 20260122000007_create_app_updates_table.sql
+

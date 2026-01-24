@@ -102,9 +102,10 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
   - Build command: `flutter build web --release --no-tree-shake-icons`
   - Dart-defines inject Supabase URL/keys at build time
 - **Mobile deployment:**
-  - iOS: Manual via Xcode → App Store Connect
+  - iOS: **CRITICAL**: Must build with `./build-ios.sh` or `flutter build ios --release --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...` BEFORE opening Xcode to archive. Never build directly in Xcode without dart-defines.
   - Android: Manual via Android Studio → Google Play Console
   - Current version: 1.1.6+77
+  - **iOS Build Script**: Use `build-ios.sh` to ensure Supabase credentials are injected properly
 - **Database migrations:**
   - **IMPORTANT**: Old migrations were OUT OF SYNC with live database (as of Jan 21, 2026)
   - **Baseline migration created**: `20260121213830_baseline_from_live.sql` - complete snapshot of production
@@ -236,17 +237,9 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
 **REMAINING ISSUES (CRITICAL)**
 - None currently
 
-**COMPLETED ISSUES:**
-1. ✅ Status Poster optimization and ranks (Jan 22, 2026) - Parallel loading, accurate rank display, centered rank badges
-2. ✅ Choose Background scrolling (Jan 22, 2026) - Dynamic GridView height calculation for full scrolling
-3. ✅ Sync restart function (Jan 22, 2026) - SyncResumeService with timestamp-based detection and 409 conflict handling
-4. ✅ My Games Last Trophy sorting (Jan 22, 2026) - Fixed get_user_grouped_games function. Migration: 20260122000006_fix_last_trophy_sorting.sql
-5. ✅ Updates section in settings (Jan 22, 2026) - Created app_updates table and UpdatesScreen. Migration: 20260122000007_create_app_updates_table.sql
-
 **REMAINING ISSUES (Non-Critical):**
 1. ⚠️ 50+ debug print statements in production code (cleanup item, not a blocker)
-2. ⚠️ Deep link configuration for password reset (UX improvement)
-3. ⚠️ No email verification on signup (acceptable with OAuth, can add later)
+2. ⚠️ No email verification on signup (acceptable with OAuth, can add later)
 
 ## Common Pitfalls & Gotchas
 

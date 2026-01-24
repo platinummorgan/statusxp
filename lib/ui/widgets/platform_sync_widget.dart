@@ -224,8 +224,17 @@ class PlatformSyncWidget extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('• ', style: TextStyle(color: platformColor)),
-                        Expanded(child: Text(desc)),
+                        Text('• ', style: TextStyle(color: platformColor, fontSize: 14, fontWeight: FontWeight.bold)),
+                        Expanded(
+                          child: Text(
+                            desc,
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   )),

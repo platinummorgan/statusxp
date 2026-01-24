@@ -442,6 +442,104 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     }
   }
 
+  /// Show forgot password dialog
+  void _showForgotPasswordDialog(BuildContext parentContext) {
+    final resetEmailController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    
+    showDialog(
+      context: parentContext,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Password'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Enter your email address and we\'ll send you a link to reset your password.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: resetEmailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'Enter your email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(context);
+                // Show loading indicator
+                ScaffoldMessenger.of(parentContext).showSnackBar(
+                  const SnackBar(
+                    content: Text('Sending reset link...'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                
+                try {
+                  // Send password reset email with platform-specific redirect
+                  final redirectUrl = kIsWeb 
+                      ? 'https://statusxp.com/reset-password'
+                      : 'com.statusxp.statusxp://reset-password';
+                  await Supabase.instance.client.auth.resetPasswordForEmail(
+                    resetEmailController.text.trim(),
+                    redirectTo: redirectUrl,
+                  );
+                  
+                  if (parentContext.mounted) {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('✅ Password reset link sent! Check your email.'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 5),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (parentContext.mounted) {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to send reset link: $e'),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 5),
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('Send Reset Link'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -545,6 +643,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                   backgroundColor: Colors.black87,
                   textColor: Colors.white,
                   onTap: _isLoading ? null : _showEmailPasswordForm,
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Forgot Password Link (visible to all users)
+                TextButton(
+                  onPressed: _isLoading ? null : () => _showForgotPasswordDialog(context),
+                  child: const Text(
+                    'Forgot your password?',
+                    style: TextStyle(
+                      color: accentPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
                 
                 // Loading indicator
@@ -760,6 +873,103 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
     super.dispose();
   }
 
+  void _showForgotPasswordDialog(BuildContext parentContext) {
+    final resetEmailController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    
+    showDialog(
+      context: parentContext,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Password'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Enter your email address and we\'ll send you a link to reset your password.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: resetEmailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'Enter your email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your email';
+                  }
+                  if (!value.contains('@')) {
+                    return 'Please enter a valid email';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(context);
+                // Show loading indicator
+                ScaffoldMessenger.of(parentContext).showSnackBar(
+                  const SnackBar(
+                    content: Text('Sending reset link...'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                
+                try {
+                  // Send password reset email with platform-specific redirect
+                  final redirectUrl = kIsWeb 
+                      ? 'https://statusxp.com/reset-password'
+                      : 'com.statusxp.statusxp://reset-password';
+                  await Supabase.instance.client.auth.resetPasswordForEmail(
+                    resetEmailController.text.trim(),
+                    redirectTo: redirectUrl,
+                  );
+                  
+                  if (parentContext.mounted) {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('✅ Password reset link sent! Check your email.'),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 5),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (parentContext.mounted) {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to send reset link: $e'),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 5),
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            child: const Text('Send Reset Link'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -909,6 +1119,26 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                 ),
               ),
               const SizedBox(height: 16),
+              
+              // Forgot Password (only show in login mode)
+              if (_isLoginMode)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      // Show forgot password dialog
+                      Navigator.pop(context); // Close current sheet
+                      _showForgotPasswordDialog(context);
+                    },
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        color: accentPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
               
               // Toggle between sign in / sign up
               TextButton(
