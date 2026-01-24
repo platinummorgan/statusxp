@@ -72,41 +72,36 @@ class SupabaseDashboardRepository {
 
     final achievementsCount = achievementsResponse.count;
 
-    // Get StatusXP from user_games table which has the calculated statusxp_earned field
+    // Get game data from user_games table
     final gamesResponse = await _client
         .from('user_games')
-        .select('platform_id, statusxp_earned, completion_percent, platinum_trophies, bronze_trophies, silver_trophies, gold_trophies, earned_trophies')
+        .select('platform_id, current_score, platinum_trophies, bronze_trophies, silver_trophies, gold_trophies')
         .eq('user_id', userId)
         .inFilter('platform_id', platformIds);
 
     final games = gamesResponse as List;
     final gamesCount = games.length;
     
-    // Sum up StatusXP and other stats
+    // Calculate StatusXP and other stats based on platform
     double platformStatusXP = 0.0;
     int platinums = 0;
     int gamerscore = 0;
     
     for (final game in games) {
-      // Use the pre-calculated statusxp_earned from user_games
-      final statusXpEarned = ((game['statusxp_earned'] as num?)?.toDouble() ?? 0.0);
-      platformStatusXP += statusXpEarned;
-      
       if (platformId == 1) {
-        // PSN: Count platinums
-        platinums += (game['platinum_trophies'] as int?) ?? 0;
-      } else if (xboxPlatforms != null) {
-        // Xbox: Sum gamerscore (stored in user_progress)
-        // Need to get current_score from user_progress for Xbox
-        final progressResponse = await _client
-            .from('user_progress')
-            .select('current_score')
-            .eq('user_id', userId)
-            .eq('platform_id', game['platform_id'])
-            .maybeSingle();
+        // PSN: Calculate StatusXP from trophy counts
+        final bronze = (game['bronze_trophies'] as int?) ?? 0;
+        final silver = (game['silver_trophies'] as int?) ?? 0;
+        final gold = (game['gold_trophies'] as int?) ?? 0;
+        final platinum = (game['platinum_trophies'] as int?) ?? 0;
         
-        if (progressResponse != null) {
-          final score = (progressResponse['current_score'] as int?) ?? 0;
+        platformStatusXP += (bronze * 25) + (silver * 50) + (gold * 100) + (platinum * 1000);
+        platinums += platinum;
+      } else {
+        // Xbox/Steam: Use current_score (gamerscore or achievement points)
+        final score = (game['current_score'] as int?) ?? 0;
+        platformStatusXP += score.toDouble();
+        if (xboxPlatforms != null) {
           gamerscore += score;
         }
       }
