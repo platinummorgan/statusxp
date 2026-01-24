@@ -14,7 +14,6 @@ import 'package:statusxp/theme/colors.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Status Poster Screen
 /// 

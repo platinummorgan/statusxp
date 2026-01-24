@@ -298,35 +298,27 @@ final leaderboardRanksProvider = FutureProvider<Map<String, int?>>((ref) async {
   
   // Calculate Global rank
   int? globalRank;
-  if (results[0] is List) {
-    final globalList = results[0] as List;
-    final globalIndex = globalList.indexWhere((row) => row['user_id'] == userId);
-    globalRank = globalIndex >= 0 ? globalIndex + 1 : null;
-  }
+  final globalList = results[0] as List;
+  final globalIndex = globalList.indexWhere((row) => row['user_id'] == userId);
+  globalRank = globalIndex >= 0 ? globalIndex + 1 : null;
   
   // Calculate PSN rank
   int? psnRank;
-  if (results[1] is List) {
-    final psnList = results[1] as List;
-    final psnIndex = psnList.indexWhere((row) => row['user_id'] == userId);
-    psnRank = psnIndex >= 0 ? psnIndex + 1 : null;
-  }
+  final psnList = results[1] as List;
+  final psnIndex = psnList.indexWhere((row) => row['user_id'] == userId);
+  psnRank = psnIndex >= 0 ? psnIndex + 1 : null;
   
   // Calculate Xbox rank
   int? xboxRank;
-  if (results[2] is List) {
-    final xboxList = results[2] as List;
-    final xboxIndex = xboxList.indexWhere((row) => row['user_id'] == userId);
-    xboxRank = xboxIndex >= 0 ? xboxIndex + 1 : null;
-  }
+  final xboxList = results[2] as List;
+  final xboxIndex = xboxList.indexWhere((row) => row['user_id'] == userId);
+  xboxRank = xboxIndex >= 0 ? xboxIndex + 1 : null;
   
   // Calculate Steam rank
   int? steamRank;
-  if (results[3] is List) {
-    final steamList = results[3] as List;
-    final steamIndex = steamList.indexWhere((row) => row['user_id'] == userId);
-    steamRank = steamIndex >= 0 ? steamIndex + 1 : null;
-  }
+  final steamList = results[3] as List;
+  final steamIndex = steamList.indexWhere((row) => row['user_id'] == userId);
+  steamRank = steamIndex >= 0 ? steamIndex + 1 : null;
   
   return {
     'global': globalRank,

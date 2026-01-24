@@ -2,10 +2,10 @@ import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for fetching dashboard statistics from Supabase (V2 Schema)
-class SupabaseDashboardRepository {
+class SupabaseDashboardRepositoryV2 {
   final SupabaseClient _client;
 
-  SupabaseDashboardRepository(this._client);
+  SupabaseDashboardRepositoryV2(this._client);
 
   /// Fetches dashboard statistics for a user
   /// 
@@ -24,7 +24,7 @@ class SupabaseDashboardRepository {
     final psnStats = results[1] as PlatformStats;
     final xboxStats = results[2] as PlatformStats;
     final steamStats = results[3] as PlatformStats;
-    final profile = results[4];
+    final profile = results[4] as Map<String, dynamic>;
 
     return DashboardStats(
       displayName: profile['displayName'] as String,
