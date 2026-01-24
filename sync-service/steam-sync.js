@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { uploadExternalIcon } from './icon-proxy-utils.js';
+import { uploadExternalIcon, uploadGameCover } from './icon-proxy-utils.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -363,10 +363,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             if (existingGame) {
               // Update cover if we don't have one
               if (!existingGame.cover_url) {
+                const externalCoverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`;
+                const proxiedCoverUrl = await uploadGameCover(externalCoverUrl, platformId, game.appid.toString(), supabase);
+                
                 const { error: updateError } = await supabase
                   .from('games')
                   .update({ 
-                    cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`
+                    cover_url: proxiedCoverUrl || externalCoverUrl
                   })
                   .eq('platform_id', platformId)
                   .eq('platform_game_id', existingGame.platform_game_id);
@@ -378,13 +381,16 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               gameTitle = existingGame;
             } else {
               // Upsert game with V2 composite key (race-condition safe)
+              const externalCoverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`;
+              const proxiedCoverUrl = await uploadGameCover(externalCoverUrl, platformId, game.appid.toString(), supabase);
+              
               const { data: newGame, error: insertError } = await supabase
                 .from('games')
                 .upsert({
                   platform_id: platformId,
                   platform_game_id: game.appid.toString(),
                   name: trimmedName,
-                  cover_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`,
+                  cover_url: proxiedCoverUrl || externalCoverUrl,
                   metadata: {
                     steam_app_id: game.appid,
                     platform_version: 'Steam',

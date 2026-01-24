@@ -68,3 +68,68 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
     return null;
   }
 }
+
+/**
+ * Download external game cover and upload to Supabase Storage
+ * @param {string} externalUrl - The external cover URL
+ * @param {number} platformId - The platform ID
+ * @param {string} gameId - The game ID
+ * @param {object} supabase - Supabase client
+ * @returns {Promise<string|null>} - The proxied URL or null if failed
+ */
+export async function uploadGameCover(externalUrl, platformId, gameId, supabase) {
+  // Skip if already a Supabase URL
+  if (!externalUrl || externalUrl.includes('supabase')) {
+    return externalUrl;
+  }
+
+  // Skip if not a valid HTTP URL
+  if (!externalUrl.startsWith('http')) {
+    return externalUrl;
+  }
+
+  try {
+    // Download the image
+    const response = await fetch(externalUrl);
+    if (!response.ok) {
+      console.error(`[COVER PROXY] Failed to download ${platformId}/${gameId} from ${externalUrl}: HTTP ${response.status}`);
+      return null;
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Determine file extension
+    const contentType = response.headers.get('content-type') || 'image/png';
+    let extension = 'png';
+    if (contentType.includes('jpeg') || contentType.includes('jpg')) extension = 'jpg';
+    else if (contentType.includes('gif')) extension = 'gif';
+    else if (contentType.includes('webp')) extension = 'webp';
+    
+    // Create filename: game-covers/{platform_id}/{game_id}.ext
+    const filename = `${platformId}/${gameId}.${extension}`;
+    
+    // Upload to Supabase Storage (game-covers bucket)
+    const { error } = await supabase.storage
+      .from('game-covers')
+      .upload(filename, arrayBuffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (error) {
+      console.error(`[COVER PROXY] Failed to upload ${platformId}/${gameId} to storage:`, error.message);
+      return null;
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('game-covers')
+      .getPublicUrl(filename);
+
+    console.log(`[COVER PROXY] ✅ Successfully proxied ${platformId}/${gameId}`);
+    return publicUrl;
+  } catch (error) {
+    console.error(`[COVER PROXY] Exception for ${platformId}/${gameId}:`, error.message);
+    return null;
+  }
+}

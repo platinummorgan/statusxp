@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { uploadGameCover } from './icon-proxy-utils.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -637,9 +638,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                   platform_game_id: existingGameById.platform_game_id, 
                   titleId: title.titleId
                 });
+                
+                const proxiedCoverUrl = await uploadGameCover(title.displayImage, platformId, title.titleId, supabase);
+                
                 const { error: updateError } = await supabase
                   .from('games')
-                  .update({ cover_url: title.displayImage })
+                  .update({ cover_url: proxiedCoverUrl || title.displayImage })
                   .eq('platform_id', platformId)
                   .eq('platform_game_id', existingGameById.platform_game_id);
                 
@@ -651,13 +655,17 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               gameTitle = existingGameById;
             } else {
               // Not found - upsert game with V2 composite key (race-condition safe)
+              const proxiedCoverUrl = title.displayImage 
+                ? await uploadGameCover(title.displayImage, platformId, title.titleId, supabase)
+                : null;
+              
               const { data: newGame, error: insertError } = await supabase
                 .from('games')
                 .upsert({
                   platform_id: platformId,
                   platform_game_id: title.titleId,
                   name: trimmedName,
-                  cover_url: title.displayImage,
+                  cover_url: proxiedCoverUrl || title.displayImage,
                   metadata: { 
                     xbox_title_id: title.titleId,
                     platform_version: platformVersion

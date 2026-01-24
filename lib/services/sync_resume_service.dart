@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/psn_service.dart';
 import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
-import 'package:statusxp/utils/statusxp_logger.dart';
 
 /// Service that checks for interrupted syncs on app startup and resumes them.
 /// 
@@ -108,7 +107,7 @@ class SyncResumeService {
 
   /// Resume PSN sync without throwing errors to the UI.
   /// 
-  /// If sync is already running (409 error), resets status to allow fresh start.
+  /// If sync is already running (409 error), leaves it alone since it's working.
   Future<void> _resumePSNSync() async {
     try {
       await _psnService.continueSync();
@@ -116,9 +115,13 @@ class SyncResumeService {
     } catch (e) {
       final errorStr = e.toString();
       
-      // Handle 409 Conflict (sync already running) by resetting status
+      // Handle 409 Conflict (sync already running) - this is actually fine!
       if (errorStr.contains('409') || errorStr.contains('already in progress')) {
-        print('⚠️ PSN sync conflict detected - resetting status to allow manual restart');
+        print('ℹ️ PSN sync is already running - no action needed');
+        // Don't reset status - the sync is actually working
+      } else {
+        print('⚠️ Failed to resume PSN sync: $e');
+        // Only reset status for actual errors, not for "already running"
         try {
           await _client.from('profiles').update({
             'psn_sync_status': 'stopped',
@@ -127,8 +130,6 @@ class SyncResumeService {
         } catch (resetError) {
           print('⚠️ Failed to reset PSN sync status: $resetError');
         }
-      } else {
-        print('⚠️ Failed to resume PSN sync: $e');
       }
       // Don't rethrow - allow app to continue even if resume fails
     }
@@ -136,7 +137,7 @@ class SyncResumeService {
 
   /// Resume Xbox sync without throwing errors to the UI.
   /// 
-  /// If sync is already running (409 error), resets status to allow fresh start.
+  /// If sync is already running (409 error), leaves it alone since it's working.
   Future<void> _resumeXboxSync() async {
     try {
       await _xboxService.continueSync();
@@ -144,9 +145,13 @@ class SyncResumeService {
     } catch (e) {
       final errorStr = e.toString();
       
-      // Handle 409 Conflict (sync already running) by resetting status
+      // Handle 409 Conflict (sync already running) - this is actually fine!
       if (errorStr.contains('409') || errorStr.contains('already in progress')) {
-        print('⚠️ Xbox sync conflict detected - resetting status to allow manual restart');
+        print('ℹ️ Xbox sync is already running - no action needed');
+        // Don't reset status - the sync is actually working
+      } else {
+        print('⚠️ Failed to resume Xbox sync: $e');
+        // Only reset status for actual errors, not for "already running"
         try {
           await _client.from('profiles').update({
             'xbox_sync_status': 'stopped',
@@ -155,8 +160,6 @@ class SyncResumeService {
         } catch (resetError) {
           print('⚠️ Failed to reset Xbox sync status: $resetError');
         }
-      } else {
-        print('⚠️ Failed to resume Xbox sync: $e');
       }
       // Don't rethrow - allow app to continue even if resume fails
     }

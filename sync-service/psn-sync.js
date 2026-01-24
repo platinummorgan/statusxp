@@ -6,7 +6,7 @@
 // - user_progress updated ONLY after trophies successfully fetched
 
 import { createClient } from '@supabase/supabase-js';
-import { uploadExternalIcon } from './icon-proxy-utils.js';
+import { uploadExternalIcon, uploadGameCover } from './icon-proxy-utils.js';
 import { initIGDBValidator } from './igdb-validator.js';
 
 const supabase = createClient(
@@ -122,11 +122,17 @@ function computeStatusXpFields({ rarityPercent, isPlatinum }) {
 async function upsertGame({ platformId, platformVersion, title }) {
   const trimmedTitle = (title.trophyTitleName || '').trim();
 
+  // Proxy the game cover through Supabase Storage
+  const externalCoverUrl = title.trophyTitleIconUrl || null;
+  const proxiedCoverUrl = externalCoverUrl
+    ? await uploadGameCover(externalCoverUrl, platformId, title.npCommunicationId, supabase)
+    : null;
+
   const payload = {
     platform_id: platformId,
     platform_game_id: title.npCommunicationId,
     name: trimmedTitle || 'Unknown Title',
-    cover_url: title.trophyTitleIconUrl || null,
+    cover_url: proxiedCoverUrl || externalCoverUrl,
     metadata: {
       psn_np_communication_id: title.npCommunicationId,
       platform_version: platformVersion,
