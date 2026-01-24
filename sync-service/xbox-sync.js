@@ -783,6 +783,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
               const achievementsData = await achievementsResponse.json();
               const pageAchievements = achievementsData?.achievements || [];
+              
+              // LOG FIRST ACHIEVEMENT TO SEE FULL STRUCTURE
+              if (pageCount === 0 && pageAchievements.length > 0) {
+                console.log(`[XBOX API DEBUG] First achievement structure for ${title.name}:`, JSON.stringify(pageAchievements[0], null, 2));
+              }
+              
               achievementsForTitle.push(...pageAchievements);
               
               continuationToken = achievementsData?.pagingInfo?.continuationToken || null;
