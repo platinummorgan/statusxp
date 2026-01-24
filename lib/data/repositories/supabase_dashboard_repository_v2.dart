@@ -72,41 +72,43 @@ class SupabaseDashboardRepository {
 
     final achievementsCount = achievementsResponse.count;
 
-    // Get game count and calculate StatusXP for platform using V2 user_progress
+    // Get StatusXP from user_games table which has the calculated statusxp_earned field
     final gamesResponse = await _client
-        .from('user_progress')
-        .select('platform_game_id, current_score, metadata')
+        .from('user_games')
+        .select('platform_id, statusxp_earned, completion_percent, platinum_trophies, bronze_trophies, silver_trophies, gold_trophies, earned_trophies')
         .eq('user_id', userId)
         .inFilter('platform_id', platformIds);
 
-    final gamesCount = (gamesResponse as List).length;
+    final games = gamesResponse as List;
+    final gamesCount = games.length;
     
-    // Calculate StatusXP based on platform
+    // Sum up StatusXP and other stats
     double platformStatusXP = 0.0;
     int platinums = 0;
     int gamerscore = 0;
     
-    for (final game in gamesResponse) {
-      final metadata = game['metadata'] as Map<String, dynamic>?;
+    for (final game in games) {
+      // Use the pre-calculated statusxp_earned from user_games
+      final statusXpEarned = ((game['statusxp_earned'] as num?)?.toDouble() ?? 0.0);
+      platformStatusXP += statusXpEarned;
       
       if (platformId == 1) {
-        // PSN: Calculate from trophy breakdown
-        final bronze = (metadata?['bronze_trophies'] as int?) ?? 0;
-        final silver = (metadata?['silver_trophies'] as int?) ?? 0;
-        final gold = (metadata?['gold_trophies'] as int?) ?? 0;
-        final platinum = (metadata?['platinum_trophies'] as int?) ?? 0;
-        
-        platformStatusXP += bronze * 25 + silver * 50 + gold * 100 + platinum * 1000;
-        platinums += platinum;
+        // PSN: Count platinums
+        platinums += (game['platinum_trophies'] as int?) ?? 0;
       } else if (xboxPlatforms != null) {
-        // Xbox: Use gamerscore
-        final score = (game['current_score'] as int?) ?? 0;
-        gamerscore += score;
-        platformStatusXP += score.toDouble();
-      } else {
-        // Steam: Achievement count × 25
-        final achievementCount = (game['achievements_earned'] as int?) ?? 0;
-        platformStatusXP += achievementCount * 25;
+        // Xbox: Sum gamerscore (stored in user_progress)
+        // Need to get current_score from user_progress for Xbox
+        final progressResponse = await _client
+            .from('user_progress')
+            .select('current_score')
+            .eq('user_id', userId)
+            .eq('platform_id', game['platform_id'])
+            .maybeSingle();
+        
+        if (progressResponse != null) {
+          final score = (progressResponse['current_score'] as int?) ?? 0;
+          gamerscore += score;
+        }
       }
     }
 
