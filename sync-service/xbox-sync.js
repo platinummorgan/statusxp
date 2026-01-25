@@ -104,30 +104,41 @@ function logMemory(label) {
 
 function mapXboxPlatformToPlatformId(devices) {
   if (!devices || !Array.isArray(devices) || devices.length === 0) {
-    return { platformId: 11, platformVersion: 'XboxOne' }; // Default to Xbox One
+    return { platformId: 11, platformVersion: 'XboxOne', isPCOnly: false }; // Default to Xbox One
   }
   
   const deviceTypes = devices.map(d => d.toLowerCase());
   
+  // Check if PC-only (Xbox achievements earned on PC via Game Pass/Microsoft Store)
+  const hasConsole = deviceTypes.some(d => 
+    d.includes('xbox') && d !== 'pc'
+  );
+  const isPCOnly = !hasConsole && deviceTypes.includes('pc');
+  
   // Check in order: newest to oldest (same as PSN)
   // Xbox API returns 'XboxSeries' for both Series S and X
   if (deviceTypes.includes('xboxseriess') || deviceTypes.includes('xboxseriesx') || deviceTypes.includes('xboxseries')) {
-    return { platformId: 12, platformVersion: 'XboxSeriesX' };
+    return { platformId: 12, platformVersion: 'XboxSeriesX', isPCOnly };
   }
   if (deviceTypes.includes('xboxone')) {
-    return { platformId: 11, platformVersion: 'XboxOne' };
+    return { platformId: 11, platformVersion: 'XboxOne', isPCOnly };
   }
   if (deviceTypes.includes('xbox360')) {
-    return { platformId: 10, platformVersion: 'Xbox360' };
+    return { platformId: 10, platformVersion: 'Xbox360', isPCOnly };
   }
   
-  // Default to Xbox One
-  return { platformId: 11, platformVersion: 'XboxOne' };
+  // PC-only Xbox achievements default to Xbox One platform
+  return { platformId: 11, platformVersion: 'XboxOne', isPCOnly };
 }
 
-function validateXboxPlatformMapping(devices, platformId, gameName, titleId) {
+function validateXboxPlatformMapping(devices, platformId, gameName, titleId, isPCOnly = false) {
   if (!devices || !Array.isArray(devices)) {
     // No device info available, skip validation
+    return true;
+  }
+  
+  // Skip validation for PC-only Xbox achievements
+  if (isPCOnly) {
     return true;
   }
   
@@ -544,11 +555,16 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const platformMapping = mapXboxPlatformToPlatformId(title.devices);
             let platformId = platformMapping.platformId;
             let platformVersion = platformMapping.platformVersion;
+            let isPCOnly = platformMapping.isPCOnly;
             
-            console.log(`📱 Platform detected: ${title.devices?.join(', ')} → ${platformVersion} (ID ${platformId})`);
+            if (isPCOnly) {
+              console.log(`💻 PC-only game: ${title.devices?.join(', ')} → ${platformVersion} (ID ${platformId})`);
+            } else {
+              console.log(`📱 Platform detected: ${title.devices?.join(', ')} → ${platformVersion} (ID ${platformId})`);
+            }
             
             // Validate platform mapping
-            if (!validateXboxPlatformMapping(title.devices, platformId, title.name, title.titleId)) {
+            if (!validateXboxPlatformMapping(title.devices, platformId, title.name, title.titleId, isPCOnly)) {
               console.error(`⚠️  Skipping game due to platform mismatch: ${title.name}`);
               continue;
             }
