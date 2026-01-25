@@ -38,19 +38,22 @@ class SupabaseDashboardRepository {
     );
   }
 
-  /// Gets total StatusXP from leaderboard_cache (same source as leaderboard)
+  /// Gets total StatusXP by summing all platforms from user_progress
   Future<double> _getStatusXPTotal(String userId) async {
     final response = await _client
-        .from('leaderboard_cache')
-        .select('total_statusxp')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .from('user_progress')
+        .select('current_score')
+        .eq('user_id', userId);
 
-    if (response == null) {
+    if (response.isEmpty) {
       return 0.0;
     }
 
-    return ((response['total_statusxp'] as num?)?.toDouble() ?? 0.0);
+    double total = 0.0;
+    for (final row in response) {
+      total += ((row['current_score'] as num?) ?? 0).toDouble();
+    }
+    return total;
   }
 
   /// Gets platform-specific stats
