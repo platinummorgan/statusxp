@@ -73,23 +73,11 @@ class SupabaseDashboardRepository {
 
     final achievementsCount = achievementsResponse.count ?? 0;
 
-    // Get distinct game count from user_achievements to avoid missing user_progress rows
-    final gamesResponse = await _client
-      .from('user_achievements')
-      .select('platform_game_id')
-      .eq('user_id', userId)
-      .inFilter('platform_id', platformIds);
-
-    final gamesCount = (gamesResponse as List)
-        .map((row) => row['platform_game_id'])
-        .where((id) => id != null)
-        .toSet()
-        .length;
-    
     // Calculate StatusXP using V2 function with stack multipliers
     double platformStatusXP = 0.0;
     int platinums = 0;
     int gamerscore = 0;
+    int platformGamesCount = 0;
     
     try {
       // Get StatusXP from V2 calculation function
@@ -126,6 +114,7 @@ class SupabaseDashboardRepository {
           // Only count this game if it belongs to one of the requested platforms
           if (gamePlatformId != null && effectiveXp != null && platformIds.contains(gamePlatformId)) {
             platformStatusXP += effectiveXp;
+            platformGamesCount += 1;
             print('[DASHBOARD] Game platform_id=$gamePlatformId added $effectiveXp to StatusXP, total now: $platformStatusXP');
           }
         }
@@ -137,6 +126,7 @@ class SupabaseDashboardRepository {
       platformStatusXP = 0.0;
     }
     
+    final gamesCount = platformGamesCount;
     print('[DASHBOARD] Final platformStatusXP for platforms $platformIds: $platformStatusXP');
     
     // Get platform-specific stats
