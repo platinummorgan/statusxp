@@ -110,7 +110,8 @@ function mapXboxPlatformToPlatformId(devices) {
   const deviceTypes = devices.map(d => d.toLowerCase());
   
   // Check in order: newest to oldest (same as PSN)
-  if (deviceTypes.includes('xboxseriess') || deviceTypes.includes('xboxseriesx')) {
+  // Xbox API returns 'XboxSeries' for both Series S and X
+  if (deviceTypes.includes('xboxseriess') || deviceTypes.includes('xboxseriesx') || deviceTypes.includes('xboxseries')) {
     return { platformId: 12, platformVersion: 'XboxSeriesX' };
   }
   if (deviceTypes.includes('xboxone')) {
@@ -137,7 +138,7 @@ function validateXboxPlatformMapping(devices, platformId, gameName, titleId) {
   const platformMap = {
     10: 'xbox360',
     11: 'xboxone',
-    12: ['xboxseriess', 'xboxseriesx']
+    12: ['xboxseriess', 'xboxseriesx', 'xboxseries'] // Xbox API returns 'XboxSeries' for both S and X
   };
   
   const assignedPlatformDevices = platformMap[platformId];
