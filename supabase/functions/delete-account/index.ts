@@ -61,8 +61,7 @@ serve(async (req) => {
     await supabaseAdmin.from('psn_sync_logs').delete().eq('user_id', userId);
     await supabaseAdmin.from('xbox_sync_logs').delete().eq('user_id', userId);
     
-    // 3. Delete display case and flex room
-    await supabaseAdmin.from('display_case_items').delete().eq('user_id', userId);
+    // 3. Delete flex room data
     await supabaseAdmin.from('flex_room_data').delete().eq('profile_id', userId); // Use profile_id
     
     // 4. Delete meta achievements
