@@ -54,6 +54,148 @@ console.log('XBOX_CLIENT_ID present:', !!process.env.XBOX_CLIENT_ID);
 console.log('SYNC_SERVICE_SECRET present:', !!process.env.SYNC_SERVICE_SECRET);
 console.log('SYNC_SERVICE_SECRET value:', process.env.SYNC_SERVICE_SECRET ? '[SET]' : '[NOT SET]');
 
+let recoveryRunning = false;
+
+async function resumeStuckSyncs() {
+  if (recoveryRunning) return;
+  recoveryRunning = true;
+
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const cutoffIso = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+    // PSN
+    const { data: psnUsers } = await supabase
+      .from('profiles')
+      .select('id, psn_account_id, psn_access_token, psn_refresh_token, psn_sync_status, updated_at')
+      .eq('psn_sync_status', 'syncing')
+      .lt('updated_at', cutoffIso)
+      .not('psn_account_id', 'is', null)
+      .not('psn_refresh_token', 'is', null);
+
+    if (psnUsers?.length) {
+      const mod = await import('./psn-sync.js');
+      const { syncPSNAchievements } = mod;
+
+      for (const user of psnUsers) {
+        const { data: logRow } = await supabase
+          .from('psn_sync_logs')
+          .insert({
+            user_id: user.id,
+            sync_type: 'full',
+            status: 'syncing',
+            started_at: new Date().toISOString(),
+          })
+          .select('id')
+          .single();
+
+        if (!logRow?.id) continue;
+
+        syncPSNAchievements(
+          user.id,
+          user.psn_account_id,
+          user.psn_access_token,
+          user.psn_refresh_token,
+          logRow.id,
+          { batchSize: process.env.BATCH_SIZE, maxConcurrent: process.env.MAX_CONCURRENT }
+        ).catch((err) => {
+          console.error('PSN recovery sync failed:', err);
+        });
+      }
+    }
+
+    // Xbox
+    const { data: xboxUsers } = await supabase
+      .from('profiles')
+      .select('id, xbox_xuid, xbox_user_hash, xbox_access_token, xbox_refresh_token, xbox_sync_status, updated_at')
+      .eq('xbox_sync_status', 'syncing')
+      .lt('updated_at', cutoffIso)
+      .not('xbox_xuid', 'is', null)
+      .not('xbox_user_hash', 'is', null)
+      .not('xbox_access_token', 'is', null);
+
+    if (xboxUsers?.length) {
+      const mod = await import('./xbox-sync.js');
+      const { syncXboxAchievements } = mod;
+
+      for (const user of xboxUsers) {
+        const { data: logRow } = await supabase
+          .from('xbox_sync_logs')
+          .insert({
+            user_id: user.id,
+            sync_type: 'full',
+            status: 'syncing',
+            started_at: new Date().toISOString(),
+          })
+          .select('id')
+          .single();
+
+        if (!logRow?.id) continue;
+
+        syncXboxAchievements(
+          user.id,
+          user.xbox_xuid,
+          user.xbox_user_hash,
+          user.xbox_access_token,
+          user.xbox_refresh_token,
+          logRow.id,
+          { batchSize: process.env.BATCH_SIZE, maxConcurrent: process.env.MAX_CONCURRENT }
+        ).catch((err) => {
+          console.error('Xbox recovery sync failed:', err);
+        });
+      }
+    }
+
+    // Steam
+    const { data: steamUsers } = await supabase
+      .from('profiles')
+      .select('id, steam_id, steam_api_key, steam_sync_status, updated_at')
+      .eq('steam_sync_status', 'syncing')
+      .lt('updated_at', cutoffIso)
+      .not('steam_id', 'is', null)
+      .not('steam_api_key', 'is', null);
+
+    if (steamUsers?.length) {
+      const mod = await import('./steam-sync.js');
+      const { syncSteamAchievements } = mod;
+
+      for (const user of steamUsers) {
+        const { data: logRow } = await supabase
+          .from('steam_sync_logs')
+          .insert({
+            user_id: user.id,
+            sync_type: 'full',
+            status: 'syncing',
+            started_at: new Date().toISOString(),
+          })
+          .select('id')
+          .single();
+
+        if (!logRow?.id) continue;
+
+        syncSteamAchievements(
+          user.id,
+          user.steam_id,
+          user.steam_api_key,
+          logRow.id,
+          { batchSize: process.env.BATCH_SIZE, maxConcurrent: process.env.MAX_CONCURRENT }
+        ).catch((err) => {
+          console.error('Steam recovery sync failed:', err);
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Recovery sync failed:', err);
+  } finally {
+    recoveryRunning = false;
+  }
+}
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'StatusXP Sync Service' });
@@ -115,6 +257,11 @@ setInterval(() => {
     }
   }
 }, 60000);
+
+// Resume stuck syncs after restart (Railway resets)
+setTimeout(() => {
+  resumeStuckSyncs();
+}, 15000);
 
 // Xbox sync endpoint - NO TIMEOUT LIMITS!
 app.post('/sync/xbox', checkAuth, async (req, res) => {
