@@ -12,17 +12,8 @@ import 'package:statusxp/ui/widgets/neon_action_chip.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 
 // ============================================================================
-// TODO: ORIGINAL TROPHY ROOM SCREEN - REPLACED BY DISPLAY CASE
+// TODO: ORIGINAL TROPHY ROOM SCREEN
 // ============================================================================
-// This screen was replaced by the new Display Case feature located at:
-// lib/features/display_case/
-//
-// The Display Case provides:
-// - Customizable trophy cabinet with drag-and-drop
-// - Platform themes (PlayStation, Xbox, Steam)
-// - Glass shelf display with grid layout
-// - Trophy icon and game cover display modes
-//
 // This screen can be repurposed for:
 // - Stats-only dashboard showing achievements overview
 // - Trophy analytics and progression tracking

@@ -925,6 +925,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               
               // Calculate base_status_xp using EXPONENTIAL CURVE (floor=0.5, cap=12, p=3)
               const includeInScore = true; // All Xbox achievements count
+              const rawGamerscore = Number(achievement.rewards?.[0]?.value ?? 0);
+              let sanitizedGamerscore = Number.isFinite(rawGamerscore) ? rawGamerscore : 0;
+              if (sanitizedGamerscore < 0 || sanitizedGamerscore > 200) {
+                sanitizedGamerscore = 0;
+              }
               
               let baseStatusXP = 0.5; // Default for NULL rarity (treat as common)
               
@@ -951,11 +956,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 description: achievement.description,
                 icon_url: iconUrl,
                 rarity_global: rarityPercent,
+                score_value: sanitizedGamerscore,
                 base_status_xp: baseStatusXP,
                 is_platinum: false, // Xbox doesn't have platinums
                 include_in_score: includeInScore,
                 metadata: {
-                  gamerscore: achievement.rewards?.[0]?.value || 0,
+                  gamerscore: sanitizedGamerscore,
                   is_secret: achievement.isSecret || false,
                   platform_version: platformVersion,
                   is_dlc: isDLC,
@@ -1124,6 +1130,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 // For now, marking all as base game (is_dlc = false)
                 const isDLC = false;
                 const dlcName = null;
+                const rawGamerscore = Number(achievement.rewards?.[0]?.value ?? 0);
+                let sanitizedGamerscore = Number.isFinite(rawGamerscore) ? rawGamerscore : 0;
+                if (sanitizedGamerscore < 0 || sanitizedGamerscore > 200) {
+                  sanitizedGamerscore = 0;
+                }
 
                 const { data: achievementRecord } = await supabase
                   .from('achievements')
@@ -1132,7 +1143,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                     xbox_achievement_id: achievement.id,
                     name: achievement.name,
                     description: achievement.description,
-                    gamerscore: achievement.rewards?.[0]?.value || 0,
+                    gamerscore: sanitizedGamerscore,
                     icon_locked_url: achievement.mediaAssets?.[0]?.url,
                     icon_unlocked_url: achievement.mediaAssets?.[0]?.url,
                     is_dlc: isDLC,

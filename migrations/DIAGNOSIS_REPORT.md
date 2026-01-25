@@ -200,7 +200,6 @@ achievement_id bigint NOT NULL,
 Some tables reference `auth.users(id)` while others reference `public.profiles(id)`:
 
 **Using auth.users:**
-- display_case_items
 - psn_sync_logs
 - steam_sync_logs
 - trophy_help_requests

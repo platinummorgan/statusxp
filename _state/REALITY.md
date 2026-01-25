@@ -23,7 +23,7 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
   - **31 tables** including:
     - Core: `profiles`, `games`, `platforms`, `achievements`, `user_achievements`
     - Progress: `user_progress`, `user_stats`, `user_sync_history`
-    - Features: `display_case_items`, `flex_room_data`, `meta_achievements`, `user_meta_achievements`
+    - Features: `flex_room_data`, `meta_achievements`, `user_meta_achievements`
     - Sync logs: `psn_sync_logs`, `xbox_sync_logs`, `steam_sync_logs`
     - Premium: `user_premium_status`, `user_ai_credits`, `user_ai_pack_purchases`
     - Social: `achievement_comments`, `trophy_help_requests`, `trophy_help_responses`

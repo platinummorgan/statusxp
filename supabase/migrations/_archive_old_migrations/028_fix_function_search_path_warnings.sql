@@ -40,7 +40,6 @@ ALTER FUNCTION public.check_genre_diversity SET search_path = 'public, pg_temp';
 -- Update Triggers
 ALTER FUNCTION public.update_updated_at_column SET search_path = 'public, pg_temp';
 ALTER FUNCTION public.update_flex_room_data_updated_at SET search_path = 'public, pg_temp';
-ALTER FUNCTION public.update_display_case_items_updated_at SET search_path = 'public, pg_temp';
 
 -- ============================================================================
 -- COMMENTS
