@@ -28,6 +28,13 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
   SyncLimitStatus? _rateLimitStatus;
   Timer? _countdownTimer;
 
+  String _normalizeSyncStatus(String? status, DateTime? lastSyncAt) {
+    if ((status == null || status == 'never_synced') && lastSyncAt != null) {
+      return 'success';
+    }
+    return status ?? 'never_synced';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -70,14 +77,20 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
             .eq('id', userId)
             .single();
 
+        final lastSyncAt = data['last_steam_sync_at'] != null
+            ? DateTime.parse(data['last_steam_sync_at'] as String)
+            : null;
+        final normalizedStatus = _normalizeSyncStatus(
+          data['steam_sync_status'] as String?,
+          lastSyncAt,
+        );
+
         setState(() {
           _steamId = data['steam_id'] as String?;
-          _syncStatus = data['steam_sync_status'] as String?;
+          _syncStatus = normalizedStatus;
           _syncProgress = data['steam_sync_progress'] as int? ?? 0;
-          _lastSyncAt = data['last_steam_sync_at'] != null 
-              ? DateTime.parse(data['last_steam_sync_at'] as String)
-              : null;
-          _isSyncing = _syncStatus == 'syncing' || _syncStatus == 'pending';
+          _lastSyncAt = lastSyncAt;
+          _isSyncing = normalizedStatus == 'syncing' || normalizedStatus == 'pending';
           _isLoading = false;
         });
 
@@ -144,20 +157,27 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
         final userId = supabase.auth.currentUser?.id;
 
         if (userId != null) {
-          final data = await supabase
+            final data = await supabase
               .from('profiles')
-              .select('steam_sync_status, steam_sync_progress')
+              .select('steam_sync_status, steam_sync_progress, last_steam_sync_at')
               .eq('id', userId)
               .single();
 
-          final newStatus = data['steam_sync_status'] as String?;
-          final newProgress = data['steam_sync_progress'] as int? ?? 0;
+            final lastSyncAt = data['last_steam_sync_at'] != null
+              ? DateTime.parse(data['last_steam_sync_at'] as String)
+              : null;
+            final newStatus = _normalizeSyncStatus(
+            data['steam_sync_status'] as String?,
+            lastSyncAt,
+            );
+            final newProgress = data['steam_sync_progress'] as int? ?? 0;
 
           // Only update UI if status or progress actually changed
           if (newStatus != _syncStatus || newProgress != _syncProgress) {
             setState(() {
               _syncStatus = newStatus;
               _syncProgress = newProgress;
+              _lastSyncAt = lastSyncAt;
             });
           }
 
