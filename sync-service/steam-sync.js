@@ -535,16 +535,23 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               const playerAchievement = playerAchievements.find(a => a.apiname === achievement.name);
               const rarityPercent = globalStats[achievement.name] || null;
 
-              // Calculate base_status_xp using NEW 1-10 integer scale
-              let baseStatusXP = 5; // Default for NULL rarity (median value)
+              // Calculate base_status_xp using BANDED RARITY TIERS (5/7/9/12/15)
+              let baseStatusXP = 5; // Default for NULL rarity
               
-              if (rarityPercent !== null) {
-                // Convert rarity % to decimal (0-1 range)
-                const p = Math.max(0.0001, Math.min(0.90, rarityPercent / 100.0));
-                // Apply logarithmic formula: round(clamp(10 * ln(1/p) / ln(1/0.0001), 1, 10))
-                baseStatusXP = Math.round(
-                  Math.max(1, Math.min(10, (10 * Math.log(1 / p)) / Math.log(1 / 0.0001)))
-                );
+              if (rarityPercent !== null && !Number.isNaN(Number(rarityPercent))) {
+                const r = Number(rarityPercent);
+                // Banded scoring based on rarity thresholds
+                if (r > 25) {
+                  baseStatusXP = 5;      // COMMON
+                } else if (r > 10) {
+                  baseStatusXP = 7;      // UNCOMMON
+                } else if (r > 5) {
+                  baseStatusXP = 9;      // RARE
+                } else if (r > 1) {
+                  baseStatusXP = 12;     // VERY_RARE
+                } else {
+                  baseStatusXP = 15;     // ULTRA_RARE
+                }
               }
 
               // Proxy the icon if available

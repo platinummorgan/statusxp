@@ -102,17 +102,23 @@ function computeStatusXpFields({ rarityPercent, isPlatinum }) {
     return { base_status_xp: 0, include_in_score: false, is_platinum: true };
   }
 
-  // Default for NULL rarity (median value)
+  // Default for NULL rarity
   let baseStatusXP = 5;
 
   if (rarityPercent != null && !Number.isNaN(Number(rarityPercent))) {
     const r = Number(rarityPercent);
-    // Convert rarity % to decimal (0-1 range)
-    const p = Math.max(0.0001, Math.min(0.90, r / 100.0));
-    // Apply logarithmic formula: round(clamp(10 * ln(1/p) / ln(1/0.0001), 1, 10))
-    baseStatusXP = Math.round(
-      Math.max(1, Math.min(10, (10 * Math.log(1 / p)) / Math.log(1 / 0.0001)))
-    );
+    // Banded scoring based on rarity thresholds
+    if (r > 25) {
+      baseStatusXP = 5;      // COMMON
+    } else if (r > 10) {
+      baseStatusXP = 7;      // UNCOMMON
+    } else if (r > 5) {
+      baseStatusXP = 9;      // RARE
+    } else if (r > 1) {
+      baseStatusXP = 12;     // VERY_RARE
+    } else {
+      baseStatusXP = 15;     // ULTRA_RARE
+    }
   }
 
   return { base_status_xp: baseStatusXP, include_in_score: true, is_platinum: false };
