@@ -672,13 +672,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       logMemory(`After processing Steam batch ${i / BATCH_SIZE + 1}`);
     }
 
-    // Calculate StatusXP for all achievements and games
-    console.log('Calculating StatusXP values...');
+    // Refresh StatusXP leaderboard for this user only
+    console.log('Running refresh_statusxp_leaderboard_for_user...');
     try {
-      await supabase.rpc('refresh_statusxp_leaderboard');
-      console.log('✅ StatusXP calculation complete');
+      await supabase.rpc('refresh_statusxp_leaderboard_for_user', { p_user_id: userId });
+      console.log('✅ refresh_statusxp_leaderboard_for_user complete');
     } catch (calcError) {
-      console.error('⚠️ StatusXP calculation failed:', calcError);
+      console.error('⚠️ refresh_statusxp_leaderboard_for_user failed:', calcError);
     }
 
     // Mark as completed

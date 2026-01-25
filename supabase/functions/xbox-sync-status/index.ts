@@ -98,10 +98,14 @@ serve(async (req) => {
       }
     }
 
+    const effectiveStatus = (profile.xbox_sync_status && profile.xbox_sync_status !== 'never_synced')
+      ? profile.xbox_sync_status
+      : (profile.last_xbox_sync_at ? 'success' : 'never_synced');
+
     return new Response(
       JSON.stringify({
         isLinked,
-        status: profile.xbox_sync_status || 'never_synced',
+        status: effectiveStatus,
         progress: profile.xbox_sync_progress || 0,
         error: profile.xbox_sync_error,
         lastSyncAt: profile.last_xbox_sync_at,

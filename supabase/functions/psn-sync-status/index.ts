@@ -86,9 +86,13 @@ serve(async (req) => {
       }
     }
 
+    const effectiveStatus = (profile.psn_sync_status && profile.psn_sync_status !== 'never_synced')
+      ? profile.psn_sync_status
+      : (profile.last_psn_sync_at ? 'success' : 'never_synced');
+
     const response = {
       isLinked: !!profile.psn_account_id,
-      status: profile.psn_sync_status,
+      status: effectiveStatus,
       progress: profile.psn_sync_progress,
       error: profile.psn_sync_error,
       lastSyncAt: profile.last_psn_sync_at,

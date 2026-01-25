@@ -150,54 +150,40 @@ class AutoSyncService {
   /// Check if we should sync based on last sync time
   Future<bool> _shouldSync(String prefKey) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final lastSyncStr = prefs.getString(prefKey);
-      
-      debugPrint('📅 Checking $prefKey: $lastSyncStr');
-      
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return false;
+
+      final platform = prefKey.contains('psn') ? 'psn' :
+                      prefKey.contains('xbox') ? 'xbox' : 'steam';
+      final lastField = platform == 'psn' ? 'last_psn_sync_at' :
+                       platform == 'xbox' ? 'last_xbox_sync_at' : 'last_steam_sync_at';
+      final statusField = platform == 'psn' ? 'psn_sync_status' :
+                         platform == 'xbox' ? 'xbox_sync_status' : 'steam_sync_status';
+
+      final response = await _client
+          .from('profiles')
+          .select('$lastField,$statusField')
+          .eq('id', userId)
+          .maybeSingle();
+
+      final status = response?[statusField] as String?;
+      if (status == 'syncing' || status == 'pending' || status == 'cancelling') {
+        debugPrint('⏭️ Skipping $platform auto-sync (status: $status)');
+        return false;
+      }
+
+      final lastSyncStr = response?[lastField] as String?;
+      debugPrint('📅 DB last sync for $platform: $lastSyncStr');
+
       if (lastSyncStr == null) {
-        // Check database as fallback (in case SharedPreferences was cleared)
-        final userId = _client.auth.currentUser?.id;
-        if (userId != null) {
-          final platform = prefKey.contains('psn') ? 'psn' : 
-                          prefKey.contains('xbox') ? 'xbox' : 'steam';
-          final dbField = platform == 'psn' ? 'last_psn_sync_at' :
-                         platform == 'xbox' ? 'last_xbox_sync_at' : 'last_steam_sync_at';
-          
-          try {
-            final response = await _client
-                .from('profiles')
-                .select(dbField)
-                .eq('id', userId)
-                .maybeSingle();
-            
-            final dbLastSync = response?[dbField] as String?;
-            if (dbLastSync != null) {
-              // Found database timestamp - use it and update SharedPreferences
-              final lastSync = DateTime.parse(dbLastSync);
-              final timeSinceSync = DateTime.now().difference(lastSync);
-              
-              // Update SharedPreferences with DB value
-              await prefs.setString(prefKey, dbLastSync);
-              
-              debugPrint('📊 Found DB timestamp: $dbLastSync (${timeSinceSync.inHours}h ${timeSinceSync.inMinutes % 60}m ago)');
-              return timeSinceSync >= _autoSyncInterval;
-            }
-          } catch (e) {
-            debugPrint('Failed to check DB timestamp: $e');
-          }
-        }
-        
-        // Never synced before - trigger sync
-        debugPrint('✅ No previous sync found - should sync');
+        debugPrint('✅ No previous sync found in DB - should sync');
         return true;
       }
-      
+
       final lastSync = DateTime.parse(lastSyncStr);
       final timeSinceSync = DateTime.now().difference(lastSync);
-      
-      debugPrint('⏰ Time since last sync: ${timeSinceSync.inHours}h ${timeSinceSync.inMinutes % 60}m');
-      
+
+      debugPrint('⏰ Time since last $platform sync: ${timeSinceSync.inHours}h ${timeSinceSync.inMinutes % 60}m');
       return timeSinceSync >= _autoSyncInterval;
     } catch (e) {
       debugPrint('Error checking sync time for $prefKey: $e');

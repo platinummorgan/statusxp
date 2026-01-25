@@ -69,19 +69,22 @@ class SupabaseDashboardRepository {
         .select('platform_achievement_id')
         .eq('user_id', userId)
         .inFilter('platform_id', platformIds)
-        .count();
+        .count(CountOption.exact);
 
-    final achievementsCount = achievementsResponse.count;
+    final achievementsCount = achievementsResponse.count ?? 0;
 
-    // Get game count from user_achievements to avoid missing user_progress rows
-    final gamesCountResponse = await _client
+    // Get distinct game count from user_achievements to avoid missing user_progress rows
+    final gamesResponse = await _client
       .from('user_achievements')
       .select('platform_game_id')
       .eq('user_id', userId)
-      .inFilter('platform_id', platformIds)
-      .count();
+      .inFilter('platform_id', platformIds);
 
-    final gamesCount = gamesCountResponse.count;
+    final gamesCount = (gamesResponse as List)
+        .map((row) => row['platform_game_id'])
+        .where((id) => id != null)
+        .toSet()
+        .length;
     
     // Calculate StatusXP using V2 function with stack multipliers
     double platformStatusXP = 0.0;

@@ -31,6 +31,11 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
     }
 
     const arrayBuffer = await response.arrayBuffer();
+    const maxBytes = parseInt(process.env.MAX_ICON_UPLOAD_BYTES || '5242880', 10); // 5 MB default
+    if (arrayBuffer.byteLength > maxBytes) {
+      console.warn(`[ICON PROXY] Skipping ${platform}/${achievementId}: ${arrayBuffer.byteLength} bytes exceeds ${maxBytes}`);
+      return externalUrl;
+    }
     
     // Determine file extension
     const contentType = response.headers.get('content-type') || 'image/png';
@@ -97,6 +102,11 @@ export async function uploadGameCover(externalUrl, platformId, gameId, supabase)
     }
 
     const arrayBuffer = await response.arrayBuffer();
+    const maxBytes = parseInt(process.env.MAX_COVER_UPLOAD_BYTES || '10485760', 10); // 10 MB default
+    if (arrayBuffer.byteLength > maxBytes) {
+      console.warn(`[COVER PROXY] Skipping ${platformId}/${gameId}: ${arrayBuffer.byteLength} bytes exceeds ${maxBytes}`);
+      return externalUrl;
+    }
     
     // Determine file extension
     const contentType = response.headers.get('content-type') || 'image/png';

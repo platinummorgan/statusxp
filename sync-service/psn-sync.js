@@ -229,11 +229,15 @@ async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTro
   }
 
   if (earnedRows.length) {
-    const { error } = await supabase
-      .from('user_achievements')
-      .upsert(earnedRows, { onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id' });
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < earnedRows.length; i += BATCH_SIZE) {
+      const chunk = earnedRows.slice(i, i + BATCH_SIZE);
+      const { error } = await supabase
+        .from('user_achievements')
+        .upsert(chunk, { onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id' });
 
-    if (error) throw new Error(`Failed to upsert user_achievements batch: ${error.message}`);
+      if (error) throw new Error(`Failed to upsert user_achievements batch: ${error.message}`);
+    }
   }
 
   return { earnedCount: earnedRows.length, mostRecentEarnedAt: mostRecent?.toISOString() ?? null };
@@ -537,13 +541,13 @@ export async function syncPSNAchievements(
       logMemory(`After PSN batch ${i / BATCH_SIZE + 1}`);
     }
 
-    // Optional: refresh leaderboard
-    console.log('Running refresh_statusxp_leaderboard...');
+    // Refresh StatusXP leaderboard for this user only
+    console.log('Running refresh_statusxp_leaderboard_for_user...');
     try {
-      await supabase.rpc('refresh_statusxp_leaderboard');
-      console.log('✅ refresh_statusxp_leaderboard complete');
+      await supabase.rpc('refresh_statusxp_leaderboard_for_user', { p_user_id: userId });
+      console.log('✅ refresh_statusxp_leaderboard_for_user complete');
     } catch (e) {
-      console.warn('⚠️ refresh_statusxp_leaderboard failed:', e.message);
+      console.warn('⚠️ refresh_statusxp_leaderboard_for_user failed:', e.message);
     }
 
     await updateSyncStatus(userId, {
