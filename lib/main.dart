@@ -210,7 +210,8 @@ class StatusXPApp extends ConsumerStatefulWidget {
   ConsumerState<StatusXPApp> createState() => _StatusXPAppState();
 }
 
-class _StatusXPAppState extends ConsumerState<StatusXPApp> {
+class _StatusXPAppState extends ConsumerState<StatusXPApp>
+    with WidgetsBindingObserver {
   AppLinks? _appLinks;
   StreamSubscription<Uri>? _sub;
   bool _hasCheckedInterruptedSyncs = false;
@@ -218,6 +219,7 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     if (kIsWeb) {
       _handleWebAuthCallback();
@@ -251,8 +253,28 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+
+    // Refresh tokens and resume any stale syncs without blocking UI
+    Future.delayed(const Duration(seconds: 1), () {
+      authRefreshService.refreshIfNeededOnResume().catchError((e) {
+        _safeLog('Token refresh on resume failed (will retry later): ${_safeStr(e)}');
+      });
+
+      try {
+        final syncResumeService = ref.read(syncResumeServiceProvider);
+        syncResumeService.checkAndResumeInterruptedSyncs();
+      } catch (e) {
+        _safeLog('Sync resume on app resume failed (non-blocking): ${_safeStr(e)}');
+      }
+    });
   }
 
   Future<void> _handleWebAuthCallback() async {

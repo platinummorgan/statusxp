@@ -107,60 +107,80 @@ class SyncResumeService {
 
   /// Resume PSN sync without throwing errors to the UI.
   /// 
-  /// If sync is already running (409 error), leaves it alone since it's working.
+  /// Automatically continues the sync from where it left off with retry logic.
+  /// Does not disrupt the app even if resume fails.
   Future<void> _resumePSNSync() async {
     try {
-      await _psnService.continueSync();
-      print('✅ PSN sync resumed successfully');
-    } catch (e) {
-      final errorStr = e.toString();
+      // Retry with exponential backoff in case of transient failures
+      int retries = 0;
+      const maxRetries = 2;
       
-      // Handle 409 Conflict (sync already running) - this is actually fine!
-      if (errorStr.contains('409') || errorStr.contains('already in progress')) {
-        print('ℹ️ PSN sync is already running - no action needed');
-        // Don't reset status - the sync is actually working
-      } else {
-        print('⚠️ Failed to resume PSN sync: $e');
-        // Only reset status for actual errors, not for "already running"
+      while (retries < maxRetries) {
         try {
-          await _client.from('profiles').update({
-            'psn_sync_status': 'stopped',
-            'psn_sync_error': 'Previous sync was interrupted - please start a new sync'
-          }).eq('id', _client.auth.currentUser!.id);
-        } catch (resetError) {
-          print('⚠️ Failed to reset PSN sync status: $resetError');
+          await _psnService.continueSync();
+          print('✅ PSN sync resumed successfully from checkpoint');
+          return;
+        } catch (e) {
+          final errorStr = e.toString();
+          
+          // Handle 409 Conflict (sync already running) - this is actually fine!
+          if (errorStr.contains('409') || errorStr.contains('already in progress')) {
+            print('ℹ️ PSN sync is already running - no action needed');
+            return;
+          }
+          
+          retries++;
+          if (retries < maxRetries) {
+            print('⚠️ PSN sync resume attempt $retries failed, retrying...');
+            await Future.delayed(Duration(milliseconds: 500 * (1 << (retries - 1))));
+          }
         }
       }
+      
+      // If all retries failed, don't error - just log and continue
+      print('⚠️ PSN sync resume failed after $maxRetries attempts - will retry on next app resume');
+    } catch (e) {
+      print('⚠️ Unexpected error in PSN sync resume: $e');
       // Don't rethrow - allow app to continue even if resume fails
     }
   }
 
   /// Resume Xbox sync without throwing errors to the UI.
   /// 
-  /// If sync is already running (409 error), leaves it alone since it's working.
+  /// Automatically continues the sync from where it left off with retry logic.
+  /// Does not disrupt the app even if resume fails.
   Future<void> _resumeXboxSync() async {
     try {
-      await _xboxService.continueSync();
-      print('✅ Xbox sync resumed successfully');
-    } catch (e) {
-      final errorStr = e.toString();
+      // Retry with exponential backoff in case of transient failures
+      int retries = 0;
+      const maxRetries = 2;
       
-      // Handle 409 Conflict (sync already running) - this is actually fine!
-      if (errorStr.contains('409') || errorStr.contains('already in progress')) {
-        print('ℹ️ Xbox sync is already running - no action needed');
-        // Don't reset status - the sync is actually working
-      } else {
-        print('⚠️ Failed to resume Xbox sync: $e');
-        // Only reset status for actual errors, not for "already running"
+      while (retries < maxRetries) {
         try {
-          await _client.from('profiles').update({
-            'xbox_sync_status': 'stopped',
-            'xbox_sync_error': 'Previous sync was interrupted - please start a new sync'
-          }).eq('id', _client.auth.currentUser!.id);
-        } catch (resetError) {
-          print('⚠️ Failed to reset Xbox sync status: $resetError');
+          await _xboxService.continueSync();
+          print('✅ Xbox sync resumed successfully from checkpoint');
+          return;
+        } catch (e) {
+          final errorStr = e.toString();
+          
+          // Handle 409 Conflict (sync already running) - this is actually fine!
+          if (errorStr.contains('409') || errorStr.contains('already in progress')) {
+            print('ℹ️ Xbox sync is already running - no action needed');
+            return;
+          }
+          
+          retries++;
+          if (retries < maxRetries) {
+            print('⚠️ Xbox sync resume attempt $retries failed, retrying...');
+            await Future.delayed(Duration(milliseconds: 500 * (1 << (retries - 1))));
+          }
         }
       }
+      
+      // If all retries failed, don't error - just log and continue
+      print('⚠️ Xbox sync resume failed after $maxRetries attempts - will retry on next app resume');
+    } catch (e) {
+      print('⚠️ Unexpected error in Xbox sync resume: $e');
       // Don't rethrow - allow app to continue even if resume fails
     }
   }

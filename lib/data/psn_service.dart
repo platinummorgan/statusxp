@@ -193,16 +193,48 @@ class PSNService {
 
   /// Stream sync status updates (polls every 2 seconds during sync)
   Stream<PSNSyncStatus> watchSyncStatus() async* {
-    while (true) {
-      final status = await getSyncStatus();
-      yield status;
+    PSNSyncStatus? lastStatus;
 
-      // If sync is in progress, poll more frequently
-      if (status.status == 'syncing' || status.status == 'pending') {
-        await Future.delayed(const Duration(seconds: 2));
-      } else {
-        // If not syncing, poll less frequently
-        await Future.delayed(const Duration(seconds: 10));
+    while (true) {
+      try {
+        final status = await getSyncStatus();
+        lastStatus = status;
+        yield status;
+
+        // If sync is in progress, poll more frequently
+        if (status.status == 'syncing' || status.status == 'pending') {
+          await Future.delayed(const Duration(seconds: 2));
+        } else {
+          // If not syncing, poll less frequently
+          await Future.delayed(const Duration(seconds: 10));
+        }
+      } catch (_) {
+        // Keep the stream alive and surface a friendly fallback instead of throwing
+        final previous = lastStatus;
+        final fallback = previous != null
+            ? PSNSyncStatus(
+                isLinked: previous.isLinked,
+                status: previous.status == 'syncing' ? 'pending' : previous.status,
+                progress: previous.progress,
+                error: 'Sync temporarily unavailable. Retrying...',
+                lastSyncAt: previous.lastSyncAt,
+                lastSyncText: previous.lastSyncText,
+                latestLog: previous.latestLog,
+                isAutoSync: previous.isAutoSync,
+              )
+            : PSNSyncStatus(
+                isLinked: false,
+                status: 'error',
+                progress: 0,
+                error: 'Sync temporarily unavailable. Retrying...',
+                lastSyncAt: null,
+                lastSyncText: null,
+                latestLog: null,
+                isAutoSync: false,
+              );
+
+        yield fallback;
+        await Future.delayed(const Duration(seconds: 5));
       }
     }
   }
