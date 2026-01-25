@@ -923,25 +923,23 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 supabase
               );
               
-              // Calculate base_status_xp using BANDED RARITY TIERS (5/7/9/12/15)
+              // Calculate base_status_xp using EXPONENTIAL CURVE (floor=0.5, cap=12, p=3)
               const includeInScore = true; // All Xbox achievements count
               
-              let baseStatusXP = 5; // Default for NULL rarity
+              let baseStatusXP = 0.5; // Default for NULL rarity (treat as common)
               
               if (rarityPercent !== null && !Number.isNaN(Number(rarityPercent))) {
                 const r = Number(rarityPercent);
-                // Banded scoring based on rarity thresholds
-                if (r > 25) {
-                  baseStatusXP = 5;      // COMMON
-                } else if (r > 10) {
-                  baseStatusXP = 7;      // UNCOMMON
-                } else if (r > 5) {
-                  baseStatusXP = 9;      // RARE
-                } else if (r > 1) {
-                  baseStatusXP = 12;     // VERY_RARE
-                } else {
-                  baseStatusXP = 15;     // ULTRA_RARE
-                }
+                const floor = 0.5;
+                const cap = 12;
+                const p = 3;
+                
+                // Exponential curve: base = floor + (cap - floor) * (1 - r/100)^p
+                const inv = Math.max(0, Math.min(1, 1 - (r / 100)));
+                baseStatusXP = floor + (cap - floor) * Math.pow(inv, p);
+                
+                // Clamp to range
+                baseStatusXP = Math.max(floor, Math.min(cap, baseStatusXP));
               }
               
               // Build achievement data object
