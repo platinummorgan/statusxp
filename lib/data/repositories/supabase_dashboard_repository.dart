@@ -90,67 +90,15 @@ class SupabaseDashboardRepository {
     
     final gamesCount = gamesResponseList.length;
     
-    // Calculate StatusXP using V2 function with stack multipliers
+    // Calculate StatusXP by summing current_score from user_progress for this platform
+    // This is simpler and more correct than calling RPC and filtering its response
     double platformStatusXP = 0.0;
+    for (final game in gamesResponseList) {
+      platformStatusXP += ((game['current_score'] as num?) ?? 0).toDouble();
+    }
+    
     int platinums = 0;
     int gamerscore = 0;
-    
-    try {
-      // Get StatusXP from V2 calculation function
-      final statusxpResponse = await _client.rpc('calculate_statusxp_with_stacks', params: {
-        'p_user_id': userId,
-      });
-      
-      print('Dashboard StatusXP response: $statusxpResponse');
-      
-      if (statusxpResponse is List) {
-        print('Dashboard StatusXP response is List with ${statusxpResponse.length} items');
-        for (final game in statusxpResponse) {
-          final gamePlatformId = game['platform_id'] as int?;
-          final effectiveXp = game['statusxp_effective'] as int?;
-          
-          print('Game: platform_id=$gamePlatformId, effective_xp=$effectiveXp');
-          
-          if (gamePlatformId != null && effectiveXp != null) {
-            if (psnPlatforms != null && psnPlatforms.contains(gamePlatformId)) {
-              platformStatusXP += effectiveXp.toDouble();
-              print('Added $effectiveXp to PSN StatusXP, total now: $platformStatusXP');
-            } else if (xboxPlatforms != null && xboxPlatforms.contains(gamePlatformId)) {
-              platformStatusXP += effectiveXp.toDouble();
-              print('Added $effectiveXp to Xbox StatusXP, total now: $platformStatusXP');
-            } else if (platformId == gamePlatformId) {
-              platformStatusXP += effectiveXp.toDouble();
-              print('Added $effectiveXp to Steam StatusXP, total now: $platformStatusXP');
-            }
-          }
-        }
-      } else {
-        print('Dashboard StatusXP response is not a List: ${statusxpResponse.runtimeType}');
-      }
-    } catch (e) {
-      print('Error calling calculate_statusxp_with_stacks: $e');
-      // Fallback to old calculation
-      platformStatusXP = await _calculateStatusXPFallback(userId, platformIds);
-    }
-    
-    print('[DASHBOARD] Calculated platformStatusXP for platform $platformId: $platformStatusXP');
-    
-    // Don't overwrite with cache if we got a valid calculation
-    if (platformStatusXP == 0.0) {
-      // Get StatusXP from main leaderboard_cache as fallback only
-      print('[DASHBOARD] Using leaderboard cache as fallback');
-      final statusxpCache = await _client
-          .from('leaderboard_cache')
-          .select('total_statusxp')
-          .eq('user_id', userId)
-          .maybeSingle();
-      
-      if (statusxpCache != null) {
-        final totalStatusXP = ((statusxpCache['total_statusxp'] as int?) ?? 0).toDouble();
-        platformStatusXP = totalStatusXP;
-        print('[DASHBOARD] StatusXP from cache: $platformStatusXP');
-      }
-    }
     
     // Get platform-specific stats
     if (psnPlatforms != null) {
