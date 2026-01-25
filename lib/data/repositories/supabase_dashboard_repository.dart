@@ -38,22 +38,30 @@ class SupabaseDashboardRepository {
     );
   }
 
-  /// Gets total StatusXP by summing all platforms from user_progress
+  /// Gets total StatusXP by calling calculate_statusxp_with_stacks RPC and summing all games
   Future<double> _getStatusXPTotal(String userId) async {
-    final response = await _client
-        .from('user_progress')
-        .select('current_score')
-        .eq('user_id', userId);
+    try {
+      final response = await _client.rpc('calculate_statusxp_with_stacks', params: {
+        'p_user_id': userId,
+      });
 
-    if (response.isEmpty) {
+      if (response is! List) {
+        print('[DASHBOARD] ERROR: StatusXP RPC response is not a List: ${response.runtimeType}');
+        return 0.0;
+      }
+
+      double total = 0.0;
+      for (final game in (response as List)) {
+        final effectiveXp = game['statusxp_effective'] as int?;
+        if (effectiveXp != null) {
+          total += effectiveXp.toDouble();
+        }
+      }
+      return total;
+    } catch (e) {
+      print('[DASHBOARD] Error getting total StatusXP: $e');
       return 0.0;
     }
-
-    double total = 0.0;
-    for (final row in response) {
-      total += ((row['current_score'] as num?) ?? 0).toDouble();
-    }
-    return total;
   }
 
   /// Gets platform-specific stats
@@ -90,15 +98,40 @@ class SupabaseDashboardRepository {
     
     final gamesCount = gamesResponseList.length;
     
-    // Calculate StatusXP by summing current_score from user_progress for this platform
-    // This is simpler and more correct than calling RPC and filtering its response
+    // Calculate StatusXP using V2 function with stack multipliers
     double platformStatusXP = 0.0;
-    for (final game in gamesResponseList) {
-      platformStatusXP += ((game['current_score'] as num?) ?? 0).toDouble();
-    }
-    
     int platinums = 0;
     int gamerscore = 0;
+    
+    try {
+      // Get StatusXP from V2 calculation function
+      final statusxpResponse = await _client.rpc('calculate_statusxp_with_stacks', params: {
+        'p_user_id': userId,
+      });
+      
+      print('[DASHBOARD] StatusXP RPC response: $statusxpResponse');
+      
+      if (statusxpResponse is List) {
+        print('[DASHBOARD] StatusXP response is List with ${statusxpResponse.length} items');
+        for (final game in statusxpResponse) {
+          final gamePlatformId = game['platform_id'] as int?;
+          final effectiveXp = game['statusxp_effective'] as int?;
+          
+          // Only count this game if it belongs to one of the requested platforms
+          if (gamePlatformId != null && effectiveXp != null && platformIds.contains(gamePlatformId)) {
+            platformStatusXP += effectiveXp.toDouble();
+            print('[DASHBOARD] Game platform_id=$gamePlatformId added $effectiveXp to StatusXP, total now: $platformStatusXP');
+          }
+        }
+      } else {
+        print('[DASHBOARD] ERROR: StatusXP response is not a List: ${statusxpResponse.runtimeType}');
+      }
+    } catch (e) {
+      print('[DASHBOARD] Error calling calculate_statusxp_with_stacks: $e');
+      platformStatusXP = 0.0;
+    }
+    
+    print('[DASHBOARD] Final platformStatusXP for platforms $platformIds: $platformStatusXP');
     
     // Get platform-specific stats
     if (psnPlatforms != null) {
