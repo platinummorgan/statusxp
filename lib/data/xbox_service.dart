@@ -179,14 +179,21 @@ class XboxService {
           await Future.delayed(const Duration(seconds: 10));
         }
       } catch (_) {
-        // Keep the stream alive and surface a friendly fallback instead of throwing
+        // If actively syncing, retry silently without showing errors to the UI
         final previous = lastStatus;
+        if (previous != null && (previous.status == 'syncing' || previous.status == 'pending')) {
+          // Just retry without yielding—user doesn't need to see transient network blips
+          await Future.delayed(const Duration(seconds: 5));
+          continue;
+        }
+
+        // For non-syncing states, show a friendly fallback
         final fallback = previous != null
             ? XboxSyncStatus(
                 isLinked: previous.isLinked,
-                status: previous.status == 'syncing' ? 'pending' : previous.status,
+                status: previous.status,
                 progress: previous.progress,
-                error: 'Sync temporarily unavailable. Retrying...',
+                error: null,
                 lastSyncAt: previous.lastSyncAt,
                 lastSyncText: previous.lastSyncText,
                 latestLog: previous.latestLog,
@@ -196,7 +203,7 @@ class XboxService {
                 isLinked: false,
                 status: 'error',
                 progress: 0,
-                error: 'Sync temporarily unavailable. Retrying...',
+                error: null,
                 lastSyncAt: null,
                 lastSyncText: null,
                 latestLog: null,
