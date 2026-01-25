@@ -99,12 +99,30 @@ class SupabaseDashboardRepository {
       if (statusxpResponse is List) {
         print('[DASHBOARD] StatusXP response is List with ${statusxpResponse.length} items');
         for (final game in statusxpResponse) {
-          final gamePlatformId = game['platform_id'] as int?;
-          final effectiveXp = game['statusxp_effective'] as int?;
+          final rawPlatformId = game['platform_id'];
+          final rawEffectiveXp = game['statusxp_effective'];
+
+          int? gamePlatformId;
+          if (rawPlatformId is int) {
+            gamePlatformId = rawPlatformId;
+          } else if (rawPlatformId is num) {
+            gamePlatformId = rawPlatformId.toInt();
+          } else if (rawPlatformId is String) {
+            gamePlatformId = int.tryParse(rawPlatformId);
+          }
+
+          double? effectiveXp;
+          if (rawEffectiveXp is int) {
+            effectiveXp = rawEffectiveXp.toDouble();
+          } else if (rawEffectiveXp is num) {
+            effectiveXp = rawEffectiveXp.toDouble();
+          } else if (rawEffectiveXp is String) {
+            effectiveXp = double.tryParse(rawEffectiveXp);
+          }
           
           // Only count this game if it belongs to one of the requested platforms
           if (gamePlatformId != null && effectiveXp != null && platformIds.contains(gamePlatformId)) {
-            platformStatusXP += effectiveXp.toDouble();
+            platformStatusXP += effectiveXp;
             print('[DASHBOARD] Game platform_id=$gamePlatformId added $effectiveXp to StatusXP, total now: $platformStatusXP');
           }
         }

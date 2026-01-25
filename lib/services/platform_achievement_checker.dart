@@ -47,11 +47,11 @@ class PlatformAchievementChecker {
   Future<Map<String, int>> _getUserStats(String userId) async {
     final stats = <String, int>{};
     
-    // Get achievement counts from user_achievements
+    // Get achievement counts from user_achievements (V2 schema)
     final achievementData = await _client
-        .from('user_achievements')
-        .select('achievements(platform, psn_trophy_type, xbox_gamerscore, rarity_global)')
-        .eq('user_id', userId);
+      .from('user_achievements')
+      .select('platform_id, achievements(rarity_global, score_value, metadata)')
+      .eq('user_id', userId);
     
     int psnTotal = 0, psnBronze = 0, psnSilver = 0, psnGold = 0, psnPlatinum = 0, psnRare = 0;
     int xboxTotal = 0, xboxGamerscore = 0, xboxRare = 0;
@@ -60,23 +60,28 @@ class PlatformAchievementChecker {
     for (final row in achievementData) {
       final achievement = row['achievements'] as Map<String, dynamic>?;
       if (achievement == null) continue;
-      
-      final platform = achievement['platform'] as String?;
+
+      final platformId = row['platform_id'] as int?;
       final rarity = (achievement['rarity_global'] as num?)?.toDouble();
-      
-      if (platform == 'psn') {
+      final metadata = achievement['metadata'] as Map<String, dynamic>?;
+      final trophyType = metadata?['psn_trophy_type'] as String?;
+
+      final isPsn = platformId == 1 || platformId == 2 || platformId == 5 || platformId == 9;
+      final isXbox = platformId == 10 || platformId == 11 || platformId == 12;
+      final isSteam = platformId == 4;
+
+      if (isPsn) {
         psnTotal++;
-        final trophyType = achievement['psn_trophy_type'] as String?;
         if (trophyType == 'bronze') psnBronze++;
         if (trophyType == 'silver') psnSilver++;
         if (trophyType == 'gold') psnGold++;
         if (trophyType == 'platinum') psnPlatinum++;
         if (rarity != null && rarity < 10) psnRare++;
-      } else if (platform == 'xbox') {
+      } else if (isXbox) {
         xboxTotal++;
-        xboxGamerscore += (achievement['xbox_gamerscore'] as int?) ?? 0;
+        xboxGamerscore += (achievement['score_value'] as int?) ?? 0;
         if (rarity != null && rarity < 10) xboxRare++;
-      } else if (platform == 'steam') {
+      } else if (isSteam) {
         steamTotal++;
         if (rarity != null && rarity < 10) steamRare++;
       }
@@ -105,9 +110,13 @@ class PlatformAchievementChecker {
     stats['steam_rare'] = steamRare;
     stats['total_unlocks'] = psnTotal + xboxTotal + steamTotal;
     
-    // Calculate StatusXP
-    stats['statusxp'] = (psnBronze * 15) + (psnSilver * 30) + (psnGold * 90) + 
-                         (psnPlatinum * 300) + (xboxGamerscore ~/ 10);
+    // Calculate StatusXP from leaderboard_cache (source of truth)
+    final statusxpRow = await _client
+      .from('leaderboard_cache')
+      .select('total_statusxp')
+      .eq('user_id', userId)
+      .maybeSingle();
+    stats['statusxp'] = (statusxpRow?['total_statusxp'] as int?) ?? 0;
     
     return stats;
   }
