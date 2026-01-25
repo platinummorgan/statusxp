@@ -872,7 +872,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               completion_percentage: title.achievement.progressPercentage,
               total_achievements: totalAchievementsFromAPI,
               achievements_earned: title.achievement.currentAchievements,
-              current_score: title.achievement.currentGamerscore, // Will be updated to StatusXP after processing achievements
+              current_score: title.achievement.currentGamerscore,
               metadata: {
                 current_gamerscore: title.achievement.currentGamerscore, // Store actual Gamerscore for display
                 max_gamerscore: title.achievement.totalGamerscore,
@@ -1185,39 +1185,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       logMemory(`After processing batch ${i / BATCH_SIZE + 1}`);
     }
 
-    // Calculate StatusXP for all achievements and games
-    console.log('Calculating StatusXP values...');
+    // Refresh StatusXP leaderboard cache (source of truth is user_achievements)
     try {
-      // Get calculated StatusXP per game from the function
-      const { data: statusxpData, error: statusxpError } = await supabase.rpc('calculate_statusxp_with_stacks', {
-        p_user_id: userId
-      });
-
-      if (statusxpError) {
-        console.error('❌ StatusXP calculation failed:', statusxpError);
-      } else {
-        // Update user_progress.current_score with calculated StatusXP (statusxp_effective)
-        console.log(`Updating current_score for ${statusxpData.length} games...`);
-        
-        for (const game of statusxpData) {
-          const { error: updateError } = await supabase
-            .from('user_progress')
-            .update({ current_score: game.statusxp_effective })
-            .eq('user_id', userId)
-            .eq('platform_id', game.platform_id)
-            .eq('platform_game_id', game.platform_game_id);
-
-          if (updateError) {
-            console.error(`⚠️ Failed to update current_score for ${game.game_name}:`, updateError);
-          }
-        }
-
-        // Refresh leaderboard cache
-        await supabase.rpc('refresh_statusxp_leaderboard');
-        console.log('✅ StatusXP calculation and leaderboard refresh complete');
-      }
-    } catch (calcError) {
-      console.error('⚠️ StatusXP calculation failed:', calcError);
+      await supabase.rpc('refresh_statusxp_leaderboard_for_user', { p_user_id: userId });
+      console.log('✅ StatusXP leaderboard refresh complete');
+    } catch (refreshError) {
+      console.error('⚠️ StatusXP leaderboard refresh failed:', refreshError);
     }
 
     // Mark as completed with retry logic
