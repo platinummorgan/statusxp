@@ -27,7 +27,7 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
     - Sync logs: `psn_sync_logs`, `xbox_sync_logs`, `steam_sync_logs`
     - Premium: `user_premium_status`, `user_ai_credits`, `user_ai_pack_purchases`
     - Social: `achievement_comments`, `trophy_help_requests`, `trophy_help_responses`
-    - Leaderboards: `leaderboard_cache` (materialized view for performance)
+    - Leaderboards: `leaderboard_cache` (table, refreshed by functions/triggers)
   - **23 views** for leaderboards, StatusXP scoring, and aggregated stats
   - **68 functions** for business logic, triggers, and data processing
   - **Composite primary keys** on `achievements` and `games` tables (platform_id + platform_game_id + platform_achievement_id)
@@ -38,7 +38,7 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
   - Mobile: Native iOS/Android apps via App Store/Google Play
   - Assets: Supabase Storage for avatars and achievement icons
 
-**Game System Mapping**
+**Game System Mapping (current)**
 [
   {
     "id": 1,
@@ -49,11 +49,6 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
     "id": 2,
     "name": "PlayStation 4",
     "code": "PS4"
-  },
-  {
-    "id": 3,
-    "name": "Xbox Series X|S",
-    "code": "Xbox"
   },
   {
     "id": 4,
@@ -86,6 +81,17 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
     "code": "XBOXSERIESX"
   }
 ]
+
+**StatusXP Math (current)**
+
+Base StatusXP per achievement uses an exponential curve by global rarity:
+
+$$
+	ext{base} = 0.5 + (12 - 0.5) \cdot \left(1 - \frac{r}{100}\right)^3
+$$
+
+Where $r$ is rarity percent. Values are clamped to $[0.5, 12]$.
+Platinums are excluded (`include_in_score = false`).
 
 **Key Dependencies:**
 - flutter_riverpod ^2.5.1 (state management)
@@ -133,7 +139,9 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
   - ✅ iOS and Android apps in production
 
 - **What is broken/needs attention:**
-  - None currently
+  - 🛠️ StatusXP leaderboard refresh must use `calculate_statusxp_with_stacks()` (per-game) to avoid overcounting.
+  - 🛠️ Auto-refresh should be triggered on `user_achievements` writes to guarantee new users appear.
+  - 🛠️ Ensure `achievements.base_status_xp` is `numeric(6,2)` (decimal support).
 
 
 ## Last known good commit
@@ -235,7 +243,7 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
 - None currently - all requested upgrades completed!
 
 **REMAINING ISSUES (CRITICAL)**
-- None currently
+1. ⚠️ Verify StatusXP refresh triggers after every platform sync (PSN/Steam/Xbox) without manual steps.
 
 **REMAINING ISSUES (Non-Critical):**
 1. ⚠️ 50+ debug print statements in production code (cleanup item, not a blocker)

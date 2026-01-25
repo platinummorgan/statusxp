@@ -38,26 +38,16 @@ class SupabaseDashboardRepository {
     );
   }
 
-  /// Gets total StatusXP by calling calculate_statusxp_with_stacks RPC and summing all games
+  /// Gets total StatusXP from leaderboard_cache (same source as leaderboard)
   Future<double> _getStatusXPTotal(String userId) async {
     try {
-      final response = await _client.rpc('calculate_statusxp_with_stacks', params: {
-        'p_user_id': userId,
-      });
+      final response = await _client
+          .from('leaderboard_cache')
+          .select('total_statusxp')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-      if (response is! List) {
-        print('[DASHBOARD] ERROR: StatusXP RPC response is not a List: ${response.runtimeType}');
-        return 0.0;
-      }
-
-      double total = 0.0;
-      for (final game in (response as List)) {
-        final effectiveXp = game['statusxp_effective'] as int?;
-        if (effectiveXp != null) {
-          total += effectiveXp.toDouble();
-        }
-      }
-      return total;
+      return ((response?['total_statusxp'] as num?)?.toDouble() ?? 0.0);
     } catch (e) {
       print('[DASHBOARD] Error getting total StatusXP: $e');
       return 0.0;
@@ -83,20 +73,15 @@ class SupabaseDashboardRepository {
 
     final achievementsCount = achievementsResponse.count;
 
-    // Get game count for platform using V2 user_progress  
-    final gamesResponseList = await _client
-        .from('user_progress')
-        .select('platform_game_id, current_score, metadata, platform_id')
-        .eq('user_id', userId)
-        .inFilter('platform_id', platformIds);
+    // Get game count from user_achievements to avoid missing user_progress rows
+    final gamesCountResponse = await _client
+      .from('user_achievements')
+      .select('platform_game_id')
+      .eq('user_id', userId)
+      .inFilter('platform_id', platformIds)
+      .count();
 
-    print('[DASHBOARD] Platform IDs queried: $platformIds');
-    print('[DASHBOARD] Games returned: ${gamesResponseList.length}');
-    if (gamesResponseList.isEmpty) {
-      print('[DASHBOARD] WARNING: No games found for user_id=$userId, platform_ids=$platformIds');
-    }
-    
-    final gamesCount = gamesResponseList.length;
+    final gamesCount = gamesCountResponse.count;
     
     // Calculate StatusXP using V2 function with stack multipliers
     double platformStatusXP = 0.0;
