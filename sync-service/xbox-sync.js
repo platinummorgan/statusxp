@@ -872,8 +872,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               completion_percentage: title.achievement.progressPercentage,
               total_achievements: totalAchievementsFromAPI,
               achievements_earned: title.achievement.currentAchievements,
-              current_score: title.achievement.currentGamerscore,
+              current_score: title.achievement.currentGamerscore, // Will be updated to StatusXP after processing achievements
               metadata: {
+                current_gamerscore: title.achievement.currentGamerscore, // Store actual Gamerscore for display
                 max_gamerscore: title.achievement.totalGamerscore,
                 platform_version: platformVersion,
                 last_rarity_sync: new Date().toISOString(),

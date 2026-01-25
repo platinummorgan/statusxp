@@ -163,12 +163,17 @@ class SupabaseDashboardRepository {
         print('[DASHBOARD] PSN platinums: $platinums');
       }
     } else if (xboxPlatforms != null) {
-      // Xbox: Calculate gamerscore from user_progress
-      for (final game in gamesResponseList) {
-        final score = (game['current_score'] as int?) ?? 0;
-        gamerscore += score;
+      // Xbox: Get gamerscore from xbox_leaderboard_cache
+      final xboxCache = await _client
+          .from('xbox_leaderboard_cache')
+          .select('gamerscore')
+          .eq('user_id', userId)
+          .maybeSingle();
+      
+      if (xboxCache != null) {
+        gamerscore = (xboxCache['gamerscore'] as int?) ?? 0;
+        print('[DASHBOARD] Xbox gamerscore: $gamerscore');
       }
-      print('[DASHBOARD] Xbox gamerscore: $gamerscore');
     }
 
     return PlatformStats(
