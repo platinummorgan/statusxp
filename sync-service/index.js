@@ -204,11 +204,16 @@ app.get('/', (req, res) => {
 // Admin: Backfill Xbox rarity without user sync
 app.post('/admin/xbox/backfill-rarity', checkAuth, async (req, res) => {
   try {
-    const { limitTitles, dryRun } = req.body || {};
+    const { limitTitles, dryRun, sleepMs } = req.body || {};
     const { backfillXboxRarity } = await import('./backfill-xbox-rarity.js');
     const result = await backfillXboxRarity({
-      limitTitles: Number(limitTitles || process.env.BACKFILL_LIMIT_TITLES || 50),
+      limitTitles: Number.isFinite(Number(limitTitles))
+        ? Number(limitTitles)
+        : Number(process.env.BACKFILL_LIMIT_TITLES || 50),
       dryRun: Boolean(dryRun || process.env.BACKFILL_DRY_RUN === 'true'),
+      sleepMs: Number.isFinite(Number(sleepMs))
+        ? Number(sleepMs)
+        : Number(process.env.BACKFILL_SLEEP_MS || 250),
     });
     res.json({ ok: true, result });
   } catch (error) {

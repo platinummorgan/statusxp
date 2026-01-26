@@ -56,31 +56,68 @@ async function fetchOpenXblRarityMap(titleId) {
   }
 }
 
-export async function backfillXboxRarity({ limitTitles = 50, dryRun = false } = {}) {
-  console.log(`Starting Xbox rarity backfill. limitTitles=${limitTitles} dryRun=${dryRun}`);
+const DEFAULT_PAGE_SIZE = 2000;
 
-  const { data: rarityRows, error } = await supabase
-    .from('achievements')
-    .select('platform_game_id')
-    .in('platform_id', PLATFORM_IDS)
-    .is('rarity_global', null)
-    .not('platform_game_id', 'is', null)
-    .limit(2000);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  if (error) {
-    throw new Error(`Failed to fetch achievements with null rarity: ${error.message}`);
+async function fetchUniqueTitleIds({ maxTitles } = {}) {
+  const uniqueTitles = new Set();
+  let offset = 0;
+
+  while (true) {
+    const { data: rarityRows, error } = await supabase
+      .from('achievements')
+      .select('platform_game_id')
+      .in('platform_id', PLATFORM_IDS)
+      .is('rarity_global', null)
+      .not('platform_game_id', 'is', null)
+      .order('platform_game_id', { ascending: true })
+      .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+
+    if (error) {
+      throw new Error(`Failed to fetch achievements with null rarity: ${error.message}`);
+    }
+
+    if (!rarityRows || rarityRows.length === 0) {
+      break;
+    }
+
+    for (const row of rarityRows) {
+      uniqueTitles.add(row.platform_game_id);
+      if (maxTitles && uniqueTitles.size >= maxTitles) {
+        return Array.from(uniqueTitles).slice(0, maxTitles);
+      }
+    }
+
+    if (rarityRows.length < DEFAULT_PAGE_SIZE) {
+      break;
+    }
+
+    offset += DEFAULT_PAGE_SIZE;
   }
 
-  const uniqueTitles = [...new Set((rarityRows || []).map(r => r.platform_game_id))]
-    .slice(0, limitTitles);
+  return Array.from(uniqueTitles);
+}
+
+export async function backfillXboxRarity({ limitTitles = 50, dryRun = false, sleepMs } = {}) {
+  const maxTitles = limitTitles && limitTitles > 0 ? limitTitles : undefined;
+  const delayMs = Number.isFinite(Number(sleepMs)) ? Number(sleepMs) : 250;
+
+  console.log(`Starting Xbox rarity backfill. limitTitles=${limitTitles} dryRun=${dryRun} sleepMs=${delayMs}`);
+
+  const uniqueTitles = await fetchUniqueTitleIds({ maxTitles });
 
   console.log(`Found ${uniqueTitles.length} titleIds with null rarity to process.`);
 
   let totalUpdated = 0;
+  let titlesWithNoData = 0;
+  let titlesAttempted = 0;
   for (const titleId of uniqueTitles) {
+    titlesAttempted += 1;
     const rarityMap = await fetchOpenXblRarityMap(titleId);
     if (!rarityMap.size) {
       console.log(`[OPENXBL] No rarity data for title ${titleId}`);
+      titlesWithNoData += 1;
       continue;
     }
 
@@ -144,10 +181,19 @@ export async function backfillXboxRarity({ limitTitles = 50, dryRun = false } = 
 
     totalUpdated += titleUpdated;
     console.log(`Updated ${titleUpdated} achievements for title ${titleId}`);
+
+    if (delayMs > 0) {
+      await sleep(delayMs);
+    }
   }
 
   console.log(`Backfill complete. Total achievements updated: ${totalUpdated}`);
-  return { updated: totalUpdated, titlesProcessed: uniqueTitles.length };
+  return {
+    updated: totalUpdated,
+    titlesProcessed: uniqueTitles.length,
+    titlesAttempted,
+    titlesWithNoData,
+  };
 }
 
 if (process.argv[1] && process.argv[1].includes('backfill-xbox-rarity.js')) {
