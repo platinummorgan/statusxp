@@ -462,6 +462,16 @@ export async function syncPSNAchievements(
       const countsChanged = existingUserGame &&
         (existingUserGame.total_achievements !== totalFromTitle || existingUserGame.achievements_earned !== earnedFromTitle);
 
+      // Check if rarity is stale (>30 days old)
+      let needRarityRefresh = false;
+      if (existingUserGame?.metadata?.last_rarity_sync) {
+        const lastRaritySync = new Date(existingUserGame.metadata.last_rarity_sync);
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        needRarityRefresh = lastRaritySync < thirtyDaysAgo;
+      } else if (existingUserGame) {
+        needRarityRefresh = true;
+      }
+
       let missingAchievements = false;
       if (existingUserGame && earnedFromTitle > 0) {
         const { count: uaCount } = await supabase
@@ -487,7 +497,7 @@ export async function syncPSNAchievements(
         hasAchievementDefs = (achCount || 0) > 0;
       }
 
-      const needsProcessing = forceFullSync || !existingUserGame || countsChanged || missingAchievements || !hasAchievementDefs;
+      const needsProcessing = forceFullSync || !existingUserGame || countsChanged || missingAchievements || !hasAchievementDefs || needRarityRefresh;
       if (!needsProcessing) {
         console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
         processedGames++;
