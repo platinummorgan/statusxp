@@ -24,3 +24,19 @@ Background sync service for Xbox, Steam, and PSN achievement data.
 
 - `GET /` - Health check
 - `POST /sync/xbox` - Start Xbox sync
+- `POST /admin/xbox/backfill-rarity` - Backfill Xbox rarity without user sync (requires `SYNC_SERVICE_SECRET`)
+
+### Admin Backfill
+
+Request body (optional):
+```
+{
+  "limitTitles": 50,
+  "dryRun": false
+}
+```
+
+Required env vars:
+- `OPENXBL_API_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`

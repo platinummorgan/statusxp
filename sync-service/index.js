@@ -201,6 +201,22 @@ app.get('/', (req, res) => {
   res.json({ status: 'ok', service: 'StatusXP Sync Service' });
 });
 
+// Admin: Backfill Xbox rarity without user sync
+app.post('/admin/xbox/backfill-rarity', checkAuth, async (req, res) => {
+  try {
+    const { limitTitles, dryRun } = req.body || {};
+    const { backfillXboxRarity } = await import('./backfill-xbox-rarity.js');
+    const result = await backfillXboxRarity({
+      limitTitles: Number(limitTitles || process.env.BACKFILL_LIMIT_TITLES || 50),
+      dryRun: Boolean(dryRun || process.env.BACKFILL_DRY_RUN === 'true'),
+    });
+    res.json({ ok: true, result });
+  } catch (error) {
+    console.error('Backfill rarity failed:', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
 // Ultra-simple OK route for quick connectivity tests (no imports or heavy logic)
 app.get('/ok', (req, res) => {
   res.status(200).json({ ok: true, time: new Date().toISOString() });
