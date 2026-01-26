@@ -56,7 +56,7 @@ async function fetchOpenXblRarityMap(titleId) {
   }
 }
 
-const DEFAULT_PAGE_SIZE = 2000;
+const DEFAULT_PAGE_SIZE = 1000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -93,7 +93,7 @@ async function fetchUniqueTitleIds({ maxTitles } = {}) {
       break;
     }
 
-    offset += DEFAULT_PAGE_SIZE;
+    offset += rarityRows.length;
   }
 
   return Array.from(uniqueTitles);
