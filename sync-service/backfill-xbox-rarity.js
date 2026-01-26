@@ -122,19 +122,28 @@ export async function backfillXboxRarity({ limitTitles = 50, dryRun = false } = 
       continue;
     }
 
-    const { error: upsertError } = await supabase
-      .from('achievements')
-      .upsert(updates, {
-        onConflict: 'platform_id,platform_game_id,platform_achievement_id',
-      });
+    let titleUpdated = 0;
+    for (const update of updates) {
+      const { error: updateError } = await supabase
+        .from('achievements')
+        .update({
+          rarity_global: update.rarity_global,
+          base_status_xp: update.base_status_xp,
+          rarity_multiplier: update.rarity_multiplier,
+        })
+        .eq('platform_id', update.platform_id)
+        .eq('platform_game_id', update.platform_game_id)
+        .eq('platform_achievement_id', update.platform_achievement_id);
 
-    if (upsertError) {
-      console.warn(`Failed to update achievements for ${titleId}: ${upsertError.message}`);
-      continue;
+      if (updateError) {
+        console.warn(`Failed to update achievement ${update.platform_achievement_id} for ${titleId}: ${updateError.message}`);
+        continue;
+      }
+      titleUpdated += 1;
     }
 
-    totalUpdated += updates.length;
-    console.log(`Updated ${updates.length} achievements for title ${titleId}`);
+    totalUpdated += titleUpdated;
+    console.log(`Updated ${titleUpdated} achievements for title ${titleId}`);
   }
 
   console.log(`Backfill complete. Total achievements updated: ${totalUpdated}`);
