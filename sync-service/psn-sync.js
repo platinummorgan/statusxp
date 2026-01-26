@@ -402,10 +402,22 @@ export async function syncPSNAchievements(
 
     const BATCH_SIZE = parseInt(options.batchSize, 10) || ENV_BATCH_SIZE;
     const MAX_CONCURRENT = parseInt(options.maxConcurrent, 10) || ENV_MAX_CONCURRENT;
+    const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
     console.log(`Using BATCH_SIZE=${BATCH_SIZE}, MAX_CONCURRENT=${MAX_CONCURRENT}`);
 
     let processedGames = 0;
     let totalEarnedTrophiesUpserted = 0;
+
+    const { data: existingUserGames } = await supabase
+      .from('user_progress')
+      .select('platform_id, platform_game_id, achievements_earned, total_achievements, completion_percentage, metadata')
+      .eq('user_id', userId)
+      .in('platform_id', [1, 2, 5, 9]);
+
+    const userGamesMap = new Map();
+    for (const ug of existingUserGames || []) {
+      userGamesMap.set(`${ug.platform_id}_${ug.platform_game_id}`, ug);
+    }
 
     const processTitle = async (title) => {
       // Token refresh every 100 games
@@ -443,6 +455,49 @@ export async function syncPSNAchievements(
 
       // Upsert game (platform-specific composite key)
       const game = await upsertGame({ platformId, platformVersion, title });
+
+      const existingUserGame = userGamesMap.get(`${platformId}_${game.platform_game_id}`);
+      const totalFromTitle = Object.values(title.definedTrophies || {}).reduce((sum, v) => sum + Number(v || 0), 0);
+      const earnedFromTitle = Object.values(title.earnedTrophies || {}).reduce((sum, v) => sum + Number(v || 0), 0);
+      const countsChanged = existingUserGame &&
+        (existingUserGame.total_achievements !== totalFromTitle || existingUserGame.achievements_earned !== earnedFromTitle);
+
+      let missingAchievements = false;
+      if (existingUserGame && earnedFromTitle > 0) {
+        const { count: uaCount } = await supabase
+          .from('user_achievements')
+          .select('user_id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .eq('platform_id', platformId)
+          .eq('platform_game_id', game.platform_game_id);
+
+        missingAchievements = (uaCount || 0) < earnedFromTitle;
+        if (missingAchievements) {
+          console.log(`🔄 MISSING ACHIEVEMENTS: ${title.trophyTitleName} shows ${earnedFromTitle} earned but ${uaCount || 0} synced - reprocessing`);
+        }
+      }
+
+      let hasAchievementDefs = true;
+      if (existingUserGame) {
+        const { count: achCount } = await supabase
+          .from('achievements')
+          .select('platform_achievement_id', { count: 'exact', head: true })
+          .eq('platform_id', platformId)
+          .eq('platform_game_id', game.platform_game_id);
+        hasAchievementDefs = (achCount || 0) > 0;
+      }
+
+      const needsProcessing = forceFullSync || !existingUserGame || countsChanged || missingAchievements || !hasAchievementDefs;
+      if (!needsProcessing) {
+        console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
+        processedGames++;
+        const pct = Math.floor((processedGames / gamesToProcess.length) * 100);
+        await supabase.from('profiles').update({ psn_sync_progress: pct }).eq('id', userId);
+        return;
+      }
+      if (forceFullSync) {
+        console.log(`🔄 FULL SYNC MODE: ${title.trophyTitleName} - reprocessing to fix data`);
+      }
 
       // Fetch trophy metadata + user earned data (source of truth)
       const trophyMetadata = await getTitleTrophies(
