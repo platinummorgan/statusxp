@@ -32,6 +32,7 @@ class LeaderboardRepository {
             )
           ''')
           .eq('profiles.show_on_leaderboard', true)
+          .gt('total_statusxp', 0)
           .order('total_statusxp', ascending: false)
           .limit(limit);
 

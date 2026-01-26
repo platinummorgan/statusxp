@@ -10,7 +10,7 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
 - Flex Room for sharing notable unlocks
 - Leaderboards and competitive rankings
 - StatusXP scoring system (rarity-based points)
-- Subscription tiers (Free, Pro, Premium)
+- Subscription tiers (Free, Premium)
 - AI Packs (Small, Medium, Large)
 
 ## How it runs
@@ -87,7 +87,7 @@ StatusXP is a multiplatform gaming achievement tracker app (Google Play, Apple A
 Base StatusXP per achievement uses an exponential curve by global rarity:
 
 $$
-	ext{base} = 0.5 + (12 - 0.5) \cdot \left(1 - \frac{r}{100}\right)^3
+  ext{base} = 0.5 + (12 - 0.5) \cdot \left(1 - \frac{r}{100}\right)^3
 $$
 
 Where $r$ is rarity percent. Values are clamped to $[0.5, 12]$.
@@ -224,9 +224,6 @@ Platinums are excluded (`include_in_score = false`).
 - 3 AI guides per day
 - Basic features only
 
-### Pro Tier (Not Yet Implemented)
-- TBD - middle tier planned
-
 ### Premium Tier
 - 12 PSN syncs/day (30-minute cooldown)
 - 15-minute cooldown for Xbox/Steam
@@ -256,7 +253,7 @@ Platinums are excluded (`include_in_score = false`).
 3. **Auth Context:** User ID is only available after auth - check for null everywhere
 4. **Platform Syncing:** Each platform has different data structures - don't assume consistency
 5. **Web vs Mobile:** Some packages work differently on web (file_picker, path_provider, etc.)
-6. **Supabase Limits (Pro Tier):** 
+6. **Supabase Limits (Supabase Pro plan):** 
    - Unlimited concurrent connections
    - 8GB database size limit (100GB with add-ons)
    - Edge Functions: 2M invocations/month, higher rate limits than free tier

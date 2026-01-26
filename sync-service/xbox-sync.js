@@ -770,8 +770,39 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               }
             } while (continuationToken);
 
-            const totalAchievementsFromAPI = achievementsForTitle.length;
+            let totalAchievementsFromAPI = achievementsForTitle.length;
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched total of ${totalAchievementsFromAPI} achievements across ${pageCount} pages`);
+
+            // Fallback: Xbox 360 titles sometimes return 0 achievements from Xbox API
+            let usedOpenXblPlayerFallback = false;
+            if (totalAchievementsFromAPI === 0) {
+              const openXBLKey = process.env.OPENXBL_API_KEY;
+              if (openXBLKey) {
+                try {
+                  const openXblResponse = await fetch(
+                    `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
+                    { headers: { 'x-authorization': openXBLKey } }
+                  );
+
+                  if (openXblResponse.ok) {
+                    const openXblData = await openXblResponse.json();
+                    const openXblAchievements = openXblData?.achievements || [];
+                    if (openXblAchievements.length > 0) {
+                      achievementsForTitle.push(...openXblAchievements);
+                      totalAchievementsFromAPI = achievementsForTitle.length;
+                      usedOpenXblPlayerFallback = true;
+                      console.log(`[OPENXBL] Using player achievements fallback for ${title.name} (${totalAchievementsFromAPI} achievements)`);
+                    }
+                  } else {
+                    console.log(`[OPENXBL] Player endpoint failed (${openXblResponse.status}) for ${title.name}`);
+                  }
+                } catch (openXblError) {
+                  console.error(`[OPENXBL] Player endpoint error for ${title.name}:`, openXblError);
+                }
+              } else {
+                console.warn('[OPENXBL] OPENXBL_API_KEY not set; cannot use player achievements fallback.');
+              }
+            }
 
             // Check if this game needs rarity refresh (30+ days since last update)
             const { data: rarityCheckGame } = await supabase
@@ -900,8 +931,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             for (const achievement of achievementsForTitle) {
               // Track the most recent achievement earned date
-              if (achievement.progressState === 'Achieved' && achievement.progression?.timeUnlocked) {
-                const earnedDate = new Date(achievement.progression.timeUnlocked);
+              const earnedAt = achievement.progression?.timeUnlocked || achievement.timeUnlocked || achievement.unlockTime || null;
+              if (achievement.progressState === 'Achieved' && earnedAt) {
+                const earnedDate = new Date(earnedAt);
                 if (!mostRecentAchievementDate || earnedDate > mostRecentAchievementDate) {
                   mostRecentAchievementDate = earnedDate;
                 }
@@ -915,7 +947,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const rarityPercent = openXBLRarityMap.get(achievement.id) || null;
               
               // Proxy the icon URL through Supabase Storage
-              const iconUrl = achievement.mediaAssets?.[0]?.url;
+              const iconUrl = achievement.mediaAssets?.[0]?.url || achievement.mediaAsset?.url || achievement.mediaAsset || null;
               const proxiedIconUrl = await uploadExternalIcon(
                 iconUrl,
                 achievement.id,
@@ -997,7 +1029,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                     platform_id: platformId,
                     platform_game_id: gameTitle.platform_game_id,
                     platform_achievement_id: achievementRecord.platform_achievement_id,
-                    earned_at: achievement.progression?.timeUnlocked,
+                    earned_at: earnedAt,
                   }, {
                     onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id',
                   });

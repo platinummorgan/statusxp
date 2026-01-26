@@ -287,7 +287,7 @@ final leaderboardRanksProvider = FutureProvider<Map<String, int?>>((ref) async {
   // Fetch all ranks in parallel for optimal performance
   final results = await Future.wait([
     // Global rank - use leaderboard_cache table (same as leaderboard screen)
-    client.from('leaderboard_cache').select('user_id,total_statusxp').order('total_statusxp', ascending: false),
+    client.from('leaderboard_cache').select('user_id,total_statusxp').gt('total_statusxp', 0).order('total_statusxp', ascending: false),
     // PSN leaderboard - fetch all to calculate rank client-side
     client.from('psn_leaderboard_cache').select('user_id,platinum_count,gold_count,silver_count,bronze_count').order('platinum_count', ascending: false).order('gold_count', ascending: false).order('silver_count', ascending: false).order('bronze_count', ascending: false),
     // Xbox leaderboard - fetch all to calculate rank client-side  
