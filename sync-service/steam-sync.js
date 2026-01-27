@@ -494,6 +494,15 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             
             const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
             const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed || !hasAchievementDefs;
+            const reasonFlags = {
+              forceFullSync,
+              isNewGame,
+              countsChanged,
+              needRarityRefresh,
+              missingAchievements,
+              syncFailed,
+              missingAchievementDefs: !hasAchievementDefs,
+            };
             if (syncFailed) {
               console.log(`🔄 RETRY FAILED SYNC: ${game.name} (previous sync failed)`);
             }
@@ -504,6 +513,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               await supabase.from('profiles').update({ steam_sync_progress: progressPercent }).eq('id', userId);
               continue;
             }
+            console.log(`🧭 Processing reasons for ${game.name}:`, JSON.stringify(reasonFlags));
             if (forceFullSync) {
               console.log(`🔄 FULL SYNC MODE: ${game.name} - reprocessing to fix data`);
             }
