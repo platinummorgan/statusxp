@@ -431,6 +431,15 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             // BUG FIX: Check if achievements were never processed (achievements_earned > 0 but no user_achievements)
             // This happens if initial sync failed to process achievements
             let missingAchievements = false;
+            let hasAchievementDefs = true;
+            if (!isNewGame && !countsChanged && !needRarityRefresh) {
+              const { count: achCount } = await supabase
+                .from('achievements')
+                .select('platform_achievement_id', { count: 'exact', head: true })
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle.platform_game_id);
+              hasAchievementDefs = (achCount || 0) > 0;
+            }
             if (!isNewGame && !countsChanged && !needRarityRefresh && existingUserGame?.achievements_earned > 0) {
               const { count: uaCount } = await supabase
                 .from('user_achievements')
@@ -446,7 +455,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             }
             
             const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
-            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed;
+            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed || !hasAchievementDefs;
             if (syncFailed) {
               console.log(`🔄 RETRY FAILED SYNC: ${game.name} (previous sync failed)`);
             }

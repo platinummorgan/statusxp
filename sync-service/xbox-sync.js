@@ -677,15 +677,17 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             // CRITICAL: Check if achievements are missing from user_achievements table
             let missingAchievements = false;
-            if (!isNewGame && !countsChanged && !syncFailed && apiEarnedAchievements > 0) {
+            let hasAchievementDefs = true;
+            if (!isNewGame && !countsChanged && !syncFailed) {
               try {
                 const { count: gameAchievementsCount } = await supabase
                   .from('achievements')
                   .select('*', { count: 'exact', head: true })
                   .eq('platform_id', platformId)
                   .eq('platform_game_id', gameTitle.platform_game_id);
-                
-                if (gameAchievementsCount && gameAchievementsCount > 0) {
+
+                hasAchievementDefs = (gameAchievementsCount || 0) > 0;
+                if (hasAchievementDefs && apiEarnedAchievements > 0) {
                   const { count: existingAchievementsCount } = await supabase
                     .from('user_achievements')
                     .select('*', { count: 'exact', head: true })
@@ -705,7 +707,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
             
             const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
-            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements;
+            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements || !hasAchievementDefs;
             
             if (!needsProcessing) {
               console.log(`⏭️  Skip ${title.name} - no changes`);
