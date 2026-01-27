@@ -14,6 +14,10 @@ class XboxConnectScreen extends ConsumerStatefulWidget {
 }
 
 class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
+  static const String _webClientId = String.fromEnvironment(
+    'XBOX_CLIENT_ID',
+    defaultValue: 'f64fede5-9343-4dc9-a145-8daa499357a3',
+  );
   bool _isLoading = false;
   String? _error;
   String? _successMessage;
@@ -40,7 +44,7 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
   }
 
   Future<void> _signInWithXboxWeb() async {
-    const clientId = '000000004C12AE6F';
+    const clientId = _webClientId;
     const redirectUri = 'https://login.live.com/oauth20_desktop.srf';
     const scope = 'XboxLive.signin XboxLive.offline_access';
 

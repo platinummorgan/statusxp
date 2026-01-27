@@ -13,8 +13,12 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
 
-  // Microsoft OAuth configuration - Using Xbox Live public client (no Azure registration needed)
-  static const String clientId = '000000004C12AE6F'; // Xbox Live public client ID
+  // Microsoft OAuth configuration
+  // Override via --dart-define=XBOX_CLIENT_ID=... when needed
+  static const String clientId = String.fromEnvironment(
+    'XBOX_CLIENT_ID',
+    defaultValue: 'f64fede5-9343-4dc9-a145-8daa499357a3',
+  );
   static const String redirectUri = 'https://login.live.com/oauth20_desktop.srf';
   static const String scope = 'XboxLive.signin XboxLive.offline_access';
   

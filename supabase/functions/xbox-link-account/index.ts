@@ -34,13 +34,14 @@ interface XboxLiveAuthResponse {
  * Exchange Microsoft authorization code for access token
  */
 async function exchangeCodeForToken(authCode: string): Promise<string> {
+  const clientId = Deno.env.get('XBOX_CLIENT_ID') ?? '000000004C12AE6F';
   const tokenResponse = await fetch('https://login.live.com/oauth20_token.srf', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      client_id: '000000004C12AE6F',
+      client_id: clientId,
       code: authCode,
       grant_type: 'authorization_code',
       redirect_uri: 'https://login.live.com/oauth20_desktop.srf',
