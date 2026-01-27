@@ -451,9 +451,19 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       return;
     }
 
-    const gamesWithProgress = titleHistory.titles.filter(t => 
-      t.achievement?.currentGamerscore > 0 || t.achievement?.currentAchievements > 0
-    );
+    const gamesWithProgress = titleHistory.titles.filter(t => {
+      const currentGamerscore = t.achievement?.currentGamerscore || 0;
+      const currentAchievements = t.achievement?.currentAchievements || 0;
+      if (currentGamerscore > 0 || currentAchievements > 0) return true;
+
+      const devices = (t.devices || []).map(d => d.toLowerCase());
+      const isXbox360 = devices.includes('xbox360');
+      const totalGamerscore = t.achievement?.totalGamerscore || 0;
+      const totalAchievements = t.achievement?.totalAchievements || 0;
+
+      // Xbox 360 titles can report 0 current progress; include if the title has achievements
+      return isXbox360 && (totalGamerscore > 0 || totalAchievements > 0);
+    });
 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
     logMemory('After filtering gamesWithProgress');
