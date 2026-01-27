@@ -458,7 +458,10 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             // Check if rarity is stale (>30 days old)
             let needRarityRefresh = false;
             if (!isNewGame && !countsChanged && !syncFailed && existingUserGame) {
-              const lastRaritySync = existingUserGame.metadata?.last_rarity_sync ? new Date(existingUserGame.metadata.last_rarity_sync) : null;
+              const lastRaritySyncRaw = existingUserGame.metadata?.last_rarity_sync
+                || existingUserGame.metadata?.last_sync_attempt
+                || existingUserGame.synced_at;
+              const lastRaritySync = lastRaritySyncRaw ? new Date(lastRaritySyncRaw) : null;
               const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
               needRarityRefresh = !lastRaritySync || lastRaritySync < thirtyDaysAgo;
             }
