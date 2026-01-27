@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_webview_login_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Screen for connecting Xbox Live account
 class XboxConnectScreen extends ConsumerStatefulWidget {
@@ -17,6 +19,10 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
   String? _successMessage;
 
   Future<void> _signInWithXbox() async {
+    if (kIsWeb) {
+      await _signInWithXboxWeb();
+      return;
+    }
     // Open WebView login screen for Microsoft OAuth
     final accessToken = await Navigator.of(context).push<String>(
       MaterialPageRoute(
@@ -31,6 +37,91 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
 
     // Process the access token
     await _linkAccount(accessToken);
+  }
+
+  Future<void> _signInWithXboxWeb() async {
+    const clientId = '000000004C12AE6F';
+    const redirectUri = 'https://login.live.com/oauth20_desktop.srf';
+    const scope = 'XboxLive.signin XboxLive.offline_access';
+
+    final authUrl = Uri.https('login.live.com', '/oauth20_authorize.srf', {
+      'client_id': clientId,
+      'response_type': 'code',
+      'redirect_uri': redirectUri,
+      'scope': scope,
+      'state': 'statusxp_xbox_auth',
+    });
+
+    try {
+      await launchUrl(authUrl, mode: LaunchMode.platformDefault);
+    } catch (_) {
+      setState(() => _error = 'Could not open Microsoft login page.');
+      return;
+    }
+
+    if (!mounted) return;
+
+    final code = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Paste Microsoft Code'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'After login, copy the URL you were sent to and paste it here.\n'
+                'It contains a code like: ...oauth20_desktop.srf?code=XXXX',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'Paste URL or code',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (code == null || code.isEmpty || !mounted) return;
+
+    final extracted = _extractCode(code);
+    if (extracted == null || extracted.isEmpty) {
+      setState(() => _error = 'Invalid code. Please paste the full URL or the code value.');
+      return;
+    }
+
+    await _linkAccount(extracted);
+  }
+
+  String? _extractCode(String input) {
+    if (input.contains('code=')) {
+      try {
+        final uri = Uri.parse(input);
+        return uri.queryParameters['code'] ?? input;
+      } catch (_) {
+        final match = RegExp(r'code=([^&]+)').firstMatch(input);
+        return match?.group(1);
+      }
+    }
+    return input;
   }
 
   Future<void> _linkAccount(String accessToken) async {
