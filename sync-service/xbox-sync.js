@@ -678,8 +678,15 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // CRITICAL: Check if achievements are missing from user_achievements table
             let missingAchievements = false;
             let hasAchievementDefs = true;
+            let suspiciousZeroAchievements = false;
             if (!isNewGame && !countsChanged && !syncFailed) {
               try {
+                // If API reports gamerscore but 0 achievements, force a reprocess (likely Xbox 360 issue)
+                if (apiGamerscore > 0 && apiEarnedAchievements === 0 && existingUserGame?.achievements_earned === 0) {
+                  suspiciousZeroAchievements = true;
+                  console.log(`🔍 ZERO ACHIEVEMENTS WITH SCORE: ${title.name} (API score: ${apiGamerscore})`);
+                }
+
                 const { count: gameAchievementsCount } = await supabase
                   .from('achievements')
                   .select('*', { count: 'exact', head: true })
@@ -707,7 +714,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
             
             const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
-            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements || !hasAchievementDefs;
+            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements || !hasAchievementDefs || suspiciousZeroAchievements;
             
             if (!needsProcessing) {
               console.log(`⏭️  Skip ${title.name} - no changes`);
