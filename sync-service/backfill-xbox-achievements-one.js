@@ -7,6 +7,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const ONLY_MISSING = (process.env.BACKFILL_ONLY_MISSING || 'true') === 'true';
+
 function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
@@ -50,11 +52,19 @@ async function run() {
     process.exit(1);
   }
 
+  if (ONLY_MISSING) {
+    const needsBackfill = await needsXboxBackfill(user.id);
+    if (!needsBackfill) {
+      console.log(`⏭️  Skip ${user.xbox_gamertag || user.id} - no missing Xbox data detected`);
+      return;
+    }
+  }
+
   const { data: logRow, error: logError } = await supabase
     .from('xbox_sync_logs')
     .insert({
       user_id: user.id,
-      sync_type: 'full',
+      sync_type: ONLY_MISSING ? 'delta' : 'full',
       status: 'syncing',
       started_at: new Date().toISOString(),
     })
@@ -81,6 +91,65 @@ async function run() {
     logRow.id,
     { batchSize: process.env.BATCH_SIZE, maxConcurrent: process.env.MAX_CONCURRENT }
   );
+}
+
+async function needsXboxBackfill(userId) {
+  const { count: progressCount, error: progressError } = await supabase
+    .from('user_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('platform_id', [10, 11, 12]);
+
+  if (progressError) {
+    console.error(`⚠️ needsXboxBackfill progress check failed for ${userId}:`, progressError.message);
+    return true; // fail open
+  }
+
+  if ((progressCount || 0) === 0) return true;
+
+  const { count: failedCount, error: failedError } = await supabase
+    .from('user_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('platform_id', [10, 11, 12])
+    .filter('metadata->>sync_failed', 'eq', 'true');
+
+  if (failedError) {
+    console.error(`⚠️ needsXboxBackfill sync_failed check failed for ${userId}:`, failedError.message);
+    return true; // fail open
+  }
+
+  if ((failedCount || 0) > 0) return true;
+
+  const { count: missingDatesCount, error: missingDatesError } = await supabase
+    .from('user_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('platform_id', [10, 11, 12])
+    .gt('achievements_earned', 0)
+    .is('last_achievement_earned_at', null);
+
+  if (missingDatesError) {
+    console.error(`⚠️ needsXboxBackfill missing dates check failed for ${userId}:`, missingDatesError.message);
+    return true; // fail open
+  }
+
+  if ((missingDatesCount || 0) > 0) return true;
+
+  const { count: missingDefsCount, error: missingDefsError } = await supabase
+    .from('user_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('platform_id', [10, 11, 12])
+    .eq('total_achievements', 0)
+    .gt('current_score', 0);
+
+  if (missingDefsError) {
+    console.error(`⚠️ needsXboxBackfill missing defs check failed for ${userId}:`, missingDefsError.message);
+    return true; // fail open
+  }
+
+  return (missingDefsCount || 0) > 0;
 }
 
 run().catch((error) => {

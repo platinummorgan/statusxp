@@ -10,6 +10,7 @@ const supabase = createClient(
 const USER_CONCURRENCY = Number(process.env.BACKFILL_USER_CONCURRENCY || 1);
 const BATCH_SIZE = process.env.BATCH_SIZE;
 const MAX_CONCURRENT = process.env.MAX_CONCURRENT;
+const ONLY_MISSING = (process.env.BACKFILL_ONLY_MISSING || 'true') === 'true';
 
 async function getXboxUsers() {
   const { data, error } = await supabase
@@ -25,11 +26,19 @@ async function getXboxUsers() {
 }
 
 async function startSyncForUser(user) {
+  if (ONLY_MISSING) {
+    const needsBackfill = await needsXboxBackfill(user.id);
+    if (!needsBackfill) {
+      console.log(`⏭️  Skip user ${user.id} - no missing Xbox data detected`);
+      return;
+    }
+  }
+
   const { data: logRow, error: logError } = await supabase
     .from('xbox_sync_logs')
     .insert({
       user_id: user.id,
-      sync_type: 'full',
+      sync_type: ONLY_MISSING ? 'delta' : 'full',
       status: 'syncing',
       started_at: new Date().toISOString(),
     })
@@ -54,6 +63,69 @@ async function startSyncForUser(user) {
     logRow.id,
     { batchSize: BATCH_SIZE, maxConcurrent: MAX_CONCURRENT }
   );
+}
+
+async function needsXboxBackfill(userId) {
+  // If no Xbox user_progress rows exist, this is a new user => backfill
+  const { count: progressCount, error: progressError } = await supabase
+    .from('user_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('platform_id', [10, 11, 12]);
+
+  if (progressError) {
+    console.error(`⚠️ needsXboxBackfill progress check failed for ${userId}:`, progressError.message);
+    return true; // fail open
+  }
+
+  if ((progressCount || 0) === 0) return true;
+
+  // Any sync_failed rows => needs backfill
+  const { count: failedCount, error: failedError } = await supabase
+    .from('user_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('platform_id', [10, 11, 12])
+    .filter('metadata->>sync_failed', 'eq', 'true');
+
+  if (failedError) {
+    console.error(`⚠️ needsXboxBackfill sync_failed check failed for ${userId}:`, failedError.message);
+    return true; // fail open
+  }
+
+  if ((failedCount || 0) > 0) return true;
+
+  // Missing earned dates (achievements earned but no timestamp)
+  const { count: missingDatesCount, error: missingDatesError } = await supabase
+    .from('user_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('platform_id', [10, 11, 12])
+    .gt('achievements_earned', 0)
+    .is('last_achievement_earned_at', null);
+
+  if (missingDatesError) {
+    console.error(`⚠️ needsXboxBackfill missing dates check failed for ${userId}:`, missingDatesError.message);
+    return true; // fail open
+  }
+
+  if ((missingDatesCount || 0) > 0) return true;
+
+  // Missing achievement definitions (score exists but total achievements is zero)
+  const { count: missingDefsCount, error: missingDefsError } = await supabase
+    .from('user_progress')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .in('platform_id', [10, 11, 12])
+    .eq('total_achievements', 0)
+    .gt('current_score', 0);
+
+  if (missingDefsError) {
+    console.error(`⚠️ needsXboxBackfill missing defs check failed for ${userId}:`, missingDefsError.message);
+    return true; // fail open
+  }
+
+  return (missingDefsCount || 0) > 0;
 }
 
 async function runWithConcurrency(users) {
@@ -84,6 +156,9 @@ async function runWithConcurrency(users) {
     const users = await getXboxUsers();
     console.log(`Found ${users.length} Xbox users to backfill.`);
     if (!users.length) return;
+    if (ONLY_MISSING) {
+      console.log('Backfill mode: delta (skip users without missing Xbox data)');
+    }
     await runWithConcurrency(users);
   } catch (error) {
     console.error('Backfill failed:', error?.message || error);
