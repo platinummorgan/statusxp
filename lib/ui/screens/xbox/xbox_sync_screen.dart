@@ -238,6 +238,15 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     }
   }
 
+  bool _shouldShowRelinkHint(String? message) {
+    if (message == null) return false;
+    final lower = message.toLowerCase();
+    return lower.contains('relink') ||
+        lower.contains('invalid_client') ||
+        lower.contains('refresh') ||
+        lower.contains('expired');
+  }
+
   @override
   Widget build(BuildContext context) {
     final syncStatusAsync = ref.watch(xboxSyncStatusProvider);
@@ -284,6 +293,9 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
             }
           }
 
+          final effectiveError = _errorMessage ?? status.error;
+          final showRelinkHint = _shouldShowRelinkHint(effectiveError);
+
           return Column(
             children: [
               if (rateLimitMessage != null)
@@ -309,6 +321,33 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                     ],
                   ),
                 ),
+              if (showRelinkHint)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.15),
+                    border: Border.all(color: Colors.orange.withOpacity(0.4)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Xbox link expired. Go to Settings → Xbox → Disconnect, then reconnect.',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.go('/settings'),
+                        child: const Text('Open Settings'),
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: PlatformSyncWidget(
                       platformName: 'Xbox',
@@ -321,7 +360,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                       syncStatus: status.status,
                       syncProgress: status.progress,
                       lastSyncAt: status.lastSyncAt,
-                      errorMessage: _errorMessage ?? status.error,
+                      errorMessage: effectiveError,
                       isSyncing: isSyncing,
                       onSyncPressed: _startSync,
                       onStopPressed: _stopSync,

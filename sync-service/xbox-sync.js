@@ -196,6 +196,9 @@ async function refreshXboxToken(refreshToken, userId) {
   if (!tokenResponse.ok) {
     const body = await tokenResponse.text();
     console.error('Failed to refresh Xbox token. Status:', tokenResponse.status, 'Body:', body);
+    if (body.includes('invalid_client') || body.includes('does not exist or is not enabled for consumers')) {
+      throw new Error('Xbox link expired. Please unlink and relink your Xbox account.');
+    }
     throw new Error('Failed to refresh Xbox token');
   }
 

@@ -73,7 +73,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           .select(
             'psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, '
             'steam_id, steam_api_key, steam_display_name, preferred_display_platform, '
-            'last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at, show_on_leaderboard',
+            'last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at, show_on_leaderboard, '
+            'xbox_sync_status, xbox_sync_error',
           )
           .eq('id', userId)
           .single();
@@ -521,6 +522,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ? () => _disconnectPlatform('Xbox')
                       : null,
                 ),
+
+                if ((_profile?['xbox_sync_status'] == 'error') &&
+                    (_profile?['xbox_sync_error'] != null) &&
+                    _profile!['xbox_sync_error']
+                        .toString()
+                        .toLowerCase()
+                        .contains('relink'))
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange.withOpacity(0.4)),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Xbox needs relinking. Disconnect then reconnect to restore syncing.',
+                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 const Divider(height: 1),
 
