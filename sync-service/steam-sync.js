@@ -287,6 +287,26 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           
           try {
             console.log(`Processing Steam app ${game.appid} - ${game.name}`);
+
+            // FAST SKIP: If playtime hasn't changed recently, avoid full processing
+            const existingUserGameQuick = userGamesMap.get(`${game.appid}_${platformId}`);
+            const fastSkipHours = parseInt(process.env.STEAM_FAST_SKIP_HOURS || '24', 10);
+            const fastSkipCutoff = new Date(Date.now() - fastSkipHours * 60 * 60 * 1000);
+            const lastSyncAttempt = existingUserGameQuick?.metadata?.last_sync_attempt
+              ? new Date(existingUserGameQuick.metadata.last_sync_attempt)
+              : null;
+            const playtimeUnchanged =
+              existingUserGameQuick &&
+              existingUserGameQuick.metadata?.steam_playtime_forever === game.playtime_forever &&
+              existingUserGameQuick.metadata?.steam_rtime_last_played === game.rtime_last_played;
+
+            if (playtimeUnchanged && lastSyncAttempt && lastSyncAttempt > fastSkipCutoff) {
+              console.log(`⏭️  Fast skip ${game.name} - playtime unchanged (last sync ${fastSkipHours}h)`);
+              processedGames++;
+              const progressPercent = Math.floor((processedGames / ownedGames.length) * 100);
+              await supabase.from('profiles').update({ steam_sync_progress: progressPercent }).eq('id', userId);
+              continue;
+            }
             
             // Get app details to check if it's DLC
             let appDetailsData;
@@ -525,6 +545,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                   is_dlc: isDLC,
                   dlc_name: dlcName,
                   base_game_app_id: baseGameAppId,
+                  steam_playtime_forever: game.playtime_forever,
+                  steam_rtime_last_played: game.rtime_last_played,
                   last_rarity_sync: new Date().toISOString(),
                   sync_failed: false,
                   sync_error: null,
