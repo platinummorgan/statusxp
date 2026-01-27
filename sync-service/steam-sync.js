@@ -292,16 +292,31 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             const existingUserGameQuick = userGamesMap.get(`${game.appid}_${platformId}`);
             const fastSkipHours = parseInt(process.env.STEAM_FAST_SKIP_HOURS || '24', 10);
             const fastSkipCutoff = new Date(Date.now() - fastSkipHours * 60 * 60 * 1000);
-            const lastSyncAttempt = existingUserGameQuick?.metadata?.last_sync_attempt
-              ? new Date(existingUserGameQuick.metadata.last_sync_attempt)
-              : null;
+            const lastSyncAttemptRaw = existingUserGameQuick?.metadata?.last_sync_attempt || existingUserGameQuick?.synced_at;
+            const lastSyncAttempt = lastSyncAttemptRaw ? new Date(lastSyncAttemptRaw) : null;
+            const storedPlaytime = existingUserGameQuick?.metadata?.steam_playtime_forever;
+            const storedLastPlayed = existingUserGameQuick?.metadata?.steam_rtime_last_played;
             const playtimeUnchanged =
               existingUserGameQuick &&
-              existingUserGameQuick.metadata?.steam_playtime_forever === game.playtime_forever &&
-              existingUserGameQuick.metadata?.steam_rtime_last_played === game.rtime_last_played;
+              Number(storedPlaytime) === Number(game.playtime_forever) &&
+              Number(storedLastPlayed) === Number(game.rtime_last_played);
 
             if (playtimeUnchanged && lastSyncAttempt && lastSyncAttempt > fastSkipCutoff) {
               console.log(`⏭️  Fast skip ${game.name} - playtime unchanged (last sync ${fastSkipHours}h)`);
+              await supabase
+                .from('user_progress')
+                .update({
+                  metadata: {
+                    ...(existingUserGameQuick?.metadata || {}),
+                    steam_playtime_forever: game.playtime_forever,
+                    steam_rtime_last_played: game.rtime_last_played,
+                    last_sync_attempt: new Date().toISOString(),
+                  },
+                })
+                .eq('user_id', userId)
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', game.appid);
+
               processedGames++;
               const progressPercent = Math.floor((processedGames / ownedGames.length) * 100);
               await supabase.from('profiles').update({ steam_sync_progress: progressPercent }).eq('id', userId);
