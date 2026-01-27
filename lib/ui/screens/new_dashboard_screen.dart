@@ -803,7 +803,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           // Most recent game (default)
           DateTime? latestTime;
           for (final game in games) {
-            final gameTime = game.getMostRecentTrophyTime();
+            final gameTime = game.getMostRecentTrophyTime() ?? game.getMostRecentPlayTime();
             if (gameTime != null) {
               if (latestTime == null || gameTime.isAfter(latestTime)) {
                 latestTime = gameTime;
@@ -821,7 +821,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             // Pinned game not found, fall back to most recent
             DateTime? latestTime;
             for (final game in games) {
-              final gameTime = game.getMostRecentTrophyTime();
+              final gameTime = game.getMostRecentTrophyTime() ?? game.getMostRecentPlayTime();
               if (gameTime != null) {
                 if (latestTime == null || gameTime.isAfter(latestTime)) {
                   latestTime = gameTime;
@@ -832,8 +832,17 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           }
         }
 
+        // Fallback if we couldn't determine a recent game
+        if (backgroundGame == null) {
+          try {
+            backgroundGame = games.firstWhere((g) => (g.coverUrl ?? '').isNotEmpty);
+          } catch (_) {
+            backgroundGame = games.isNotEmpty ? games.first : null;
+          }
+        }
+
         // Use cover art if available
-        if (backgroundGame?.coverUrl != null) {
+        if (backgroundGame?.coverUrl != null && backgroundGame!.coverUrl!.isNotEmpty) {
           return Stack(
             fit: StackFit.expand,
             children: [
