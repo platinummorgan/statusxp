@@ -66,7 +66,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
       return;
     }
 
-    const redirectUri = 'https://statusxp.app/settings';
+    const redirectUri = 'https://statusxp.com/settings';
     const scope = 'user:read:subscriptions';
 
     final authUrl = Uri.https('id.twitch.tv', '/oauth2/authorize', {
@@ -92,7 +92,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
 
     try {
       final twitchService = ref.read(twitchServiceProvider);
-      const redirectUri = 'https://statusxp.app/settings';
+      const redirectUri = 'https://statusxp.com/settings';
       
       final result = await twitchService.linkAccount(code, redirectUri);
 
