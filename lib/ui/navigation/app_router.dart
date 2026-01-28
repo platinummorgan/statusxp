@@ -51,6 +51,26 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PremiumSuccessScreen(),
     ),
 
+    // Twitch OAuth Callback - Redirect to settings with OAuth params
+    GoRoute(
+      path: '/twitch-callback',
+      name: 'twitch-callback',
+      redirect: (context, state) {
+        // Preserve OAuth code and state parameters when redirecting to settings
+        final code = state.uri.queryParameters['code'];
+        final error = state.uri.queryParameters['error'];
+        final errorDescription = state.uri.queryParameters['error_description'];
+        
+        if (error != null) {
+          return '/settings?error=$error${errorDescription != null ? '&error_description=$errorDescription' : ''}';
+        }
+        if (code != null) {
+          return '/settings?code=$code&state=${state.uri.queryParameters['state'] ?? ''}';
+        }
+        return '/settings';
+      },
+    ),
+
     ShellRoute(
       builder: (context, state, child) => AuthGate(child: child),
       routes: [
