@@ -847,7 +847,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             fit: StackFit.expand,
             children: [
               Image.network(
-                backgroundGame!.coverUrl!,
+                backgroundGame.coverUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0A0E27)),
               ),

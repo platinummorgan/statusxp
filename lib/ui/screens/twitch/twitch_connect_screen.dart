@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:statusxp/data/twitch_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'dart:html' as html show window, Location;
+import 'dart:html' as html show window;
 
 /// Screen for connecting Twitch account (WEB ONLY)
 /// 
@@ -164,7 +162,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFF9146FF), // Twitch purple
+                color: const Color(0xFF9146FF),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
@@ -211,7 +209,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
                         style: TextStyle(color: Colors.red.shade900),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
 

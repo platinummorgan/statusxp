@@ -64,7 +64,7 @@ async function run() {
     .from('xbox_sync_logs')
     .insert({
       user_id: user.id,
-      sync_type: ONLY_MISSING ? 'delta' : 'full',
+      sync_type: ONLY_MISSING ? 'incremental' : 'full',
       status: 'syncing',
       started_at: new Date().toISOString(),
     })

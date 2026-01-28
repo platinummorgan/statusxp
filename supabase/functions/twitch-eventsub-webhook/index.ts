@@ -67,11 +67,56 @@ function verifySignature(
 
 /**
  * Grant premium access to user
+ * If user already has active Twitch premium, add 33 days to their existing time
  */
 async function grantPremium(supabase: any, userId: string) {
-  // Calculate expiry (1 month from now)
-  const expiresAt = new Date();
-  expiresAt.setMonth(expiresAt.getMonth() + 1);
+  // Check if user already has premium from any source
+  const { data: existingPremium } = await supabase
+    .from('user_premium_status')
+    .select('premium_source, expires_at, is_premium')
+    .eq('user_id', userId)
+    .single();
+
+  // NEVER overwrite Apple/Google IAP or Stripe - they have higher priority
+  // Hierarchy: Apple/Google > Stripe > Twitch
+  if (existingPremium?.is_premium && 
+      (existingPremium.premium_source === 'apple' || 
+       existingPremium.premium_source === 'google' ||
+       existingPremium.premium_source === 'stripe')) {
+    console.log(`User has ${existingPremium.premium_source} premium (higher priority) - not overwriting with Twitch`);
+    
+    // Create notification (generic message - don't mention Twitch)
+    await supabase.from('notifications').insert({
+      user_id: userId,
+      type: 'subscription_conflict',
+      title: 'Active Subscription Detected',
+      message: 'You already have an active premium subscription. Please cancel your existing subscription or wait until it expires.',
+      created_at: new Date().toISOString(),
+    });
+    
+    return;
+  }
+
+  let expiresAt: Date;
+
+  if (existingPremium?.premium_source === 'twitch' && existingPremium.is_premium) {
+    // User already has Twitch premium - add 33 days to their current expiry
+    const currentExpiry = new Date(existingPremium.expires_at);
+    const now = new Date();
+    
+    // If their current expiry is in the future, add to that date
+    // Otherwise, add to now (in case they're in grace period)
+    const baseDate = currentExpiry > now ? currentExpiry : now;
+    expiresAt = new Date(baseDate);
+    expiresAt.setDate(expiresAt.getDate() + 33);
+    
+    console.log(`User has existing Twitch premium until ${currentExpiry.toISOString()}, extending to ${expiresAt.toISOString()}`);
+  } else {
+    // New Twitch premium - 30 days membership + 3 days grace period = 33 days
+    expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 33);
+    console.log(`Granting new Twitch premium until ${expiresAt.toISOString()}`);
+  }
 
   const { error } = await supabase
     .from('user_premium_status')
@@ -94,22 +139,33 @@ async function grantPremium(supabase: any, userId: string) {
 }
 
 /**
- * Revoke premium access from user (only if source was Twitch)
+ * Revoke premium access from user (only if source was Twitch and grace period expired)
  */
 async function revokePremium(supabase: any, userId: string) {
-  // First check if their premium is from Twitch
+  // First check if their premium is from Twitch and when it expires
   const { data: premiumStatus } = await supabase
     .from('user_premium_status')
-    .select('premium_source')
+    .select('premium_source, expires_at')
     .eq('user_id', userId)
     .single();
 
   // Only revoke if premium was granted via Twitch
   if (premiumStatus?.premium_source === 'twitch') {
+    // Check if grace period has expired (expires_at is in the past)
+    const expiryDate = new Date(premiumStatus.expires_at);
+    const now = new Date();
+    
+    if (expiryDate > now) {
+      console.log(`ℹ️  User ${userId} still in grace period until ${expiryDate.toISOString()}, not revoking yet`);
+      return;
+    }
+    
+    console.log(`Grace period expired for user ${userId}, revoking premium`);
     const { error } = await supabase
       .from('user_premium_status')
       .update({
         is_premium: false,
+        premium_source: null,
         expires_at: new Date().toISOString(), // Set to now
         updated_at: new Date().toISOString(),
       })
@@ -196,6 +252,11 @@ serve(async (req) => {
         case 'channel.subscription.gift':
           console.log(`🎁 New subscription: ${event.user_name} (Tier ${event.tier})`);
           await grantPremium(supabase, profile.id);
+          break;
+
+        case 'channel.subscription.message':
+          console.log(`🔄 Subscription renewal: ${event.user_name} (Tier ${event.tier})`);
+          await grantPremium(supabase, profile.id); // Reset to 33 days
           break;
 
         case 'channel.subscription.end':

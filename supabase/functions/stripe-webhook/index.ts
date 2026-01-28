@@ -65,25 +65,62 @@ serve(async (req) => {
             console.log('✅ AI credits added successfully to user_ai_credits.pack_credits')
           }
         } else {
-          // Premium subscription activation
-          console.log(`💎 Activating premium for user: ${userId}`)
-          console.log(`📧 Customer email: ${session.customer_email}`)
+          // Premium subscription activation via Stripe
+          console.log(`💎 Activating Stripe premium for user: ${userId}`);
+          console.log(`📧 Customer email: ${session.customer_email}`);
 
+          // Check existing premium status
+          const { data: existingPremium } = await supabase
+            .from('user_premium_status')
+            .select('premium_source, is_premium')
+            .eq('user_id', userId)
+            .single();
+
+          // Stripe can overwrite Twitch, but NOT Apple/Google
+          if (existingPremium?.is_premium && 
+              (existingPremium.premium_source === 'apple' || existingPremium.premium_source === 'google')) {
+            console.log(`⚠️ User has ${existingPremium.premium_source} IAP - not overwriting with Stripe`);
+            
+            // Create notification about existing subscription (generic message)
+            await supabase.from('notifications').insert({
+              user_id: userId,
+              type: 'subscription_conflict',
+              title: 'Active Subscription Detected',
+              message: 'You already have an active premium subscription. Please cancel your existing subscription or wait until it expires before purchasing a new one.',
+              created_at: new Date().toISOString(),
+            });
+            break;
+          }
+
+          // Stripe overwrites Twitch (lower priority)
           const { error: updateError } = await supabase
             .from('user_premium_status')
             .upsert({
               user_id: userId,
               is_premium: true,
+              premium_source: 'stripe',
               premium_since: new Date().toISOString(),
+              expires_at: null, // Stripe subscriptions managed by Stripe
               updated_at: new Date().toISOString(),
             }, {
               onConflict: 'user_id'
-            })
+            });
 
           if (updateError) {
-            console.error('❌ Error updating premium status:', updateError)
+            console.error('❌ Error updating premium status:', updateError);
           } else {
-            console.log('✅ Premium status activated successfully')
+            console.log('✅ Stripe premium status activated successfully');
+            
+            // If we overwrote Twitch, notify user (generic message)
+            if (existingPremium?.premium_source === 'twitch') {
+              await supabase.from('notifications').insert({
+                user_id: userId,
+                type: 'subscription_changed',
+                title: 'Premium Source Updated',
+                message: 'Your premium subscription source has been updated. Your previous subscription has been replaced.',
+                created_at: new Date().toISOString(),
+              });
+            }
           }
         }
 

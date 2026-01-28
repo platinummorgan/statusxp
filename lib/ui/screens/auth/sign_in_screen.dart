@@ -503,7 +503,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                 
                 try {
                   // Send password reset email with platform-specific redirect
-                  final redirectUrl = kIsWeb 
+                  const redirectUrl = kIsWeb 
                       ? 'https://statusxp.com/reset-password'
                       : 'com.statusxp.statusxp://reset-password';
                   await Supabase.instance.client.auth.resetPasswordForEmail(
@@ -933,7 +933,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                 
                 try {
                   // Send password reset email with platform-specific redirect
-                  final redirectUrl = kIsWeb 
+                  const redirectUrl = kIsWeb 
                       ? 'https://statusxp.com/reset-password'
                       : 'com.statusxp.statusxp://reset-password';
                   await Supabase.instance.client.auth.resetPasswordForEmail(

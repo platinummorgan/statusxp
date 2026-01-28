@@ -79,7 +79,7 @@ class SupabaseDashboardRepositoryV2 {
         .eq('user_id', userId)
         .inFilter('platform_id', platformIds);
 
-    print('[DASHBOARD] Platform $platformId query returned: ${gamesResponse?.length ?? 0} games');
+    print('[DASHBOARD] Platform $platformId query returned: ${gamesResponse.length ?? 0} games');
     
     final games = gamesResponse as List;
     final gamesCount = games.length;

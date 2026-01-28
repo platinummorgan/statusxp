@@ -42,7 +42,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final redirectUrl = kIsWeb 
+    const redirectUrl = kIsWeb 
         ? 'https://statusxp.com/login-callback'
         : 'com.statusxp.statusxp://login-callback';
     return await _client.auth.signUp(
@@ -242,7 +242,7 @@ class AuthService {
   Future<AuthResponse> signInWithApple() async {
     // On web, use OAuth flow instead of native Sign In with Apple
     if (kIsWeb) {
-      final redirectUrl = 'https://statusxp.com/login-callback';
+      const redirectUrl = 'https://statusxp.com/login-callback';
       final success = await _client.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: redirectUrl,
@@ -350,7 +350,7 @@ class AuthService {
 
   Future<AuthResponse> _signInWithGoogleOAuth() async {
     final currentUser = _client.auth.currentUser;
-    final redirectTo = kIsWeb 
+    const redirectTo = kIsWeb 
         ? 'https://statusxp.com/login-callback'
         : 'com.statusxp.statusxp://login-callback';
     

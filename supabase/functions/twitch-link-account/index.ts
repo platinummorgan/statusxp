@@ -238,29 +238,86 @@ serve(async (req) => {
       throw updateError;
     }
 
-    // If subscribed, grant premium access
+    // If subscribed, grant premium access (but don't overwrite existing premium from other sources)
     if (isSubscribed) {
-      console.log('User is subscribed - granting premium access');
+      console.log('User is subscribed - checking existing premium status');
       
-      // Calculate expiry (1 month from now)
-      const premiumExpiresAt = new Date();
-      premiumExpiresAt.setMonth(premiumExpiresAt.getMonth() + 1);
-
-      const { error: premiumError } = await supabaseAdmin
+      // Check if user already has premium from another source (Apple/Google/Stripe)
+      const { data: existingPremium } = await supabaseAdmin
         .from('user_premium_status')
-        .upsert({
-          user_id: user.id,
-          is_premium: true,
-          premium_source: 'twitch',
-          expires_at: premiumExpiresAt.toISOString(),
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id',
-        });
+        .select('premium_source, is_premium, expires_at')
+        .eq('user_id', user.id)
+        .single();
 
-      if (premiumError) {
-        console.error('Failed to update premium status:', premiumError);
-        // Don't fail the entire request if premium update fails
+      // NEVER overwrite Apple/Google IAP or Stripe premium with Twitch
+      // Hierarchy: Apple/Google > Stripe > Twitch
+      const hasHigherPriorityPremium = existingPremium?.is_premium && 
+        existingPremium?.premium_source && 
+        (existingPremium.premium_source === 'apple' || 
+         existingPremium.premium_source === 'google' ||
+         existingPremium.premium_source === 'stripe');
+
+      if (hasHigherPriorityPremium) {
+        console.log(`User already has active premium from ${existingPremium.premium_source}, not overwriting with Twitch`);
+        
+        // Create notification (generic message - don't mention Twitch)
+        await supabaseAdmin.from('notifications').insert({
+          user_id: user.id,
+          type: 'subscription_conflict',
+          title: 'Active Subscription Detected',
+          message: 'You already have an active premium subscription. Please cancel your existing subscription or wait until it expires before linking a new premium source.',
+          created_at: new Date().toISOString(),
+        });
+        
+        // Don't overwrite - Apple/Google/Stripe take precedence over Twitch
+      } else {
+        console.log('Granting premium access via Twitch subscription');
+        
+        // Check if user already has active Twitch premium to stack time
+        const { data: existingTwitchPremium } = await supabaseAdmin
+          .from('user_premium_status')
+          .select('premium_source, expires_at')
+          .eq('user_id', user.id)
+          .eq('premium_source', 'twitch')
+          .single();
+
+        let premiumExpiresAt: Date;
+
+        if (existingTwitchPremium?.expires_at) {
+          // User already has Twitch premium - add 33 days to existing time
+          const currentExpiry = new Date(existingTwitchPremium.expires_at);
+          const now = new Date();
+          
+          // If current expiry is in the future, add to that date
+          // Otherwise, add to now (in case they're in grace period)
+          const baseDate = currentExpiry > now ? currentExpiry : now;
+          premiumExpiresAt = new Date(baseDate);
+          premiumExpiresAt.setDate(premiumExpiresAt.getDate() + 33);
+          
+          console.log(`Extending existing Twitch premium from ${currentExpiry.toISOString()} to ${premiumExpiresAt.toISOString()}`);
+        } else {
+          // New Twitch premium - 30 days membership + 3 days grace period = 33 days
+          premiumExpiresAt = new Date();
+          premiumExpiresAt.setDate(premiumExpiresAt.getDate() + 33);
+          console.log(`Granting new Twitch premium until ${premiumExpiresAt.toISOString()}`);
+        }
+
+        const { error: premiumError } = await supabaseAdmin
+          .from('user_premium_status')
+          .upsert({
+            user_id: user.id,
+            is_premium: true,
+            premium_source: 'twitch',
+            expires_at: premiumExpiresAt.toISOString(),
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id',
+          });
+
+        if (premiumError) {
+          console.error('Failed to update premium status:', premiumError);
+          // Don't fail the entire request if premium update fails
+        }
       }
     }
 
