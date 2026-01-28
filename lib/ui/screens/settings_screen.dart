@@ -17,6 +17,7 @@ import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
 import 'package:statusxp/ui/screens/updates_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
+import 'package:statusxp/ui/screens/twitch/twitch_connect_screen.dart';
 
 /// Settings Screen - Platform connections and app configuration
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -147,6 +148,196 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'steam_id': null,
           'steam_api_key': null,
           'steam_sync_status': 'never_synced',
+        };
+      } else if (platform == 'Twitch') {
+        updates = {
+          'twitch_user_id': null,
+        };
+      }
+
+      await supabase.from('profiles').update(updates).eq('id', userId);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$platform disconnected successfully')),
+      );
+      _loadProfile();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to disconnect: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showTwitchStatusDialog() async {
+    try {
+      final twitchService = ref.read(twitchServiceProvider);
+      
+      // Show loading
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      final status = await twitchService.checkSubscription();
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.stream, color: Color(0xFF9146FF)),
+              SizedBox(width: 12),
+              Text('Twitch Connection'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (status.isSubscribed) ...[
+                const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text(
+                      'Active Subscription',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text('You have an active Twitch subscription!'),
+                const SizedBox(height: 8),
+                const Text('Premium features are unlocked. 🎉'),
+                if (status.tier != null) ...[
+                  const SizedBox(height: 12),
+                  Text('Tier: ${status.tier}'),
+                ],
+              ] else ...[
+                const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text(
+                      'No Active Subscription',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text('Your Twitch account is linked, but you don\'t have an active subscription.'),
+                const SizedBox(height: 8),
+                const Text('Subscribe to unlock premium features!'),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+            if (!status.isSubscribed)
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // TODO: Link to Twitch channel
+                },
+                child: const Text('Subscribe on Twitch'),
+              ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading if shown
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to check Twitch status: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _disconnectPlatform(String platform) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Disconnect $platform?'),
+        content: Text(
+          'This will remove the connection to your $platform account. '
+          'Your synced data will remain, but you won\'t be able to sync new achievements until you reconnect.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Disconnect'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      Map<String, dynamic> updates = {};
+
+      if (platform == 'PlayStation') {
+        updates = {
+          'psn_account_id': null,
+          'psn_online_id': null,
+          'psn_npsso_token': null,
+          'psn_access_token': null,
+          'psn_refresh_token': null,
+          'psn_token_expires_at': null,
+          'psn_sync_status': 'never_synced',
+        };
+      } else if (platform == 'Xbox') {
+        updates = {
+          'xbox_xuid': null,
+          'xbox_gamertag': null,
+          'xbox_access_token': null,
+          'xbox_refresh_token': null,
+          'xbox_token_expires_at': null,
+          'xbox_sync_status': 'never_synced',
+        };
+      } else if (platform == 'Steam') {
+        updates = {
+          'steam_id': null,
+          'steam_api_key': null,
+          'steam_sync_status': 'never_synced',
+        };
+      } else if (platform == 'Twitch') {
+        updates = {
+          'twitch_user_id': null,
         };
       }
 
@@ -588,6 +779,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ? () => _disconnectPlatform('Steam')
                       : null,
                 ),
+
+                // Twitch (Web only)
+                if (kIsWeb) ...[
+                  const Divider(height: 1),
+                  _buildPlatformTile(
+                    icon: Icons.stream,
+                    iconColor: const Color(0xFF9146FF),
+                    title: 'Twitch',
+                    subtitle: _profile?['twitch_user_id'] != null
+                        ? 'Connected (subscribers get premium!)'
+                        : 'Not connected',
+                    isConnected: _profile?['twitch_user_id'] != null,
+                    onTap: () async {
+                      if (_profile?['twitch_user_id'] != null) {
+                        // Show subscription status dialog
+                        _showTwitchStatusDialog();
+                      } else {
+                        final result = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TwitchConnectScreen(),
+                          ),
+                        );
+                        if (result == true) _loadProfile();
+                      }
+                    },
+                    onDisconnect: _profile?['twitch_user_id'] != null
+                        ? () => _disconnectPlatform('Twitch')
+                        : null,
+                  ),
+                ],
 
                 const SizedBox(height: 24),
 
