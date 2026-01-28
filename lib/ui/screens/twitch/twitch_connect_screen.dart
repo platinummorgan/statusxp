@@ -102,12 +102,12 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
           if (result.isSubscribed) {
             _successMessage = 
                 'Successfully linked Twitch account!\n'
-                'Premium access granted! 🎉\n\n'
-                'Your Twitch subscription unlocks all premium features.';
+                'Twitch subscription detected! 🎉\n\n'
+                'Your premium status will be automatically managed based on your subscription.';
           } else {
             _successMessage = 
                 'Successfully linked Twitch account!\n\n'
-                'Subscribe to the StatusXP Twitch channel to unlock premium access!';
+                'Subscribe to the Platinum Morgan Twitch channel to unlock premium access!';
           }
         });
 

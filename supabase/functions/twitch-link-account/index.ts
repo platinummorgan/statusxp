@@ -99,13 +99,21 @@ async function getTwitchUser(accessToken: string): Promise<TwitchUserResponse> {
 
 /**
  * Check if user is subscribed to broadcaster
+ * Note: This requires the BROADCASTER's access token with channel:read:subscriptions scope
  */
-async function checkSubscription(accessToken: string, userId: string): Promise<boolean> {
+async function checkSubscription(userId: string): Promise<boolean> {
   const clientId = Deno.env.get('TWITCH_CLIENT_ID');
   const broadcasterId = Deno.env.get('TWITCH_BROADCASTER_ID');
+  const broadcasterToken = Deno.env.get('TWITCH_BROADCASTER_TOKEN');
 
   if (!broadcasterId) {
     console.log('TWITCH_BROADCASTER_ID not set, skipping subscription check');
+    return false;
+  }
+
+  if (!broadcasterToken) {
+    console.error('TWITCH_BROADCASTER_TOKEN not set - cannot check subscriptions');
+    console.error('Please set this secret with your broadcaster access token that has channel:read:subscriptions scope');
     return false;
   }
 
@@ -114,7 +122,7 @@ async function checkSubscription(accessToken: string, userId: string): Promise<b
       `https://api.twitch.tv/helix/subscriptions/user?broadcaster_id=${broadcasterId}&user_id=${userId}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${broadcasterToken}`,
           'Client-Id': clientId!,
         },
       }
@@ -122,17 +130,20 @@ async function checkSubscription(accessToken: string, userId: string): Promise<b
 
     if (response.status === 404) {
       // User is not subscribed
+      console.log('User is not subscribed (404 response)');
       return false;
     }
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Failed to check subscription:', error);
+      console.error('Failed to check subscription:', response.status, error);
       return false;
     }
 
     const data: TwitchSubscriptionCheckResponse = await response.json();
-    return data.data && data.data.length > 0;
+    const isSubscribed = data.data && data.data.length > 0;
+    console.log(`Subscription check result: ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}`);
+    return isSubscribed;
   } catch (error) {
     console.error('Error checking subscription:', error);
     return false;
@@ -211,7 +222,7 @@ serve(async (req) => {
     console.log('Checking subscription status...');
 
     // Check subscription status
-    const isSubscribed = await checkSubscription(tokenResponse.access_token, twitchUser.id);
+    const isSubscribed = await checkSubscription(twitchUser.id);
 
     console.log(`Subscription status: ${isSubscribed ? 'subscribed' : 'not subscribed'}`);
 
