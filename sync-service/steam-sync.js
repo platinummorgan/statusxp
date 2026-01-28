@@ -454,6 +454,27 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             const countsChanged = existingUserGame && 
               (existingUserGame.total_achievements !== totalCount || existingUserGame.achievements_earned !== unlockedCount);
             const syncFailed = existingUserGame && existingUserGame.metadata?.sync_failed === true;
+
+            if (isNewGame) {
+              try {
+                const { data: debugUserGame } = await supabase
+                  .from('user_progress')
+                  .select('platform_game_id, platform_id')
+                  .eq('user_id', userId)
+                  .eq('platform_id', platformId)
+                  .eq('platform_game_id', game.appid.toString())
+                  .maybeSingle();
+
+                console.log(
+                  `🔎 NEW GAME DEBUG ${game.name}: ` +
+                  `mapKey=${gameTitle.platform_game_id}_${platformId} ` +
+                  `mapHas=${userGamesMap.has(`${gameTitle.platform_game_id}_${platformId}`)} ` +
+                  `dbFound=${debugUserGame != null}`
+                );
+              } catch (debugErr) {
+                console.log(`🔎 NEW GAME DEBUG failed for ${game.name}: ${debugErr.message}`);
+              }
+            }
             
             // Check if rarity is stale (>30 days old)
             let needRarityRefresh = false;
