@@ -75,7 +75,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             'psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, '
             'steam_id, steam_api_key, steam_display_name, preferred_display_platform, '
             'last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at, show_on_leaderboard, '
-            'xbox_sync_status, xbox_sync_error',
+            'xbox_sync_status, xbox_sync_error, twitch_user_id',
           )
           .eq('id', userId)
           .single();
@@ -721,7 +721,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             builder: (context) => const TwitchConnectScreen(),
                           ),
                         );
-                        if (result == true) _loadProfile();
+                        if (result == true && mounted) {
+                          // Reload profile to show Twitch connection
+                          await _loadProfile();
+                        }
                       }
                     },
                     onDisconnect: _profile?['twitch_user_id'] != null
