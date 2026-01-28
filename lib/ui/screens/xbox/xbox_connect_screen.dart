@@ -116,16 +116,12 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
   }
 
   String? _extractCode(String input) {
-    if (input.contains('code=')) {
-      try {
-        final uri = Uri.parse(input);
-        return uri.queryParameters['code'] ?? input;
-      } catch (_) {
-        final match = RegExp(r'code=([^&]+)').firstMatch(input);
-        return match?.group(1);
-      }
-    }
-    return input;
+    if (!input.contains('code=')) return input;
+    final match = RegExp(r'[?&]code=([^&#]+)').firstMatch(input);
+    if (match == null) return input;
+    final rawCode = match.group(1);
+    if (rawCode == null || rawCode.isEmpty) return null;
+    return Uri.decodeComponent(rawCode);
   }
 
   Future<void> _linkAccount(String accessToken) async {

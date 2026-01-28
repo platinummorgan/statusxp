@@ -62,19 +62,24 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
       ..loadRequest(authUrl);
   }
 
+  String? _extractCodeFromUrl(String url) {
+    final match = RegExp(r'[?&]code=([^&#]+)').firstMatch(url);
+    if (match == null) return null;
+    final rawCode = match.group(1);
+    if (rawCode == null || rawCode.isEmpty) return null;
+    return Uri.decodeComponent(rawCode);
+  }
+
   void _checkForAuthCode(String url) {
     final uri = Uri.parse(url);
     
     // Debug: Print the URL we're checking
     // Check if we're at the redirect URI
     if (uri.host == 'login.live.com' && uri.path.contains('oauth20_desktop.srf')) {
-      // Try query parameters first
-      String? code = uri.queryParameters['code'];
-      
-      // If not in query params, check fragment
+      // Extract code without converting '+' to space
+      String? code = _extractCodeFromUrl(url);
       if (code == null && uri.fragment.isNotEmpty) {
-        final fragmentParams = Uri.splitQueryString(uri.fragment);
-        code = fragmentParams['code'];
+        code = _extractCodeFromUrl('?${uri.fragment}');
       }
       
       final error = uri.queryParameters['error'];
