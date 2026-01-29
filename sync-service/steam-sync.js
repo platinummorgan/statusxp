@@ -455,6 +455,25 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               (existingUserGame.total_achievements !== totalCount || existingUserGame.achievements_earned !== unlockedCount);
             const syncFailed = existingUserGame && existingUserGame.metadata?.sync_failed === true;
 
+            // BUG FIX: Force processing if user_progress is missing even when achievements exist
+            // This handles the case where a previous sync wrote user_achievements but crashed before writing user_progress
+            let missingUserProgress = false;
+            if (!isNewGame) {
+              // Double-check DB to ensure user_progress actually exists (handles edge case where map is stale)
+              const { data: dbUserProgress } = await supabase
+                .from('user_progress')
+                .select('platform_game_id')
+                .eq('user_id', userId)
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', game.appid.toString())
+                .maybeSingle();
+              
+              if (!dbUserProgress) {
+                missingUserProgress = true;
+                console.log(`🔧 MISSING USER_PROGRESS FIX: ${game.name} has achievements but no progress record - forcing creation`);
+              }
+            }
+
             if (isNewGame) {
               try {
                 const { data: debugUserGame } = await supabase
@@ -514,7 +533,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             }
             
             const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
-            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed || !hasAchievementDefs;
+            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed || !hasAchievementDefs || missingUserProgress;
             const reasonFlags = {
               forceFullSync,
               isNewGame,
@@ -523,6 +542,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               missingAchievements,
               syncFailed,
               missingAchievementDefs: !hasAchievementDefs,
+              missingUserProgress,
             };
             if (syncFailed) {
               console.log(`🔄 RETRY FAILED SYNC: ${game.name} (previous sync failed)`);
