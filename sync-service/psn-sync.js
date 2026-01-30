@@ -578,6 +578,27 @@ export async function syncPSNAchievements(
         userTrophyMap,
       });
 
+      // CLEANUP: Delete older platform_id versions of this game (same platform_game_id)
+      // This handles existing duplicates that were synced before deduplication was added
+      const { error: deleteError } = await supabase
+        .from('user_achievements')
+        .delete()
+        .eq('user_id', userId)
+        .eq('platform_game_id', game.platform_game_id)
+        .neq('platform_id', platformId);  // Delete all platform_ids EXCEPT the current one
+      
+      if (deleteError) {
+        console.warn(`⚠️  Failed to cleanup duplicate platform_ids for ${title.trophyTitleName}: ${deleteError.message}`);
+      } else {
+        // Also cleanup user_progress
+        await supabase
+          .from('user_progress')
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform_game_id', game.platform_game_id)
+          .neq('platform_id', platformId);
+      }
+
       // Batch upsert user_achievements for earned only (DB write is ONE call)
       const { earnedCount, mostRecentEarnedAt } = await upsertUserAchievementsBatch({
         userId,
