@@ -214,6 +214,13 @@ async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTro
     if (!ut?.earned) continue;
 
     const earnedAtIso = ut.earnedDateTime || null;
+    
+    // Skip achievements without earned_at timestamp - DB requires non-null
+    if (!earnedAtIso) {
+      console.warn(`⚠️  Skipping trophy ${ut.trophyId} for game ${gameId} - missing earnedDateTime`);
+      continue;
+    }
+    
     if (earnedAtIso) {
       const d = new Date(earnedAtIso);
       if (!mostRecent || d > mostRecent) mostRecent = d;
@@ -395,9 +402,35 @@ export async function syncPSNAchievements(
 
     // Keep your behavior: only titles with progress > 0
     // If you want *all* titles, change this to: const gamesToProcess = allTitles;
-    const gamesToProcess = allTitles.filter((t) => Number(t.progress || 0) > 0);
+    let gamesToProcess = allTitles.filter((t) => Number(t.progress || 0) > 0);
 
-    console.log(`Found ${gamesToProcess.length} games with progress`);
+    // DEDUP FIX: Remove duplicate cross-gen games (same npCommunicationId on multiple platforms)
+    // PSN API returns cross-gen games multiple times - keep only the newest platform version
+    const seenNpIds = new Map();
+    const dedupedGames = [];
+    for (const title of gamesToProcess) {
+      const npId = title.npCommunicationId;
+      if (seenNpIds.has(npId)) {
+        const existing = seenNpIds.get(npId);
+        const { platformId: existingPlatformId } = mapPsnPlatformToPlatformId(existing.trophyTitlePlatform);
+        const { platformId: newPlatformId } = mapPsnPlatformToPlatformId(title.trophyTitlePlatform);
+        
+        // Keep the newer platform (lower platform_id = newer: PS5=1, PS4=2, PS3=5)
+        if (newPlatformId < existingPlatformId) {
+          console.log(`🔄 DEDUP: Upgrading ${title.trophyTitleName} from platform_id=${existingPlatformId} to ${newPlatformId}`);
+          seenNpIds.set(npId, title);
+          dedupedGames[dedupedGames.indexOf(existing)] = title;
+        } else {
+          console.log(`⏭️  DEDUP: Skipping duplicate ${title.trophyTitleName} (already have platform_id=${existingPlatformId})`);
+        }
+      } else {
+        seenNpIds.set(npId, title);
+        dedupedGames.push(title);
+      }
+    }
+    gamesToProcess = dedupedGames;
+
+    console.log(`Found ${gamesToProcess.length} games after deduplication (removed ${allTitles.filter((t) => Number(t.progress || 0) > 0).length - gamesToProcess.length} duplicates)`);
     logMemory('After filtering gamesToProcess');
 
     const BATCH_SIZE = parseInt(options.batchSize, 10) || ENV_BATCH_SIZE;
