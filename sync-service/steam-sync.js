@@ -419,21 +419,28 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               const externalCoverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`;
               const proxiedCoverUrl = await uploadGameCover(externalCoverUrl, platformId, game.appid.toString(), supabase);
               
+              const gamePayload = {
+                platform_id: platformId,
+                platform_game_id: game.appid.toString(),
+                name: trimmedName,
+                metadata: {
+                  steam_app_id: game.appid,
+                  platform_version: 'Steam',
+                  is_dlc: isDLC,
+                  dlc_name: dlcName,
+                  base_game_app_id: baseGameAppId,
+                },
+              };
+              
+              // Only set cover_url if we have a new value
+              const newCoverUrl = proxiedCoverUrl || externalCoverUrl;
+              if (newCoverUrl) {
+                gamePayload.cover_url = newCoverUrl;
+              }
+              
               const { data: newGame, error: insertError } = await supabase
                 .from('games')
-                .upsert({
-                  platform_id: platformId,
-                  platform_game_id: game.appid.toString(),
-                  name: trimmedName,
-                  cover_url: proxiedCoverUrl || externalCoverUrl,
-                  metadata: {
-                    steam_app_id: game.appid,
-                    platform_version: 'Steam',
-                    is_dlc: isDLC,
-                    dlc_name: dlcName,
-                    base_game_app_id: baseGameAppId,
-                  },
-                }, {
+                .upsert(gamePayload, {
                   onConflict: 'platform_id,platform_game_id'
                 })
                 .select()

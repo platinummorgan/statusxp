@@ -639,18 +639,25 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 ? await uploadGameCover(title.displayImage, platformId, title.titleId, supabase)
                 : null;
               
+              const gamePayload = {
+                platform_id: platformId,
+                platform_game_id: title.titleId,
+                name: trimmedName,
+                metadata: { 
+                  xbox_title_id: title.titleId,
+                  platform_version: platformVersion
+                },
+              };
+              
+              // Only set cover_url if we have a new value
+              const newCoverUrl = proxiedCoverUrl || title.displayImage;
+              if (newCoverUrl) {
+                gamePayload.cover_url = newCoverUrl;
+              }
+              
               const { data: newGame, error: insertError } = await supabase
                 .from('games')
-                .upsert({
-                  platform_id: platformId,
-                  platform_game_id: title.titleId,
-                  name: trimmedName,
-                  cover_url: proxiedCoverUrl || title.displayImage,
-                  metadata: { 
-                    xbox_title_id: title.titleId,
-                    platform_version: platformVersion
-                  },
-                }, {
+                .upsert(gamePayload, {
                   onConflict: 'platform_id,platform_game_id'
                 })
                 .select()

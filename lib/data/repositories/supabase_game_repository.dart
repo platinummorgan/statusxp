@@ -253,13 +253,25 @@ class SupabaseGameRepository {
         String? primaryPlatformGameId;
         
         if (platforms.isNotEmpty) {
-          if (platformFilter != null && platforms.contains(platformFilter)) {
-            final index = platforms.indexOf(platformFilter);
-            primaryPlatform = platformFilter;
-            primaryPlatformId = platformIds.isNotEmpty ? platformIds[index] : null;
-            primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds[index] : null;
+          // Case-insensitive platform matching
+          if (platformFilter != null) {
+            final filterLower = platformFilter.toLowerCase();
+            final matchIndex = platforms.indexWhere(
+              (p) => p.toLowerCase() == filterLower
+            );
+            
+            if (matchIndex >= 0) {
+              primaryPlatform = platforms[matchIndex];
+              primaryPlatformId = platformIds.isNotEmpty ? platformIds[matchIndex] : null;
+              primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds[matchIndex] : null;
+            } else {
+              // Use first platform as default if filter doesn't match
+              primaryPlatform = platforms.first;
+              primaryPlatformId = platformIds.isNotEmpty ? platformIds.first : null;
+              primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds.first : null;
+            }
           } else {
-            // Use first platform as default
+            // Use first platform as default when no filter
             primaryPlatform = platforms.first;
             primaryPlatformId = platformIds.isNotEmpty ? platformIds.first : null;
             primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds.first : null;

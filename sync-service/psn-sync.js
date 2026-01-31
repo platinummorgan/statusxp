@@ -131,11 +131,11 @@ async function upsertGame({ platformId, platformVersion, title }) {
     ? await uploadGameCover(externalCoverUrl, platformId, title.npCommunicationId, supabase)
     : null;
 
+  // Build base payload
   const payload = {
     platform_id: platformId,
     platform_game_id: title.npCommunicationId,
     name: trimmedTitle || 'Unknown Title',
-    cover_url: proxiedCoverUrl || externalCoverUrl,
     metadata: {
       psn_np_communication_id: title.npCommunicationId,
       platform_version: platformVersion,
@@ -146,6 +146,12 @@ async function upsertGame({ platformId, platformVersion, title }) {
       last_api_seen_at: new Date().toISOString(),
     },
   };
+
+  // Only set cover_url if we have a new value (don't overwrite existing with null)
+  const newCoverUrl = proxiedCoverUrl || externalCoverUrl;
+  if (newCoverUrl) {
+    payload.cover_url = newCoverUrl;
+  }
 
   const { data, error } = await supabase
     .from('games')
