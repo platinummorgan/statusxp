@@ -1,26 +1,14 @@
--- Check if user_progress exists for Steam games
-SELECT 
-  'user_progress for Steam' as check_name,
-  COUNT(*) as count
-FROM user_progress
-WHERE platform_id = 4
-  AND user_id = (SELECT id FROM auth.users WHERE email = 'mdorminey79@gmail.com');
+-- Backfill user_progress for Steam games from user_achievements
+-- This fixes the issue where Steam sync wrote achievements but not progress records
+-- Run for user: 35029ccf-0d16-4741-a2fe-1e5b9fee4e23
 
--- Check how many unique Steam games you have achievements for
-SELECT 
-  'Unique Steam games from achievements' as check_name,
-  COUNT(DISTINCT platform_game_id) as count
-FROM user_achievements
-WHERE platform_id = 4
-  AND user_id = (SELECT id FROM auth.users WHERE email = 'mdorminey79@gmail.com');
-
--- Backfill user_progress for Steam games
 INSERT INTO user_progress (
   user_id,
   platform_id,
   platform_game_id,
-  total_achievements,
+  current_score,
   achievements_earned,
+  total_achievements,
   completion_percentage,
   first_played_at,
   last_played_at,
@@ -31,50 +19,45 @@ SELECT
   ua.user_id,
   ua.platform_id,
   ua.platform_game_id,
-  a.total_count,
-  a.earned_count,
-  CASE 
-    WHEN a.total_count > 0 THEN ROUND((a.earned_count::numeric / a.total_count::numeric) * 100, 2)
-    ELSE 0
-  END as completion_percentage,
-  NOW() as first_played_at,
-  NOW() as last_played_at,
+  COUNT(*)::integer as current_score, -- For Steam, score = achievement count
+  COUNT(*)::integer as achievements_earned,
+  (
+    SELECT COUNT(*)::integer
+    FROM achievements a
+    WHERE a.platform_id = ua.platform_id
+      AND a.platform_game_id = ua.platform_game_id
+  ) as total_achievements,
+  (
+    COUNT(*)::numeric / NULLIF(
+      (SELECT COUNT(*) FROM achievements a 
+       WHERE a.platform_id = ua.platform_id 
+         AND a.platform_game_id = ua.platform_game_id), 0
+    ) * 100
+  )::numeric(5,2) as completion_percentage,
+  MIN(ua.earned_at) as first_played_at,
+  MAX(ua.earned_at) as last_played_at,
   NOW() as synced_at,
   jsonb_build_object(
-    'backfilled', true,
-    'backfilled_at', NOW()
+    'backfilled_from_user_achievements', true,
+    'backfill_date', NOW()
   ) as metadata
 FROM user_achievements ua
-JOIN (
-  SELECT 
-    platform_id,
-    platform_game_id,
-    COUNT(*) as total_count,
-    COUNT(*) FILTER (WHERE EXISTS (
-      SELECT 1 FROM user_achievements ua2 
-      WHERE ua2.platform_id = achievements.platform_id 
-        AND ua2.platform_game_id = achievements.platform_game_id
-        AND ua2.platform_achievement_id = achievements.platform_achievement_id
-        AND ua2.user_id = (SELECT id FROM auth.users WHERE email = 'mdorminey79@gmail.com')
-    )) as earned_count
-  FROM achievements
-  WHERE platform_id = 4
-  GROUP BY platform_id, platform_game_id
-) a ON a.platform_id = ua.platform_id AND a.platform_game_id = ua.platform_game_id
-WHERE ua.user_id = (SELECT id FROM auth.users WHERE email = 'mdorminey79@gmail.com')
-  AND ua.platform_id = 4
+WHERE ua.user_id = '35029ccf-0d16-4741-a2fe-1e5b9fee4e23'::uuid
+  AND ua.platform_id = 4  -- Steam
   AND NOT EXISTS (
-    SELECT 1 FROM user_progress up
-    WHERE up.user_id = ua.user_id
-      AND up.platform_id = ua.platform_id
+    SELECT 1 
+    FROM user_progress up 
+    WHERE up.user_id = ua.user_id 
+      AND up.platform_id = ua.platform_id 
       AND up.platform_game_id = ua.platform_game_id
   )
-GROUP BY ua.user_id, ua.platform_id, ua.platform_game_id, a.total_count, a.earned_count;
+GROUP BY ua.user_id, ua.platform_id, ua.platform_game_id;
 
--- Verify backfill
+-- Verify the backfill worked
 SELECT 
-  'After backfill - user_progress count' as check_name,
-  COUNT(*) as count
+  COUNT(*) as steam_games_backfilled,
+  SUM(achievements_earned) as total_achievements_backfilled
 FROM user_progress
-WHERE platform_id = 4
-  AND user_id = (SELECT id FROM auth.users WHERE email = 'mdorminey79@gmail.com');
+WHERE user_id = '35029ccf-0d16-4741-a2fe-1e5b9fee4e23'::uuid
+  AND platform_id = 4;
+

@@ -5,10 +5,10 @@ import 'package:statusxp/data/psn_service.dart';
 import 'package:statusxp/data/xbox_service.dart';
 
 /// Service that handles automatic background syncing
-/// Checks last sync time and triggers sync if > 12 hours
+/// Checks last sync time and triggers sync if > 24 hours
 /// 
 /// IMPORTANT: Auto-sync is completely SEPARATE from rate limiting:
-/// - Auto-sync: Runs every 12 hours in background (SharedPreferences)
+/// - Auto-sync: Runs every 24 hours in background (SharedPreferences)
 /// - Rate limits: Apply only to manual "Sync Now" button presses (user_sync_history table)
 /// - Auto-syncs pass isAutoSync=true flag and don't record in rate limit database
 /// - Users can still manually sync whenever allowed by rate limits
@@ -17,7 +17,7 @@ class AutoSyncService {
   final PSNService _psnService;
   final XboxService _xboxService;
   
-  static const Duration _autoSyncInterval = Duration(hours: 12);
+  static const Duration _autoSyncInterval = Duration(hours: 24);
   static const String _psnLastSyncKey = 'last_psn_sync_time';
   static const String _xboxLastSyncKey = 'last_xbox_sync_time';
   static const String _steamLastSyncKey = 'last_steam_sync_time';

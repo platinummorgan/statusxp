@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
-import 'dart:html' as html show window;
+// Conditional import for web-only features
+import 'package:statusxp/utils/web_utils.dart' if (dart.library.io) 'package:statusxp/utils/web_utils_stub.dart';
 
 /// Screen for connecting Twitch account (WEB ONLY)
 /// 
@@ -36,7 +37,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
   Future<void> _checkForOAuthCallback() async {
     if (!kIsWeb) return;
 
-    final uri = Uri.parse(html.window.location.href);
+    final uri = Uri.parse(WebUtils.getCurrentUrl());
     final code = uri.queryParameters['code'];
     final error = uri.queryParameters['error'];
 
@@ -45,13 +46,13 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
         _error = 'OAuth error: $error';
       });
       // Clean URL
-      html.window.history.replaceState(null, '', '/settings');
+      WebUtils.replaceUrl('/settings');
       return;
     }
 
     if (code != null) {
       // Clean URL immediately
-      html.window.history.replaceState(null, '', '/settings');
+      WebUtils.replaceUrl('/settings');
       
       // Process the OAuth code
       await _linkAccount(code);
@@ -78,7 +79,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
     });
 
     // Redirect to Twitch OAuth page
-    html.window.location.assign(authUrl.toString());
+    WebUtils.redirectTo(authUrl.toString());
   }
 
   Future<void> _linkAccount(String code) async {

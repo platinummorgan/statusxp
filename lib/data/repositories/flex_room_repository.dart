@@ -265,11 +265,39 @@ class FlexRoomRepository {
       final sweattiestPlatinum = results[3] as FlexTile?;
       
       // Build superlatives map from remaining results
-      final superlatives = <String, FlexTile>{};
+      var superlatives = <String, FlexTile>{};
       for (var i = 0; i < superlativeKeys.length; i++) {
         final tile = results[4 + i] as FlexTile?;
         if (tile != null) {
           superlatives[superlativeKeys[i]] = tile;
+        }
+      }
+      
+      // Auto-fill superlatives if empty or has fewer than 3
+      if (superlatives.length < 3) {
+        print('🎯 Superlatives mostly empty, auto-filling...');
+        final autoFilled = await autofillSuperlatives(userId);
+        if (autoFilled.isNotEmpty) {
+          // Merge auto-filled with existing (keep existing ones)
+          superlatives = {...autoFilled, ...superlatives};
+          
+          // Save the auto-filled superlatives to database
+          final dataToSave = FlexRoomData(
+            userId: userId,
+            tagline: data['tagline'] ?? 'Completionist',
+            lastUpdated: DateTime.now(),
+            flexOfAllTime: results[0] as FlexTile?,
+            rarestFlex: results[1] as FlexTile?,
+            mostTimeSunk: results[2] as FlexTile?,
+            sweattiestPlatinum: results[3] as FlexTile?,
+            superlatives: superlatives,
+            recentFlexes: const [],
+          );
+          
+          // Save asynchronously (don't wait)
+          updateFlexRoomData(dataToSave).catchError((e) {
+            print('⚠️ Failed to save auto-filled superlatives: $e');
+          });
         }
       }
       
@@ -577,6 +605,69 @@ class FlexRoomRepository {
       return await _getSuggestionsByRarityAndXP(userId, maxRarity: 10.0);
     } catch (e) {
       return [];
+    }
+  }
+
+  /// Auto-fill superlatives with smart suggestions
+  Future<Map<String, FlexTile>> autofillSuperlatives(String userId) async {
+    try {
+      print('🤖 Auto-filling superlatives for user $userId');
+      final superlatives = <String, FlexTile>{};
+      
+      // Get suggestions for each category in parallel
+      final categories = [
+        'hardest',
+        'easiest',
+        'aggravating',
+        'rage_inducing',
+        'biggest_grind',
+        'most_time',
+        'rng_nightmare',
+        'never_again',
+        'most_proud',
+        'clutch',
+        'cozy_comfort',
+        'hidden_gem',
+      ];
+      
+      final futures = categories.map((category) async {
+        try {
+          final response = await _client
+              .rpc('get_superlative_suggestions_v3', params: {
+            'p_user_id': userId,
+            'p_category': category,
+          });
+          
+          if (response != null && response is List && response.isNotEmpty) {
+            final result = response.first;
+            final tile = await _getAchievementTileV2(
+              result['platform_id'],
+              result['platform_game_id'],
+              result['platform_achievement_id'],
+              userId,
+            );
+            return MapEntry(category, tile);
+          }
+          return null;
+        } catch (e) {
+          print('⚠️ Failed to get suggestion for $category: $e');
+          return null;
+        }
+      });
+      
+      final results = await Future.wait(futures);
+      
+      for (final entry in results) {
+        if (entry != null && entry.value != null) {
+          superlatives[entry.key] = entry.value!;
+        }
+      }
+      
+      print('✅ Auto-filled ${superlatives.length} superlatives');
+      return superlatives;
+    } catch (e) {
+      print('❌ Error auto-filling superlatives: $e');
+      return {};
     }
   }
 

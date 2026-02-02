@@ -171,16 +171,16 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           // App Icon
                           Container(
-                            width: 80,
-                            height: 80,
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: CyberpunkTheme.neonCyan.withValues(alpha: 0.4),
                                 width: 2,
@@ -193,14 +193,14 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                               ],
                             ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(14),
                               child: Image.asset(
                                 'assets/images/app_icon.png',
                                 fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 12),
                           
                           // Username with massive glow
                           FittedBox(
@@ -210,7 +210,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                               style: theme.textTheme.displayLarge?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
-                                fontSize: 48,
+                                fontSize: 36,
                                 letterSpacing: 2,
                                 shadows: [
                                   ...CyberpunkTheme.neonGlow(color: CyberpunkTheme.neonPurple, blurRadius: 20),
@@ -224,11 +224,11 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                               maxLines: 1,
                             ),
                           ),
-                          const SizedBox(height: 36),
+                          const SizedBox(height: 20),
 
                           // Massive StatusXP display
                           Container(
-                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
@@ -248,7 +248,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                                   _formatNumber(dashboardStats.totalStatusXP.toInt()),
                                   style: theme.textTheme.displayLarge?.copyWith(
                                     color: CyberpunkTheme.neonPurple,
-                                    fontSize: 67,
+                                    fontSize: 52,
                                     fontWeight: FontWeight.w900,
                                     height: 0.9,
                                     letterSpacing: -1,
@@ -263,7 +263,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'STATUS POINTS',
+                                  'STATUSXP',
                                   style: theme.textTheme.labelMedium?.copyWith(
                                     color: CyberpunkTheme.neonPurple.withValues(alpha: 0.8),
                                     letterSpacing: 4,
@@ -315,45 +315,35 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                             ),
                           ),
 
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 20),
 
-                          // Platform stats grid
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Expanded(
-                                child: _PlatformStat(
-                                  label: 'PSN',
-                                  games: dashboardStats.psnStats.gamesCount,
-                                  achievements: dashboardStats.psnStats.achievementsUnlocked,
-                                  achievementLabel: 'TROPH',
-                                  color: CyberpunkTheme.neonCyan,
-                                  rank: ranks?['psn'],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _PlatformStat(
-                                  label: 'XBOX',
-                                  games: dashboardStats.xboxStats.gamesCount,
-                                  achievements: dashboardStats.xboxStats.gamerscore,
-                                  achievementLabel: 'GAMER',
-                                  color: CyberpunkTheme.neonGreen,
-                                  rank: ranks?['xbox'],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _PlatformStat(
-                                  label: 'STEAM',
-                                  games: dashboardStats.steamStats.gamesCount,
-                                  achievements: dashboardStats.steamStats.achievementsUnlocked,
-                                  achievementLabel: 'ACHV',
-                                  color: accentSecondary,
-                                  rank: ranks?['steam'],
-                                ),
-                              ),
-                            ],
+                          // Platform stats - stacked vertically like leaderboards
+                          _PlatformStat(
+                            label: 'PSN',
+                            games: dashboardStats.psnStats.gamesCount,
+                            achievements: dashboardStats.psnStats.achievementsUnlocked,
+                            achievementLabel: 'TROPH',
+                            color: CyberpunkTheme.neonCyan,
+                            rank: ranks?['psn'],
+                            platinumCount: dashboardStats.psnStats.platinums,
+                          ),
+                          const SizedBox(height: 8),
+                          _PlatformStat(
+                            label: 'XBOX',
+                            games: dashboardStats.xboxStats.gamesCount,
+                            achievements: dashboardStats.xboxStats.gamerscore,
+                            achievementLabel: 'SCORE',
+                            color: CyberpunkTheme.neonGreen,
+                            rank: ranks?['xbox'],
+                          ),
+                          const SizedBox(height: 8),
+                          _PlatformStat(
+                            label: 'STEAM',
+                            games: dashboardStats.steamStats.gamesCount,
+                            achievements: dashboardStats.steamStats.achievementsUnlocked,
+                            achievementLabel: 'ACHV',
+                            color: accentSecondary,
+                            rank: ranks?['steam'],
                           ),
 
                           const SizedBox(height: 24),
@@ -369,7 +359,7 @@ class _StatusPosterScreenState extends ConsumerState<StatusPosterScreen> {
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Text(
-                              '⚡ BEAT MY SCORE',
+                              '⚡ WHAT\'S YOUR STATUS!?',
                               style: theme.textTheme.labelMedium?.copyWith(
                                 color: CyberpunkTheme.neonPink,
                                 letterSpacing: 2.5,
@@ -668,6 +658,7 @@ class _PlatformStat extends StatelessWidget {
   final String achievementLabel;
   final Color color;
   final int? rank;
+  final int? platinumCount;
 
   const _PlatformStat({
     required this.label,
@@ -676,6 +667,7 @@ class _PlatformStat extends StatelessWidget {
     required this.achievementLabel,
     required this.color,
     this.rank,
+    this.platinumCount,
   });
 
   @override
@@ -699,69 +691,82 @@ class _PlatformStat extends StatelessWidget {
           width: 1.5,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Row(
         children: [
+          // Platform label
           Text(
             label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              letterSpacing: 2,
-              fontWeight: FontWeight.w800,
-              fontSize: 11,
-              shadows: CyberpunkTheme.neonGlow(color: color, blurRadius: 6),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '$games',
             style: theme.textTheme.titleLarge?.copyWith(
               color: color,
-              fontSize: 32,
+              letterSpacing: 2,
               fontWeight: FontWeight.w900,
-              height: 1.0,
-              shadows: CyberpunkTheme.neonGlow(color: color, blurRadius: 8),
+              fontSize: 16,
             ),
           ),
-          const SizedBox(height: 3),
-          Text(
-            'GAMES',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color.withValues(alpha: 0.6),
-              fontSize: 9,
-              letterSpacing: 1.5,
-              fontWeight: FontWeight.w600,
+          const SizedBox(width: 16),
+          
+          // Main metric (platinum count for PSN, otherwise achievements/score)
+          Expanded(
+            child: Row(
+              children: [
+                if (platinumCount != null && platinumCount! > 0) ...[
+                  // Show platinum count for PSN
+                  Icon(
+                    Icons.emoji_events,
+                    color: color,
+                    size: 18,
+                    shadows: CyberpunkTheme.neonGlow(color: color, blurRadius: 4),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$platinumCount',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: color,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      shadows: CyberpunkTheme.neonGlow(color: color, blurRadius: 6),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'PLAT',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: color.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      letterSpacing: 1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ] else ...[
+                  // Show achievements/gamerscore for Xbox/Steam
+                  Text(
+                    '$achievements',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: color,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      shadows: CyberpunkTheme.neonGlow(color: color, blurRadius: 6),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    achievementLabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: color.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Container(
-            height: 1,
-            width: 30,
-            color: color.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$achievements',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: color.withValues(alpha: 0.9),
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            achievementLabel,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color.withValues(alpha: 0.5),
-              fontSize: 9,
-              letterSpacing: 1.2,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (rank != null) ...[
-            const SizedBox(height: 10),
+          
+          // Rank badge on the right
+          if (rank != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
@@ -786,7 +791,7 @@ class _PlatformStat extends StatelessWidget {
                     '#$rank',
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: color,
-                      fontSize: 12,
+                      fontSize: 14,
                       letterSpacing: 1,
                       fontWeight: FontWeight.w900,
                       shadows: [
@@ -800,7 +805,6 @@ class _PlatformStat extends StatelessWidget {
                 ],
               ),
             ),
-          ],
         ],
       ),
     );
