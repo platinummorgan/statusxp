@@ -20,9 +20,9 @@ const supabase = createClient(
 );
 
 // Helper to download external icon and upload to Supabase Storage
-async function uploadExternalIcon(externalUrl, achievementId, platform) {
+async function uploadExternalIcon(externalUrl, achievementId, platformId) {
   try {
-    console.log(`[${platform.toUpperCase()} ${achievementId}] Downloading icon from:`, externalUrl.substring(0, 80) + '...');
+    console.log(`[PLATFORM ${platformId} ${achievementId}] Downloading icon from:`, externalUrl.substring(0, 80) + '...');
     
     // Download the image from the external URL
     const response = await fetch(externalUrl);
@@ -41,9 +41,8 @@ async function uploadExternalIcon(externalUrl, achievementId, platform) {
     else if (contentType.includes('gif')) extension = 'gif';
     else if (contentType.includes('webp')) extension = 'webp';
     
-    // Create a unique filename: achievement-icons/platform/achievementId_timestamp.ext
-    const timestamp = Date.now();
-    const filename = `achievement-icons/${platform}/${achievementId}_${timestamp}.${extension}`;
+    // Create filename: achievement-icons/{platform_id}/{platform_achievement_id}.ext
+    const filename = `achievement-icons/${platformId}/${achievementId}.${extension}`;
     
     console.log(`  ⬆️  Uploading to: ${filename}`);
     
@@ -73,21 +72,86 @@ async function uploadExternalIcon(externalUrl, achievementId, platform) {
   }
 }
 
+async function migrateTrophyIcons() {
+  console.log('🏆 Starting PlayStation trophy icon migration...\n');
+
+  const { data: trophies, error } = await supabase
+    .from('achievements')
+    .select('platform_id, platform_game_id, platform_achievement_id, name, icon_url, proxied_icon_url')
+    .not('icon_url', 'is', null)
+    .is('proxied_icon_url', null)
+    .in('platform_id', [1, 2, 5, 9]) // PlayStation platforms
+    .limit(100);
+
+  if (error) {
+    console.error('❌ Failed to fetch trophies:', error);
+    return { migrated: 0, failed: 0, skipped: 0 };
+  }
+
+  console.log(`📊 Found ${trophies.length} trophies with icons to migrate\n`);
+
+  let migrated = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (const trophy of trophies) {
+    console.log(`\n🏆 Processing trophy ${trophy.platform_achievement_id}: ${trophy.name.substring(0, 50)}...`);
+    
+    if (trophy.icon_url.includes('supabase')) {
+      console.log('  ✓ Icon already proxied');
+      skipped++;
+      continue;
+    }
+
+    if (trophy.icon_url.startsWith('data:') || !trophy.icon_url.startsWith('http')) {
+      console.log('  ⚠️  Skipping invalid icon URL');
+      skipped++;
+      continue;
+    }
+
+    const proxiedUrl = await uploadExternalIcon(trophy.icon_url, trophy.platform_achievement_id, trophy.platform_id);
+    
+    if (proxiedUrl) {
+      console.log('  💾 Updating database...');
+      const { error: updateError } = await supabase
+        .from('achievements')
+        .update({ proxied_icon_url: proxiedUrl })
+        .eq('platform_id', trophy.platform_id)
+        .eq('platform_game_id', trophy.platform_game_id)
+        .eq('platform_achievement_id', trophy.platform_achievement_id);
+
+      if (updateError) {
+        console.error('  ❌ Database update failed:', updateError);
+        failed++;
+      } else {
+        console.log('  ✅ Database updated');
+        migrated++;
+      }
+    } else {
+      failed++;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  return { migrated, failed, skipped, total: trophies.length };
+}
+
 async function migrateAchievementIcons() {
-  console.log('🚀 Starting achievement icon migration...\n');
+  console.log('🎮 Starting Xbox achievement icon migration...\n');
 
   // Get all achievements with icon URLs that haven't been proxied yet
   const { data: achievements, error } = await supabase
     .from('achievements')
-    .select('id, name, platform, icon_url, proxied_icon_url')
+    .select('platform_id, platform_game_id, platform_achievement_id, name, icon_url, proxied_icon_url')
     .not('icon_url', 'is', null)
     .is('proxied_icon_url', null)
-    .order('id')
+    .in('platform_id', [10, 11, 12]) // Xbox platforms only
     .limit(100); // Process in batches to avoid timeout
 
   if (error) {
     console.error('❌ Failed to fetch achievements:', error);
-    return;
+    return { migrated: 0, failed: 0, skipped: 0 };
   }
 
   console.log(`📊 Found ${achievements.length} achievements with icons to migrate\n`);
@@ -97,7 +161,7 @@ async function migrateAchievementIcons() {
   let skipped = 0;
 
   for (const achievement of achievements) {
-    console.log(`\n🏆 Processing achievement ${achievement.id}: ${achievement.name.substring(0, 50)}...`);
+    console.log(`\n🏆 Processing achievement ${achievement.platform_achievement_id}: ${achievement.name.substring(0, 50)}...`);
     
     // Skip if icon_url is already a Supabase URL
     if (achievement.icon_url.includes('supabase')) {
@@ -113,7 +177,7 @@ async function migrateAchievementIcons() {
       continue;
     }
 
-    const proxiedUrl = await uploadExternalIcon(achievement.icon_url, achievement.id, achievement.platform);
+    const proxiedUrl = await uploadExternalIcon(achievement.icon_url, achievement.platform_achievement_id, achievement.platform_id);
     
     if (proxiedUrl) {
       // Update database with proxied URL
@@ -121,7 +185,9 @@ async function migrateAchievementIcons() {
       const { error: updateError } = await supabase
         .from('achievements')
         .update({ proxied_icon_url: proxiedUrl })
-        .eq('id', achievement.id);
+        .eq('platform_id', achievement.platform_id)
+        .eq('platform_game_id', achievement.platform_game_id)
+        .eq('platform_achievement_id', achievement.platform_achievement_id);
 
       if (updateError) {
         console.error('  ❌ Database update failed:', updateError);
@@ -138,19 +204,41 @@ async function migrateAchievementIcons() {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  console.log('\n\n📈 Migration Summary:');
-  console.log(`  ✅ Successfully migrated: ${migrated}`);
-  console.log(`  ❌ Failed: ${failed}`);
-  console.log(`  ⏭️  Skipped: ${skipped}`);
-  console.log(`  📊 Total processed: ${achievements.length}`);
+  return { migrated, failed, skipped, total: achievements.length };
+}
+
+// Run both migrations
+async function runAllMigrations() {
+  console.log('🚀 Starting icon migration for all platforms...\n');
   
-  if (achievements.length === 100) {
-    console.log('\n⚠️  Note: Processed 100 achievements (batch limit). Run again to process more.');
+  const xboxResults = await migrateAchievementIcons();
+  console.log('\n' + '='.repeat(60) + '\n');
+  const psnResults = await migrateTrophyIcons();
+  
+  console.log('\n\n📈 Total Migration Summary:');
+  console.log('  Xbox Achievements:');
+  console.log(`    ✅ Successfully migrated: ${xboxResults.migrated}`);
+  console.log(`    ❌ Failed: ${xboxResults.failed}`);
+  console.log(`    ⏭️  Skipped: ${xboxResults.skipped}`);
+  console.log(`    📊 Total processed: ${xboxResults.total}`);
+  
+  console.log('\n  PlayStation Trophies:');
+  console.log(`    ✅ Successfully migrated: ${psnResults.migrated}`);
+  console.log(`    ❌ Failed: ${psnResults.failed}`);
+  console.log(`    ⏭️  Skipped: ${psnResults.skipped}`);
+  console.log(`    📊 Total processed: ${psnResults.total}`);
+  
+  console.log('\n  Grand Total:');
+  console.log(`    ✅ ${xboxResults.migrated + psnResults.migrated} icons migrated`);
+  console.log(`    ❌ ${xboxResults.failed + psnResults.failed} failed`);
+  console.log(`    ⏭️  ${xboxResults.skipped + psnResults.skipped} skipped`);
+  
+  if (xboxResults.total === 100 || psnResults.total === 100) {
+    console.log('\n⚠️  Note: Hit batch limit. Run again to process more.');
   }
 }
 
-// Run the migration
-migrateAchievementIcons()
+runAllMigrations()
   .then(() => {
     console.log('\n✨ Migration complete!');
     process.exit(0);

@@ -44,11 +44,10 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
     else if (contentType.includes('gif')) extension = 'gif';
     else if (contentType.includes('webp')) extension = 'webp';
     
-    // Create filename
-    const timestamp = Date.now();
-    const filename = `achievement-icons/${platform}/${achievementId}_${timestamp}.${extension}`;
+    // Create filename without timestamp to prevent duplicates
+    const filename = `achievement-icons/${platform}/${achievementId}.${extension}`;
     
-    // Upload to Supabase Storage
+    // Upload to Supabase Storage (upsert will replace if already exists)
     const { error } = await supabase.storage
       .from('avatars')
       .upload(filename, arrayBuffer, {
