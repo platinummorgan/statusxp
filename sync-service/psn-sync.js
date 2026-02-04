@@ -604,10 +604,11 @@ export async function syncPSNAchievements(
         if (invalidProxiedAchs) {
           for (const ach of invalidProxiedAchs) {
             const url = ach.proxied_icon_url;
-            // Invalid if: numbered folder OR timestamped OR doesn't match achievement ID
+            // Invalid if: numbered folder OR timestamped OR missing gameId prefix
+            const validPattern = new RegExp(`/avatars/achievement-icons/psn/${game.platform_game_id}_${ach.platform_achievement_id}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
             if (/\/avatars\/achievement-icons\/\d+\//.test(url) || 
                 /_\d{13}\.(png|jpg|jpeg|gif|webp)$/i.test(url) ||
-                !url.includes(`/avatars/achievement-icons/psn/${ach.platform_achievement_id}.`)) {
+                !validPattern.test(url)) {
               invalidCount++;
             }
           }
