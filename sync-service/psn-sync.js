@@ -450,56 +450,9 @@ export async function syncPSNAchievements(
 
     await supabase.from('psn_sync_logs').update({ status: 'syncing' }).eq('id', syncLogId);
 
-    // Try to update profile name and avatar
-    try {
-      // Fetch user profile - getProfileFromAccountId works but doesn't return avatarUrls
-      // We need to make a raw API call to get avatar data
-      const profileResponse = await fetch('https://m.np.playstation.com/api/userProfile/v1/internal/users/me/profile', {
-        headers: {
-          'Authorization': `Bearer ${currentAccessToken}`,
-        },
-      });
-      
-      if (!profileResponse.ok) {
-        throw new Error(`Failed to fetch profile: ${profileResponse.status}`);
-      }
-      
-      const userProfile = await profileResponse.json();
-      console.log('[PSN SYNC] User profile avatarUrls:', userProfile.avatarUrls);
-      
-      const { data: currentProfile } = await supabase
-        .from('profiles')
-        .select('display_name, preferred_display_platform')
-        .eq('id', userId)
-        .single();
-
-      const updates = { psn_online_id: userProfile.onlineId, psn_account_id: accountId };
-      if (!currentProfile?.display_name || currentProfile.preferred_display_platform === 'psn') {
-        updates.display_name = userProfile.onlineId;
-      }
-      
-      // Upload PSN avatar if available
-      if (userProfile.avatarUrls && userProfile.avatarUrls.length > 0) {
-        // Use the medium-sized avatar or largest available
-        const avatarUrl = userProfile.avatarUrls.find(a => a.size === 'm')?.avatarUrl || 
-                          userProfile.avatarUrls[userProfile.avatarUrls.length - 1].avatarUrl;
-        console.log('[PSN SYNC] Uploading PSN avatar:', avatarUrl);
-        const proxiedAvatarUrl = await uploadExternalAvatar(avatarUrl, userId, 'psn');
-        if (proxiedAvatarUrl) {
-          updates.psn_avatar_url = proxiedAvatarUrl;
-          console.log('[PSN SYNC] ✅ Avatar uploaded successfully');
-        } else {
-          console.warn('[PSN SYNC] ⚠️ Avatar upload failed');
-        }
-      } else {
-        console.warn('[PSN SYNC] ⚠️ No avatar URLs returned from PSN API');
-      }
-      
-      await supabase.from('profiles').update(updates).eq('id', userId);
-    } catch (e) {
-      console.warn('⚠️ Failed to fetch/update PSN profile (continuing):', e.message);
-    }
-
+    // Note: PSN avatars are uploaded during account linking flow, not during sync
+    // The token used for trophy sync doesn't have permissions for profile endpoints (403)
+    
     // Fetch ALL titles w/ pagination
     console.log('Fetching ALL PSN titles with pagination...');
     let allTitles = [];
