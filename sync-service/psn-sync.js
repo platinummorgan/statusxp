@@ -19,6 +19,60 @@ const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '3', 10);
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Helper to download external avatar and upload to Supabase Storage
+async function uploadExternalAvatar(externalUrl, userId, platform) {
+  try {
+    console.log(`[AVATAR STORAGE] Downloading ${platform} avatar from:`, externalUrl);
+    
+    // Download the image from the external URL
+    const response = await fetch(externalUrl);
+    if (!response.ok) {
+      console.error(`[AVATAR STORAGE] Failed to download avatar: ${response.status}`);
+      return null;
+    }
+
+    // Get the image data as a buffer
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Determine file extension from content type
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    let extension = 'jpg';
+    if (contentType.includes('png')) extension = 'png';
+    else if (contentType.includes('gif')) extension = 'gif';
+    else if (contentType.includes('webp')) extension = 'webp';
+    
+    // Create a unique filename: user-avatars/{platform}_{userId}_{timestamp}.ext
+    const timestamp = Date.now();
+    const filename = `user-avatars/${platform}_${userId}_${timestamp}.${extension}`;
+    
+    console.log(`[AVATAR STORAGE] Uploading to Supabase Storage: ${filename}`);
+    
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('avatars')
+      .upload(filename, arrayBuffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (error) {
+      console.error('[AVATAR STORAGE] Upload error:', error);
+      return null;
+    }
+
+    // Get the public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filename);
+
+    console.log(`[AVATAR STORAGE] Successfully uploaded avatar:`, publicUrl);
+    return publicUrl;
+  } catch (error) {
+    console.error('[AVATAR STORAGE] Exception:', error);
+    return null;
+  }
+}
+
 function logMemory(label) {
   try {
     const m = process.memoryUsage();
@@ -397,7 +451,7 @@ export async function syncPSNAchievements(
 
     await supabase.from('psn_sync_logs').update({ status: 'syncing' }).eq('id', syncLogId);
 
-    // Try to update profile name
+    // Try to update profile name and avatar
     try {
       const userProfile = await getProfileFromAccountId({ accessToken: currentAccessToken }, accountId);
       const { data: currentProfile } = await supabase
@@ -410,6 +464,19 @@ export async function syncPSNAchievements(
       if (!currentProfile?.display_name || currentProfile.preferred_display_platform === 'psn') {
         updates.display_name = userProfile.onlineId;
       }
+      
+      // Upload PSN avatar if available
+      if (userProfile.avatarUrls && userProfile.avatarUrls.length > 0) {
+        // Use the largest avatar URL available
+        const avatarUrl = userProfile.avatarUrls[userProfile.avatarUrls.length - 1].avatarUrl;
+        console.log('[PSN SYNC] Uploading PSN avatar:', avatarUrl);
+        const proxiedAvatarUrl = await uploadExternalAvatar(avatarUrl, userId, 'psn');
+        if (proxiedAvatarUrl) {
+          updates.psn_avatar_url = proxiedAvatarUrl;
+          console.log('[PSN SYNC] ✅ Avatar uploaded successfully');
+        }
+      }
+      
       await supabase.from('profiles').update(updates).eq('id', userId);
     } catch (e) {
       console.warn('⚠️ Failed to fetch/update PSN profile (continuing):', e.message);
