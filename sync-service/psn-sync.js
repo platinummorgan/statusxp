@@ -582,7 +582,7 @@ export async function syncPSNAchievements(
 
       const needsProcessing = forceFullSync || !existingUserGame || countsChanged || missingAchievements || !hasAchievementDefs || needRarityRefresh;
       
-      // Only check for missing proxied URLs if we would otherwise skip (avoid timeout from processing too many games)
+      // Only check for missing/invalid proxied URLs if we would otherwise skip (avoid timeout from processing too many games)
       if (!needsProcessing && existingUserGame) {
         const { count: missingProxyCount } = await supabase
           .from('achievements')
@@ -592,8 +592,30 @@ export async function syncPSNAchievements(
           .is('proxied_icon_url', null)
           .not('icon_url', 'is', null);
         
-        if ((missingProxyCount || 0) > 0) {
-          console.log(`🔄 MISSING PROXIED URLS: ${title.trophyTitleName} has ${missingProxyCount} achievements without proxied icons - reprocessing`);
+        // Also check for invalid proxied URLs (numbered folders or timestamped files)
+        const { data: invalidProxiedAchs } = await supabase
+          .from('achievements')
+          .select('platform_achievement_id, proxied_icon_url')
+          .eq('platform_id', platformId)
+          .eq('platform_game_id', game.platform_game_id)
+          .not('proxied_icon_url', 'is', null);
+        
+        let invalidCount = 0;
+        if (invalidProxiedAchs) {
+          for (const ach of invalidProxiedAchs) {
+            const url = ach.proxied_icon_url;
+            // Invalid if: numbered folder OR timestamped OR doesn't match achievement ID
+            if (/\/avatars\/achievement-icons\/\d+\//.test(url) || 
+                /_\d{13}\.(png|jpg|jpeg|gif|webp)$/i.test(url) ||
+                !url.includes(`/avatars/achievement-icons/psn/${ach.platform_achievement_id}.`)) {
+              invalidCount++;
+            }
+          }
+        }
+        
+        const totalIssues = (missingProxyCount || 0) + invalidCount;
+        if (totalIssues > 0) {
+          console.log(`🔄 INVALID PROXIED URLS: ${title.trophyTitleName} has ${missingProxyCount || 0} missing + ${invalidCount} invalid proxied icons - reprocessing`);
           // Continue to process this game
         } else {
           console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);

@@ -31,9 +31,9 @@ async function uploadExternalAvatar(externalUrl, userId, platform) {
     else if (contentType.includes('gif')) extension = 'gif';
     else if (contentType.includes('webp')) extension = 'webp';
     
-    // Create a unique filename: platform/userId_timestamp.ext
+    // Create a unique filename: user-avatars/{platform}_{userId}_{timestamp}.ext
     const timestamp = Date.now();
-    const filename = `${platform}/${userId}_${timestamp}.${extension}`;
+    const filename = `user-avatars/${platform}_${userId}_${timestamp}.${extension}`;
     
     console.log(`[AVATAR STORAGE] Uploading to Supabase Storage: ${filename}`);
     
