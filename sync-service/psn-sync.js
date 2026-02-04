@@ -431,8 +431,6 @@ export async function syncPSNAchievements(
       getTitleTrophies,
       getUserTrophiesEarnedForTitle,
       exchangeRefreshTokenForAuthTokens,
-      getProfileFromAccountId,
-      getUserProfile,
     } = psnApi;
 
     // Refresh tokens immediately (PSN tokens can expire mid-run)
@@ -454,8 +452,21 @@ export async function syncPSNAchievements(
 
     // Try to update profile name and avatar
     try {
-      // Fetch user profile with avatar URLs
-      const userProfile = await getUserProfile({ accessToken: currentAccessToken }, 'me');
+      // Fetch user profile - getProfileFromAccountId works but doesn't return avatarUrls
+      // We need to make a raw API call to get avatar data
+      const profileResponse = await fetch('https://m.np.playstation.com/api/userProfile/v1/internal/users/me/profile', {
+        headers: {
+          'Authorization': `Bearer ${currentAccessToken}`,
+        },
+      });
+      
+      if (!profileResponse.ok) {
+        throw new Error(`Failed to fetch profile: ${profileResponse.status}`);
+      }
+      
+      const userProfile = await profileResponse.json();
+      console.log('[PSN SYNC] User profile avatarUrls:', userProfile.avatarUrls);
+      
       const { data: currentProfile } = await supabase
         .from('profiles')
         .select('display_name, preferred_display_platform')
@@ -468,7 +479,6 @@ export async function syncPSNAchievements(
       }
       
       // Upload PSN avatar if available
-      console.log('[PSN SYNC] User profile avatarUrls:', userProfile.avatarUrls);
       if (userProfile.avatarUrls && userProfile.avatarUrls.length > 0) {
         // Use the medium-sized avatar or largest available
         const avatarUrl = userProfile.avatarUrls.find(a => a.size === 'm')?.avatarUrl || 
