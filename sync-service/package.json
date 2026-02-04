@@ -1,6 +1,6 @@
 {
   "name": "statusxp-sync-service",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Background sync service for Xbox, Steam, and PSN achievements",
   "main": "index.js",
   "type": "module",

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:statusxp/firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:statusxp/config/supabase_config.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
+import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/services/auth_refresh_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/services/sync_resume_service.dart';
@@ -112,6 +115,18 @@ Future<void> _initializeApp() async {
   try {
     await dotenv.load(fileName: '.env');
   } catch (_) {}
+
+  // Initialize Firebase for all platforms
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await AnalyticsService().initialize();
+    _safeLog('🔥 Firebase Analytics initialized');
+  } catch (e) {
+    _safeLog('Firebase initialization error: ${_safeStr(e)}');
+    // Continue without analytics if it fails
+  }
 
   // Don't proactively clean storage - only clean on actual errors
   // This prevents interfering with active OAuth flows

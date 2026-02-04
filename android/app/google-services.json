@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "99712650730",
+    "project_id": "statusxp",
+    "storage_bucket": "statusxp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:99712650730:android:cafa59689d1dadb7a93693",
+        "android_client_info": {
+          "package_name": "com.statusxp.statusxp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyl5HukrbloLTZUXPYE1ZTY8hcTc8NKOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

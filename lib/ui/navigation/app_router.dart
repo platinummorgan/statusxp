@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/ui/screens/auth/auth_gate.dart';
 import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
 import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
@@ -29,6 +30,10 @@ import 'package:statusxp/ui/screens/premium_analytics_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   debugLogDiagnostics: kDebugMode,
+  observers: [
+    // Track screen views automatically using FirebaseAnalyticsObserver
+    AnalyticsService().observer,
+  ],
   routes: [
     // Landing Page - Public marketing page
     GoRoute(
@@ -275,3 +280,40 @@ final GoRouter appRouter = GoRouter(
     ),
   ),
 );
+
+/// Route observer that automatically logs screen views to Firebase Analytics
+class _AnalyticsRouteObserver extends NavigatorObserver {
+  final _analytics = AnalyticsService();
+
+  @override
+  void didPush(Route route, Route? previousRoute) {
+    super.didPush(route, previousRoute);
+    _logScreenView(route);
+  }
+
+  @override
+  void didPop(Route route, Route? previousRoute) {
+    super.didPop(route, previousRoute);
+    if (previousRoute != null) {
+      _logScreenView(previousRoute);
+    }
+  }
+
+  @override
+  void didReplace({Route? newRoute, Route? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (newRoute != null) {
+      _logScreenView(newRoute);
+    }
+  }
+
+  void _logScreenView(Route route) {
+    final screenName = route.settings.name;
+    if (screenName != null && screenName.isNotEmpty) {
+      _analytics.logScreenView(
+        screenName: screenName,
+        screenClass: route.runtimeType.toString(),
+      );
+    }
+  }
+}

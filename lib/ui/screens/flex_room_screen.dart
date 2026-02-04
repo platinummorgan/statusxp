@@ -7,6 +7,7 @@ import 'package:statusxp/data/repositories/flex_room_repository.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/widgets/achievement_picker_modal.dart';
+
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/ui/widgets/title_selector_modal.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -1448,8 +1449,6 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                         borderRadius: BorderRadius.circular(4),
                         child: Image.network(
                           tile.gameCoverUrl!,
-                          width: 30,
-                          height: 30,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                         ),

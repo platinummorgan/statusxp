@@ -63,29 +63,8 @@ class GameListTile extends StatelessWidget {
               child: game.cover.isNotEmpty && game.cover.startsWith('http')
                   ? Image.network(
                       game.cover,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return _buildPlaceholderCover();
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          width: 80,
-                          height: 80,
-                          color: surfaceDark,
-                          child: const Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(accentSecondary),
-                              ),
-                            ),
-                          ),
-                        );
                       },
                     )
                   : _buildPlaceholderCover(),

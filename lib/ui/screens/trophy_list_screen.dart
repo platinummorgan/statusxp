@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:statusxp/ui/widgets/cross_platform_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/game.dart';
 import 'package:statusxp/domain/trophy.dart';
@@ -169,8 +170,8 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(10),
                           child: trophy.iconUrl != null
-                              ? Image.network(
-                                  trophy.iconUrl!,
+                              ? CrossPlatformImage(
+                                  imageUrl: trophy.iconUrl!,
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => Icon(
                                     _getTierIcon(trophy.tier),

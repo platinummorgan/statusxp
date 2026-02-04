@@ -62,6 +62,10 @@ dependencies:
   # Supabase backend integration
   supabase_flutter: ^2.10.3
   
+  # Firebase Analytics for tracking user behavior
+  firebase_core: ^3.8.1
+  firebase_analytics: ^11.3.5
+  
   # WebView for PSN OAuth login flow
   webview_flutter: ^4.11.0
   

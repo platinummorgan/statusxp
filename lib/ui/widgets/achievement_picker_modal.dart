@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:statusxp/ui/widgets/cross_platform_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/data/repositories/flex_room_repository.dart';
 import 'package:statusxp/domain/flex_room_data.dart';
@@ -525,8 +526,8 @@ class _AchievementPickerModalState
                 child: gameCoverUrl != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          gameCoverUrl,
+                        child: CrossPlatformImage(
+                          imageUrl: gameCoverUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Icon(
                             _getPlatformIcon(_selectedPlatform!),
@@ -725,8 +726,8 @@ class _AchievementPickerModalState
                 child: tile.gameCoverUrl != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          tile.gameCoverUrl!,
+                        child: CrossPlatformImage(
+                          imageUrl: tile.gameCoverUrl!,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Icon(
                             _getPlatformIcon(tile.platform),

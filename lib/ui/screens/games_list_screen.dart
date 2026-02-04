@@ -99,7 +99,7 @@ class _GamesListScreenState extends ConsumerState<GamesListScreen> {
           }
           final result = bTime.compareTo(aTime);
           if (result != 0) {
-            print('SORT: ${a.name} (${aTime.toLocal()}) vs ${b.name} (${bTime.toLocal()}) = $result');
+            // Sorting games
           }
           return result;
         case GameSortOption.platinumEarned:

@@ -88,12 +88,11 @@ Deno.serve(async (req) => {
 
     // Fetch games that need backfilling (external URLs only)
     const { data: games, error: fetchError } = await supabase
-      .from('games')
-      .select('platform_id, platform_game_id, cover_url')
+      .from('game_titles')
+      .select('platform_id, platform_game_id, cover_url, proxied_cover_url')
       .in('platform_id', platform_ids)
       .not('cover_url', 'is', null)
-      .not('cover_url', 'like', '%supabase%')
-      .not('cover_url', 'like', '%cloudfront%')
+      .is('proxied_cover_url', null)
       .range(offset, offset + batch_size - 1);
 
     if (fetchError) {
@@ -116,8 +115,11 @@ Deno.serve(async (req) => {
       if (newUrl) {
         // Update the database with the new URL
         const { error: updateError } = await supabase
-          .from('games')
-          .update({ cover_url: newUrl })
+          .from('game_titles')
+          .update({ 
+            proxied_cover_url: publicUrl,
+            updated_at: new Date().toISOString()
+          })
           .eq('platform_id', game.platform_id)
           .eq('platform_game_id', game.platform_game_id);
 

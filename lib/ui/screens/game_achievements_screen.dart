@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:statusxp/ui/widgets/cross_platform_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -69,7 +70,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         throw Exception('Missing platform_id or platform_game_id for V2 schema');
       }
       
-      print('[GameAchievements] Loading for platform_id=${widget.platformId}, platform_game_id=${widget.platformGameId}');
+      // Loading achievements
       
       // Get achievements for this game (V2 schema - uses composite keys)
       final achievementsResponse = await supabase
@@ -90,7 +91,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           .eq('platform_id', widget.platformId!)
           .eq('platform_game_id', widget.platformGameId!);
       
-      print('[GameAchievements] Found ${(achievementsResponse as List).length} achievements');
+      // Achievements loaded
 
       // Get user's earned achievements for this game using V2 schema
       final userEarnedResponse = await supabase
@@ -109,7 +110,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           earnedMap[achId] = date;
         }
       }
-      print('[GameAchievements] User has earned ${earnedMap.length} achievements');
+      // User progress loaded
 
       // Merge the data
       final achievements = (achievementsResponse).map((ach) {
@@ -473,10 +474,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: achievement['proxied_icon_url'] != null || achievement['icon_url'] != null
-                      ? Image.network(
-                          achievement['proxied_icon_url'] ?? achievement['icon_url'],
-                          width: 60,
-                          height: 60,
+                      ? CrossPlatformImage(
+                          imageUrl: achievement['proxied_icon_url'] ?? achievement['icon_url'],
+                          width: 64,
+                          height: 64,
                           fit: BoxFit.cover,
                           color: isEarned ? null : Colors.black54,
                           colorBlendMode: isEarned ? null : BlendMode.darken,

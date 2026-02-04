@@ -115,7 +115,6 @@ class SupabaseDashboardRepository {
           if (gamePlatformId != null && effectiveXp != null && platformIds.contains(gamePlatformId)) {
             platformStatusXP += effectiveXp;
             platformGamesCount += 1;
-            print('[DASHBOARD] Game platform_id=$gamePlatformId added $effectiveXp to StatusXP, total now: $platformStatusXP');
           }
         }
       } else {
@@ -127,7 +126,6 @@ class SupabaseDashboardRepository {
     }
     
     final gamesCount = platformGamesCount;
-    print('[DASHBOARD] Final platformStatusXP for platforms $platformIds: $platformStatusXP');
     
     // Get platform-specific stats
     if (psnPlatforms != null) {
