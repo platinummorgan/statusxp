@@ -466,6 +466,7 @@ export async function syncPSNAchievements(
       }
       
       // Upload PSN avatar if available
+      console.log('[PSN SYNC] User profile avatarUrls:', userProfile.avatarUrls);
       if (userProfile.avatarUrls && userProfile.avatarUrls.length > 0) {
         // Use the largest avatar URL available
         const avatarUrl = userProfile.avatarUrls[userProfile.avatarUrls.length - 1].avatarUrl;
@@ -474,7 +475,11 @@ export async function syncPSNAchievements(
         if (proxiedAvatarUrl) {
           updates.psn_avatar_url = proxiedAvatarUrl;
           console.log('[PSN SYNC] ✅ Avatar uploaded successfully');
+        } else {
+          console.warn('[PSN SYNC] ⚠️ Avatar upload failed');
         }
+      } else {
+        console.warn('[PSN SYNC] ⚠️ No avatar URLs returned from PSN API');
       }
       
       await supabase.from('profiles').update(updates).eq('id', userId);
