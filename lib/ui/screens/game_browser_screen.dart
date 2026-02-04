@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:statusxp/ui/widgets/cross_platform_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
@@ -354,7 +354,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
     final platformNames = game['platform_names'] as List<dynamic>? ?? [];
     final platformIds = game['platform_ids'] as List<dynamic>? ?? [];
     final platformGameIds = game['platform_game_ids'] as List<dynamic>? ?? [];
-    final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
+    final coverUrl = kIsWeb ? (game['proxied_cover_url'] ?? game['cover_url']) as String? : game['cover_url'] as String?;
 
     showDialog(
       context: context,
@@ -509,7 +509,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
   Widget _buildGameCard(Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
-    final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
+    final coverUrl = kIsWeb ? (game['proxied_cover_url'] ?? game['cover_url']) as String? : game['cover_url'] as String?;
     final platformId = game['platform_id'];
     final platformGameId = game['platform_game_id'];
     final platformData = game['platforms'] as Map<String, dynamic>?;
@@ -555,8 +555,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
                 child: coverUrl != null && coverUrl.isNotEmpty
-                    ? CrossPlatformImage(
-                        imageUrl: coverUrl,
+                    ? Image.network(
+                        coverUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           color: const Color(0xFF0A0E27),
@@ -654,7 +654,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
   Widget _buildGameListItem(Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
-    final coverUrl = (game['proxied_cover_url'] ?? game['cover_url']) as String?;
+    final coverUrl = kIsWeb ? (game['proxied_cover_url'] ?? game['cover_url']) as String? : game['cover_url'] as String?;
     final platformId = game['platform_id'];
     final platformGameId = game['platform_game_id'];
     final platformData = game['platforms'] as Map<String, dynamic>?;
@@ -704,8 +704,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                   width: 80,
                   height: 100,
                   child: coverUrl != null && coverUrl.isNotEmpty
-                      ? CrossPlatformImage(
-                          imageUrl: coverUrl,
+                      ? Image.network(
+                          coverUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             color: const Color(0xFF0A0E27),

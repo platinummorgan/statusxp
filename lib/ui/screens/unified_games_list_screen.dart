@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:statusxp/ui/widgets/cross_platform_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/unified_game.dart';
@@ -382,8 +381,8 @@ class UnifiedGamesListScreen extends ConsumerWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: game.coverUrl != null
-                    ? CrossPlatformImage(
-                        imageUrl: game.coverUrl!,
+                    ? Image.network(
+                        game.coverUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => _buildPlaceholderCover(),
                       )

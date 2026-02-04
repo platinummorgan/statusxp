@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:statusxp/ui/widgets/cross_platform_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/achievement_comment.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
@@ -70,8 +69,8 @@ class AchievementCommentsScreen extends ConsumerWidget {
                 if (achievementIconUrl != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: CrossPlatformImage(
-                      imageUrl: achievementIconUrl!,
+                    child: Image.network(
+                      achievementIconUrl!,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(

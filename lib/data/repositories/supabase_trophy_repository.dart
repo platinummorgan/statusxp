@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/trophy.dart';
 
@@ -42,7 +43,7 @@ class SupabaseTrophyRepository {
           name: row['name'] as String,
           description: row['description'] as String?,
           tier: row['tier'] as String,
-          iconUrl: row['proxied_icon_url'] ?? row['icon_url'] as String?,
+          iconUrl: kIsWeb ? (row['proxied_icon_url'] ?? row['icon_url']) as String? : row['icon_url'] as String?,
           rarityGlobal: (row['rarity_global'] as num?)?.toDouble(),
           hidden: row['hidden'] as bool? ?? false,
           earned: earnedAt != null,

@@ -1,5 +1,4 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:flutter/foundation.dart';
 
 /// Analytics service for tracking user behavior and app usage
 /// Automatically tracks screen views and custom events

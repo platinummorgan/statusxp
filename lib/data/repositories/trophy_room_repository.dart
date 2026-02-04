@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for fetching Trophy Room data
@@ -50,10 +51,10 @@ class TrophyRoomRepository {
           'trophy_id': trophy['id'],
           'trophy_name': trophy['name'],
           'game_name': gameTitle['name'],
-          'cover_url': gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'],
+          'cover_url': kIsWeb ? (gameTitle['proxied_cover_url'] ?? gameTitle['cover_url']) : gameTitle['cover_url'],
           'rarity': (trophy['rarity_global'] as num?)?.toDouble() ?? 100.0,
           'earned_at': row['earned_at'],
-          'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
+          'icon_url': kIsWeb ? (trophy['proxied_icon_url'] ?? trophy['icon_url']) : trophy['icon_url'],
         };
       }).toList();
     } catch (e) {
@@ -114,7 +115,7 @@ class TrophyRoomRepository {
           'tier': trophy['tier'],
           'rarity': (trophy['rarity_global'] as num?)?.toDouble() ?? 100.0,
           'earned_at': row['earned_at'],
-          'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
+          'icon_url': kIsWeb ? (trophy['proxied_icon_url'] ?? trophy['icon_url']) : trophy['icon_url'],
         };
       }).toList();
     } catch (e) {
@@ -157,7 +158,7 @@ class TrophyRoomRepository {
           'game_name': gameTitle['name'],
           'tier': trophy['tier'],
           'earned_at': row['earned_at'],
-          'icon_url': trophy['proxied_icon_url'] ?? trophy['icon_url'],
+          'icon_url': kIsWeb ? (trophy['proxied_icon_url'] ?? trophy['icon_url']) : trophy['icon_url'],
         };
       }).toList();
     } catch (e) {

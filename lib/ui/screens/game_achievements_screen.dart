@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:statusxp/ui/widgets/cross_platform_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -158,7 +157,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           'platform_achievement_id': ach['platform_achievement_id'], // Keep for V2 composite keys
           'name': ach['name'],
           'description': ach['description'],
-          'icon_url': ach['proxied_icon_url'] ?? ach['icon_url'],
+          'icon_url': kIsWeb && widget.platformId != 4 ? (ach['proxied_icon_url'] ?? ach['icon_url']) : ach['icon_url'], // Xbox (4) has no CORS issues
           'proxied_icon_url': ach['proxied_icon_url'],
           'rarity_global': rarityGlobal,
           'rarity_band': rarityBand,
@@ -474,8 +473,8 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: achievement['proxied_icon_url'] != null || achievement['icon_url'] != null
-                      ? CrossPlatformImage(
-                          imageUrl: achievement['proxied_icon_url'] ?? achievement['icon_url'],
+                      ? Image.network(
+                          kIsWeb ? (achievement['proxied_icon_url'] ?? achievement['icon_url']) : achievement['icon_url'],
                           width: 64,
                           height: 64,
                           fit: BoxFit.cover,
