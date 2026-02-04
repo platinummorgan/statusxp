@@ -12,14 +12,14 @@
  * @returns {Promise<string|null>} - The proxied URL or null if failed
  */
 export async function uploadExternalIcon(externalUrl, achievementId, platform, supabase) {
-  // Skip if already a Supabase URL
-  if (!externalUrl || externalUrl.includes('supabase')) {
-    return externalUrl;
+  // Skip if no URL provided
+  if (!externalUrl) {
+    return null;
   }
 
   // Skip if not a valid HTTP URL
   if (!externalUrl.startsWith('http')) {
-    return externalUrl;
+    return null;
   }
 
   try {
