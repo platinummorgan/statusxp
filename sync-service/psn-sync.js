@@ -192,8 +192,8 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
     if (/\/avatars\/achievement-icons\/\d+\//.test(url)) return false;
     // Must NOT have timestamp: filename_1234567890123.png
     if (/_\d{13}\.(png|jpg|jpeg|gif|webp)$/i.test(url)) return false;
-    // Filename must match achievement ID: ends with /{achievementId}.ext
-    const filePattern = new RegExp(`/${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
+    // Filename must match gameId_achievementId pattern: ends with /{gameId}_{achievementId}.ext
+    const filePattern = new RegExp(`/${gameId}_${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
     if (!filePattern.test(url)) return false;
     // Valid!
     return true;
@@ -220,7 +220,7 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
       console.log(`[PSN SYNC] ✓ Reusing valid proxied URL for trophy ${trophyIdStr}`);
     } else if (iconUrl) {
       // Upload new icon (NULL or invalid existing URL)
-      proxiedIconUrl = await uploadExternalIcon(iconUrl, trophyIdStr, 'psn', supabase);
+      proxiedIconUrl = await uploadExternalIcon(iconUrl, trophyIdStr, gameId, 'psn', supabase);
     }
 
     const statusFields = computeStatusXpFields({ rarityPercent, isPlatinum });

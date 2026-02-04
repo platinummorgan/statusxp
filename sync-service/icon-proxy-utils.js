@@ -7,11 +7,12 @@
  * Download external icon and upload to Supabase Storage
  * @param {string} externalUrl - The external icon URL
  * @param {string} achievementId - The achievement ID
+ * @param {string} gameId - The game ID (to prevent collisions)
  * @param {string} platform - The platform (psn, xbox, steam)
  * @param {object} supabase - Supabase client
  * @returns {Promise<string|null>} - The proxied URL or null if failed
  */
-export async function uploadExternalIcon(externalUrl, achievementId, platform, supabase) {
+export async function uploadExternalIcon(externalUrl, achievementId, gameId, platform, supabase) {
   // Skip if no URL provided
   if (!externalUrl) {
     console.log(`[ICON PROXY] ⚠️ No URL for ${platform}/${achievementId}`);
@@ -48,7 +49,8 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
     else if (contentType.includes('webp')) extension = 'webp';
     
     // Create filename without timestamp to prevent duplicates
-    const filename = `achievement-icons/${platform}/${achievementId}.${extension}`;
+    // Include gameId to prevent collisions (different games can have same trophy IDs)
+    const filename = `achievement-icons/${platform}/${gameId}_${achievementId}.${extension}`;
     
     // Upload to Supabase Storage
     const { error } = await supabase.storage

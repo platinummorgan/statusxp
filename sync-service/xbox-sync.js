@@ -977,8 +977,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               if (!url.includes('/avatars/achievement-icons/xbox/')) return false;
               if (/\/avatars\/achievement-icons\/\d+\//.test(url)) return false;
               if (/_\d{13}\.(png|jpg|jpeg|gif|webp)$/i.test(url)) return false;
-              // Filename must match achievement ID: ends with /{achievementId}.ext
-              const filePattern = new RegExp(`/${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
+              // Filename must match gameId_achievementId pattern: ends with /{gameId}_{achievementId}.ext
+              const filePattern = new RegExp(`/${gameTitle.platform_game_id}_${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
               if (!filePattern.test(url)) return false;
               return true;
             };
@@ -1012,7 +1012,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 proxiedIconUrl = existingProxied;
                 console.log(`[XBOX SYNC] ✓ Reusing valid proxied URL for ${achievement.id}`);
               } else if (iconUrl) {
-                proxiedIconUrl = await uploadExternalIcon(iconUrl, achievement.id, 'xbox', supabase);
+                proxiedIconUrl = await uploadExternalIcon(iconUrl, achievement.id, gameTitle.platform_game_id, 'xbox', supabase);
               }
               
               // Calculate base_status_xp using EXPONENTIAL CURVE (floor=0.5, cap=12, p=3)

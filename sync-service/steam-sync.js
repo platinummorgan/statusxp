@@ -654,8 +654,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               if (!url.includes('/avatars/achievement-icons/steam/')) return false;
               if (/\/avatars\/achievement-icons\/\d+\//.test(url)) return false;
               if (/_\d{13}\.(png|jpg|jpeg|gif|webp)$/i.test(url)) return false;
-              // Filename must match achievement ID: ends with /{achievementId}.ext
-              const filePattern = new RegExp(`/${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
+              // Filename must match gameId_achievementId pattern: ends with /{gameId}_{achievementId}.ext
+              const filePattern = new RegExp(`/${gameTitle.platform_game_id}_${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
               if (!filePattern.test(url)) return false;
               return true;
             };
@@ -696,7 +696,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 proxiedIconUrl = existingProxied;
                 console.log(`[STEAM SYNC] ✓ Reusing valid proxied URL for ${achievement.name}`);
               } else if (iconUrl) {
-                proxiedIconUrl = await uploadExternalIcon(iconUrl, achievement.name, 'steam', supabase);
+                proxiedIconUrl = await uploadExternalIcon(iconUrl, achievement.name, gameTitle.platform_game_id, 'steam', supabase);
               }
 
               // Upsert achievement with V2 composite keys and StatusXP
