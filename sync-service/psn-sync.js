@@ -166,6 +166,39 @@ async function upsertGame({ platformId, platformVersion, title }) {
 async function upsertAchievementsBatch({ platformId, platformVersion, gameId, trophies, userTrophyMap }) {
   if (!trophies?.length) return;
 
+  // First, fetch existing achievements to check for valid proxied URLs
+  const trophyIds = trophies.map(t => t.trophyId.toString());
+  const { data: existingAchievements } = await supabase
+    .from('achievements')
+    .select('platform_achievement_id, proxied_icon_url')
+    .eq('platform_id', platformId)
+    .eq('platform_game_id', gameId)
+    .in('platform_achievement_id', trophyIds);
+
+  // Create map of existing proxied URLs
+  const existingProxiedMap = new Map();
+  if (existingAchievements) {
+    for (const ach of existingAchievements) {
+      existingProxiedMap.set(ach.platform_achievement_id, ach.proxied_icon_url);
+    }
+  }
+
+  // Helper to check if proxied URL is valid (not NULL, not numbered folder, not timestamped, matches achievement ID)
+  const isValidProxiedUrl = (url, achievementId) => {
+    if (!url) return false;
+    // Must be in correct folder structure: /avatars/achievement-icons/psn/
+    if (!url.includes('/avatars/achievement-icons/psn/')) return false;
+    // Must NOT be numbered folder: /avatars/achievement-icons/1/ etc
+    if (/\/avatars\/achievement-icons\/\d+\//.test(url)) return false;
+    // Must NOT have timestamp: filename_1234567890123.png
+    if (/_\d{13}\.(png|jpg|jpeg|gif|webp)$/i.test(url)) return false;
+    // Filename must match achievement ID: ends with /{achievementId}.ext
+    const filePattern = new RegExp(`/${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
+    if (!filePattern.test(url)) return false;
+    // Valid!
+    return true;
+  };
+
   // NOTE: we still proxy icons one-by-one (storage), but DB writes are batched.
   const rows = [];
   for (const trophyMeta of trophies) {
@@ -175,9 +208,20 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
     const rarityPercent = userTrophy?.trophyEarnedRate ? parseFloat(userTrophy.trophyEarnedRate) : null;
 
     const iconUrl = trophyMeta.trophyIconUrl || null;
-    const proxiedIconUrl = iconUrl
-      ? await uploadExternalIcon(iconUrl, trophyMeta.trophyId.toString(), 'psn', supabase)
-      : null;
+    const trophyIdStr = trophyMeta.trophyId.toString();
+    
+    // Check if we already have a valid proxied URL
+    const existingProxied = existingProxiedMap.get(trophyIdStr);
+    let proxiedIconUrl = null;
+    
+    if (isValidProxiedUrl(existingProxied, trophyIdStr)) {
+      // Reuse existing valid proxied URL (skip upload)
+      proxiedIconUrl = existingProxied;
+      console.log(`[PSN SYNC] ✓ Reusing valid proxied URL for trophy ${trophyIdStr}`);
+    } else if (iconUrl) {
+      // Upload new icon (NULL or invalid existing URL)
+      proxiedIconUrl = await uploadExternalIcon(iconUrl, trophyIdStr, 'psn', supabase);
+    }
 
     const statusFields = computeStatusXpFields({ rarityPercent, isPlatinum });
 

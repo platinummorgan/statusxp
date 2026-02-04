@@ -955,6 +955,34 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 onConflict: 'user_id,platform_id,platform_game_id',
               });
 
+            // Fetch existing achievements to check for valid proxied URLs
+            const achievementIds = achievementsForTitle.map(a => a.id);
+            const { data: existingAchievements } = await supabase
+              .from('achievements')
+              .select('platform_achievement_id, proxied_icon_url')
+              .eq('platform_id', platformId)
+              .eq('platform_game_id', gameTitle.platform_game_id)
+              .in('platform_achievement_id', achievementIds);
+
+            const existingProxiedMap = new Map();
+            if (existingAchievements) {
+              for (const ach of existingAchievements) {
+                existingProxiedMap.set(ach.platform_achievement_id, ach.proxied_icon_url);
+              }
+            }
+
+            // Helper to check if proxied URL is valid (not NULL, not numbered folder, not timestamped, matches achievement ID)
+            const isValidProxiedUrl = (url, achievementId) => {
+              if (!url) return false;
+              if (!url.includes('/avatars/achievement-icons/xbox/')) return false;
+              if (/\/avatars\/achievement-icons\/\d+\//.test(url)) return false;
+              if (/_\d{13}\.(png|jpg|jpeg|gif|webp)$/i.test(url)) return false;
+              // Filename must match achievement ID: ends with /{achievementId}.ext
+              const filePattern = new RegExp(`/${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
+              if (!filePattern.test(url)) return false;
+              return true;
+            };
+
             // Process achievements for this title
             let mostRecentAchievementDate = null;
             
@@ -975,14 +1003,17 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               // Get rarity from OpenXBL (falls back to null if not available)
               const rarityPercent = openXBLRarityMap.get(achievement.id) || null;
               
-              // Proxy the icon URL through Supabase Storage
+              // Proxy the icon URL through Supabase Storage (check existing first)
               const iconUrl = achievement.mediaAssets?.[0]?.url || achievement.mediaAsset?.url || achievement.mediaAsset || null;
-              const proxiedIconUrl = await uploadExternalIcon(
-                iconUrl,
-                achievement.id,
-                'xbox',
-                supabase
-              );
+              const existingProxied = existingProxiedMap.get(achievement.id);
+              let proxiedIconUrl = null;
+              
+              if (isValidProxiedUrl(existingProxied, achievement.id)) {
+                proxiedIconUrl = existingProxied;
+                console.log(`[XBOX SYNC] ✓ Reusing valid proxied URL for ${achievement.id}`);
+              } else if (iconUrl) {
+                proxiedIconUrl = await uploadExternalIcon(iconUrl, achievement.id, 'xbox', supabase);
+              }
               
               // Calculate base_status_xp using EXPONENTIAL CURVE (floor=0.5, cap=12, p=3)
               const includeInScore = true; // All Xbox achievements count

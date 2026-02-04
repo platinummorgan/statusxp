@@ -632,6 +632,34 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 onConflict: 'user_id,platform_id,platform_game_id',
               });
 
+            // Fetch existing achievements to check for valid proxied URLs
+            const achievementNames = achievements.map(a => a.name);
+            const { data: existingAchievements } = await supabase
+              .from('achievements')
+              .select('platform_achievement_id, proxied_icon_url')
+              .eq('platform_id', platformId)
+              .eq('platform_game_id', gameTitle.platform_game_id)
+              .in('platform_achievement_id', achievementNames);
+
+            const existingProxiedMap = new Map();
+            if (existingAchievements) {
+              for (const ach of existingAchievements) {
+                existingProxiedMap.set(ach.platform_achievement_id, ach.proxied_icon_url);
+              }
+            }
+
+            // Helper to check if proxied URL is valid (not NULL, not numbered folder, not timestamped, matches achievement ID)
+            const isValidProxiedUrl = (url, achievementId) => {
+              if (!url) return false;
+              if (!url.includes('/avatars/achievement-icons/steam/')) return false;
+              if (/\/avatars\/achievement-icons\/\d+\//.test(url)) return false;
+              if (/_\d{13}\.(png|jpg|jpeg|gif|webp)$/i.test(url)) return false;
+              // Filename must match achievement ID: ends with /{achievementId}.ext
+              const filePattern = new RegExp(`/${achievementId}\\.(png|jpg|jpeg|gif|webp)$`, 'i');
+              if (!filePattern.test(url)) return false;
+              return true;
+            };
+
             // TODO OPTIMIZATION: This achievement processing loop is N+1 (2-3 DB calls per achievement)
             // Should batch upsert achievements with unique constraint on (platform_id, platform_game_id, platform_achievement_id)
             // Then batch upsert user_achievements. Same issue as PSN/Xbox - major performance bottleneck.
@@ -659,9 +687,17 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 baseStatusXP = Math.max(floor, Math.min(cap, baseStatusXP));
               }
 
-              // Proxy the icon if available
+              // Proxy the icon if available (check existing first)
               const iconUrl = achievement.icon || '';
-              const proxiedIconUrl = iconUrl ? await uploadExternalIcon(iconUrl, achievement.name, 'steam', supabase) : null;
+              const existingProxied = existingProxiedMap.get(achievement.name);
+              let proxiedIconUrl = null;
+              
+              if (isValidProxiedUrl(existingProxied, achievement.name)) {
+                proxiedIconUrl = existingProxied;
+                console.log(`[STEAM SYNC] ✓ Reusing valid proxied URL for ${achievement.name}`);
+              } else if (iconUrl) {
+                proxiedIconUrl = await uploadExternalIcon(iconUrl, achievement.name, 'steam', supabase);
+              }
 
               // Upsert achievement with V2 composite keys and StatusXP
               const achievementData = {
