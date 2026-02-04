@@ -6,6 +6,61 @@ import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { TrophyTitle, Trophy, TrophyGroup, UserTrophyProfileSummary } from './psn-api.ts';
 
 /**
+ * Download icon from external URL and upload to Supabase Storage
+ * Returns the proxied URL or null if upload fails
+ */
+async function downloadAndUploadIcon(
+  supabase: SupabaseClient,
+  externalUrl: string,
+  platformCode: string,
+  achievementId: string
+): Promise<string | null> {
+  try {
+    // Download the icon
+    const response = await fetch(externalUrl);
+    if (!response.ok) {
+      console.error(`Failed to download icon: ${response.status}`);
+      return null;
+    }
+
+    const blob = await response.blob();
+    const arrayBuffer = await blob.arrayBuffer();
+
+    // Determine file extension
+    const contentType = response.headers.get("content-type") || "image/png";
+    const urlExtension = externalUrl.split('.').pop()?.split('?')[0];
+    const extension = urlExtension && ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(urlExtension.toLowerCase()) 
+      ? urlExtension.toLowerCase() 
+      : contentType.split('/')[1] || 'png';
+
+    // Upload to storage: avatars/achievement-icons/{platform}/{achievement_id}.{ext}
+    const filePath = `achievement-icons/${platformCode.toLowerCase()}/${achievementId}.${extension}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, arrayBuffer, {
+        contentType,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error(`Failed to upload icon: ${uploadError.message}`);
+      return null;
+    }
+
+    // Get the public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  } catch (error) {
+    console.error(`Error processing icon: ${error}`);
+    return null;
+  }
+}
+
+/**
  * Get or create platform by code
  */
 export async function getOrCreatePlatform(
@@ -192,14 +247,26 @@ export async function upsertTrophy(
   supabase: SupabaseClient,
   gameTitleId: number,
   trophy: Trophy,
-  sortOrder: number
+  sortOrder: number,
+  platformCode: string = 'psn'
 ): Promise<number> {
   const { data: existing } = await supabase
     .from('trophies')
-    .select('id')
+    .select('id, proxied_icon_url')
     .eq('game_title_id', gameTitleId)
     .eq('psn_trophy_id', trophy.trophyId)
     .single();
+
+  // Download and upload icon to Storage if not already proxied
+  let proxiedIconUrl = existing?.proxied_icon_url;
+  if (!proxiedIconUrl && trophy.trophyIconUrl) {
+    proxiedIconUrl = await downloadAndUploadIcon(
+      supabase,
+      trophy.trophyIconUrl,
+      platformCode,
+      trophy.trophyId.toString()
+    );
+  }
 
   const trophyData = {
     game_title_id: gameTitleId,
@@ -208,6 +275,7 @@ export async function upsertTrophy(
     tier: trophy.trophyType,
     sort_order: sortOrder,
     icon_url: trophy.trophyIconUrl,
+    proxied_icon_url: proxiedIconUrl,
     psn_trophy_id: trophy.trophyId,
     psn_trophy_group_id: trophy.trophyGroupId,
     psn_trophy_type: trophy.trophyType,

@@ -30,7 +30,7 @@ serve(async (req) => {
     // Fetch achievements/trophies that need backfilling (external URLs only)
     const { data: icons, error: fetchError } = await supabase
       .from(table)
-      .select('id, platform_id, platform_achievement_id, icon_url, proxied_icon_url')
+      .select('id, platform_id, platform_achievement_id, icon_url, proxied_icon_url, platforms(code)')
       .in('platform_id', platform_ids)
       .not('icon_url', 'is', null)
       .is('proxied_icon_url', null)
@@ -79,12 +79,15 @@ serve(async (req) => {
           ? urlExtension.toLowerCase() 
           : contentType.split('/')[1] || 'png';
 
-        // Upload to storage with path: achievement-icons/{platform_id}/{platform_achievement_id}.{ext}
-        const filePath = `${icon.platform_id}/${icon.platform_achievement_id}.${extension}`;
+        // Get platform code (psn, xbox, steam) from the joined platforms table
+        const platformCode = (icon.platforms as any)?.code?.toLowerCase() || 'unknown';
+
+        // Upload to storage with path: achievement-icons/{platform_code}/{platform_achievement_id}.{ext}
+        const filePath = `${platformCode}/${icon.platform_achievement_id}.${extension}`;
         
         const { error: uploadError } = await supabase.storage
-          .from('achievement-icons')
-          .upload(filePath, arrayBuffer, {
+          .from('avatars')
+          .upload(`achievement-icons/${filePath}`, arrayBuffer, {
             contentType,
             upsert: true,
           });
@@ -93,10 +96,10 @@ serve(async (req) => {
           throw uploadError;
         }
 
-        // Get the public URL
+        // Get the public URL from avatars bucket
         const { data: { publicUrl } } = supabase.storage
-          .from('achievement-icons')
-          .getPublicUrl(filePath);
+          .from('avatars')
+          .getPublicUrl(`achievement-icons/${filePath}`);
 
         console.log(`Uploaded to: ${publicUrl}`);
 

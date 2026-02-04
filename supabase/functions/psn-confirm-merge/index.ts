@@ -55,7 +55,7 @@ serve(async (req) => {
       .update({
         psn_account_id: credentials.accountId,
         psn_online_id: credentials.onlineId,
-        psn_avatar_url: credentials.avatarUrl,
+        psn_avatar_url: null, // Will be set by sync service
         psn_is_plus: credentials.isPlus,
         psn_npsso_token: credentials.npssoToken,
         psn_access_token: credentials.accessToken,
