@@ -527,7 +527,6 @@ export async function syncPSNAchievements(
       }
 
       let hasAchievementDefs = true;
-      let hasMissingProxiedUrls = false;
       if (existingUserGame) {
         const { count: achCount } = await supabase
           .from('achievements')
@@ -535,8 +534,12 @@ export async function syncPSNAchievements(
           .eq('platform_id', platformId)
           .eq('platform_game_id', game.platform_game_id);
         hasAchievementDefs = (achCount || 0) > 0;
-        
-        // Check if any achievements are missing proxied URLs
+      }
+
+      const needsProcessing = forceFullSync || !existingUserGame || countsChanged || missingAchievements || !hasAchievementDefs || needRarityRefresh;
+      
+      // Only check for missing proxied URLs if we would otherwise skip (avoid timeout from processing too many games)
+      if (!needsProcessing && existingUserGame) {
         const { count: missingProxyCount } = await supabase
           .from('achievements')
           .select('platform_achievement_id', { count: 'exact', head: true })
@@ -544,13 +547,19 @@ export async function syncPSNAchievements(
           .eq('platform_game_id', game.platform_game_id)
           .is('proxied_icon_url', null)
           .not('icon_url', 'is', null);
-        hasMissingProxiedUrls = (missingProxyCount || 0) > 0;
-        if (hasMissingProxiedUrls) {
-          console.log(`🔄 MISSING PROXIED URLS: ${title.trophyTitleName} has ${missingProxyCount} achievements without proxied icons`);
+        
+        if ((missingProxyCount || 0) > 0) {
+          console.log(`🔄 MISSING PROXIED URLS: ${title.trophyTitleName} has ${missingProxyCount} achievements without proxied icons - reprocessing`);
+          // Process this game for proxied URLs
+        } else {
+          console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
+          processedGames++;
+          const pct = Math.floor((processedGames / gamesToProcess.length) * 100);
+          await supabase.from('profiles').update({ psn_sync_progress: pct }).eq('id', userId);
+          return;
         }
       }
-
-      const needsProcessing = forceFullSync || !existingUserGame || countsChanged || missingAchievements || !hasAchievementDefs || needRarityRefresh || hasMissingProxiedUrls;
+      
       if (!needsProcessing) {
         console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
         processedGames++;
