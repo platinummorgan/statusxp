@@ -23,7 +23,27 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
   }
 
   try {
-    // Download the image
+    // First, check if file already exists in storage (any extension)
+    const extensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+    for (const ext of extensions) {
+      const filename = `achievement-icons/${platform}/${achievementId}.${ext}`;
+      const { data: existingFile } = await supabase.storage
+        .from('avatars')
+        .list(`achievement-icons/${platform}`, {
+          search: `${achievementId}.${ext}`
+        });
+      
+      if (existingFile && existingFile.length > 0) {
+        // File exists, return the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filename);
+        console.log(`[ICON PROXY] ✓ Using existing ${platform}/${achievementId}.${ext}`);
+        return publicUrl;
+      }
+    }
+
+    // File doesn't exist, download and upload it
     const response = await fetch(externalUrl);
     if (!response.ok) {
       console.error(`[ICON PROXY] Failed to download ${platform}/${achievementId} from ${externalUrl}: HTTP ${response.status}`);
@@ -47,12 +67,12 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
     // Create filename without timestamp to prevent duplicates
     const filename = `achievement-icons/${platform}/${achievementId}.${extension}`;
     
-    // Upload to Supabase Storage (upsert will replace if already exists)
+    // Upload to Supabase Storage
     const { error } = await supabase.storage
       .from('avatars')
       .upload(filename, arrayBuffer, {
         contentType,
-        upsert: true,
+        upsert: false, // Don't overwrite since we checked it doesn't exist
       });
 
     if (error) {
