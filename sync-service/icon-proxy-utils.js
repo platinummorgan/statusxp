@@ -23,18 +23,18 @@ export async function uploadExternalIcon(externalUrl, achievementId, platform, s
   }
 
   try {
-    // First, check if file already exists in storage (any extension)
+    // First, check if file already exists in storage (exact match only, no timestamps)
     const extensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
     for (const ext of extensions) {
       const filename = `achievement-icons/${platform}/${achievementId}.${ext}`;
-      const { data: existingFile } = await supabase.storage
+      const { data: existingFiles } = await supabase.storage
         .from('avatars')
         .list(`achievement-icons/${platform}`, {
           search: `${achievementId}.${ext}`
         });
       
-      if (existingFile && existingFile.length > 0) {
-        // File exists, return the public URL
+      // Check if exact filename exists (not timestamped)
+      if (existingFiles && existingFiles.some(f => f.name === `${achievementId}.${ext}`)) {
         const { data: { publicUrl } } = supabase.storage
           .from('avatars')
           .getPublicUrl(filename);
