@@ -14,14 +14,17 @@
 export async function uploadExternalIcon(externalUrl, achievementId, platform, supabase) {
   // Skip if no URL provided
   if (!externalUrl) {
+    console.log(`[ICON PROXY] ⚠️ No URL for ${platform}/${achievementId}`);
     return null;
   }
 
   // Skip if not a valid HTTP URL
   if (!externalUrl.startsWith('http')) {
+    console.log(`[ICON PROXY] ⚠️ Invalid URL for ${platform}/${achievementId}: ${externalUrl}`);
     return null;
   }
 
+  console.log(`[ICON PROXY] Processing ${platform}/${achievementId}...`);
   try {
     // First, check if file already exists in storage (exact match only, no timestamps)
     const extensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
