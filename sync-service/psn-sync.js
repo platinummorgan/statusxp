@@ -432,6 +432,7 @@ export async function syncPSNAchievements(
       getUserTrophiesEarnedForTitle,
       exchangeRefreshTokenForAuthTokens,
       getProfileFromAccountId,
+      getUserProfile,
     } = psnApi;
 
     // Refresh tokens immediately (PSN tokens can expire mid-run)
@@ -453,7 +454,8 @@ export async function syncPSNAchievements(
 
     // Try to update profile name and avatar
     try {
-      const userProfile = await getProfileFromAccountId({ accessToken: currentAccessToken }, accountId);
+      // Fetch user profile with avatar URLs
+      const userProfile = await getUserProfile({ accessToken: currentAccessToken }, 'me');
       const { data: currentProfile } = await supabase
         .from('profiles')
         .select('display_name, preferred_display_platform')
@@ -468,8 +470,9 @@ export async function syncPSNAchievements(
       // Upload PSN avatar if available
       console.log('[PSN SYNC] User profile avatarUrls:', userProfile.avatarUrls);
       if (userProfile.avatarUrls && userProfile.avatarUrls.length > 0) {
-        // Use the largest avatar URL available
-        const avatarUrl = userProfile.avatarUrls[userProfile.avatarUrls.length - 1].avatarUrl;
+        // Use the medium-sized avatar or largest available
+        const avatarUrl = userProfile.avatarUrls.find(a => a.size === 'm')?.avatarUrl || 
+                          userProfile.avatarUrls[userProfile.avatarUrls.length - 1].avatarUrl;
         console.log('[PSN SYNC] Uploading PSN avatar:', avatarUrl);
         const proxiedAvatarUrl = await uploadExternalAvatar(avatarUrl, userId, 'psn');
         if (proxiedAvatarUrl) {
