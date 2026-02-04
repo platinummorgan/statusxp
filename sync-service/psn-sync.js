@@ -550,7 +550,7 @@ export async function syncPSNAchievements(
         
         if ((missingProxyCount || 0) > 0) {
           console.log(`🔄 MISSING PROXIED URLS: ${title.trophyTitleName} has ${missingProxyCount} achievements without proxied icons - reprocessing`);
-          // Process this game for proxied URLs
+          // Continue to process this game
         } else {
           console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
           processedGames++;
@@ -560,13 +560,6 @@ export async function syncPSNAchievements(
         }
       }
       
-      if (!needsProcessing) {
-        console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
-        processedGames++;
-        const pct = Math.floor((processedGames / gamesToProcess.length) * 100);
-        await supabase.from('profiles').update({ psn_sync_progress: pct }).eq('id', userId);
-        return;
-      }
       if (forceFullSync) {
         console.log(`🔄 FULL SYNC MODE: ${title.trophyTitleName} - reprocessing to fix data`);
       }
