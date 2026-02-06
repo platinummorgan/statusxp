@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../domain/activity_feed_entry.dart';
+import '../../domain/activity_feed_entry.dart';
 
 class ActivityFeedRepository {
   final SupabaseClient _client;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../domain/activity_feed_entry.dart';
-import '../data/repositories/activity_feed_repository.dart';
+import '../../domain/activity_feed_entry.dart';
+import '../../data/repositories/activity_feed_repository.dart';
 import 'package:intl/intl.dart';
 
 // ============================================================
@@ -83,7 +83,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'What are fellow StatusXP chasers up to!?',
+                      'What are your fellow StatusXPians up to?',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),

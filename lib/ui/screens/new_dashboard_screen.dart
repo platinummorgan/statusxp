@@ -610,6 +610,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
 
                       const SizedBox(height: 40),
 
+                      // Activity Feed Widget
+                      const ActivityFeedWidget(),
+
+                      const SizedBox(height: 40),
+
                       // My Games Section with More dropdown
                       Row(
                         children: [
@@ -734,11 +739,6 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                           ),
                         ],
                       ),
-                      
-                      const SizedBox(height: 18),
-                      
-                      // Activity Feed Widget
-                      const ActivityFeedWidget(),
                       
                       const SizedBox(height: 18),
                       
