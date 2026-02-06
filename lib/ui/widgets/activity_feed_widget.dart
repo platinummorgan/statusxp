@@ -49,118 +49,122 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget> {
   @override
   Widget build(BuildContext context) {
     final feedAsync = ref.watch(activityFeedProvider);
-    final unreadAsync = ref.watch(unreadCountProvider);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        children: [
-          // Header with unread badge
-          InkWell(
-            onTap: () async {
-              setState(() {
-                _isExpanded = !_isExpanded;
-              });
-              
-              // Mark as viewed when expanded
-              if (_isExpanded) {
-                final repo = ref.read(activityFeedRepositoryProvider);
-                await repo.markAsViewed();
-                // Refresh unread count
-                ref.invalidate(unreadCountProvider);
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Icon(
-                    _isExpanded
-                        ? Icons.expand_less
-                        : Icons.expand_more,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
+    return Column(
+      children: [
+        // Clickable header - single line
+        InkWell(
+          onTap: () async {
+            setState(() {
+              _isExpanded = !_isExpanded;
+            });
+            
+            // Mark as viewed when expanded
+            if (_isExpanded) {
+              final repo = ref.read(activityFeedRepositoryProvider);
+              await repo.markAsViewed();
+              // Refresh unread count
+              ref.invalidate(unreadCountProvider);
+            }
+          },
+          hoverColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  _isExpanded
+                      ? Icons.expand_less
+                      : Icons.expand_more,
+                  color: Theme.of(context).primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: feedAsync.when(
+                    data: (groups) {
+                      // Calculate total story count
+                      final totalCount = groups.fold<int>(
+                        0,
+                        (sum, group) => sum + group.storyCount,
+                      );
+                      return Text(
+                        'What are your fellow StatusXPians up to? ($totalCount)',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                      );
+                    },
+                    loading: () => Text(
                       'What are your fellow StatusXPians up to?',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                    ),
+                    error: (_, __) => Text(
+                      'What are your fellow StatusXPians up to? (0)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).primaryColor,
                           ),
                     ),
                   ),
-                  // Unread badge
-                  unreadAsync.when(
-                    data: (count) {
-                      if (count == 0) return const SizedBox.shrink();
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.error,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '+$count',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      );
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Divider when collapsed
+        if (!_isExpanded)
+          const Divider(height: 1),
+        
+        // Collapsible content
+        if (_isExpanded)
+          feedAsync.when(
+            data: (groups) {
+              if (groups.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Text(
+                    'No recent activity. Sync your achievements to see updates!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                );
+              }
+
+              return Column(
+                children: [
+                  const Divider(height: 1),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: groups.length,
+                    itemBuilder: (context, index) {
+                      final group = groups[index];
+                      return _DateGroup(group: group);
                     },
-                    loading: () => const SizedBox.shrink(),
-                    error: (_, __) => const SizedBox.shrink(),
                   ),
                 ],
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, stack) => Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Text(
+                'Failed to load activity feed: $error',
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
               ),
             ),
           ),
-          
-          // Collapsible content
-          if (_isExpanded)
-            feedAsync.when(
-              data: (groups) {
-                if (groups.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: Text(
-                      'No recent activity. Sync your achievements to see updates!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: groups.length,
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    return _DateGroup(group: group);
-                  },
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (error, stack) => Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Text(
-                  'Failed to load activity feed: $error',
-                  style: const TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
+      ],
   }
 }
 
