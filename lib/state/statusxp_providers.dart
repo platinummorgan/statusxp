@@ -64,9 +64,23 @@ final biometricUnlockGrantedProvider = StateProvider<bool>((ref) {
 /// StreamProvider for authentication state changes.
 /// 
 /// Emits whenever the user signs in, signs out, or the token refreshes.
+/// Network errors during token refresh are silently handled to prevent error dialogs.
 final authStateProvider = StreamProvider<AuthState>((ref) {
   final authService = ref.watch(authServiceProvider);
-  return authService.authStateChanges;
+  return authService.authStateChanges.handleError((error, stackTrace) {
+    // Silently handle network errors during token refresh
+    // These are temporary and Supabase will automatically retry
+    if (error.toString().contains('SocketException') ||
+        error.toString().contains('Failed host lookup') ||
+        error.toString().contains('AuthRetryableFetchException') ||
+        error.toString().contains('No address associated with hostname')) {
+      // Don't propagate network errors - just log them
+      print('Network error during auth state change (will auto-retry): $error');
+      return;
+    }
+    // Re-throw other errors (like actual auth failures)
+    throw error;
+  });
 });
 
 /// Provider for the current user ID.

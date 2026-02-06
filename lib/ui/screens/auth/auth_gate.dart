@@ -246,27 +246,47 @@ class _AuthGateState extends ConsumerState<AuthGate> with WidgetsBindingObserver
           ),
         );
       },
-      error: (error, stack) => Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error, color: Colors.red, size: 48),
-              const SizedBox(height: 16),
-              Text(
-                'Authentication error',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-            ],
+      error: (error, stack) {
+        // Don't show error screen for network issues - these are temporary
+        if (error.toString().contains('SocketException') ||
+            error.toString().contains('Failed host lookup') ||
+            error.toString().contains('AuthRetryableFetchException') ||
+            error.toString().contains('No address associated with hostname')) {
+          // Show loading instead of error for network issues
+          final currentUser = Supabase.instance.client.auth.currentUser;
+          if (currentUser != null) {
+            return _buildMainAppOrLock();
+          }
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        
+        // Only show error screen for actual auth errors
+        return Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error, color: Colors.red, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Authentication error',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error.toString(),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
