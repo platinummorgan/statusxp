@@ -181,6 +181,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           'include_in_score': ach['include_in_score'],
           'is_dlc': metadata['is_dlc'] as bool? ?? false,
           'dlc_name': metadata['dlc_name'],
+          'trophy_group_id': metadata['trophy_group_id'],
           'earned_at': earnedAt,
           'is_earned': earnedAt != null,
         };
@@ -193,6 +194,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           .map((a) => a['dlc_name'])
           .where((name) => name != null)
           .toSet();
+      final uniqueTrophyGroups = achievements
+          .map((a) => a['trophy_group_id'])
+          .where((id) => id != null && id != 'default')
+          .toSet();
       
       if (kDebugMode) {
         print('🎮 Achievements loaded for ${widget.gameName}:');
@@ -200,6 +205,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         print('   Marked as DLC: $dlcCount');
         print('   With DLC names: $withDlcName');
         print('   Unique DLC groups: ${uniqueDlcNames.length}');
+        print('   Unique trophy group IDs: ${uniqueTrophyGroups.length} - ${uniqueTrophyGroups.toList()}');
         if (uniqueDlcNames.isNotEmpty) {
           print('   DLC names: ${uniqueDlcNames.toList()}');
         }
@@ -208,7 +214,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         print('   First 5 achievements:');
         for (var i = 0; i < achievements.length && i < 5; i++) {
           final ach = achievements[i];
-          print('     ${i + 1}. ${ach['name']}: is_dlc=${ach['is_dlc']}, dlc_name=${ach['dlc_name']}');
+          print('     ${i + 1}. ${ach['name']}: trophy_group=${ach['trophy_group_id']}, dlc_name=${ach['dlc_name']}');
         }
       }
       
@@ -380,9 +386,13 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
     final Map<String, List<Map<String, dynamic>>> grouped = {};
     
     for (final ach in achievements) {
-      final isDlc = ach['is_dlc'] as bool? ?? false;
+      final trophyGroupId = ach['trophy_group_id'] as String? ?? 'default';
       final dlcName = ach['dlc_name'] as String?;
-      final groupKey = isDlc && dlcName != null ? dlcName : 'Base Game';
+      
+      // Use trophy_group_id to determine grouping, fallback to "DLC X" if dlc_name is missing
+      final groupKey = trophyGroupId != 'default' 
+          ? (dlcName ?? 'DLC $trophyGroupId')
+          : 'Base Game';
       
       grouped.putIfAbsent(groupKey, () => []);
       grouped[groupKey]!.add(ach);
