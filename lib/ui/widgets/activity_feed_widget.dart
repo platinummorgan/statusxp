@@ -165,6 +165,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget> {
             ),
           ),
       ],
+    );
   }
 }
 
