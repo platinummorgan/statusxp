@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/activity_feed_entry.dart';
 import '../../data/repositories/activity_feed_repository.dart';
+import '../../theme/cyberpunk_theme.dart';
 import 'package:intl/intl.dart';
 
 // ============================================================
@@ -43,8 +44,34 @@ class ActivityFeedWidget extends ConsumerStatefulWidget {
   ConsumerState<ActivityFeedWidget> createState() => _ActivityFeedWidgetState();
 }
 
-class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget> {
+class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
+    with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 4000),
+      vsync: this,
+    )..repeat();
+    
+    _shimmerAnimation = Tween<double>(
+      begin: -2.0,
+      end: 2.0,
+    ).animate(CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +79,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget> {
 
     return Column(
       children: [
-        // Clickable header - single line
+        // Clickable header - cyberpunk styled single line
         InkWell(
           onTap: () async {
             setState(() {
@@ -67,59 +94,120 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget> {
               ref.invalidate(unreadCountProvider);
             }
           },
-          hoverColor: Theme.of(context).primaryColor.withOpacity(0.1),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Icon(
-                  _isExpanded
-                      ? Icons.expand_less
-                      : Icons.expand_more,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: feedAsync.when(
-                    data: (groups) {
-                      // Calculate total story count
-                      final totalCount = groups.fold<int>(
-                        0,
-                        (sum, group) => sum + group.storyCount,
-                      );
-                      return Text(
-                        'What are your fellow StatusXPians up to? ($totalCount)',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                      );
-                    },
-                    loading: () => Text(
-                      'What are your fellow StatusXPians up to?',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).primaryColor,
-                          ),
+          hoverColor: CyberpunkTheme.neonPurple.withOpacity(0.1),
+          child: Stack(
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
                     ),
-                    error: (_, __) => Text(
-                      'What are your fellow StatusXPians up to? (0)',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _isExpanded
+                          ? Icons.expand_less
+                          : Icons.expand_more,
+                      color: CyberpunkTheme.neonPurple,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: feedAsync.when(
+                        data: (groups) {
+                          // Calculate total story count
+                          final totalCount = groups.fold<int>(
+                            0,
+                            (sum, group) => sum + group.storyCount,
+                          );
+                          return Text(
+                            'What are your fellow StatusXPians up to? ($totalCount)',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          );
+                        },
+                        loading: () => const Text(
+                          'What are your fellow StatusXPians up to?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).primaryColor,
+                            letterSpacing: 0.5,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        error: (_, __) => const Text(
+                          'What are your fellow StatusXPians up to? (0)',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Shimmer effect overlay
+              Positioned.fill(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: AnimatedBuilder(
+                      animation: _shimmerAnimation,
+                      builder: (context, child) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              stops: [
+                                _shimmerAnimation.value - 0.3,
+                                _shimmerAnimation.value,
+                                _shimmerAnimation.value + 0.3,
+                              ],
+                              colors: [
+                                Colors.transparent,
+                                Colors.white.withOpacity(0.15),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        
-        // Divider when collapsed
-        if (!_isExpanded)
-          const Divider(height: 1),
         
         // Collapsible content
         if (_isExpanded)
