@@ -117,6 +117,17 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         final earnedAt = earnedMap[achievementId];
         final metadata = ach['metadata'] as Map<String, dynamic>? ?? {};
         
+        // Debug: Log first achievement metadata
+        if (kDebugMode && achievementsResponse.indexOf(ach) == 0) {
+          print('🔍 First achievement metadata structure:');
+          print('   Achievement: ${ach['name']}');
+          print('   metadata type: ${metadata.runtimeType}');
+          print('   metadata keys: ${metadata.keys.toList()}');
+          print('   is_dlc value: ${metadata['is_dlc']} (type: ${metadata['is_dlc'].runtimeType})');
+          print('   dlc_name value: ${metadata['dlc_name']}');
+          print('   Full metadata: $metadata');
+        }
+        
         // Extract platform-specific fields from metadata
         String? trophyType;
         int? gamerscore;
@@ -191,6 +202,13 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         print('   Unique DLC groups: ${uniqueDlcNames.length}');
         if (uniqueDlcNames.isNotEmpty) {
           print('   DLC names: ${uniqueDlcNames.toList()}');
+        }
+        
+        // Debug: Log first few achievements' DLC status
+        print('   First 5 achievements:');
+        for (var i = 0; i < achievements.length && i < 5; i++) {
+          final ach = achievements[i];
+          print('     ${i + 1}. ${ach['name']}: is_dlc=${ach['is_dlc']}, dlc_name=${ach['dlc_name']}');
         }
       }
       
