@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS user_stat_snapshots (
 );
 
 CREATE INDEX idx_snapshots_user_time ON user_stat_snapshots(user_id, synced_at DESC);
-CREATE INDEX idx_snapshots_cleanup ON user_stat_snapshots(synced_at) WHERE synced_at < NOW() - INTERVAL '30 days';
+CREATE INDEX idx_snapshots_cleanup ON user_stat_snapshots(synced_at);
 
 COMMENT ON TABLE user_stat_snapshots IS 'Captures user stats at each sync for before/after comparison';
 

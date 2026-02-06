@@ -978,9 +978,14 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 }
               }
               
-              // Xbox DLC detection: check if achievement has a category or parent title indicating DLC
-              // For now, we'll default to false as Xbox API doesn't clearly separate DLC
-              const isDLC = false; // TODO: Xbox API doesn't provide clear DLC indicators
+              // Xbox DLC detection: Xbox Live API does not provide DLC indicators
+              // Research conducted 2026-02: Tested OpenXBL marketplace & achievement APIs
+              // - No titleAssociations, category, or grouping fields in achievements
+              // - Marketplace API returns empty for titleIds
+              // - All achievements returned in flat list under single titleId
+              // Unlike PSN (trophy groups) and Steam (separate appIds), Xbox doesn't separate DLC
+              const isDLC = false;
+              const dlcName = null;
               
               // Get rarity from OpenXBL (falls back to null if not available)
               const rarityPercent = openXBLRarityMap.get(achievement.id) || null;
@@ -1192,8 +1197,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const achievementsData = await achievementsResponse.json();
 
               for (const achievement of achievementsData.achievements) {
-                // TODO: Xbox API doesn't clearly separate DLC achievements from base game
-                // For now, marking all as base game (is_dlc = false)
+                // Xbox DLC detection: Xbox Live API does not provide DLC indicators
+                // Research conducted 2026-02: Tested OpenXBL marketplace & achievement APIs
+                // - No titleAssociations, category, or grouping fields in achievements
+                // - Marketplace API returns empty for titleIds
+                // - All achievements returned in flat list under single titleId
+                // Unlike PSN (trophy groups) and Steam (separate appIds), Xbox doesn't separate DLC
                 const isDLC = false;
                 const dlcName = null;
                 const rawGamerscore = Number(achievement.rewards?.[0]?.value ?? 0);

@@ -218,7 +218,7 @@ async function upsertGame({ platformId, platformVersion, title }) {
   return data;
 }
 
-async function upsertAchievementsBatch({ platformId, platformVersion, gameId, trophies, userTrophyMap }) {
+async function upsertAchievementsBatch({ platformId, platformVersion, gameId, trophies, userTrophyMap, trophyGroupMap }) {
   if (!trophies?.length) return;
 
   // First, fetch existing achievements to check for valid proxied URLs
@@ -280,6 +280,10 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
 
     const statusFields = computeStatusXpFields({ rarityPercent, isPlatinum });
 
+    const trophyGroupId = trophyMeta.trophyGroupId ?? 'default';
+    const isDlc = trophyGroupId !== 'default';
+    const dlcName = trophyGroupMap?.get(trophyGroupId) || (isDlc ? `DLC ${trophyGroupId}` : null);
+
     rows.push({
       platform_id: platformId,
       platform_game_id: gameId,
@@ -296,8 +300,9 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
       metadata: {
         psn_trophy_type: trophyMeta.trophyType,
         platform_version: platformVersion,
-        trophy_group_id: trophyMeta.trophyGroupId ?? 'default',
-        is_dlc: trophyMeta.trophyGroupId && trophyMeta.trophyGroupId !== 'default',
+        trophy_group_id: trophyGroupId,
+        is_dlc: isDlc,
+        dlc_name: dlcName,
         steam_hidden: false,
         xbox_is_secret: false,
       },
@@ -437,6 +442,7 @@ export async function syncPSNAchievements(
     const {
       getUserTitles,
       getTitleTrophies,
+      getTitleTrophyGroups,
       getUserTrophiesEarnedForTitle,
       exchangeRefreshTokenForAuthTokens,
     } = psnApi;
@@ -677,6 +683,28 @@ export async function syncPSNAchievements(
         console.log(`🔄 FULL SYNC MODE: ${title.trophyTitleName} - reprocessing to fix data`);
       }
 
+      // Fetch trophy groups first (for DLC names)
+      let trophyGroupMap = new Map();
+      trophyGroupMap.set('default', 'Base Game');
+      
+      if (title.hasTrophyGroups) {
+        try {
+          const groupsData = await getTitleTrophyGroups(
+            { accessToken: currentAccessToken },
+            title.npCommunicationId,
+            { npServiceName: title.npServiceName }
+          );
+          
+          const groups = groupsData?.trophyGroups ?? [];
+          for (const group of groups) {
+            trophyGroupMap.set(group.trophyGroupId, group.trophyGroupName);
+          }
+          console.log(`📦 Found ${groups.length} trophy groups for ${title.trophyTitleName}`);
+        } catch (err) {
+          console.warn(`⚠️  Failed to fetch trophy groups for ${title.trophyTitleName}: ${err.message}`);
+        }
+      }
+
       // Fetch trophy metadata + user earned data (source of truth)
       const trophyMetadata = await getTitleTrophies(
         { accessToken: currentAccessToken },
@@ -711,6 +739,7 @@ export async function syncPSNAchievements(
         gameId: game.platform_game_id,
         trophies,
         userTrophyMap,
+        trophyGroupMap,
       });
 
       // CLEANUP: Delete older platform_id versions of this game (same platform_game_id)

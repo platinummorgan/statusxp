@@ -6,18 +6,41 @@
 
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization - only create OpenAI client if API key exists
+let openai = null;
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 /**
  * Generate AI story for a stat change
  */
 export async function generateActivityStory(username, change) {
+  const client = getOpenAIClient();
+  
+  // If no OpenAI API key, fallback to template stories immediately
+  if (!client) {
+    console.warn('⚠️  OPENAI_API_KEY not set - using template stories instead');
+    return {
+      success: false,
+      story: buildTemplateStory(username, change),
+      model: null,
+      error: 'OPENAI_API_KEY not configured'
+    };
+  }
+  
   const prompt = buildPrompt(username, change);
   
   try {
-    const response = await openai.chat.completions.create({
+    const response = await client.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
