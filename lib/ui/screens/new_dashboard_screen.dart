@@ -148,7 +148,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(dashboardStatsProvider);
       _checkAndTriggerAutoSync();
-      _checkAndShowSystemAnnouncement();
+      // _checkAndShowSystemAnnouncement(); // Removed - maintenance complete
       // Start animations after a short delay
       Future.delayed(const Duration(milliseconds: 100), () {
         if (mounted) {

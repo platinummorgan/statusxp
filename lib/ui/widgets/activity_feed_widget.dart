@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../domain/activity_feed_entry.dart';
-import '../../data/repositories/activity_feed_repository.dart';
-import '../../theme/cyberpunk_theme.dart';
+import 'package:statusxp/domain/activity_feed_entry.dart';
+import 'package:statusxp/data/repositories/activity_feed_repository.dart';
+import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:intl/intl.dart';
 
 // ============================================================
@@ -38,7 +38,7 @@ final activityFeedStreamProvider = StreamProvider<List<ActivityFeedGroup>>((ref)
 // ============================================================
 
 class ActivityFeedWidget extends ConsumerStatefulWidget {
-  const ActivityFeedWidget({Key? key}) : super(key: key);
+  const ActivityFeedWidget({super.key});
 
   @override
   ConsumerState<ActivityFeedWidget> createState() => _ActivityFeedWidgetState();
@@ -134,7 +134,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                             (sum, group) => sum + group.storyCount,
                           );
                           return Text(
-                            'What are your fellow StatusXPians up to? ($totalCount)',
+                            'What are other StatusXPians up to? ($totalCount)',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
