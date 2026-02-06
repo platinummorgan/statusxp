@@ -696,10 +696,19 @@ export async function syncPSNAchievements(
           );
           
           const groups = groupsData?.trophyGroups ?? [];
-          for (const group of groups) {
-            trophyGroupMap.set(group.trophyGroupId, group.trophyGroupName);
-          }
           console.log(`📦 Found ${groups.length} trophy groups for ${title.trophyTitleName}`);
+          
+          // Debug: Log first group structure
+          if (groups.length > 0) {
+            console.log(`🔍 First trophy group structure:`, JSON.stringify(groups[0], null, 2));
+          }
+          
+          for (const group of groups) {
+            const groupId = group.trophyGroupId;
+            const groupName = group.trophyGroupName || group.groupName || `DLC ${groupId}`;
+            trophyGroupMap.set(groupId, groupName);
+            console.log(`  ➜ Group ${groupId}: "${groupName}"`);
+          }
         } catch (err) {
           console.warn(`⚠️  Failed to fetch trophy groups for ${title.trophyTitleName}: ${err.message}`);
         }

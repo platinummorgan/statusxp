@@ -174,6 +174,26 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           'is_earned': earnedAt != null,
         };
       }).toList();
+      
+      // Debug: Log DLC grouping info
+      final dlcCount = achievements.where((a) => a['is_dlc'] == true).length;
+      final withDlcName = achievements.where((a) => a['dlc_name'] != null).length;
+      final uniqueDlcNames = achievements
+          .map((a) => a['dlc_name'])
+          .where((name) => name != null)
+          .toSet();
+      
+      if (kDebugMode) {
+        print('🎮 Achievements loaded for ${widget.gameName}:');
+        print('   Total: ${achievements.length}');
+        print('   Marked as DLC: $dlcCount');
+        print('   With DLC names: $withDlcName');
+        print('   Unique DLC groups: ${uniqueDlcNames.length}');
+        if (uniqueDlcNames.isNotEmpty) {
+          print('   DLC names: ${uniqueDlcNames.toList()}');
+        }
+      }
+      
       setState(() {
         _achievements = achievements;
         _isLoading = false;
@@ -348,6 +368,14 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       
       grouped.putIfAbsent(groupKey, () => []);
       grouped[groupKey]!.add(ach);
+    }
+
+    // Debug: Log grouping results
+    if (kDebugMode) {
+      print('📦 Achievement grouping:');
+      grouped.forEach((groupName, achs) {
+        print('   $groupName: ${achs.length} achievements');
+      });
     }
 
     // Sort groups: Base Game first, then DLC groups by name
