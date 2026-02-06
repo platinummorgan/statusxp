@@ -16,6 +16,12 @@ class LeaderboardEntry {
   final int? bronzeCount;
   final int? totalTrophies;
   
+  // PSN Possible Trophy Counts
+  final int? possiblePlatinum;
+  final int? possibleGold;
+  final int? possibleSilver;
+  final int? possibleBronze;
+  
   // Potential Stats
   final int? potentialScore;
 
@@ -33,6 +39,10 @@ class LeaderboardEntry {
     this.silverCount,
     this.bronzeCount,
     this.totalTrophies,
+    this.possiblePlatinum,
+    this.possibleGold,
+    this.possibleSilver,
+    this.possibleBronze,
     this.potentialScore,
   });
 
@@ -51,6 +61,10 @@ class LeaderboardEntry {
       silverCount: (json['silver_count'] as num?)?.toInt(),
       bronzeCount: (json['bronze_count'] as num?)?.toInt(),
       totalTrophies: (json['total_trophies'] as num?)?.toInt(),
+      possiblePlatinum: (json['possible_platinum'] as num?)?.toInt(),
+      possibleGold: (json['possible_gold'] as num?)?.toInt(),
+      possibleSilver: (json['possible_silver'] as num?)?.toInt(),
+      possibleBronze: (json['possible_bronze'] as num?)?.toInt(),
       potentialScore: (json['potential_score'] as num?)?.toInt(),
     );
   }
@@ -70,6 +84,10 @@ class LeaderboardEntry {
       'silver_count': silverCount,
       'bronze_count': bronzeCount,
       'total_trophies': totalTrophies,
+      'possible_platinum': possiblePlatinum,
+      'possible_gold': possibleGold,
+      'possible_silver': possibleSilver,
+      'possible_bronze': possibleBronze,
       'potential_score': potentialScore,
     };
   }

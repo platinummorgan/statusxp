@@ -549,16 +549,50 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   }
 
   Widget _buildPSNTrophyRow(LeaderboardEntry entry, Color accentColor) {
-    return Row(
+    return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildTrophyCount('assets/images/platinum_trophy.png', entry.platinumCount ?? 0, isLarge: true, color: accentColor),
-        const SizedBox(width: 6),
-        _buildTrophyCount('assets/images/gold_trophy.png', entry.goldCount ?? 0),
-        const SizedBox(width: 4),
-        _buildTrophyCount('assets/images/silver_trophy.png', entry.silverCount ?? 0),
-        const SizedBox(width: 4),
-        _buildTrophyCount('assets/images/bronze_trophy.png', entry.bronzeCount ?? 0),
+        // Earned trophies
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildTrophyCount('assets/images/platinum_trophy.png', entry.platinumCount ?? 0, isLarge: true, color: accentColor),
+            const SizedBox(width: 6),
+            _buildTrophyCount('assets/images/gold_trophy.png', entry.goldCount ?? 0),
+            const SizedBox(width: 4),
+            _buildTrophyCount('assets/images/silver_trophy.png', entry.silverCount ?? 0),
+            const SizedBox(width: 4),
+            _buildTrophyCount('assets/images/bronze_trophy.png', entry.bronzeCount ?? 0),
+          ],
+        ),
+        // Possible trophies keynote
+        if (entry.possiblePlatinum != null || entry.possibleGold != null || entry.possibleSilver != null || entry.possibleBronze != null) ...[
+          const SizedBox(height: 2),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Owned: ',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.3),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              Text(
+                '${entry.possiblePlatinum ?? 0} | ${entry.possibleGold ?? 0} | ${entry.possibleSilver ?? 0} | ${entry.possibleBronze ?? 0}',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.4),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

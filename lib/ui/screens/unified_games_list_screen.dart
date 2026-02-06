@@ -380,13 +380,25 @@ class UnifiedGamesListScreen extends ConsumerWidget {
               // Game cover
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: game.coverUrl != null
-                    ? Image.network(
-                        game.coverUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholderCover(),
-                      )
-                    : _buildPlaceholderCover(),
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  constraints: const BoxConstraints(
+                    maxWidth: 60,
+                    maxHeight: 60,
+                    minWidth: 60,
+                    minHeight: 60,
+                  ),
+                  child: game.coverUrl != null
+                      ? Image.network(
+                          game.coverUrl!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildPlaceholderCover(),
+                        )
+                      : _buildPlaceholderCover(),
+                ),
               ),
               const SizedBox(width: 12),
               // Game info

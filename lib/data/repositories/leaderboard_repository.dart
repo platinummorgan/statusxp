@@ -82,6 +82,10 @@ class LeaderboardRepository {
         final silverCount = (row['silver_count'] as int?) ?? 0;
         final bronzeCount = (row['bronze_count'] as int?) ?? 0;
         final totalTrophies = (row['total_trophies'] as int?) ?? 0;
+        final possiblePlatinum = (row['possible_platinum'] as int?) ?? 0;
+        final possibleGold = (row['possible_gold'] as int?) ?? 0;
+        final possibleSilver = (row['possible_silver'] as int?) ?? 0;
+        final possibleBronze = (row['possible_bronze'] as int?) ?? 0;
         final gameCount = (row['total_games'] as int?) ?? 0;
         final previousRank = row['previous_rank'] as int?;
         final rankChange = (row['rank_change'] as int?) ?? 0;
@@ -97,6 +101,10 @@ class LeaderboardRepository {
           'silver_count': silverCount,
           'bronze_count': bronzeCount,
           'total_trophies': totalTrophies,
+          'possible_platinum': possiblePlatinum,
+          'possible_gold': possibleGold,
+          'possible_silver': possibleSilver,
+          'possible_bronze': possibleBronze,
           'games_count': gameCount,
           'previous_rank': previousRank,
           'rank_change': rankChange,
