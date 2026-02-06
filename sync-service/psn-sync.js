@@ -8,6 +8,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { uploadExternalIcon, uploadGameCover } from './icon-proxy-utils.js';
 import { initIGDBValidator } from './igdb-validator.js';
+import { createPreSyncSnapshot, detectChangesAndGenerateStories } from './activity-feed-snapshots.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -424,6 +425,13 @@ export async function syncPSNAchievements(
     if (profileError) throw new Error(`Profile lookup failed: ${profileError.message}`);
     if (!profileValidation) throw new Error(`Profile not found for user ${userId}`);
 
+    // Create pre-sync snapshot for activity feed
+    console.log('📸 Creating pre-sync snapshot for activity feed...');
+    const preSnapshot = await createPreSyncSnapshot(userId);
+    if (!preSnapshot) {
+      console.warn('⚠️ Failed to create pre-sync snapshot, activity feed disabled for this sync');
+    }
+
     const psnModule = await import('psn-api');
     const psnApi = psnModule.default ?? psnModule;
     const {
@@ -802,6 +810,17 @@ export async function syncPSNAchievements(
       last_psn_sync_at: new Date().toISOString(),
       psn_sync_error: null,
     });
+
+    // Generate activity feed stories if snapshot exists
+    if (preSnapshot) {
+      console.log('📊 Detecting changes and generating activity feed stories...');
+      try {
+        await detectChangesAndGenerateStories(userId, preSnapshot);
+        console.log('✅ Activity feed stories generated');
+      } catch (feedError) {
+        console.error('⚠️ Activity feed generation failed (non-fatal):', feedError);
+      }
+    }
 
     await supabase
       .from('psn_sync_logs')

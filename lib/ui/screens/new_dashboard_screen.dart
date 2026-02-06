@@ -14,6 +14,7 @@ import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
+import 'package:statusxp/ui/widgets/activity_feed_widget.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -733,6 +734,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                           ),
                         ],
                       ),
+                      
+                      const SizedBox(height: 18),
+                      
+                      // Activity Feed Widget
+                      const ActivityFeedWidget(),
                       
                       const SizedBox(height: 18),
                       

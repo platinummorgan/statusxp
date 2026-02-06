@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { uploadExternalIcon, uploadGameCover } from './icon-proxy-utils.js';
+import { createPreSyncSnapshot, detectChangesAndGenerateStories } from './activity-feed-snapshots.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -152,6 +153,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       .from('steam_sync_logs')
       .update({ status: 'syncing' })
       .eq('id', syncLogId);
+
+    // Create pre-sync snapshot for activity feed
+    console.log('📸 Creating pre-sync snapshot for activity feed...');
+    const preSnapshot = await createPreSyncSnapshot(userId);
+    if (!preSnapshot) {
+      console.warn('⚠️ Failed to create pre-sync snapshot, activity feed disabled for this sync');
+    }
 
     // Fetch owned games
     const gamesResponse = await fetch(
@@ -833,6 +841,17 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         last_steam_sync_at: new Date().toISOString(),
       })
       .eq('id', userId);
+
+    // Generate activity feed stories if snapshot exists
+    if (preSnapshot) {
+      console.log('📊 Detecting changes and generating activity feed stories...');
+      try {
+        await detectChangesAndGenerateStories(userId, preSnapshot);
+        console.log('✅ Activity feed stories generated');
+      } catch (feedError) {
+        console.error('⚠️ Activity feed generation failed (non-fatal):', feedError);
+      }
+    }
 
     await supabase
       .from('steam_sync_logs')

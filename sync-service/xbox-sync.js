@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { uploadGameCover, uploadExternalIcon } from './icon-proxy-utils.js';
+import { createPreSyncSnapshot, detectChangesAndGenerateStories } from './activity-feed-snapshots.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -390,6 +391,13 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
   }
 
   console.log(`✅ Profile validated for user ${userId}`);
+  
+  // Create pre-sync snapshot for activity feed
+  console.log('📸 Creating pre-sync snapshot for activity feed...');
+  const preSnapshot = await createPreSyncSnapshot(userId);
+  if (!preSnapshot) {
+    console.warn('⚠️ Failed to create pre-sync snapshot, activity feed disabled for this sync');
+  }
   
   try {
     // Refresh token first
@@ -1271,6 +1279,17 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     
     if (!statusUpdated) {
       console.error('🚨 WARNING: Sync completed but status update failed! User may see stuck sync.');
+    }
+
+    // Generate activity feed stories if snapshot exists
+    if (preSnapshot) {
+      console.log('📊 Detecting changes and generating activity feed stories...');
+      try {
+        await detectChangesAndGenerateStories(userId, preSnapshot);
+        console.log('✅ Activity feed stories generated');
+      } catch (feedError) {
+        console.error('⚠️ Activity feed generation failed (non-fatal):', feedError);
+      }
     }
 
     await supabase
