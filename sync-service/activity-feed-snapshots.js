@@ -17,22 +17,19 @@ const supabase = createClient(
  */
 export async function createPreSyncSnapshot(userId) {
   try {
-    // Get current profile stats
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
+    // Get current StatusXP from leaderboard_cache
+    const { data: leaderboardData, error: leaderboardError } = await supabase
+      .from('leaderboard_cache')
       .select('total_statusxp')
-      .eq('id', userId)
-      .single();
+      .eq('user_id', userId)
+      .maybeSingle();
     
-    if (profileError) {
-      console.error('❌ Failed to fetch profile for snapshot:', profileError);
+    if (leaderboardError) {
+      console.error('❌ Failed to fetch leaderboard data for snapshot:', leaderboardError);
       return null;
     }
     
-    if (!profile) {
-      console.warn('⚠️ Profile not found for snapshot:', userId);
-      return null;
-    }
+    const totalStatusXp = leaderboardData?.total_statusxp || 0;
     
     // Count platinums (PSN only: platforms 1, 2, 5, 9)
     const { count: platinumCount } = await supabase
@@ -83,7 +80,7 @@ export async function createPreSyncSnapshot(userId) {
       .from('user_stat_snapshots')
       .insert({
         user_id: userId,
-        total_statusxp: profile.total_statusxp || 0,
+        total_statusxp: totalStatusXp,
         platinum_count: platinumCount || 0,
         psn_gold_count: goldCount,
         psn_silver_count: silverCount,
