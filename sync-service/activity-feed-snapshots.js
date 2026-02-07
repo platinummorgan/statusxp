@@ -18,11 +18,16 @@ const supabase = createClient(
 export async function createPreSyncSnapshot(userId) {
   try {
     // Get current profile stats
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('total_statusxp')
       .eq('id', userId)
       .single();
+    
+    if (profileError) {
+      console.error('❌ Failed to fetch profile for snapshot:', profileError);
+      return null;
+    }
     
     if (!profile) {
       console.warn('⚠️ Profile not found for snapshot:', userId);
