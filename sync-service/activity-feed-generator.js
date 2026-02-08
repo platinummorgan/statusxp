@@ -136,6 +136,35 @@ function buildPrompt(username, change) {
               Examples:
               - "${username} unlocked ${amount} Steam achievements! (${oldValue} → ${newValue})"
               - "Steam grind! ${username} added ${amount} more achievements."`;
+    
+    case 'trophy_with_statusxp':
+      const trophyParts = [];
+      if (change.goldCount > 0) trophyParts.push(`${change.goldCount} Gold`);
+      if (change.silverCount > 0) trophyParts.push(`${change.silverCount} Silver`);
+      if (change.bronzeCount > 0) trophyParts.push(`${change.bronzeCount} Bronze`);
+      const trophyList = trophyParts.join(', ');
+      
+      return `${username} earned ${trophyList} trophies in ${gameTitle}, gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
+              Trophy counts - Gold: ${change.oldGold} → ${change.oldGold + change.goldCount}, Silver: ${change.oldSilver} → ${change.oldSilver + change.silverCount}, Bronze: ${change.oldBronze} → ${change.oldBronze + change.bronzeCount}
+              Write a celebratory announcement mentioning BOTH trophy details AND StatusXP gain.
+              Examples:
+              - "${username} snagged 8 Bronze in Nexomon: Extinction, earning 13 StatusXP (59,239 → 59,252)!"
+              - "Trophy spree! ${username} got 5 Silver, 10 Bronze in Elden Ring for 247 StatusXP (12k → 12.2k)!"
+              - "${username} cleaned up! 2 Gold, 3 Silver in Dishonored netted 189 StatusXP!"`;
+    
+    case 'gamerscore_with_statusxp':
+      return `${username} increased their Xbox Gamerscore from ${oldValue} to ${newValue} (+${amount}), gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
+              Write a celebratory announcement mentioning BOTH Gamerscore AND StatusXP gain.
+              Examples:
+              - "${username} jumped 500 Gamerscore for 125 StatusXP (6000G → 6500G, 8k → 8,125 StatusXP)!"
+              - "Xbox grind! ${username} gained 250G and 63 StatusXP!"`;
+    
+    case 'steam_with_statusxp':
+      return `${username} earned ${amount} Steam achievements (${oldValue} → ${newValue}), gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
+              Write a fun announcement mentioning BOTH Steam achievements AND StatusXP gain.
+              Examples:
+              - "${username} unlocked ${amount} Steam achievements for ${change.statusxpChange} StatusXP!"
+              - "Steam grind! ${username} added ${amount} achievements, earning ${change.statusxpChange} StatusXP!"`;
               
     default:
       return `${username} accomplished something in StatusXP. Write a short, fun announcement.`;
@@ -165,6 +194,19 @@ function buildTemplateStory(username, change) {
       
     case 'steam_achievement_gain':
       return `${username} earned ${change.change} Steam achievements (${change.oldValue} → ${change.newValue})`;
+    
+    case 'trophy_with_statusxp':
+      const trophyParts = [];
+      if (change.goldCount > 0) trophyParts.push(`${change.goldCount} Gold`);
+      if (change.silverCount > 0) trophyParts.push(`${change.silverCount} Silver`);
+      if (change.bronzeCount > 0) trophyParts.push(`${change.bronzeCount} Bronze`);
+      return `${username} earned ${trophyParts.join(', ')} in ${change.gameTitle}, gaining ${change.statusxpChange} StatusXP`;
+    
+    case 'gamerscore_with_statusxp':
+      return `${username} gained ${change.change} Gamerscore and ${change.statusxpChange} StatusXP`;
+    
+    case 'steam_with_statusxp':
+      return `${username} earned ${change.change} Steam achievements and gained ${change.statusxpChange} StatusXP`;
       
     default:
       return `${username} made progress in StatusXP`;

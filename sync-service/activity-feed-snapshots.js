@@ -38,25 +38,13 @@ export async function createPreSyncSnapshot(userId) {
     
     const totalStatusXp = leaderboardData?.total_statusxp || 0;
     
-    // Count platinums (PSN only: platforms 1, 2, 5, 9)
-    const { count: platinumCount } = await supabase
-      .from('user_achievements')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('trophy_type', 'platinum')
-      .in('platform_id', [1, 2, 5, 9]);
+    // Count PSN trophies by type (need to JOIN with achievements to get trophy type from metadata)
+    const { data: psnTrophies } = await supabase.rpc('get_user_trophy_counts', { p_user_id: userId });
     
-    // Count PSN trophies by type
-    const { data: psnTrophies } = await supabase
-      .from('user_achievements')
-      .select('trophy_type')
-      .eq('user_id', userId)
-      .in('platform_id', [1, 2, 5, 9])
-      .in('trophy_type', ['gold', 'silver', 'bronze']);
-    
-    const goldCount = psnTrophies?.filter(t => t.trophy_type === 'gold').length || 0;
-    const silverCount = psnTrophies?.filter(t => t.trophy_type === 'silver').length || 0;
-    const bronzeCount = psnTrophies?.filter(t => t.trophy_type === 'bronze').length || 0;
+    const platinumCount = psnTrophies?.[0]?.platinum_count || 0;
+    const goldCount = psnTrophies?.[0]?.gold_count || 0;
+    const silverCount = psnTrophies?.[0]?.silver_count || 0;
+    const bronzeCount = psnTrophies?.[0]?.bronze_count || 0;
     
     // Get Xbox gamerscore (if linked)
     const { data: xboxData } = await supabase
@@ -210,10 +198,77 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   
   console.log(`📊 Detected ${changes.length} changes for activity feed`);
   
+  // Combine trophy/achievement changes with StatusXP gains for richer stories
+  const combinedChanges = combineRelatedChanges(changes);
+  console.log(`✨ Combined into ${combinedChanges.length} stories`);
+  
   // Generate stories for each change
-  for (const change of changes) {
+  for (const change of combinedChanges) {
     await generateAndInsertStory(userId, change, postSnapshot);
   }
+}
+
+/**
+ * Combine related changes (e.g., trophies + StatusXP gain) into single stories
+ */
+function combineRelatedChanges(changes) {
+  const statusXpChange = changes.find(c => c.type === 'statusxp_gain');
+  const trophyChange = changes.find(c => c.type === 'trophy_detail');
+  const gamerscoreChange = changes.find(c => c.type === 'gamerscore_gain');
+  const steamChange = changes.find(c => c.type === 'steam_achievement_gain');
+  const platinumChange = changes.find(c => c.type === 'platinum_milestone');
+  
+  let combinedChanges = [];
+  let processedTypes = new Set();
+  
+  // Combine trophy details with StatusXP gain
+  if (trophyChange && statusXpChange) {
+    combinedChanges.push({
+      ...trophyChange,
+      type: 'trophy_with_statusxp',
+      statusxpOld: statusXpChange.oldValue,
+      statusxpNew: statusXpChange.newValue,
+      statusxpChange: statusXpChange.change,
+      changeType: statusXpChange.changeType,
+    });
+    processedTypes.add('statusxp_gain');
+    processedTypes.add('trophy_detail');
+  }
+  
+  // Combine gamerscore with StatusXP
+  if (gamerscoreChange && statusXpChange && !processedTypes.has('statusxp_gain')) {
+    combinedChanges.push({
+      ...gamerscoreChange,
+      type: 'gamerscore_with_statusxp',
+      statusxpOld: statusXpChange.oldValue,
+      statusxpNew: statusXpChange.newValue,
+      statusxpChange: statusXpChange.change,
+    });
+    processedTypes.add('statusxp_gain');
+    processedTypes.add('gamerscore_gain');
+  }
+  
+  // Combine Steam with StatusXP
+  if (steamChange && statusXpChange && !processedTypes.has('statusxp_gain')) {
+    combinedChanges.push({
+      ...steamChange,
+      type: 'steam_with_statusxp',
+      statusxpOld: statusXpChange.oldValue,
+      statusxpNew: statusXpChange.newValue,
+      statusxpChange: statusXpChange.change,
+    });
+    processedTypes.add('statusxp_gain');
+    processedTypes.add('steam_achievement_gain');
+  }
+  
+  // Add remaining changes that weren't combined
+  for (const change of changes) {
+    if (!processedTypes.has(change.type)) {
+      combinedChanges.push(change);
+    }
+  }
+  
+  return combinedChanges;
 }
 
 /**
