@@ -229,33 +229,41 @@ serve(async (req) => {
 
     console.log('Storing Xbox credentials...');
     
-    // Check if this Xbox account already exists for a different user
-    const mergeCheck = await checkForExistingPlatformAccount(
-      supabase,
-      user.id,
-      'xbox',
-      xboxAuth.xuid  // Use XUID instead of gamertag - this is the unique identifier
-    );
-
-    // If Xbox account exists for a DIFFERENT user, block it
-    if (mergeCheck.shouldMerge && mergeCheck.existingUserId && mergeCheck.existingUserId !== user.id) {
-      console.log(`🔗 Xbox account ${xboxAuth.gamertag} already exists under user ${mergeCheck.existingUserId}`);
-      
-      return new Response(
-        JSON.stringify({
-          error: 'Xbox account already registered',
-          platform: 'Xbox',
-          username: xboxAuth.gamertag,
-          xuid: xboxAuth.xuid,
-          message: `This Xbox account (XUID: ${xboxAuth.xuid}) is already connected to another account. If this is your account, please contact support for assistance.`,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
-      );
-    }
+    // First check: Does THIS user already have Xbox linked?
+    const { data: currentUserProfile } = await supabase
+      .from('profiles')
+      .select('xbox_xuid')
+      .eq('id', user.id)
+      .single();
     
-    // If Xbox account exists for THIS SAME user, we're refreshing/updating tokens
-    if (mergeCheck.existingUserId === user.id) {
-      console.log(`🔄 Refreshing Xbox tokens for user ${user.id}`);
+    const userAlreadyHasXbox = currentUserProfile?.xbox_xuid === xboxAuth.xuid;
+    
+    if (userAlreadyHasXbox) {
+      console.log(`🔄 Refreshing Xbox tokens for user ${user.id} (same XUID: ${xboxAuth.xuid})`);
+      // Continue to update - this is just a token refresh
+    } else {
+      // Check if this Xbox account exists for a DIFFERENT user
+      const mergeCheck = await checkForExistingPlatformAccount(
+        supabase,
+        user.id,
+        'xbox',
+        xboxAuth.xuid
+      );
+
+      if (mergeCheck.shouldMerge && mergeCheck.existingUserId) {
+        console.log(`🔗 Xbox account ${xboxAuth.gamertag} already exists under user ${mergeCheck.existingUserId}`);
+        
+        return new Response(
+          JSON.stringify({
+            error: 'Xbox account already registered',
+            platform: 'Xbox',
+            username: xboxAuth.gamertag,
+            xuid: xboxAuth.xuid,
+            message: `This Xbox account (XUID: ${xboxAuth.xuid}) is already connected to another account. If this is your account, please contact support for assistance.`,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
+        );
+      }
     }
     
     // Calculate token expiry
