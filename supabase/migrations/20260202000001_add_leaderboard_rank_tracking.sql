@@ -101,7 +101,19 @@ BEGIN
   )
   SELECT 
     cr.user_id,
-    COALESCE(p.display_name, p.username, 'Player'::text) as display_name,
+    -- Use platform name based on preferred display platform
+    COALESCE(
+      CASE p.preferred_display_platform
+        WHEN 'psn' THEN p.psn_online_id
+        WHEN 'xbox' THEN p.xbox_gamertag
+        WHEN 'steam' THEN p.steam_display_name
+      END,
+      p.psn_online_id,
+      p.xbox_gamertag, 
+      p.steam_display_name,
+      p.username,
+      'Player'::text
+    ) as display_name,
     COALESCE(
       CASE p.preferred_display_platform
         WHEN 'psn' THEN p.psn_avatar_url
