@@ -228,20 +228,33 @@ serve(async (req) => {
     }
 
     console.log('Storing Xbox credentials...');
+    console.log(`🔍 Current signed-in user ID: ${user.id}`);
+    console.log(`🔍 Current signed-in user email: ${user.email}`);
     
     // First check: Does THIS user already have Xbox linked?
-    const { data: currentUserProfile } = await supabase
+    // Use service role to bypass RLS for reading user's own profile
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
+    const { data: currentUserProfile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('xbox_xuid')
       .eq('id', user.id)
       .single();
     
+    console.log('DEBUG: currentUserProfile:', JSON.stringify(currentUserProfile));
+    console.log('DEBUG: profileError:', JSON.stringify(profileError));
+    
     const userAlreadyHasXbox = currentUserProfile?.xbox_xuid === xboxAuth.xuid;
+    console.log('DEBUG: userAlreadyHasXbox:', userAlreadyHasXbox);
     
     if (userAlreadyHasXbox) {
       console.log(`🔄 Refreshing Xbox tokens for user ${user.id} (same XUID: ${xboxAuth.xuid})`);
       // Continue to update - this is just a token refresh
     } else {
+      console.log('DEBUG: Not a token refresh, checking for different user...');
       // Check if this Xbox account exists for a DIFFERENT user
       const mergeCheck = await checkForExistingPlatformAccount(
         supabase,
@@ -250,8 +263,22 @@ serve(async (req) => {
         xboxAuth.xuid
       );
 
+      console.log('DEBUG: mergeCheck result:', JSON.stringify(mergeCheck));
+
       if (mergeCheck.shouldMerge && mergeCheck.existingUserId) {
         console.log(`🔗 Xbox account ${xboxAuth.gamertag} already exists under user ${mergeCheck.existingUserId}`);
+        
+        // Check if user needs to sign in with different account
+        const { data: existingProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('display_name')
+          .eq('id', mergeCheck.existingUserId)
+          .single();
+        
+        const { data: existingAuth } = await supabaseAdmin
+          .auth.admin.getUserById(mergeCheck.existingUserId);
+        
+        console.log(`⚠️ Current user ${user.email} (${user.id}) trying to link Xbox that belongs to ${existingAuth?.user?.email} (${mergeCheck.existingUserId})`);
         
         return new Response(
           JSON.stringify({
@@ -259,7 +286,9 @@ serve(async (req) => {
             platform: 'Xbox',
             username: xboxAuth.gamertag,
             xuid: xboxAuth.xuid,
-            message: `This Xbox account (XUID: ${xboxAuth.xuid}) is already connected to another account. If this is your account, please contact support for assistance.`,
+            message: `This Xbox account is already linked to ${existingAuth?.user?.email || 'another account'}. Please sign in with that account to manage your Xbox connection. If you need help, contact support.`,
+            currentUser: user.email,
+            linkedToUser: existingAuth?.user?.email,
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
         );

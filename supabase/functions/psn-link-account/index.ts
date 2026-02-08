@@ -93,27 +93,47 @@ serve(async (req) => {
 
     console.log('Storing PSN credentials...');
     
-    // Check if this PSN account already exists for a different user
-    const mergeCheck = await checkForExistingPlatformAccount(
-      supabase,
-      user.id,
-      'psn',
-      userProfile.onlineId
+    // First check: Does THIS user already have PSN linked?
+    // Use service role to bypass RLS for reading user's own profile
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
-    if (mergeCheck.shouldMerge && mergeCheck.existingUserId) {
-      console.log(`🔗 PSN account ${userProfile.onlineId} already exists under user ${mergeCheck.existingUserId}`);
-      
-      return new Response(
-        JSON.stringify({
-          error: 'PSN account already registered',
-          platform: 'PSN',
-          username: userProfile.onlineId,
-          accountId: profile.accountId,
-          message: `This PSN account (Account ID: ${profile.accountId}) is already connected to another account. If this is your account, please contact support for assistance.`,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
+    
+    const { data: currentUserProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('psn_online_id')
+      .eq('id', user.id)
+      .single();
+    
+    const userAlreadyHasPSN = currentUserProfile?.psn_online_id === userProfile.onlineId;
+    
+    if (userAlreadyHasPSN) {
+      console.log(`🔄 Refreshing PSN tokens for user ${user.id} (same PSN: ${userProfile.onlineId})`);
+      // Continue to update - this is just a token refresh
+    } else {
+      // Check if this PSN account exists for a DIFFERENT user
+      const mergeCheck = await checkForExistingPlatformAccount(
+        supabase,
+        user.id,
+        'psn',
+        userProfile.onlineId
       );
+
+      if (mergeCheck.shouldMerge && mergeCheck.existingUserId) {
+        console.log(`🔗 PSN account ${userProfile.onlineId} already exists under user ${mergeCheck.existingUserId}`);
+        
+        return new Response(
+          JSON.stringify({
+            error: 'PSN account already registered',
+            platform: 'PSN',
+            username: userProfile.onlineId,
+            accountId: profile.accountId,
+            message: `This PSN account (Account ID: ${profile.accountId}) is already connected to another account. If this is your account, please contact support for assistance.`,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
+        );
+      }
     }
     
     // Calculate token expiry
