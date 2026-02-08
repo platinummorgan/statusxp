@@ -155,7 +155,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                               child: Text(
                                 '+$unreadCount',
                                 style: const TextStyle(
-                                  color: CyberpunkTheme.darkBg,
+                                  color: CyberpunkTheme.deepBlack,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -323,7 +323,7 @@ class _DateGroupState extends State<_DateGroup> {
                   child: Text(
                     '+${widget.group.storyCount}',
                     style: const TextStyle(
-                      color: CyberpunkTheme.darkBg,
+                      color: CyberpunkTheme.deepBlack,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
