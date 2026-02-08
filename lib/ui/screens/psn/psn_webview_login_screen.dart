@@ -45,8 +45,9 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
             }
           },
           onWebResourceError: (error) {
+            // Don't show error overlay for minor resource failures
+            // Page may still be functional even if some assets fail to load
             setState(() {
-              _error = 'Failed to load login page';
               _isLoading = false;
             });
           },
@@ -116,7 +117,7 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
 
   void _navigateToNPSSOPage() {
     _controller.loadRequest(
-      Uri.parse('https://ca.account.sony.com/api/v1/ssocookie'),
+      Uri.parse('https://account.sony.com/api/v1/ssocookie'),
     );
   }
 
