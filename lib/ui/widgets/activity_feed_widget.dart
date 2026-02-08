@@ -126,47 +126,49 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: feedAsync.when(
-                        data: (groups) {
-                          // Calculate total story count
-                          final totalCount = groups.fold<int>(
-                            0,
-                            (sum, group) => sum + group.storyCount,
-                          );
-                          return Text(
-                            'What are other StatusXPians up to? ($totalCount)',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
+                      child: Consumer(
+                        builder: (context, ref, child) {
+                          final unreadAsync = ref.watch(unreadCountProvider);
+                          return unreadAsync.when(
+                            data: (unreadCount) {
+                              return Text(
+                                unreadCount > 0
+                                    ? 'What are other StatusXPians up to? (+$unreadCount new)'
+                                    : 'What are other StatusXPians up to?',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              );
+                            },
+                            loading: () => const Text(
+                              'What are your fellow StatusXPians up to?',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                            error: (_, __) => const Text(
+                              'What are your fellow StatusXPians up to?',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           );
                         },
-                        loading: () => const Text(
-                          'What are your fellow StatusXPians up to?',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        error: (_, __) => const Text(
-                          'What are your fellow StatusXPians up to? (0)',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
                       ),
                     ),
                   ],
