@@ -126,50 +126,46 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Consumer(
-                        builder: (context, ref, child) {
-                          final unreadAsync = ref.watch(unreadCountProvider);
-                          return unreadAsync.when(
-                            data: (unreadCount) {
-                              return Text(
-                                unreadCount > 0
-                                    ? 'What are other StatusXPians up to? (+$unreadCount new)'
-                                    : 'What are other StatusXPians up to?',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.5,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              );
-                            },
-                            loading: () => const Text(
-                              'What are your fellow StatusXPians up to?',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                            error: (_, __) => const Text(
-                              'What are your fellow StatusXPians up to?',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          );
-                        },
+                      child: const Text(
+                        'What are other StatusXPians up to?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
+                    ),
+                    // Badge indicator
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final unreadAsync = ref.watch(unreadCountProvider);
+                        return unreadAsync.when(
+                          data: (unreadCount) {
+                            if (unreadCount == 0) return const SizedBox.shrink();
+                            return Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: CyberpunkTheme.neonCyan,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '+$unreadCount',
+                                style: const TextStyle(
+                                  color: CyberpunkTheme.darkBg,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                          },
+                          loading: () => const SizedBox.shrink(),
+                          error: (_, __) => const SizedBox.shrink(),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -317,11 +313,20 @@ class _DateGroupState extends State<_DateGroup> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  '(+${widget.group.storyCount})',
-                  style: TextStyle(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.7),
-                    fontSize: 12,
+                // Badge indicator (like notification badge)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: CyberpunkTheme.neonCyan,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '+${widget.group.storyCount}',
+                    style: const TextStyle(
+                      color: CyberpunkTheme.darkBg,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
