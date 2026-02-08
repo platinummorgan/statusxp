@@ -17,6 +17,13 @@ const supabase = createClient(
  */
 export async function createPreSyncSnapshot(userId) {
   try {
+    // Delete any recent pre-sync snapshots to prevent duplicates from multiple sync attempts
+    await supabase
+      .from('user_stat_snapshots')
+      .delete()
+      .eq('user_id', userId)
+      .gte('synced_at', new Date(Date.now() - 5 * 60 * 1000).toISOString());
+    
     // Get current StatusXP from leaderboard_cache
     const { data: leaderboardData, error: leaderboardError } = await supabase
       .from('leaderboard_cache')
