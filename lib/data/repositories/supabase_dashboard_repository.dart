@@ -112,7 +112,7 @@ class SupabaseDashboardRepository {
           }
           
           // Only count this game if it belongs to one of the requested platforms
-          if (gamePlatformId != null && effectiveXp != null && platformIds.contains(gamePlatformId)) {
+          if (effectiveXp != null && platformIds.contains(gamePlatformId)) {
             platformStatusXP += effectiveXp;
             platformGamesCount += 1;
           }
