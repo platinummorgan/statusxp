@@ -288,7 +288,14 @@ class _DateGroupState extends State<_DateGroup> {
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: Colors.grey.shade100,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1a1f3a),
+              border: Border(
+                bottom: BorderSide(
+                  color: CyberpunkTheme.neonPurple.withOpacity(0.2),
+                ),
+              ),
+            ),
             child: Row(
               children: [
                 Icon(
@@ -296,6 +303,7 @@ class _DateGroupState extends State<_DateGroup> {
                       ? Icons.expand_less
                       : Icons.expand_more,
                   size: 20,
+                  color: CyberpunkTheme.neonCyan,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -303,13 +311,14 @@ class _DateGroupState extends State<_DateGroup> {
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '(+${widget.group.storyCount})',
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: CyberpunkTheme.neonCyan.withOpacity(0.7),
                     fontSize: 12,
                   ),
                 ),

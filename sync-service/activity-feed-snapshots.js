@@ -271,7 +271,7 @@ async function generateAndInsertStory(userId, change, snapshot) {
 async function getDisplayName(userId, eventType) {
   const { data: profile } = await supabase
     .from('profiles')
-    .select('psn_online_id, xbox_gamertag, steam_display_name, username')
+    .select('psn_online_id, xbox_gamertag, steam_display_name, username, preferred_display_platform')
     .eq('id', userId)
     .single();
   
@@ -290,8 +290,19 @@ async function getDisplayName(userId, eventType) {
     return profile.steam_display_name || profile.username || 'Steam User';
   }
   
-  // StatusXP - use preferred display name
-  return profile.psn_online_id || profile.xbox_gamertag || profile.username || 'User';
+  // StatusXP general events - use preferred display platform if set
+  if (profile.preferred_display_platform === 'psn' && profile.psn_online_id) {
+    return profile.psn_online_id;
+  }
+  if (profile.preferred_display_platform === 'xbox' && profile.xbox_gamertag) {
+    return profile.xbox_gamertag;
+  }
+  if (profile.preferred_display_platform === 'steam' && profile.steam_display_name) {
+    return profile.steam_display_name;
+  }
+  
+  // Fallback: use any available platform name
+  return profile.psn_online_id || profile.xbox_gamertag || profile.steam_display_name || profile.username || 'User';
 }
 
 /**
