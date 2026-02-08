@@ -237,7 +237,8 @@ serve(async (req) => {
       xboxAuth.xuid  // Use XUID instead of gamertag - this is the unique identifier
     );
 
-    if (mergeCheck.shouldMerge && mergeCheck.existingUserId) {
+    // If Xbox account exists for a DIFFERENT user, block it
+    if (mergeCheck.shouldMerge && mergeCheck.existingUserId && mergeCheck.existingUserId !== user.id) {
       console.log(`🔗 Xbox account ${xboxAuth.gamertag} already exists under user ${mergeCheck.existingUserId}`);
       
       return new Response(
@@ -252,11 +253,16 @@ serve(async (req) => {
       );
     }
     
+    // If Xbox account exists for THIS SAME user, we're refreshing/updating tokens
+    if (mergeCheck.existingUserId === user.id) {
+      console.log(`🔄 Refreshing Xbox tokens for user ${user.id}`);
+    }
+    
     // Calculate token expiry
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + xboxAuth.expiresIn);
 
-    // Update user profile with Xbox credentials
+    // Update user profile with Xbox credentials (works for both new link and token refresh)
     const { error: updateError } = await supabase
       .from('profiles')
       .update({

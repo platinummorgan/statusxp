@@ -74,9 +74,12 @@ class AuthService {
   Future<void> resetPassword({
     required String email,
   }) async {
+    const redirectUrl = kIsWeb 
+        ? 'https://statusxp.com/reset-password'
+        : 'com.statusxp.statusxp://reset-password';
     await _client.auth.resetPasswordForEmail(
       email,
-      redirectTo: 'com.statusxp.statusxp://reset-password',
+      redirectTo: redirectUrl,
     );
   }
   
