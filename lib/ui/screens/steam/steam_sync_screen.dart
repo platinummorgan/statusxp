@@ -325,7 +325,14 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
         title: const Text('Steam Sync'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Try to pop first, but if nothing in stack, go home
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
       ),
       body: Column(

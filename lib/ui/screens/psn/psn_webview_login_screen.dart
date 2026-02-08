@@ -17,6 +17,7 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
   String? _error;
+  String? _detectedRegion; // Track user's region (ca, us, eu, jp, etc.)
 
   @override
   void initState() {
@@ -33,6 +34,15 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
             setState(() {
               _isLoading = true;
             });
+            
+            // Detect region from Sony account URL (e.g., ca.account.sony.com → "ca")
+            final regionMatch = RegExp(r'https://([a-z]{2})\.account\.sony\.com').firstMatch(url);
+            if (regionMatch != null) {
+              setState(() {
+                _detectedRegion = regionMatch.group(1);
+              });
+              print('[PSN Login] Detected region: $_detectedRegion');
+            }
           },
           onPageFinished: (url) async {
             setState(() {
@@ -116,9 +126,14 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
   }
 
   void _navigateToNPSSOPage() {
-    _controller.loadRequest(
-      Uri.parse('https://account.sony.com/api/v1/ssocookie'),
-    );
+    // Use detected region if available (e.g., ca, us, eu, jp)
+    // Otherwise fall back to global endpoint
+    final region = _detectedRegion ?? '';
+    final prefix = region.isNotEmpty ? '$region.' : '';
+    final url = 'https://${prefix}account.sony.com/api/v1/ssocookie';
+    
+    print('[PSN Login] Navigating to: $url');
+    _controller.loadRequest(Uri.parse(url));
   }
 
   @override

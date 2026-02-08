@@ -256,7 +256,14 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
         title: const Text('Xbox Sync'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Try to pop first, but if nothing in stack, go home
+            if (Navigator.of(context).canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
       ),
       body: syncStatusAsync.when(
