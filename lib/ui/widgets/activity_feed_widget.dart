@@ -312,23 +312,6 @@ class _DateGroupState extends State<_DateGroup> {
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Badge indicator (like notification badge)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: CyberpunkTheme.neonCyan,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '+${widget.group.storyCount}',
-                    style: const TextStyle(
-                      color: CyberpunkTheme.deepBlack,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
