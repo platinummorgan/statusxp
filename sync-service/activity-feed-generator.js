@@ -122,20 +122,22 @@ function buildPrompt(username, change) {
               - "${username} cleaned up! 1 Gold, 3 Silver, 10 Bronze in Dishonored."`;
               
     case 'gamerscore_gain':
-      return `${username} increased their Xbox Gamerscore from ${oldValue} to ${newValue} (+${amount}).
+      const gameContext = gameTitle ? ` in ${gameTitle}` : '';
+      return `${username} increased their Xbox Gamerscore from ${oldValue} to ${newValue} (+${amount})${gameContext}.
               Write a celebratory announcement with gaming personality.
-              MUST include before/after values.
+              MUST include before/after values and game title if provided.
               Examples:
-              - "${username} jumped 500 Gamerscore (6000 → 6500). Keep grinding!"
-              - "Xbox grind! ${username} gained 250 Gamerscore (15k → 15,250)!"`;
+              - "${username} jumped 500 Gamerscore (6000 → 6500) in Halo Infinite!"
+              - "Xbox grind! ${username} gained 250 Gamerscore in Forza Horizon (15k → 15,250)!"`;
               
     case 'steam_achievement_gain':
-      return `${username} earned ${amount} Steam achievements.
+      const steamGameContext = gameTitle ? ` in ${gameTitle}` : '';
+      return `${username} earned ${amount} Steam achievements${steamGameContext}.
               Total achievements: ${oldValue} → ${newValue}.
-              Write a short, fun announcement with before/after values.
+              Write a short, fun announcement with before/after values and game title if provided.
               Examples:
-              - "${username} unlocked ${amount} Steam achievements! (${oldValue} → ${newValue})"
-              - "Steam grind! ${username} added ${amount} more achievements."`;
+              - "${username} unlocked ${amount} Steam achievements in Elden Ring! (${oldValue} → ${newValue})"
+              - "Steam grind! ${username} added ${amount} more achievements in Baldur's Gate 3!"`;
     
     case 'trophy_with_statusxp':
       const trophyParts = [];
@@ -153,18 +155,20 @@ function buildPrompt(username, change) {
               - "${username} cleaned up! 2 Gold, 3 Silver in Dishonored netted 189 StatusXP!"`;
     
     case 'gamerscore_with_statusxp':
-      return `${username} increased their Xbox Gamerscore from ${oldValue} to ${newValue} (+${amount}), gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
-              Write a celebratory announcement mentioning BOTH Gamerscore AND StatusXP gain.
+      const xboxGameContext = gameTitle ? ` in ${gameTitle}` : '';
+      return `${username} increased their Xbox Gamerscore from ${oldValue} to ${newValue} (+${amount})${xboxGameContext}, gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
+              Write a celebratory announcement mentioning BOTH Gamerscore, game title (if provided), AND StatusXP gain.
               Examples:
-              - "${username} jumped 500 Gamerscore for 125 StatusXP (6000G → 6500G, 8k → 8,125 StatusXP)!"
-              - "Xbox grind! ${username} gained 250G and 63 StatusXP!"`;
+              - "${username} jumped 500 Gamerscore in Halo Infinite for 125 StatusXP (6000G → 6500G)!"
+              - "Xbox grind! ${username} gained 250G in Forza and 63 StatusXP!"`;
     
     case 'steam_with_statusxp':
-      return `${username} earned ${amount} Steam achievements (${oldValue} → ${newValue}), gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
-              Write a fun announcement mentioning BOTH Steam achievements AND StatusXP gain.
+      const steamCombinedContext = gameTitle ? ` in ${gameTitle}` : '';
+      return `${username} earned ${amount} Steam achievements${steamCombinedContext} (${oldValue} → ${newValue}), gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
+              Write a fun announcement mentioning BOTH Steam achievements, game title (if provided), AND StatusXP gain.
               Examples:
-              - "${username} unlocked ${amount} Steam achievements for ${change.statusxpChange} StatusXP!"
-              - "Steam grind! ${username} added ${amount} achievements, earning ${change.statusxpChange} StatusXP!"`;
+              - "${username} unlocked ${amount} Steam achievements in Elden Ring for ${change.statusxpChange} StatusXP!"
+              - "Steam grind! ${username} added ${amount} achievements in Baldur's Gate 3, earning ${change.statusxpChange} StatusXP!"`;
               
     default:
       return `${username} accomplished something in StatusXP. Write a short, fun announcement.`;
@@ -190,10 +194,12 @@ function buildTemplateStory(username, change) {
       return `${username} earned ${trophyParts.join(', ')} in ${change.gameTitle}`;
       
     case 'gamerscore_gain':
-      return `${username} increased Gamerscore by ${change.change} (${change.oldValue} → ${change.newValue})`;
+      const gameContext2 = change.gameTitle ? ` in ${change.gameTitle}` : '';
+      return `${username} increased Gamerscore by ${change.change} (${change.oldValue} → ${change.newValue})${gameContext2}`;
       
     case 'steam_achievement_gain':
-      return `${username} earned ${change.change} Steam achievements (${change.oldValue} → ${change.newValue})`;
+      const steamContext = change.gameTitle ? ` in ${change.gameTitle}` : '';
+      return `${username} earned ${change.change} Steam achievements (${change.oldValue} → ${change.newValue})${steamContext}`;
     
     case 'trophy_with_statusxp':
       const trophyParts = [];
@@ -203,10 +209,12 @@ function buildTemplateStory(username, change) {
       return `${username} earned ${trophyParts.join(', ')} in ${change.gameTitle}, gaining ${change.statusxpChange} StatusXP`;
     
     case 'gamerscore_with_statusxp':
-      return `${username} gained ${change.change} Gamerscore and ${change.statusxpChange} StatusXP`;
+      const xboxCombinedContext = change.gameTitle ? ` in ${change.gameTitle}` : '';
+      return `${username} gained ${change.change} Gamerscore${xboxCombinedContext} and ${change.statusxpChange} StatusXP`;
     
     case 'steam_with_statusxp':
-      return `${username} earned ${change.change} Steam achievements and gained ${change.statusxpChange} StatusXP`;
+      const steamCombinedContext2 = change.gameTitle ? ` in ${change.gameTitle}` : '';
+      return `${username} earned ${change.change} Steam achievements${steamCombinedContext2} and gained ${change.statusxpChange} StatusXP`;
       
     default:
       return `${username} made progress in StatusXP`;

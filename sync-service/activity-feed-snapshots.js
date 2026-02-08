@@ -177,6 +177,7 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
       newValue: postSnapshot.gamerscore,
       change: postSnapshot.gamerscore - preSnapshot.gamerscore,
       changeType: categorizeChange(postSnapshot.gamerscore - preSnapshot.gamerscore, 'gamerscore'),
+      gameTitle: postSnapshot.latest_game_title,
     });
   }
   
@@ -188,6 +189,7 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
       newValue: postSnapshot.steam_achievement_count,
       change: postSnapshot.steam_achievement_count - preSnapshot.steam_achievement_count,
       changeType: categorizeChange(postSnapshot.steam_achievement_count - preSnapshot.steam_achievement_count, 'steam_achievements'),
+      gameTitle: postSnapshot.latest_game_title,
     });
   }
   
