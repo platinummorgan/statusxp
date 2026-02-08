@@ -157,6 +157,43 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   const bronzeDiff = postSnapshot.psn_bronze_count - preSnapshot.psn_bronze_count;
   
   if (goldDiff > 0 || silverDiff > 0 || bronzeDiff > 0) {
+    // Check for rare trophies (< 10% rarity) earned in this sync
+    const { data: rareTrophies } = await supabase
+      .from('user_achievements')
+      .select(`
+        platform_achievement_id,
+        achievements!inner(
+          name,
+          metadata
+        )
+      `)
+      .eq('user_id', userId)
+      .in('platform_id', [1, 2, 5, 9])
+      .gte('earned_at', preSnapshot.synced_at)
+      .lte('earned_at', postSnapshot.synced_at);
+    
+    // Filter for trophies with rarity < 10%
+    const impressiveRarities = [];
+    if (rareTrophies) {
+      for (const trophy of rareTrophies) {
+        const rarity = parseFloat(trophy.achievements?.metadata?.rarity);
+        if (!isNaN(rarity) && rarity < 10) {
+          impressiveRarities.push({
+            name: trophy.achievements?.name,
+            rarity: rarity,
+            type: trophy.achievements?.metadata?.psn_trophy_type
+          });
+        }
+      }
+      
+      // Sort by rarity (rarest first)
+      impressiveRarities.sort((a, b) => a.rarity - b.rarity);
+      
+      if (impressiveRarities.length > 0) {
+        console.log(`🔥 Rare trophy detected! ${impressiveRarities[0].name} (${impressiveRarities[0].rarity}%)`);
+      }
+    }
+    
     changes.push({
       type: 'trophy_detail',
       goldCount: goldDiff,
@@ -166,6 +203,7 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
       oldSilver: preSnapshot.psn_silver_count,
       oldBronze: preSnapshot.psn_bronze_count,
       gameTitle: postSnapshot.latest_game_title || 'a game',
+      rareTrophies: impressiveRarities.length > 0 ? impressiveRarities : null,
     });
   }
   

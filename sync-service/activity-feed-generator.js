@@ -111,14 +111,22 @@ function buildPrompt(username, change) {
       if (change.bronzeCount > 0) trophyParts.push(`${change.bronzeCount} Bronze`);
       const trophyList = trophyParts.join(', ');
       
-      return `${username} earned ${trophyList} trophies in ${gameTitle}.
+      let rarityInfo = '';
+      if (change.rareTrophies && change.rareTrophies.length > 0) {
+        const rarest = change.rareTrophies[0]; // Get the rarest one
+        rarityInfo = ` INCLUDING A RARE ${rarest.type?.toUpperCase()} trophy "${rarest.name}" (${rarest.rarity}% rarity)!`;
+      }
+      
+      return `${username} earned ${trophyList} trophies in ${gameTitle}${rarityInfo}.
               Gold: ${change.oldGold} → ${change.oldGold + change.goldCount}
               Silver: ${change.oldSilver} → ${change.oldSilver + change.silverCount}
               Bronze: ${change.oldBronze} → ${change.oldBronze + change.bronzeCount}
-              Write a celebratory announcement mentioning the trophy types.
+              ${rarityInfo ? 'IMPORTANT: Call out the rare trophy with excitement! Use emojis like 🔥 💎 ⚡ for ultra-rare (<5%).' : ''}
+              Write a celebratory announcement mentioning the trophy types${rarityInfo ? ' and ESPECIALLY the rare trophy' : ''}.
               Examples:
               - "${username} snagged 15 Bronze trophies in God of War! (0 → 15)"
               - "Trophy hunt! ${username} grabbed 2 Gold, 5 Silver in Elden Ring!"
+              ${rarityInfo ? '- "Holy grind! ${username} got 4 Bronze + an ULTRA RARE Silver (0.8%!) in Dark Souls 🔥"' : ''}
               - "${username} cleaned up! 1 Gold, 3 Silver, 10 Bronze in Dishonored."`;
               
     case 'gamerscore_gain':
@@ -140,18 +148,26 @@ function buildPrompt(username, change) {
               - "Steam grind! ${username} added ${amount} more achievements in Baldur's Gate 3!"`;
     
     case 'trophy_with_statusxp':
-      const trophyParts = [];
-      if (change.goldCount > 0) trophyParts.push(`${change.goldCount} Gold`);
-      if (change.silverCount > 0) trophyParts.push(`${change.silverCount} Silver`);
-      if (change.bronzeCount > 0) trophyParts.push(`${change.bronzeCount} Bronze`);
-      const trophyList = trophyParts.join(', ');
+      const trophyParts2 = [];
+      if (change.goldCount > 0) trophyParts2.push(`${change.goldCount} Gold`);
+      if (change.silverCount > 0) trophyParts2.push(`${change.silverCount} Silver`);
+      if (change.bronzeCount > 0) trophyParts2.push(`${change.bronzeCount} Bronze`);
+      const trophyList2 = trophyParts2.join(', ');
       
-      return `${username} earned ${trophyList} trophies in ${gameTitle}, gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
+      let rarityInfo2 = '';
+      if (change.rareTrophies && change.rareTrophies.length > 0) {
+        const rarest2 = change.rareTrophies[0];
+        rarityInfo2 = ` INCLUDING A RARE ${rarest2.type?.toUpperCase()} "${rarest2.name}" (${rarest2.rarity}% rarity)`;
+      }
+      
+      return `${username} earned ${trophyList2} trophies in ${gameTitle}${rarityInfo2}, gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew}).
               Trophy counts - Gold: ${change.oldGold} → ${change.oldGold + change.goldCount}, Silver: ${change.oldSilver} → ${change.oldSilver + change.silverCount}, Bronze: ${change.oldBronze} → ${change.oldBronze + change.bronzeCount}
-              Write a celebratory announcement mentioning BOTH trophy details AND StatusXP gain.
+              ${rarityInfo2 ? 'IMPORTANT: Call out the rare trophy with enthusiasm! Use emojis like 🔥 💎 ⚡ for ultra-rare (<5%).' : ''}
+              Write a celebratory announcement mentioning BOTH trophy details${rarityInfo2 ? ' (ESPECIALLY the rare one)' : ''} AND StatusXP gain.
               Examples:
               - "${username} snagged 8 Bronze in Nexomon: Extinction, earning 13 StatusXP (59,239 → 59,252)!"
               - "Trophy spree! ${username} got 5 Silver, 10 Bronze in Elden Ring for 247 StatusXP (12k → 12.2k)!"
+              ${rarityInfo2 ? '- "LEGENDARY! ${username} got 4 Bronze + an ULTRA RARE Silver (0.3%!) 🔥 Earned 156 StatusXP in Dark Souls!"' : ''}
               - "${username} cleaned up! 2 Gold, 3 Silver in Dishonored netted 189 StatusXP!"`;
     
     case 'gamerscore_with_statusxp':
@@ -187,11 +203,16 @@ function buildTemplateStory(username, change) {
       return `${username} earned their ${getOrdinal(change.newValue)} platinum in ${change.gameTitle}`;
       
     case 'trophy_detail':
-      const trophyParts = [];
-      if (change.goldCount > 0) trophyParts.push(`${change.goldCount} Gold`);
-      if (change.silverCount > 0) trophyParts.push(`${change.silverCount} Silver`);
-      if (change.bronzeCount > 0) trophyParts.push(`${change.bronzeCount} Bronze`);
-      return `${username} earned ${trophyParts.join(', ')} in ${change.gameTitle}`;
+      const trophyParts3 = [];
+      if (change.goldCount > 0) trophyParts3.push(`${change.goldCount} Gold`);
+      if (change.silverCount > 0) trophyParts3.push(`${change.silverCount} Silver`);
+      if (change.bronzeCount > 0) trophyParts3.push(`${change.bronzeCount} Bronze`);
+      let rareSuffix = '';
+      if (change.rareTrophies && change.rareTrophies.length > 0) {
+        const rarest = change.rareTrophies[0];
+        rareSuffix = ` including a rare ${rarest.type} (${rarest.rarity}%)`;
+      }
+      return `${username} earned ${trophyParts3.join(', ')} in ${change.gameTitle}${rareSuffix}`;
       
     case 'gamerscore_gain':
       const gameContext2 = change.gameTitle ? ` in ${change.gameTitle}` : '';
@@ -202,11 +223,16 @@ function buildTemplateStory(username, change) {
       return `${username} earned ${change.change} Steam achievements (${change.oldValue} → ${change.newValue})${steamContext}`;
     
     case 'trophy_with_statusxp':
-      const trophyParts = [];
-      if (change.goldCount > 0) trophyParts.push(`${change.goldCount} Gold`);
-      if (change.silverCount > 0) trophyParts.push(`${change.silverCount} Silver`);
-      if (change.bronzeCount > 0) trophyParts.push(`${change.bronzeCount} Bronze`);
-      return `${username} earned ${trophyParts.join(', ')} in ${change.gameTitle}, gaining ${change.statusxpChange} StatusXP`;
+      const trophyParts4 = [];
+      if (change.goldCount > 0) trophyParts4.push(`${change.goldCount} Gold`);
+      if (change.silverCount > 0) trophyParts4.push(`${change.silverCount} Silver`);
+      if (change.bronzeCount > 0) trophyParts4.push(`${change.bronzeCount} Bronze`);
+      let rareSuffix2 = '';
+      if (change.rareTrophies && change.rareTrophies.length > 0) {
+        const rarest = change.rareTrophies[0];
+        rareSuffix2 = ` including a rare ${rarest.type} (${rarest.rarity}%)`;
+      }
+      return `${username} earned ${trophyParts4.join(', ')} in ${change.gameTitle}${rareSuffix2}, gaining ${change.statusxpChange} StatusXP`;
     
     case 'gamerscore_with_statusxp':
       const xboxCombinedContext = change.gameTitle ? ` in ${change.gameTitle}` : '';
