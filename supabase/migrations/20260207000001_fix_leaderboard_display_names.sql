@@ -1,4 +1,4 @@
--- Fix leaderboard display names to respect preferred_display_platform setting
+ix leaderboard display names to respect preferred_display_platform setting
 -- This ensures StatusXP leaderboard shows the same name as activity feed
 
 CREATE OR REPLACE FUNCTION public.get_leaderboard_with_movement(

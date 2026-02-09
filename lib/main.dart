@@ -333,19 +333,34 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
     final isRecovery =
         fullUrl.contains('type=recovery') || fullUrl.contains('reset-password');
 
-    if (!isRecovery) return;
+    if (!isRecovery) {
+      _safeLog('Not a recovery link, ignoring');
+      return;
+    }
 
     try {
-      _safeLog('Password reset link detected');
+      _safeLog('Password reset link detected - processing token');
 
       await Supabase.instance.client.auth.getSessionFromUrl(Uri.parse(fullUrl));
+      
+      _safeLog('Token processed successfully, navigating to reset screen');
 
       if (!mounted) return;
-      await Future.delayed(const Duration(milliseconds: 300));
+      
+      // Wait for auth state to settle
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      _safeLog('Navigating to /reset-password');
       appRouter.go('/reset-password');
+      _safeLog('Navigation complete');
     } catch (e, stack) {
       _safeLog('Error handling password reset: ${_safeStr(e)}');
       _safeLog('Stack: ${_safeStr(stack)}');
+      
+      // Even if token processing fails, try to navigate to reset screen
+      if (mounted) {
+        appRouter.go('/reset-password');
+      }
     }
   }
 
