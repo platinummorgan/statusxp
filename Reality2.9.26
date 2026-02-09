@@ -1,0 +1,175 @@
+# StatusXP Reality Report
+
+Generated: 2026-02-09
+Primary live schema source: sql_archive/DATABASE_SCHEMA_LIVE_2026-02-09.sql (last modified 02/09/2026 12:04:07)
+
+## Scope
+- Repository-level audit of Flutter app, Supabase edge functions, sync-service, and migrations.
+- Live schema anchored to 2026-02-09 production dump.
+
+## Platform and Infra Reality
+- Client platforms: iOS, Android, Web.
+- Supabase for auth/database/storage/edge functions.
+- Railway sync worker service at sync-service.
+- Vercel web hosting for Flutter web output.
+- App version: 1.1.13+87
+
+## Repository Size Snapshot
+- Dart files (lib): 129
+- Edge function directories (supabase/functions): 33
+- Sync service JS files (sync-service): 36
+- Root SQL migrations (supabase/migrations): 5
+- Manual archived SQL files: 50
+
+## Route Inventory (GoRouter)
+- /
+- /achievement-comments/:achievementId
+- /achievements
+- /analytics
+- /coop-partners
+- /coop-partners/:requestId
+- /flex-room
+- /game/:gameId
+- /game/:gameId/achievements
+- /games
+- /games/browse
+- /landing
+- /leaderboards
+- /poster
+- /premium-subscription
+- /premium/success
+- /psn-sync
+- /reset-password
+- /settings
+- /twitch-callback
+- /unified-games
+- /xbox-sync
+
+## Literal Route Navigations Found in Code
+- /
+- /achievements
+- /coop-partners
+- /coop-partners/${request.id}
+- /games
+- /poster
+- /premium-subscription
+- /psn-sync
+- /reset-password
+- /settings
+- /unified-games
+- /xbox-sync
+
+## Edge Functions Invoked by Flutter App
+- delete-account
+- psn-confirm-merge
+- psn-link-account
+- psn-start-sync
+- psn-stop-sync
+- psn-sync-status
+- steam-start-sync
+- steam-stop-sync
+- stripe-ai-pack-checkout
+- stripe-create-checkout
+- stripe-customer-portal
+- twitch-check-subscription
+- twitch-link-account
+- xbox-link-account
+- xbox-start-sync
+- xbox-stop-sync
+- xbox-sync-status
+- youtube-search
+
+## RPC Calls from Flutter App
+- add_ai_pack_credits
+- calculate_statusxp_with_stacks
+- can_use_ai
+- can_user_sync
+- consume_ai_credit
+- get_activity_feed_grouped
+- get_grouped_games_fast
+- get_leaderboard_with_movement
+- get_most_time_sunk_game_v2
+- get_platform_achievement_counts
+- get_psn_leaderboard_with_movement
+- get_rarest_achievement_v2
+- get_recent_notable_achievements_v2
+- get_steam_leaderboard_with_movement
+- get_superlative_suggestions_v3
+- get_sweatiest_platinum_v2
+- get_unread_activity_count
+- get_user_achievements_for_game
+- get_user_completions
+- get_user_games_for_platform
+- get_user_grouped_games
+- get_xbox_leaderboard_with_movement
+- mark_activity_feed_viewed
+- unlock_achievement_if_new
+
+## App .from() Object References
+- achievement_comments
+- achievements
+- activity_feed
+- app_updates
+- flex_room_data
+- games
+- leaderboard_cache
+- meta_achievements
+- notifications
+- platforms
+- profiles
+- psn_leaderboard_cache
+- steam_leaderboard_cache
+- trophies
+- trophy_help_requests
+- trophy_help_responses
+- user_achievements
+- user_games
+- user_meta_achievements
+- user_premium_status
+- user_selected_title
+- user_stats
+- user_sync_history
+- user_sync_status
+- user_trophies
+- xbox_leaderboard_cache
+
+## Sync Service Endpoints
+- GET /
+- POST /admin/xbox/backfill-rarity
+- GET /ok
+- GET /health
+- POST /sync/xbox
+- POST /sync/psn
+- POST /sync/steam
+- POST /sync/xbox/stop
+- POST /sync/psn/stop
+- POST /sync/steam/stop
+
+## Live DB Object Counts
+- Tables: 38
+- Views: 7
+- Materialized views: 1
+- Functions: 79
+- RLS-enabled tables: 31
+- Policies: 77
+
+## Drift and Risk Findings (Current)
+1. App references missing from live schema:
+- notifications
+- trophies
+- user_trophies
+2. Source RPC calls missing in live function list:
+- exec
+- exec_sql
+- get_flex_room_achievements
+3. Active edge functions referencing objects missing from live schema:
+- notifications
+- user_ai_guides
+- user_trophies
+4. Legacy backup files were moved to legacy/ to isolate runtime paths.
+
+## Immediate Fixes Applied In This Pass
+- Added .premium_expires_at usage in active premium code paths.
+- Prevented subscription activation failure when notifications insert is unavailable.
+- Moved old backup/alternate entry files into legacy/ (non-runtime).
+

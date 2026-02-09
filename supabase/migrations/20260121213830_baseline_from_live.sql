@@ -1,6 +1,3 @@
-
-
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -11,54 +8,13 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
-
 CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA "pg_catalog";
-
-
-
-
-
-
 COMMENT ON SCHEMA "public" IS 'Platform leaderboard caches migrated to VIEWs in migration 1011. No refresh functions needed - VIEWs always show current data.';
-
-
-
 CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "graphql";
-
-
-
-
-
-
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
-
-
-
-
-
-
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
-
-
-
-
-
-
 CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
-
-
-
-
-
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
-
-
-
-
-
-
 CREATE OR REPLACE FUNCTION "public"."add_ai_credits"("p_user_id" "uuid", "p_credits" integer) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -81,11 +37,7 @@ BEGIN
     updated_at = now();
 END;
 $$;
-
-
 ALTER FUNCTION "public"."add_ai_credits"("p_user_id" "uuid", "p_credits" integer) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."add_ai_pack_credits"("p_user_id" "uuid", "p_pack_type" character varying, "p_credits" integer, "p_price" numeric, "p_platform" character varying) RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'pg_temp'
@@ -110,15 +62,8 @@ BEGIN
   );
 END;
 $$;
-
-
 ALTER FUNCTION "public"."add_ai_pack_credits"("p_user_id" "uuid", "p_pack_type" character varying, "p_credits" integer, "p_price" numeric, "p_platform" character varying) OWNER TO "postgres";
-
-
 COMMENT ON FUNCTION "public"."add_ai_pack_credits"("p_user_id" "uuid", "p_pack_type" character varying, "p_credits" integer, "p_price" numeric, "p_platform" character varying) IS 'Adds purchased AI credits - search_path set to prevent attacks';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."auto_refresh_all_leaderboards"() RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -132,11 +77,7 @@ BEGIN
   PERFORM refresh_steam_leaderboard_cache();
 END;
 $$;
-
-
 ALTER FUNCTION "public"."auto_refresh_all_leaderboards"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."calculate_achievement_similarity"("game_id_1" bigint, "game_id_2" bigint) RETURNS numeric
     LANGUAGE "plpgsql"
     AS $$
@@ -175,11 +116,7 @@ BEGIN
   RETURN similarity_score;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."calculate_achievement_similarity"("game_id_1" bigint, "game_id_2" bigint) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."calculate_achievement_statusxp"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -199,11 +136,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."calculate_achievement_statusxp"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."calculate_statusxp_simple"("p_user_id" "uuid") RETURNS TABLE("platform_id" bigint, "platform_game_id" "text", "statusxp" bigint)
     LANGUAGE "plpgsql" STABLE
     AS $$
@@ -223,11 +156,7 @@ BEGIN
   GROUP BY ua.platform_id, ua.platform_game_id;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."calculate_statusxp_simple"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."calculate_statusxp_with_stacks"("p_user_id" "uuid") RETURNS TABLE("platform_id" bigint, "platform_game_id" "text", "game_name" "text", "achievements_earned" integer, "statusxp_raw" integer, "stack_index" integer, "stack_multiplier" numeric, "statusxp_effective" integer)
     LANGUAGE "plpgsql"
     AS $$
@@ -290,11 +219,7 @@ BEGIN
   ORDER BY statusxp_effective DESC;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."calculate_statusxp_with_stacks"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."calculate_user_achievement_statusxp"() RETURNS "void"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public, pg_temp'
@@ -306,11 +231,7 @@ BEGIN
   WHERE ua.achievement_id = a.id;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."calculate_user_achievement_statusxp"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."calculate_user_game_statusxp"() RETURNS "void"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public, pg_temp'
@@ -344,11 +265,7 @@ BEGIN
   WHERE ug.id = gs.user_game_id;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."calculate_user_game_statusxp"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."can_use_ai"("p_user_id" "uuid") RETURNS json
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public', 'pg_temp'
@@ -419,15 +336,8 @@ BEGIN
   );
 END;
 $$;
-
-
 ALTER FUNCTION "public"."can_use_ai"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 COMMENT ON FUNCTION "public"."can_use_ai"("p_user_id" "uuid") IS 'Check if user can use AI features - with secure search_path';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."can_user_sync"("p_user_id" "uuid", "p_platform" "text") RETURNS json
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public', 'pg_temp'
@@ -506,15 +416,8 @@ BEGIN
   );
 END;
 $$;
-
-
 ALTER FUNCTION "public"."can_user_sync"("p_user_id" "uuid", "p_platform" "text") OWNER TO "postgres";
-
-
 COMMENT ON FUNCTION "public"."can_user_sync"("p_user_id" "uuid", "p_platform" "text") IS 'Check if user can perform sync - with secure search_path';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."can_user_sync_psn"("user_id" "uuid") RETURNS TABLE("can_sync" boolean, "reason" "text", "next_sync_available_at" timestamp with time zone)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public, pg_temp'
@@ -567,15 +470,8 @@ begin
   end if;
 end;
 $$;
-
-
 ALTER FUNCTION "public"."can_user_sync_psn"("user_id" "uuid") OWNER TO "postgres";
-
-
 COMMENT ON FUNCTION "public"."can_user_sync_psn"("user_id" "uuid") IS 'Check if user can start a new PSN sync based on subscription tier rate limits';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."check_big_comeback"("p_user_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -596,11 +492,7 @@ BEGIN
   );
 END;
 $$;
-
-
 ALTER FUNCTION "public"."check_big_comeback"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."check_closer"("p_user_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -621,11 +513,7 @@ BEGIN
   );
 END;
 $$;
-
-
 ALTER FUNCTION "public"."check_closer"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."check_game_hopper"("p_user_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -649,11 +537,7 @@ BEGIN
   RETURN COALESCE(max_games_in_day, 0) >= 5;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."check_game_hopper"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."check_genre_diversity"("p_user_id" "uuid", "p_required_count" integer) RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -672,11 +556,7 @@ BEGIN
   RETURN COALESCE(unique_genres, 0) >= p_required_count;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."check_genre_diversity"("p_user_id" "uuid", "p_required_count" integer) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."check_glow_up"("p_user_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -708,11 +588,7 @@ BEGIN
   RETURN COALESCE(latest_avg, 0) - COALESCE(earliest_avg, 0) >= 5;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."check_glow_up"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."check_power_session"("p_user_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -737,11 +613,7 @@ BEGIN
   RETURN COALESCE(max_trophies_in_24h, 0) >= 100;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."check_power_session"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."check_spike_week"("p_user_id" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -758,11 +630,7 @@ BEGIN
   RETURN COALESCE(max_completions_in_week, 0) >= 3;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."check_spike_week"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."consume_ai_credit"("p_user_id" "uuid") RETURNS json
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -833,15 +701,8 @@ BEGIN
   RETURN json_build_object('success', FALSE, 'error', 'No AI credits available');
 END;
 $$;
-
-
 ALTER FUNCTION "public"."consume_ai_credit"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 COMMENT ON FUNCTION "public"."consume_ai_credit"("p_user_id" "uuid") IS 'Consume one AI credit - with secure search_path';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."get_games_with_platforms"("search_query" "text" DEFAULT NULL::"text", "platform_filter" "text" DEFAULT NULL::"text", "result_limit" integer DEFAULT 100, "result_offset" integer DEFAULT 0) RETURNS TABLE("id" bigint, "name" "text", "cover_url" "text", "platforms" "text"[])
     LANGUAGE "plpgsql"
     AS $$
@@ -871,11 +732,7 @@ BEGIN
   OFFSET result_offset;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_games_with_platforms"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_grouped_games"("search_query" "text" DEFAULT NULL::"text", "platform_filter" "text" DEFAULT NULL::"text", "result_limit" integer DEFAULT 100, "result_offset" integer DEFAULT 0, "sort_by" "text" DEFAULT 'name_asc'::"text") RETURNS TABLE("group_id" "text", "name" "text", "cover_url" "text", "platforms" "text"[], "game_title_ids" bigint[], "total_achievements" integer, "primary_game_id" bigint)
     LANGUAGE "plpgsql"
     AS $$
@@ -980,11 +837,7 @@ BEGIN
   OFFSET result_offset;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_grouped_games"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer, "sort_by" "text") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_grouped_games_fast"("search_query" "text" DEFAULT NULL::"text", "platform_filter" "text" DEFAULT NULL::"text", "result_limit" integer DEFAULT 100, "result_offset" integer DEFAULT 0, "sort_by" "text" DEFAULT 'name_asc'::"text") RETURNS TABLE("group_id" "text", "name" "text", "cover_url" "text", "platforms" "text"[], "platform_names" "text"[], "platform_ids" bigint[], "platform_game_ids" "text"[], "total_achievements" integer, "primary_platform_id" bigint, "primary_game_id_str" "text", "primary_game_id" "text", "proxied_cover_url" "text")
     LANGUAGE "plpgsql"
     AS $$
@@ -1029,11 +882,7 @@ BEGIN
   OFFSET result_offset;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_grouped_games_fast"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer, "sort_by" "text") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_most_time_sunk_game"("p_user_id" "uuid") RETURNS TABLE("game_title_id" bigint, "achievement_count" bigint)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public, pg_temp'
@@ -1051,11 +900,7 @@ BEGIN
   LIMIT 1;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_most_time_sunk_game"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_most_time_sunk_game_v2"("p_user_id" "uuid") RETURNS TABLE("platform_id" bigint, "platform_game_id" "text", "platform_achievement_id" "text", "earned_at" timestamp with time zone, "achievement_name" "text", "achievement_icon_url" "text", "game_name" "text", "game_cover_url" "text", "rarity_global" numeric)
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1098,11 +943,7 @@ BEGIN
   LIMIT 1;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_most_time_sunk_game_v2"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_platform_achievement_counts"("p_user_id" "uuid") RETURNS TABLE("platform_id" bigint, "platform_code" "text", "platform_name" "text", "earned_rows" integer)
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1120,15 +961,8 @@ BEGIN
   ORDER BY p.id;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_platform_achievement_counts"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 COMMENT ON FUNCTION "public"."get_platform_achievement_counts"("p_user_id" "uuid") IS 'Returns achievement counts grouped by platform for a user. Joins platforms table to return platform_code and platform_name directly instead of requiring frontend mapping.';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."get_platinum_leaderboard"("limit_count" integer DEFAULT 100) RETURNS TABLE("user_id" "uuid", "display_name" "text", "avatar_url" "text", "score" bigint, "games_count" bigint)
     LANGUAGE "plpgsql" STABLE
     AS $$
@@ -1151,11 +985,7 @@ BEGIN
   LIMIT limit_count;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_platinum_leaderboard"("limit_count" integer) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_rarest_achievement_v2"("p_user_id" "uuid") RETURNS TABLE("platform_id" bigint, "platform_game_id" "text", "platform_achievement_id" "text", "earned_at" timestamp with time zone, "rarity_global" numeric, "achievement_name" "text", "achievement_icon_url" "text", "game_name" "text", "game_cover_url" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1185,11 +1015,7 @@ BEGIN
   LIMIT 1;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_rarest_achievement_v2"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_recent_notable_achievements_v2"("p_user_id" "uuid", "p_limit" integer DEFAULT 5) RETURNS TABLE("platform_id" bigint, "platform_game_id" "text", "platform_achievement_id" "text", "earned_at" timestamp with time zone, "rarity_global" numeric, "is_platinum" boolean, "achievement_name" "text", "achievement_icon_url" "text", "game_name" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1222,11 +1048,7 @@ BEGIN
   LIMIT p_limit;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_recent_notable_achievements_v2"("p_user_id" "uuid", "p_limit" integer) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_steam_leaderboard"("limit_count" integer DEFAULT 100) RETURNS TABLE("user_id" "uuid", "display_name" "text", "avatar_url" "text", "score" bigint, "games_count" bigint)
     LANGUAGE "plpgsql" STABLE
     AS $$
@@ -1249,11 +1071,7 @@ BEGIN
   LIMIT limit_count;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_steam_leaderboard"("limit_count" integer) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_superlative_suggestions_v2"("p_user_id" "uuid", "p_category" "text") RETURNS TABLE("platform_id" bigint, "platform_game_id" "text", "platform_achievement_id" "text", "earned_at" timestamp with time zone, "score" numeric)
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1313,11 +1131,7 @@ BEGIN
   END IF;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_superlative_suggestions_v2"("p_user_id" "uuid", "p_category" "text") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_sweatiest_platinum_v2"("p_user_id" "uuid") RETURNS TABLE("platform_id" bigint, "platform_game_id" "text", "platform_achievement_id" "text", "earned_at" timestamp with time zone, "rarity_global" numeric, "achievement_name" "text", "achievement_icon_url" "text", "game_name" "text", "game_cover_url" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1349,11 +1163,7 @@ BEGIN
   LIMIT 1;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_sweatiest_platinum_v2"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_user_achievements_for_game"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_id" "text", "p_search_query" "text" DEFAULT NULL::"text") RETURNS TABLE("platform_achievement_id" "text", "achievement_name" "text", "game_name" "text", "cover_url" "text", "icon_url" "text", "rarity_global" numeric, "earned_at" timestamp with time zone)
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1382,11 +1192,7 @@ BEGIN
   ORDER BY ua.earned_at DESC;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_user_achievements_for_game"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_id" "text", "p_search_query" "text") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_user_completions"("p_user_id" "uuid") RETURNS TABLE("xbox_complete" integer, "steam_perfect" integer)
     LANGUAGE "plpgsql"
     AS $$
@@ -1400,11 +1206,7 @@ BEGIN
   WHERE ug.user_id = p_user_id;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_user_completions"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_user_games_for_platform"("p_user_id" "uuid", "p_platform_id" bigint, "p_search_query" "text" DEFAULT NULL::"text") RETURNS TABLE("platform_id" bigint, "platform_game_id" "text", "game_name" "text", "cover_url" "text", "achievement_count" bigint)
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1427,11 +1229,7 @@ BEGIN
   ORDER BY g.name;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_user_games_for_platform"("p_user_id" "uuid", "p_platform_id" bigint, "p_search_query" "text") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_user_grouped_games"("p_user_id" "uuid") RETURNS TABLE("group_id" "text", "name" "text", "cover_url" "text", "proxied_cover_url" "text", "platforms" "jsonb"[], "total_statusxp" numeric, "avg_completion" numeric, "last_played_at" timestamp with time zone, "game_title_ids" bigint[])
     LANGUAGE "plpgsql"
     AS $$
@@ -1504,11 +1302,7 @@ BEGIN
     ug.game_title;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_user_grouped_games"("p_user_id" "uuid") OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."get_xbox_leaderboard"("limit_count" integer DEFAULT 100) RETURNS TABLE("user_id" "uuid", "display_name" "text", "avatar_url" "text", "score" bigint, "games_count" bigint)
     LANGUAGE "plpgsql" STABLE
     AS $$
@@ -1531,11 +1325,7 @@ BEGIN
   LIMIT limit_count;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."get_xbox_leaderboard"("limit_count" integer) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1551,11 +1341,7 @@ BEGIN
   RETURN new;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."mark_game_groups_for_refresh"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -1564,11 +1350,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."mark_game_groups_for_refresh"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."prevent_duplicate_email_profiles"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1594,15 +1376,8 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."prevent_duplicate_email_profiles"() OWNER TO "postgres";
-
-
 COMMENT ON FUNCTION "public"."prevent_duplicate_email_profiles"() IS 'Prevents duplicate accounts with same email across different auth providers (Apple, Google, email/password)';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."recalculate_achievement_rarity"() RETURNS "void"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public, pg_temp'
@@ -1637,11 +1412,7 @@ BEGIN
   WHERE rarity_global IS NOT NULL;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."recalculate_achievement_rarity"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."recompute_user_progress_for_games"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_ids" "text"[]) RETURNS "void"
     LANGUAGE "sql"
     AS $$
@@ -1677,11 +1448,7 @@ CREATE OR REPLACE FUNCTION "public"."recompute_user_progress_for_games"("p_user_
     last_achievement_earned_at = EXCLUDED.last_achievement_earned_at,
     synced_at = now();
 $$;
-
-
 ALTER FUNCTION "public"."recompute_user_progress_for_games"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_ids" "text"[]) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."refresh_game_groups"() RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -1765,11 +1532,7 @@ BEGIN
   RAISE NOTICE 'Refreshed % game groups', (SELECT COUNT(*) FROM game_groups);
 END;
 $$;
-
-
 ALTER FUNCTION "public"."refresh_game_groups"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."refresh_game_groups_if_needed"() RETURNS boolean
     LANGUAGE "plpgsql"
     AS $$
@@ -1788,11 +1551,7 @@ BEGIN
   RETURN false;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."refresh_game_groups_if_needed"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."refresh_grouped_games_cache"() RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -1800,11 +1559,7 @@ BEGIN
   REFRESH MATERIALIZED VIEW CONCURRENTLY grouped_games_cache;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."refresh_grouped_games_cache"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."refresh_leaderboard_cache"() RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
@@ -1812,11 +1567,7 @@ BEGIN
   REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_cache;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."refresh_leaderboard_cache"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."refresh_leaderboard_global_cache"() RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -1824,11 +1575,7 @@ BEGIN
   RAISE NOTICE 'Global leaderboard cache is a view - automatically up to date';
 END;
 $$;
-
-
 ALTER FUNCTION "public"."refresh_leaderboard_global_cache"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."refresh_statusxp_leaderboard"() RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -1864,11 +1611,7 @@ BEGIN
     last_updated = EXCLUDED.last_updated;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."refresh_statusxp_leaderboard"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."trigger_calculate_statusxp"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -1889,11 +1632,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."trigger_calculate_statusxp"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."trigger_refresh_leaderboards_on_sync"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -1903,11 +1642,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."trigger_refresh_leaderboards_on_sync"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."trigger_update_achievement_rarity"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -1934,11 +1669,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."trigger_update_achievement_rarity"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."unlock_achievement_if_new"("p_user_id" "uuid", "p_achievement_id" "text", "p_unlocked_at" timestamp with time zone DEFAULT "now"()) RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -1963,11 +1694,7 @@ BEGIN
   RETURN FALSE;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."unlock_achievement_if_new"("p_user_id" "uuid", "p_achievement_id" "text", "p_unlocked_at" timestamp with time zone) OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."update_display_case_items_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public, pg_temp'
@@ -1977,11 +1704,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."update_display_case_items_updated_at"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."update_flex_room_data_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public, pg_temp'
@@ -1991,11 +1714,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."update_flex_room_data_updated_at"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."update_flex_room_last_updated"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -2004,11 +1723,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."update_flex_room_last_updated"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."update_trophy_help_request_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
@@ -2017,11 +1732,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-
 ALTER FUNCTION "public"."update_trophy_help_request_updated_at"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     SET "search_path" TO 'public, pg_temp'
@@ -2031,11 +1742,7 @@ begin
   return new;
 end;
 $$;
-
-
 ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."upsert_user_achievements_batch"("p_rows" "jsonb") RETURNS "void"
     LANGUAGE "plpgsql"
     AS $$
@@ -2059,15 +1766,9 @@ BEGIN
     synced_at = now();
 END;
 $$;
-
-
 ALTER FUNCTION "public"."upsert_user_achievements_batch"("p_rows" "jsonb") OWNER TO "postgres";
-
 SET default_tablespace = '';
-
 SET default_table_access_method = "heap";
-
-
 CREATE TABLE IF NOT EXISTS "public"."achievement_comments" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "achievement_id" bigint NOT NULL,
@@ -2082,27 +1783,11 @@ CREATE TABLE IF NOT EXISTS "public"."achievement_comments" (
     "platform_game_id" "text" NOT NULL,
     "platform_achievement_id" "text" NOT NULL
 );
-
-
 ALTER TABLE "public"."achievement_comments" OWNER TO "postgres";
-
-
 COMMENT ON COLUMN "public"."achievement_comments"."achievement_id" IS 'DEPRECATED: Use (platform_id, platform_game_id, platform_achievement_id) composite FK instead. Will be removed in future migration.';
-
-
-
 COMMENT ON COLUMN "public"."achievement_comments"."platform_id" IS 'Part of composite FK to achievements (platform_id, platform_game_id, platform_achievement_id)';
-
-
-
 COMMENT ON COLUMN "public"."achievement_comments"."platform_game_id" IS 'Part of composite FK to achievements (platform_id, platform_game_id, platform_achievement_id)';
-
-
-
 COMMENT ON COLUMN "public"."achievement_comments"."platform_achievement_id" IS 'Part of composite FK to achievements (platform_id, platform_game_id, platform_achievement_id). Initially backfilled from achievement_id::text';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."achievements" (
     "platform_id" bigint NOT NULL,
     "platform_game_id" "text" NOT NULL,
@@ -2120,15 +1805,8 @@ CREATE TABLE IF NOT EXISTS "public"."achievements" (
     "is_platinum" boolean DEFAULT false,
     "proxied_icon_url" "text"
 );
-
-
 ALTER TABLE "public"."achievements" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."achievements" IS 'Platform-specific achievements. Composite PK ensures uniqueness.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."display_case_items" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -2142,27 +1820,11 @@ CREATE TABLE IF NOT EXISTS "public"."display_case_items" (
     CONSTRAINT "display_case_items_position_in_shelf_check" CHECK ((("position_in_shelf" >= 0) AND ("position_in_shelf" < 10))),
     CONSTRAINT "display_case_items_shelf_number_check" CHECK (("shelf_number" >= 0))
 );
-
-
 ALTER TABLE "public"."display_case_items" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."display_case_items" IS 'User-customized trophy display case arrangements';
-
-
-
 COMMENT ON COLUMN "public"."display_case_items"."display_type" IS 'How the trophy is displayed: trophyIcon, gameCover, figurine, or custom';
-
-
-
 COMMENT ON COLUMN "public"."display_case_items"."shelf_number" IS 'Which shelf (0-indexed from top)';
-
-
-
 COMMENT ON COLUMN "public"."display_case_items"."position_in_shelf" IS 'Position on shelf (0-indexed from left)';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."flex_room_data" (
     "user_id" "uuid" NOT NULL,
     "tagline" "text" DEFAULT 'Completionist'::"text",
@@ -2183,19 +1845,9 @@ CREATE TABLE IF NOT EXISTS "public"."flex_room_data" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "profile_id" "uuid" NOT NULL
 );
-
-
 ALTER TABLE "public"."flex_room_data" OWNER TO "postgres";
-
-
 COMMENT ON COLUMN "public"."flex_room_data"."user_id" IS 'DEPRECATED: Use profile_id instead. Column kept for reference only. FK constraint removed.';
-
-
-
 COMMENT ON COLUMN "public"."flex_room_data"."profile_id" IS 'References profiles(id). Replaces user_id (auth.users) for app-domain consistency.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."game_groups" (
     "id" bigint NOT NULL,
     "group_key" "text" NOT NULL,
@@ -2206,52 +1858,30 @@ CREATE TABLE IF NOT EXISTS "public"."game_groups" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."game_groups" OWNER TO "postgres";
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."game_groups_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."game_groups_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."game_groups_id_seq" OWNED BY "public"."game_groups"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."game_groups_refresh_queue" (
     "id" bigint NOT NULL,
     "needs_refresh" boolean DEFAULT true,
     "last_refresh_at" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."game_groups_refresh_queue" OWNER TO "postgres";
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."game_groups_refresh_queue_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."game_groups_refresh_queue_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."game_groups_refresh_queue_id_seq" OWNED BY "public"."game_groups_refresh_queue"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."games" (
     "platform_id" bigint NOT NULL,
     "platform_game_id" "text" NOT NULL,
@@ -2262,19 +1892,9 @@ CREATE TABLE IF NOT EXISTS "public"."games" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."games" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."games" IS 'Platform-specific games. Composite PK prevents duplicates.';
-
-
-
 COMMENT ON COLUMN "public"."games"."platform_game_id" IS 'xbox_title_id, psn_npwr_id, or steam_app_id depending on platform';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."platforms" (
     "id" bigint NOT NULL,
     "code" "text" NOT NULL,
@@ -2283,11 +1903,7 @@ CREATE TABLE IF NOT EXISTS "public"."platforms" (
     "accent_color" "text",
     "created_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."platforms" OWNER TO "postgres";
-
-
 CREATE MATERIALIZED VIEW "public"."grouped_games_cache" AS
  WITH "distinct_game_platforms" AS (
          SELECT DISTINCT ON (("lower"(TRIM(BOTH FROM "g"."name"))), "g"."platform_id") "lower"(TRIM(BOTH FROM "g"."name")) AS "normalized_name",
@@ -2356,22 +1972,14 @@ CREATE MATERIALIZED VIEW "public"."grouped_games_cache" AS
    FROM ("game_groups" "gg"
      LEFT JOIN "achievement_counts" "ac" ON (("ac"."normalized_name" = "gg"."normalized_name")))
   WITH NO DATA;
-
-
 ALTER MATERIALIZED VIEW "public"."grouped_games_cache" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."leaderboard_cache" (
     "user_id" "uuid" NOT NULL,
     "total_statusxp" bigint DEFAULT 0 NOT NULL,
     "total_game_entries" integer DEFAULT 0 NOT NULL,
     "last_updated" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."leaderboard_cache" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "id" "uuid" NOT NULL,
     "username" "text" NOT NULL,
@@ -2422,119 +2030,34 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     CONSTRAINT "profiles_subscription_tier_check" CHECK (("subscription_tier" = ANY (ARRAY['free'::"text", 'premium'::"text"]))),
     CONSTRAINT "profiles_xbox_sync_status_check" CHECK (("xbox_sync_status" = ANY (ARRAY['never_synced'::"text", 'pending'::"text", 'syncing'::"text", 'success'::"text", 'error'::"text", 'stopped'::"text", 'cancelling'::"text"])))
 );
-
-
 ALTER TABLE "public"."profiles" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."profiles" IS 'Consolidated RLS policies - single policy per operation type';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_online_id" IS 'PSN Online ID (username) fetched from PSN API';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_account_id" IS 'PlayStation Network account ID';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_npsso_token" IS 'Encrypted NPSSO token for PSN authentication';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_access_token" IS 'Current PSN API access token';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_refresh_token" IS 'PSN refresh token for obtaining new access tokens';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_token_expires_at" IS 'Expiration timestamp for the current access token';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."last_psn_sync_at" IS 'Last successful PSN trophy sync timestamp';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_sync_status" IS 'Current status of PSN sync process';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_sync_error" IS 'Error message from last failed sync';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_sync_progress" IS 'Percentage progress of current sync (0-100)';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."subscription_tier" IS 'User subscription tier: free (24h sync cooldown) or premium (8h sync cooldown)';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."subscription_expires_at" IS 'When premium subscription expires (null for free tier)';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_avatar_url" IS 'PSN avatar URL (typically medium size)';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."psn_is_plus" IS 'Whether user has PlayStation Plus subscription';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."xbox_user_hash" IS 'Xbox Live user hash (uhs) required for API authorization headers';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."steam_sync_status" IS 'Current status of Steam sync process';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."steam_sync_progress" IS 'Sync progress percentage (0-100)';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."steam_sync_error" IS 'Error message from last failed sync';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."last_steam_sync_at" IS 'Last successful Steam achievement sync timestamp';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."steam_api_key" IS 'User Steam Web API key for accessing achievements';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."xbox_avatar_url" IS 'Xbox profile avatar URL fetched from Xbox Live API';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."steam_avatar_url" IS 'Steam avatar URL (avatarfull) fetched from Steam API';
-
-
-
 COMMENT ON COLUMN "public"."profiles"."show_on_leaderboard" IS 'Privacy setting: whether user appears on public leaderboards (default: true)';
-
-
-
 COMMENT ON CONSTRAINT "profiles_psn_sync_status_check" ON "public"."profiles" IS 'Valid PSN sync statuses: never_synced (initial), pending (more to sync), syncing (active), success (complete), error (failed), stopped (paused by user), cancelling (stop requested)';
-
-
-
 COMMENT ON CONSTRAINT "profiles_steam_sync_status_check" ON "public"."profiles" IS 'Valid Steam sync statuses: never_synced (initial), pending (more to sync), syncing (active), success (complete), error (failed), stopped (paused by user), cancelling (stop requested)';
-
-
-
 COMMENT ON CONSTRAINT "profiles_xbox_sync_status_check" ON "public"."profiles" IS 'Valid Xbox sync statuses: never_synced (initial), pending (more to sync), syncing (active), success (complete), error (failed), stopped (paused by user), cancelling (stop requested)';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_achievements" (
     "user_id" "uuid" NOT NULL,
     "platform_id" bigint NOT NULL,
@@ -2543,15 +2066,8 @@ CREATE TABLE IF NOT EXISTS "public"."user_achievements" (
     "earned_at" timestamp with time zone NOT NULL,
     "synced_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."user_achievements" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."user_achievements" IS 'Earned achievements. Composite PK prevents duplicate earnings.';
-
-
-
 CREATE OR REPLACE VIEW "public"."leaderboard_global_cache" AS
  WITH "user_statusxp" AS (
          SELECT "ua"."user_id",
@@ -2582,11 +2098,7 @@ CREATE OR REPLACE VIEW "public"."leaderboard_global_cache" AS
      JOIN "public"."profiles" "p" ON (("p"."id" = "us"."user_id")))
   WHERE (("p"."show_on_leaderboard" = true) AND ("us"."statusxp" > 0))
   ORDER BY "us"."statusxp" DESC, "us"."total_achievements" DESC;
-
-
 ALTER VIEW "public"."leaderboard_global_cache" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."meta_achievements" (
     "id" "text" NOT NULL,
     "category" "text" NOT NULL,
@@ -2597,30 +2109,16 @@ CREATE TABLE IF NOT EXISTS "public"."meta_achievements" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "required_platforms" "text"[]
 );
-
-
 ALTER TABLE "public"."meta_achievements" OWNER TO "postgres";
-
-
 COMMENT ON COLUMN "public"."meta_achievements"."required_platforms" IS 'Array of platform codes required to earn this achievement. NULL = available to all. Examples: [''psn''], [''xbox''], [''steam''], [''psn'',''xbox'',''steam''] for cross-platform';
-
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."platforms_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."platforms_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."platforms_id_seq" OWNED BY "public"."platforms"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."profile_themes" (
     "id" bigint NOT NULL,
     "code" "text" NOT NULL,
@@ -2631,26 +2129,15 @@ CREATE TABLE IF NOT EXISTS "public"."profile_themes" (
     "text_color" "text",
     "metadata" "jsonb" DEFAULT '{}'::"jsonb"
 );
-
-
 ALTER TABLE "public"."profile_themes" OWNER TO "postgres";
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."profile_themes_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."profile_themes_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."profile_themes_id_seq" OWNED BY "public"."profile_themes"."id";
-
-
-
 CREATE OR REPLACE VIEW "public"."psn_leaderboard_cache" AS
  SELECT "ua"."user_id",
     COALESCE("p"."psn_online_id", "p"."display_name", "p"."username", 'Player'::"text") AS "display_name",
@@ -2701,15 +2188,8 @@ CREATE OR REPLACE VIEW "public"."psn_leaderboard_cache" AS
             WHEN (("a"."metadata" ->> 'psn_trophy_type'::"text") = 'bronze'::"text") THEN 1
             ELSE 0
         END)) DESC;
-
-
 ALTER VIEW "public"."psn_leaderboard_cache" OWNER TO "postgres";
-
-
 COMMENT ON VIEW "public"."psn_leaderboard_cache" IS 'PSN leaderboard showing all PSN platforms (PS5, PS4, PS3, PSVITA). Uses psn_avatar_url for platform-specific avatars.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."psn_sync_logs" (
     "id" bigint NOT NULL,
     "user_id" "uuid",
@@ -2725,26 +2205,15 @@ CREATE TABLE IF NOT EXISTS "public"."psn_sync_logs" (
     CONSTRAINT "psn_sync_logs_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'syncing'::"text", 'completed'::"text", 'failed'::"text"]))),
     CONSTRAINT "psn_sync_logs_sync_type_check" CHECK (("sync_type" = ANY (ARRAY['full'::"text", 'incremental'::"text"])))
 );
-
-
 ALTER TABLE "public"."psn_sync_logs" OWNER TO "postgres";
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."psn_sync_logs_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."psn_sync_logs_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."psn_sync_logs_id_seq" OWNED BY "public"."psn_sync_logs"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."psn_user_trophy_profile" (
     "user_id" "uuid" NOT NULL,
     "psn_trophy_level" integer NOT NULL,
@@ -2756,15 +2225,8 @@ CREATE TABLE IF NOT EXISTS "public"."psn_user_trophy_profile" (
     "psn_earned_platinum" integer DEFAULT 0,
     "last_fetched_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."psn_user_trophy_profile" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."psn_user_trophy_profile" IS 'PSN account trophy summary and level';
-
-
-
 CREATE OR REPLACE VIEW "public"."steam_leaderboard_cache" AS
  SELECT "ua"."user_id",
     COALESCE("p"."steam_display_name", "p"."display_name", "p"."username", 'Player'::"text") AS "display_name",
@@ -2779,15 +2241,8 @@ CREATE OR REPLACE VIEW "public"."steam_leaderboard_cache" AS
   GROUP BY "ua"."user_id", "p"."steam_display_name", "p"."display_name", "p"."username", "p"."steam_avatar_url"
  HAVING ("count"(*) > 0)
   ORDER BY ("count"(*)) DESC, ("count"(DISTINCT "a"."platform_game_id")) DESC;
-
-
 ALTER VIEW "public"."steam_leaderboard_cache" OWNER TO "postgres";
-
-
 COMMENT ON VIEW "public"."steam_leaderboard_cache" IS 'Steam leaderboard showing Steam achievements. Uses steam_avatar_url for platform-specific avatars. Uses V2 schema.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."steam_sync_logs" (
     "id" bigint NOT NULL,
     "user_id" "uuid",
@@ -2803,26 +2258,15 @@ CREATE TABLE IF NOT EXISTS "public"."steam_sync_logs" (
     CONSTRAINT "steam_sync_logs_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'syncing'::"text", 'completed'::"text", 'failed'::"text"]))),
     CONSTRAINT "steam_sync_logs_sync_type_check" CHECK (("sync_type" = ANY (ARRAY['full'::"text", 'incremental'::"text"])))
 );
-
-
 ALTER TABLE "public"."steam_sync_logs" OWNER TO "postgres";
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."steam_sync_logs_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."steam_sync_logs_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."steam_sync_logs_id_seq" OWNED BY "public"."steam_sync_logs"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."trophy_help_requests" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -2840,19 +2284,9 @@ CREATE TABLE IF NOT EXISTS "public"."trophy_help_requests" (
     "profile_id" "uuid" NOT NULL,
     CONSTRAINT "trophy_help_requests_status_check" CHECK (("status" = ANY (ARRAY['open'::"text", 'assigned'::"text", 'closed'::"text", 'cancelled'::"text"])))
 );
-
-
 ALTER TABLE "public"."trophy_help_requests" OWNER TO "postgres";
-
-
 COMMENT ON COLUMN "public"."trophy_help_requests"."user_id" IS 'DEPRECATED: Use profile_id instead. Column kept for reference only. FK constraint removed.';
-
-
-
 COMMENT ON COLUMN "public"."trophy_help_requests"."profile_id" IS 'References profiles(id). Replaces user_id (auth.users) for app-domain consistency.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."trophy_help_responses" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "request_id" "uuid" NOT NULL,
@@ -2863,19 +2297,9 @@ CREATE TABLE IF NOT EXISTS "public"."trophy_help_responses" (
     "helper_profile_id" "uuid" NOT NULL,
     CONSTRAINT "trophy_help_responses_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'accepted'::"text", 'declined'::"text", 'completed'::"text"])))
 );
-
-
 ALTER TABLE "public"."trophy_help_responses" OWNER TO "postgres";
-
-
 COMMENT ON COLUMN "public"."trophy_help_responses"."helper_user_id" IS 'DEPRECATED: Use helper_profile_id instead. Column kept for reference only. FK constraint removed.';
-
-
-
 COMMENT ON COLUMN "public"."trophy_help_responses"."helper_profile_id" IS 'References profiles(id). Replaces helper_user_id (auth.users) for app-domain consistency.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."trophy_room_items" (
     "id" bigint NOT NULL,
     "shelf_id" bigint,
@@ -2887,26 +2311,15 @@ CREATE TABLE IF NOT EXISTS "public"."trophy_room_items" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."trophy_room_items" OWNER TO "postgres";
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."trophy_room_items_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."trophy_room_items_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."trophy_room_items_id_seq" OWNED BY "public"."trophy_room_items"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."trophy_room_shelves" (
     "id" bigint NOT NULL,
     "user_id" "uuid",
@@ -2915,41 +2328,23 @@ CREATE TABLE IF NOT EXISTS "public"."trophy_room_shelves" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."trophy_room_shelves" OWNER TO "postgres";
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."trophy_room_shelves_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."trophy_room_shelves_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."trophy_room_shelves_id_seq" OWNED BY "public"."trophy_room_shelves"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_ai_credits" (
     "user_id" "uuid" NOT NULL,
     "pack_credits" integer DEFAULT 0,
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."user_ai_credits" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."user_ai_credits" IS 'Tracks purchased AI pack credits';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_ai_daily_usage" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -2959,15 +2354,8 @@ CREATE TABLE IF NOT EXISTS "public"."user_ai_daily_usage" (
     "source" "text",
     CONSTRAINT "user_ai_daily_usage_source_check" CHECK (("source" = ANY (ARRAY['daily_free'::"text", 'pack'::"text", 'premium'::"text"])))
 );
-
-
 ALTER TABLE "public"."user_ai_daily_usage" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."user_ai_daily_usage" IS 'Tracks daily free AI usage (3 per day)';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_ai_pack_purchases" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -2977,15 +2365,8 @@ CREATE TABLE IF NOT EXISTS "public"."user_ai_pack_purchases" (
     "purchase_date" timestamp with time zone DEFAULT "now"(),
     "platform" character varying(20)
 );
-
-
 ALTER TABLE "public"."user_ai_pack_purchases" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."user_ai_pack_purchases" IS 'Records all AI pack purchases';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_premium_status" (
     "user_id" "uuid" NOT NULL,
     "is_premium" boolean DEFAULT false,
@@ -2996,15 +2377,8 @@ CREATE TABLE IF NOT EXISTS "public"."user_premium_status" (
     "monthly_ai_credits" integer DEFAULT 100,
     "ai_credits_refreshed_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."user_premium_status" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."user_premium_status" IS 'Tracks user premium subscription status';
-
-
-
 CREATE OR REPLACE VIEW "public"."user_ai_status" WITH ("security_invoker"='true') AS
  SELECT "uac"."user_id",
     COALESCE("uac"."pack_credits", 0) AS "pack_credits",
@@ -3015,15 +2389,8 @@ CREATE OR REPLACE VIEW "public"."user_ai_status" WITH ("security_invoker"='true'
           WHERE (("uadu"."user_id" = "uac"."user_id") AND (("uadu"."created_at")::"date" = CURRENT_DATE))) AS "daily_free_used"
    FROM ("public"."user_ai_credits" "uac"
      LEFT JOIN "public"."user_premium_status" "ups" ON (("ups"."user_id" = "uac"."user_id")));
-
-
 ALTER VIEW "public"."user_ai_status" OWNER TO "postgres";
-
-
 COMMENT ON VIEW "public"."user_ai_status" IS 'Secure view of user AI credit status without exposing auth.users data';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_progress" (
     "user_id" "uuid" NOT NULL,
     "platform_id" bigint NOT NULL,
@@ -3038,19 +2405,9 @@ CREATE TABLE IF NOT EXISTS "public"."user_progress" (
     "metadata" "jsonb" DEFAULT '{}'::"jsonb",
     "last_achievement_earned_at" timestamp with time zone
 );
-
-
 ALTER TABLE "public"."user_progress" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."user_progress" IS 'User progress per platform-specific game. Composite PK prevents duplicates.';
-
-
-
 COMMENT ON COLUMN "public"."user_progress"."current_score" IS 'Gamerscore (Xbox), trophy points (PSN), or achievement count (Steam)';
-
-
-
 CREATE OR REPLACE VIEW "public"."user_games" AS
  WITH "user_game_progress" AS (
          SELECT "up"."user_id",
@@ -3118,11 +2475,7 @@ CREATE OR REPLACE VIEW "public"."user_games" AS
     "now"() AS "updated_at"
    FROM ("user_game_progress" "ugp"
      LEFT JOIN "psn_trophy_breakdown" "psn" ON ((("psn"."user_id" = "ugp"."user_id") AND ("psn"."platform_id" = "ugp"."platform_id") AND ("psn"."platform_game_id" = "ugp"."platform_game_id"))));
-
-
 ALTER VIEW "public"."user_games" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_meta_achievements" (
     "id" bigint NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -3130,26 +2483,15 @@ CREATE TABLE IF NOT EXISTS "public"."user_meta_achievements" (
     "custom_title" "text",
     "unlocked_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."user_meta_achievements" OWNER TO "postgres";
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."user_meta_achievements_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."user_meta_achievements_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."user_meta_achievements_id_seq" OWNED BY "public"."user_meta_achievements"."id";
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_profile_settings" (
     "user_id" "uuid" NOT NULL,
     "profile_theme_id" bigint,
@@ -3161,22 +2503,14 @@ CREATE TABLE IF NOT EXISTS "public"."user_profile_settings" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."user_profile_settings" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_selected_title" (
     "user_id" "uuid" NOT NULL,
     "achievement_id" "text",
     "custom_title" "text",
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."user_selected_title" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_stats" (
     "user_id" "uuid" NOT NULL,
     "total_games" integer DEFAULT 0,
@@ -3189,11 +2523,7 @@ CREATE TABLE IF NOT EXISTS "public"."user_stats" (
     "total_gamerscore" integer DEFAULT 0,
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
-
-
 ALTER TABLE "public"."user_stats" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."user_sync_history" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -3202,15 +2532,8 @@ CREATE TABLE IF NOT EXISTS "public"."user_sync_history" (
     "success" boolean DEFAULT true,
     "profile_id" "uuid"
 );
-
-
 ALTER TABLE "public"."user_sync_history" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."user_sync_history" IS 'Tracks sync operations for rate limiting';
-
-
-
 CREATE OR REPLACE VIEW "public"."user_sync_status" WITH ("security_invoker"='true') AS
  SELECT "ush"."user_id",
     "ush"."platform",
@@ -3221,15 +2544,8 @@ CREATE OR REPLACE VIEW "public"."user_sync_status" WITH ("security_invoker"='tru
      LEFT JOIN "public"."user_premium_status" "ups" ON (("ups"."user_id" = "ush"."user_id")))
   WHERE ("ush"."success" = true)
   GROUP BY "ush"."user_id", "ush"."platform", "ups"."is_premium";
-
-
 ALTER VIEW "public"."user_sync_status" OWNER TO "postgres";
-
-
 COMMENT ON VIEW "public"."user_sync_status" IS 'Secure view of user sync status - uses security_invoker to enforce RLS';
-
-
-
 CREATE OR REPLACE VIEW "public"."xbox_leaderboard_cache" AS
  SELECT "ua"."user_id",
     COALESCE("p"."xbox_gamertag", "p"."display_name", "p"."username", 'Player'::"text") AS "display_name",
@@ -3246,15 +2562,8 @@ CREATE OR REPLACE VIEW "public"."xbox_leaderboard_cache" AS
   GROUP BY "ua"."user_id", "p"."xbox_gamertag", "p"."display_name", "p"."username", "p"."xbox_avatar_url"
  HAVING ("count"(*) > 0)
   ORDER BY COALESCE("sum"("up"."current_score"), (0)::bigint) DESC, ("count"(*)) DESC, ("count"(DISTINCT "a"."platform_game_id")) DESC;
-
-
 ALTER VIEW "public"."xbox_leaderboard_cache" OWNER TO "postgres";
-
-
 COMMENT ON VIEW "public"."xbox_leaderboard_cache" IS 'Xbox leaderboard showing all Xbox platforms (360, One, Series X/S). Uses xbox_avatar_url for platform-specific avatars. Uses V2 schema with user_progress for gamerscore.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."xbox_sync_logs" (
     "id" bigint NOT NULL,
     "user_id" "uuid",
@@ -3270,2040 +2579,695 @@ CREATE TABLE IF NOT EXISTS "public"."xbox_sync_logs" (
     CONSTRAINT "xbox_sync_logs_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'syncing'::"text", 'completed'::"text", 'failed'::"text"]))),
     CONSTRAINT "xbox_sync_logs_sync_type_check" CHECK (("sync_type" = ANY (ARRAY['full'::"text", 'incremental'::"text"])))
 );
-
-
 ALTER TABLE "public"."xbox_sync_logs" OWNER TO "postgres";
-
-
 COMMENT ON TABLE "public"."xbox_sync_logs" IS 'Optimized: auth.uid() wrapped in subquery, single policy per operation';
-
-
-
 CREATE SEQUENCE IF NOT EXISTS "public"."xbox_sync_logs_id_seq"
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
 ALTER SEQUENCE "public"."xbox_sync_logs_id_seq" OWNER TO "postgres";
-
-
 ALTER SEQUENCE "public"."xbox_sync_logs_id_seq" OWNED BY "public"."xbox_sync_logs"."id";
-
-
-
 ALTER TABLE ONLY "public"."game_groups" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."game_groups_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."game_groups_refresh_queue" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."game_groups_refresh_queue_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."platforms" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."platforms_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."profile_themes" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."profile_themes_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."psn_sync_logs" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."psn_sync_logs_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."steam_sync_logs" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."steam_sync_logs_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."trophy_room_items" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."trophy_room_items_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."trophy_room_shelves" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."trophy_room_shelves_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."user_meta_achievements" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."user_meta_achievements_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."xbox_sync_logs" ALTER COLUMN "id" SET DEFAULT "nextval"('"public"."xbox_sync_logs_id_seq"'::"regclass");
-
-
-
 ALTER TABLE ONLY "public"."achievement_comments"
     ADD CONSTRAINT "achievement_comments_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."achievements"
     ADD CONSTRAINT "achievements_pkey" PRIMARY KEY ("platform_id", "platform_game_id", "platform_achievement_id");
-
-
-
 ALTER TABLE ONLY "public"."display_case_items"
     ADD CONSTRAINT "display_case_items_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."display_case_items"
     ADD CONSTRAINT "display_case_items_user_id_shelf_number_position_in_shelf_key" UNIQUE ("user_id", "shelf_number", "position_in_shelf");
-
-
-
 ALTER TABLE ONLY "public"."flex_room_data"
     ADD CONSTRAINT "flex_room_data_pkey" PRIMARY KEY ("user_id");
-
-
-
 ALTER TABLE ONLY "public"."game_groups"
     ADD CONSTRAINT "game_groups_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."game_groups_refresh_queue"
     ADD CONSTRAINT "game_groups_refresh_queue_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."games"
     ADD CONSTRAINT "games_pkey" PRIMARY KEY ("platform_id", "platform_game_id");
-
-
-
 ALTER TABLE ONLY "public"."leaderboard_cache"
     ADD CONSTRAINT "leaderboard_cache_pkey" PRIMARY KEY ("user_id");
-
-
-
 ALTER TABLE ONLY "public"."meta_achievements"
     ADD CONSTRAINT "meta_achievements_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."platforms"
     ADD CONSTRAINT "platforms_code_key" UNIQUE ("code");
-
-
-
 ALTER TABLE ONLY "public"."platforms"
     ADD CONSTRAINT "platforms_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."profile_themes"
     ADD CONSTRAINT "profile_themes_code_key" UNIQUE ("code");
-
-
-
 ALTER TABLE ONLY "public"."profile_themes"
     ADD CONSTRAINT "profile_themes_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_username_key" UNIQUE ("username");
-
-
-
 ALTER TABLE ONLY "public"."psn_sync_logs"
     ADD CONSTRAINT "psn_sync_logs_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."psn_user_trophy_profile"
     ADD CONSTRAINT "psn_user_trophy_profile_pkey" PRIMARY KEY ("user_id");
-
-
-
 ALTER TABLE ONLY "public"."steam_sync_logs"
     ADD CONSTRAINT "steam_sync_logs_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."trophy_help_requests"
     ADD CONSTRAINT "trophy_help_requests_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."trophy_help_responses"
     ADD CONSTRAINT "trophy_help_responses_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."trophy_room_items"
     ADD CONSTRAINT "trophy_room_items_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."trophy_room_items"
     ADD CONSTRAINT "trophy_room_items_shelf_id_slot_index_key" UNIQUE ("shelf_id", "slot_index");
-
-
-
 ALTER TABLE ONLY "public"."trophy_room_shelves"
     ADD CONSTRAINT "trophy_room_shelves_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."user_achievements"
     ADD CONSTRAINT "user_achievements_pkey" PRIMARY KEY ("user_id", "platform_id", "platform_game_id", "platform_achievement_id");
-
-
-
 ALTER TABLE ONLY "public"."user_ai_credits"
     ADD CONSTRAINT "user_ai_credits_pkey" PRIMARY KEY ("user_id");
-
-
-
 ALTER TABLE ONLY "public"."user_ai_daily_usage"
     ADD CONSTRAINT "user_ai_daily_usage_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."user_ai_daily_usage"
     ADD CONSTRAINT "user_ai_daily_usage_user_id_usage_date_key" UNIQUE ("user_id", "usage_date");
-
-
-
 ALTER TABLE ONLY "public"."user_ai_pack_purchases"
     ADD CONSTRAINT "user_ai_pack_purchases_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."user_meta_achievements"
     ADD CONSTRAINT "user_meta_achievements_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."user_meta_achievements"
     ADD CONSTRAINT "user_meta_achievements_user_id_achievement_id_key" UNIQUE ("user_id", "achievement_id");
-
-
-
 ALTER TABLE ONLY "public"."user_premium_status"
     ADD CONSTRAINT "user_premium_status_pkey" PRIMARY KEY ("user_id");
-
-
-
 ALTER TABLE ONLY "public"."user_profile_settings"
     ADD CONSTRAINT "user_profile_settings_pkey" PRIMARY KEY ("user_id");
-
-
-
 ALTER TABLE ONLY "public"."user_progress"
     ADD CONSTRAINT "user_progress_pkey" PRIMARY KEY ("user_id", "platform_id", "platform_game_id");
-
-
-
 ALTER TABLE ONLY "public"."user_selected_title"
     ADD CONSTRAINT "user_selected_title_pkey" PRIMARY KEY ("user_id");
-
-
-
 ALTER TABLE ONLY "public"."user_stats"
     ADD CONSTRAINT "user_stats_pkey" PRIMARY KEY ("user_id");
-
-
-
 ALTER TABLE ONLY "public"."user_sync_history"
     ADD CONSTRAINT "user_sync_history_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."xbox_sync_logs"
     ADD CONSTRAINT "xbox_sync_logs_pkey" PRIMARY KEY ("id");
-
-
-
 COMMENT ON INDEX "public"."display_case_items_user_id_shelf_number_position_in_shelf_key" IS 'Unique constraint on user display case positions';
-
-
-
 CREATE INDEX "idx_achievement_comments_achievement_composite" ON "public"."achievement_comments" USING "btree" ("platform_id", "platform_game_id", "platform_achievement_id");
-
-
-
 CREATE INDEX "idx_achievement_comments_created_at" ON "public"."achievement_comments" USING "btree" ("created_at" DESC);
-
-
-
 CREATE INDEX "idx_achievement_comments_user_id" ON "public"."achievement_comments" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_achievements_game" ON "public"."achievements" USING "btree" ("platform_id", "platform_game_id");
-
-
-
 CREATE INDEX "idx_achievements_rarity" ON "public"."achievements" USING "btree" ("rarity_global") WHERE ("rarity_global" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_achievements_statusxp" ON "public"."achievements" USING "btree" ("base_status_xp", "rarity_multiplier");
-
-
-
 CREATE INDEX "idx_display_case_items_position" ON "public"."display_case_items" USING "btree" ("user_id", "shelf_number", "position_in_shelf");
-
-
-
 CREATE INDEX "idx_display_case_items_user" ON "public"."display_case_items" USING "btree" ("user_id");
-
-
-
 CREATE UNIQUE INDEX "idx_flex_room_data_profile_id" ON "public"."flex_room_data" USING "btree" ("profile_id");
-
-
-
 CREATE INDEX "idx_game_groups_game_title_ids" ON "public"."game_groups" USING "gin" ("game_title_ids");
-
-
-
 CREATE INDEX "idx_game_groups_primary_game_id" ON "public"."game_groups" USING "btree" ("primary_game_id");
-
-
-
 CREATE INDEX "idx_games_name" ON "public"."games" USING "btree" ("name");
-
-
-
 CREATE INDEX "idx_games_name_lower" ON "public"."games" USING "btree" ("lower"(TRIM(BOTH FROM "name")));
-
-
-
 CREATE INDEX "idx_games_platform_id" ON "public"."games" USING "btree" ("platform_id");
-
-
-
 CREATE INDEX "idx_grouped_games_display_name" ON "public"."grouped_games_cache" USING "btree" ("name");
-
-
-
 CREATE INDEX "idx_grouped_games_name" ON "public"."grouped_games_cache" USING "btree" ("normalized_name");
-
-
-
 CREATE INDEX "idx_grouped_games_primary_platform" ON "public"."grouped_games_cache" USING "btree" ("primary_platform_id");
-
-
-
 CREATE INDEX "idx_leaderboard_cache_statusxp" ON "public"."leaderboard_cache" USING "btree" ("total_statusxp" DESC);
-
-
-
 CREATE INDEX "idx_meta_achievements_category" ON "public"."meta_achievements" USING "btree" ("category");
-
-
-
 CREATE INDEX "idx_platforms_code" ON "public"."platforms" USING "btree" ("code");
-
-
-
 CREATE INDEX "idx_profile_themes_code" ON "public"."profile_themes" USING "btree" ("code");
-
-
-
 CREATE INDEX "idx_profiles_last_xbox_sync" ON "public"."profiles" USING "btree" ("last_xbox_sync_at" DESC) WHERE ("last_xbox_sync_at" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_profiles_leaderboard" ON "public"."profiles" USING "btree" ("show_on_leaderboard") WHERE ("show_on_leaderboard" = true);
-
-
-
 CREATE INDEX "idx_profiles_merged_into" ON "public"."profiles" USING "btree" ("merged_into_user_id") WHERE ("merged_into_user_id" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_profiles_psn" ON "public"."profiles" USING "btree" ("psn_online_id") WHERE ("psn_online_id" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_profiles_psn_account_id" ON "public"."profiles" USING "btree" ("psn_account_id") WHERE ("psn_account_id" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_profiles_psn_is_plus" ON "public"."profiles" USING "btree" ("psn_is_plus") WHERE ("psn_is_plus" = true);
-
-
-
 CREATE INDEX "idx_profiles_psn_sync_status" ON "public"."profiles" USING "btree" ("psn_sync_status");
-
-
-
 CREATE INDEX "idx_profiles_show_on_leaderboard" ON "public"."profiles" USING "btree" ("show_on_leaderboard");
-
-
-
 CREATE INDEX "idx_profiles_steam" ON "public"."profiles" USING "btree" ("steam_id") WHERE ("steam_id" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_profiles_steam_sync_status" ON "public"."profiles" USING "btree" ("steam_sync_status");
-
-
-
 CREATE INDEX "idx_profiles_subscription_tier" ON "public"."profiles" USING "btree" ("subscription_tier");
-
-
-
 CREATE INDEX "idx_profiles_username" ON "public"."profiles" USING "btree" ("username");
-
-
-
 CREATE INDEX "idx_profiles_xbox" ON "public"."profiles" USING "btree" ("xbox_gamertag") WHERE ("xbox_gamertag" IS NOT NULL);
-
-
-
 COMMENT ON INDEX "public"."idx_profiles_xbox" IS 'Index for Xbox gamertag lookups';
-
-
-
 CREATE INDEX "idx_profiles_xbox_sync_status" ON "public"."profiles" USING "btree" ("xbox_sync_status");
-
-
-
 CREATE INDEX "idx_profiles_xbox_xuid" ON "public"."profiles" USING "btree" ("xbox_xuid") WHERE ("xbox_xuid" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_psn_sync_logs_started_at" ON "public"."psn_sync_logs" USING "btree" ("started_at" DESC);
-
-
-
 CREATE INDEX "idx_psn_sync_logs_status" ON "public"."psn_sync_logs" USING "btree" ("status");
-
-
-
 CREATE INDEX "idx_psn_sync_logs_user_id" ON "public"."psn_sync_logs" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_steam_sync_logs_started_at" ON "public"."steam_sync_logs" USING "btree" ("started_at" DESC);
-
-
-
 CREATE INDEX "idx_steam_sync_logs_status" ON "public"."steam_sync_logs" USING "btree" ("status");
-
-
-
 CREATE INDEX "idx_steam_sync_logs_user_id" ON "public"."steam_sync_logs" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_sync_history_user_platform_date" ON "public"."user_sync_history" USING "btree" ("user_id", "platform", "synced_at" DESC);
-
-
-
 COMMENT ON INDEX "public"."idx_sync_history_user_platform_date" IS 'Index for sync history queries by user, platform, and date';
-
-
-
 CREATE INDEX "idx_trophy_help_requests_active_status" ON "public"."trophy_help_requests" USING "btree" ("status", "created_at" DESC) WHERE ("status" = ANY (ARRAY['open'::"text", 'assigned'::"text"]));
-
-
-
 CREATE INDEX "idx_trophy_help_requests_created_at" ON "public"."trophy_help_requests" USING "btree" ("created_at" DESC);
-
-
-
 CREATE INDEX "idx_trophy_help_requests_game_id" ON "public"."trophy_help_requests" USING "btree" ("game_id");
-
-
-
 CREATE INDEX "idx_trophy_help_requests_platform" ON "public"."trophy_help_requests" USING "btree" ("platform");
-
-
-
 CREATE INDEX "idx_trophy_help_requests_profile_status" ON "public"."trophy_help_requests" USING "btree" ("profile_id", "status", "created_at" DESC);
-
-
-
 CREATE INDEX "idx_trophy_help_requests_status" ON "public"."trophy_help_requests" USING "btree" ("status");
-
-
-
 CREATE INDEX "idx_trophy_help_requests_user_id" ON "public"."trophy_help_requests" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_trophy_help_responses_helper_profile" ON "public"."trophy_help_responses" USING "btree" ("helper_profile_id", "created_at" DESC);
-
-
-
 CREATE INDEX "idx_trophy_help_responses_helper_user_id" ON "public"."trophy_help_responses" USING "btree" ("helper_user_id");
-
-
-
 CREATE INDEX "idx_trophy_help_responses_pending" ON "public"."trophy_help_responses" USING "btree" ("status", "created_at" DESC) WHERE ("status" = 'pending'::"text");
-
-
-
 CREATE INDEX "idx_trophy_help_responses_request_id" ON "public"."trophy_help_responses" USING "btree" ("request_id");
-
-
-
 CREATE INDEX "idx_trophy_room_items_game" ON "public"."trophy_room_items" USING "btree" ("game_title_id") WHERE ("game_title_id" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_trophy_room_items_shelf" ON "public"."trophy_room_items" USING "btree" ("shelf_id", "slot_index");
-
-
-
 CREATE INDEX "idx_trophy_room_items_trophy" ON "public"."trophy_room_items" USING "btree" ("trophy_id") WHERE ("trophy_id" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_trophy_room_shelves_user" ON "public"."trophy_room_shelves" USING "btree" ("user_id", "sort_order");
-
-
-
 CREATE INDEX "idx_user_achievements_achievement" ON "public"."user_achievements" USING "btree" ("platform_id", "platform_game_id", "platform_achievement_id");
-
-
-
 CREATE INDEX "idx_user_achievements_earned_at" ON "public"."user_achievements" USING "btree" ("earned_at" DESC);
-
-
-
 CREATE INDEX "idx_user_achievements_user" ON "public"."user_achievements" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_user_achievements_v2_earned" ON "public"."user_achievements" USING "btree" ("earned_at");
-
-
-
 CREATE INDEX "idx_user_ai_credits_user_id" ON "public"."user_ai_credits" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_user_ai_daily_usage_user_date" ON "public"."user_ai_daily_usage" USING "btree" ("user_id", "usage_date");
-
-
-
 CREATE INDEX "idx_user_ai_pack_purchases_user_id" ON "public"."user_ai_pack_purchases" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_user_meta_achievements_achievement_id" ON "public"."user_meta_achievements" USING "btree" ("achievement_id");
-
-
-
 CREATE INDEX "idx_user_meta_achievements_user_id" ON "public"."user_meta_achievements" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_user_premium_status_user_id" ON "public"."user_premium_status" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_user_progress_completion" ON "public"."user_progress" USING "btree" ("completion_percentage" DESC) WHERE ("completion_percentage" = (100)::numeric);
-
-
-
 CREATE INDEX "idx_user_progress_game" ON "public"."user_progress" USING "btree" ("platform_id", "platform_game_id");
-
-
-
 CREATE INDEX "idx_user_progress_user" ON "public"."user_progress" USING "btree" ("user_id");
-
-
-
 CREATE INDEX "idx_user_progress_v2_platform" ON "public"."user_progress" USING "btree" ("platform_id");
-
-
-
 CREATE INDEX "idx_user_progress_v2_score" ON "public"."user_progress" USING "btree" ("user_id", "current_score") WHERE ("current_score" > 0);
-
-
-
 CREATE INDEX "idx_xbox_sync_logs_started_at" ON "public"."xbox_sync_logs" USING "btree" ("started_at" DESC);
-
-
-
 CREATE INDEX "idx_xbox_sync_logs_status" ON "public"."xbox_sync_logs" USING "btree" ("status");
-
-
-
 CREATE INDEX "idx_xbox_sync_logs_user_id" ON "public"."xbox_sync_logs" USING "btree" ("user_id");
-
-
-
 CREATE OR REPLACE TRIGGER "auto_calculate_statusxp" BEFORE INSERT OR UPDATE ON "public"."achievements" FOR EACH ROW EXECUTE FUNCTION "public"."calculate_achievement_statusxp"();
-
-
-
 CREATE OR REPLACE TRIGGER "set_last_updated" BEFORE UPDATE ON "public"."flex_room_data" FOR EACH ROW EXECUTE FUNCTION "public"."update_flex_room_last_updated"();
-
-
-
 CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."achievement_comments" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
-
-
-
 CREATE OR REPLACE TRIGGER "trigger_achievement_rarity" BEFORE INSERT OR UPDATE OF "rarity_global" ON "public"."achievements" FOR EACH ROW EXECUTE FUNCTION "public"."trigger_update_achievement_rarity"();
-
-
-
 CREATE OR REPLACE TRIGGER "trigger_update_display_case_items_updated_at" BEFORE UPDATE ON "public"."display_case_items" FOR EACH ROW EXECUTE FUNCTION "public"."update_display_case_items_updated_at"();
-
-
-
 CREATE OR REPLACE TRIGGER "update_profiles_updated_at" BEFORE UPDATE ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
-
-
-
 CREATE OR REPLACE TRIGGER "update_trophy_help_request_updated_at_trigger" BEFORE UPDATE ON "public"."trophy_help_requests" FOR EACH ROW EXECUTE FUNCTION "public"."update_trophy_help_request_updated_at"();
-
-
-
 CREATE OR REPLACE TRIGGER "update_trophy_room_items_updated_at" BEFORE UPDATE ON "public"."trophy_room_items" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
-
-
-
 CREATE OR REPLACE TRIGGER "update_trophy_room_shelves_updated_at" BEFORE UPDATE ON "public"."trophy_room_shelves" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
-
-
-
 CREATE OR REPLACE TRIGGER "update_user_profile_settings_updated_at" BEFORE UPDATE ON "public"."user_profile_settings" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
-
-
-
 ALTER TABLE ONLY "public"."achievement_comments"
     ADD CONSTRAINT "achievement_comments_achievement_fkey" FOREIGN KEY ("platform_id", "platform_game_id", "platform_achievement_id") REFERENCES "public"."achievements"("platform_id", "platform_game_id", "platform_achievement_id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."achievement_comments"
     ADD CONSTRAINT "achievement_comments_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."achievements"
     ADD CONSTRAINT "achievements_platform_id_platform_game_id_fkey" FOREIGN KEY ("platform_id", "platform_game_id") REFERENCES "public"."games"("platform_id", "platform_game_id");
-
-
-
 ALTER TABLE ONLY "public"."display_case_items"
     ADD CONSTRAINT "display_case_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."flex_room_data"
     ADD CONSTRAINT "fk_flex_of_all_time" FOREIGN KEY ("flex_of_all_time_platform_id", "flex_of_all_time_platform_game_id", "flex_of_all_time_platform_achievement_id") REFERENCES "public"."achievements"("platform_id", "platform_game_id", "platform_achievement_id") ON DELETE SET NULL;
-
-
-
 ALTER TABLE ONLY "public"."flex_room_data"
     ADD CONSTRAINT "fk_most_time_sunk" FOREIGN KEY ("most_time_sunk_platform_id", "most_time_sunk_platform_game_id", "most_time_sunk_platform_achievement_id") REFERENCES "public"."achievements"("platform_id", "platform_game_id", "platform_achievement_id") ON DELETE SET NULL;
-
-
-
 ALTER TABLE ONLY "public"."flex_room_data"
     ADD CONSTRAINT "fk_rarest_flex" FOREIGN KEY ("rarest_flex_platform_id", "rarest_flex_platform_game_id", "rarest_flex_platform_achievement_id") REFERENCES "public"."achievements"("platform_id", "platform_game_id", "platform_achievement_id") ON DELETE SET NULL;
-
-
-
 ALTER TABLE ONLY "public"."flex_room_data"
     ADD CONSTRAINT "fk_sweatiest_platinum" FOREIGN KEY ("sweatiest_platinum_platform_id", "sweatiest_platinum_platform_game_id", "sweatiest_platinum_platform_achievement_id") REFERENCES "public"."achievements"("platform_id", "platform_game_id", "platform_achievement_id") ON DELETE SET NULL;
-
-
-
 ALTER TABLE ONLY "public"."flex_room_data"
     ADD CONSTRAINT "flex_room_data_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."games"
     ADD CONSTRAINT "games_platform_id_fkey" FOREIGN KEY ("platform_id") REFERENCES "public"."platforms"("id");
-
-
-
 ALTER TABLE ONLY "public"."leaderboard_cache"
     ADD CONSTRAINT "leaderboard_cache_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id");
-
-
-
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_merged_into_user_id_fkey" FOREIGN KEY ("merged_into_user_id") REFERENCES "auth"."users"("id") ON DELETE SET NULL;
-
-
-
 ALTER TABLE ONLY "public"."psn_sync_logs"
     ADD CONSTRAINT "psn_sync_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."psn_user_trophy_profile"
     ADD CONSTRAINT "psn_user_trophy_profile_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."steam_sync_logs"
     ADD CONSTRAINT "steam_sync_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."trophy_help_requests"
     ADD CONSTRAINT "trophy_help_requests_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."trophy_help_responses"
     ADD CONSTRAINT "trophy_help_responses_helper_profile_id_fkey" FOREIGN KEY ("helper_profile_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."trophy_help_responses"
     ADD CONSTRAINT "trophy_help_responses_request_id_fkey" FOREIGN KEY ("request_id") REFERENCES "public"."trophy_help_requests"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."trophy_room_items"
     ADD CONSTRAINT "trophy_room_items_shelf_id_fkey" FOREIGN KEY ("shelf_id") REFERENCES "public"."trophy_room_shelves"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."trophy_room_shelves"
     ADD CONSTRAINT "trophy_room_shelves_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id");
-
-
-
 ALTER TABLE ONLY "public"."user_achievements"
     ADD CONSTRAINT "user_achievements_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_achievements"
     ADD CONSTRAINT "user_achievements_v2_platform_id_platform_game_id_platform_fkey" FOREIGN KEY ("platform_id", "platform_game_id", "platform_achievement_id") REFERENCES "public"."achievements"("platform_id", "platform_game_id", "platform_achievement_id");
-
-
-
 ALTER TABLE ONLY "public"."user_ai_credits"
     ADD CONSTRAINT "user_ai_credits_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_ai_daily_usage"
     ADD CONSTRAINT "user_ai_daily_usage_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_ai_pack_purchases"
     ADD CONSTRAINT "user_ai_pack_purchases_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_meta_achievements"
     ADD CONSTRAINT "user_meta_achievements_achievement_id_fkey" FOREIGN KEY ("achievement_id") REFERENCES "public"."meta_achievements"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_meta_achievements"
     ADD CONSTRAINT "user_meta_achievements_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_premium_status"
     ADD CONSTRAINT "user_premium_status_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_profile_settings"
     ADD CONSTRAINT "user_profile_settings_profile_theme_id_fkey" FOREIGN KEY ("profile_theme_id") REFERENCES "public"."profile_themes"("id");
-
-
-
 ALTER TABLE ONLY "public"."user_profile_settings"
     ADD CONSTRAINT "user_profile_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_progress"
     ADD CONSTRAINT "user_progress_platform_id_platform_game_id_fkey" FOREIGN KEY ("platform_id", "platform_game_id") REFERENCES "public"."games"("platform_id", "platform_game_id");
-
-
-
 ALTER TABLE ONLY "public"."user_progress"
     ADD CONSTRAINT "user_progress_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_selected_title"
     ADD CONSTRAINT "user_selected_title_achievement_id_fkey" FOREIGN KEY ("achievement_id") REFERENCES "public"."meta_achievements"("id") ON DELETE SET NULL;
-
-
-
 ALTER TABLE ONLY "public"."user_selected_title"
     ADD CONSTRAINT "user_selected_title_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_stats"
     ADD CONSTRAINT "user_stats_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_sync_history"
     ADD CONSTRAINT "user_sync_history_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."user_sync_history"
     ADD CONSTRAINT "user_sync_history_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."xbox_sync_logs"
     ADD CONSTRAINT "xbox_sync_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
-
-
-
 CREATE POLICY "Anyone can view meta achievements" ON "public"."meta_achievements" FOR SELECT USING (true);
-
-
-
 CREATE POLICY "Anyone can view non-hidden comments" ON "public"."achievement_comments" FOR SELECT USING (("is_hidden" = false));
-
-
-
 CREATE POLICY "Anyone can view open trophy help requests" ON "public"."trophy_help_requests" FOR SELECT USING ((("status" = 'open'::"text") OR ("auth"."uid"() = "profile_id")));
-
-
-
 CREATE POLICY "Authenticated users can insert comments" ON "public"."achievement_comments" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Public read access" ON "public"."platforms" FOR SELECT USING (true);
-
-
-
 CREATE POLICY "Public read access" ON "public"."profile_themes" FOR SELECT USING (true);
-
-
-
 CREATE POLICY "Request owners can update response status" ON "public"."trophy_help_responses" FOR UPDATE USING (("auth"."uid"() IN ( SELECT "r"."profile_id"
    FROM "public"."trophy_help_requests" "r"
   WHERE ("r"."id" = "trophy_help_responses"."request_id"))));
-
-
-
 CREATE POLICY "Users can create trophy help requests" ON "public"."trophy_help_requests" FOR INSERT WITH CHECK (("auth"."uid"() = "profile_id"));
-
-
-
 CREATE POLICY "Users can create trophy help responses" ON "public"."trophy_help_responses" FOR INSERT WITH CHECK (("auth"."uid"() = "helper_profile_id"));
-
-
-
 CREATE POLICY "Users can delete own comments" ON "public"."achievement_comments" FOR DELETE TO "authenticated" USING (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can delete their own comments or admin can delete any" ON "public"."achievement_comments" FOR DELETE TO "authenticated" USING ((("auth"."uid"() = "user_id") OR ("auth"."uid"() = '84b60ad6-cb2c-484f-8953-bf814551fd7a'::"uuid")));
-
-
-
 CREATE POLICY "Users can delete their own flex room data" ON "public"."flex_room_data" FOR DELETE USING (("auth"."uid"() = "profile_id"));
-
-
-
 CREATE POLICY "Users can delete their own trophy help requests" ON "public"."trophy_help_requests" FOR DELETE USING (("auth"."uid"() = "profile_id"));
-
-
-
 CREATE POLICY "Users can insert own PSN sync logs" ON "public"."psn_sync_logs" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert own Steam sync logs" ON "public"."steam_sync_logs" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert own Xbox sync logs" ON "public"."xbox_sync_logs" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert their own AI credits" ON "public"."user_ai_credits" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert their own AI usage" ON "public"."user_ai_daily_usage" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert their own PSN trophy profile" ON "public"."psn_user_trophy_profile" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert their own flex room data" ON "public"."flex_room_data" FOR INSERT WITH CHECK (("auth"."uid"() = "profile_id"));
-
-
-
 CREATE POLICY "Users can insert their own premium status" ON "public"."user_premium_status" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert their own purchases" ON "public"."user_ai_pack_purchases" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can insert their own sync history" ON "public"."user_sync_history" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can post their own comments" ON "public"."achievement_comments" FOR INSERT TO "authenticated" WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can unlock their own meta achievements" ON "public"."user_meta_achievements" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update own PSN sync logs" ON "public"."psn_sync_logs" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update own Steam sync logs" ON "public"."steam_sync_logs" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update own Xbox sync logs" ON "public"."xbox_sync_logs" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update own comments" ON "public"."achievement_comments" FOR UPDATE TO "authenticated" USING (("auth"."uid"() = "user_id")) WITH CHECK (("auth"."uid"() = "user_id"));
-
-
-
 CREATE POLICY "Users can update their own AI credits" ON "public"."user_ai_credits" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update their own PSN trophy profile" ON "public"."psn_user_trophy_profile" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update their own flex room data" ON "public"."flex_room_data" FOR UPDATE USING (("auth"."uid"() = "profile_id"));
-
-
-
 CREATE POLICY "Users can update their own meta achievements" ON "public"."user_meta_achievements" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update their own premium status" ON "public"."user_premium_status" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can update their own trophy help requests" ON "public"."trophy_help_requests" FOR UPDATE USING (("auth"."uid"() = "profile_id")) WITH CHECK (("auth"."uid"() = "profile_id"));
-
-
-
 CREATE POLICY "Users can view own PSN sync logs" ON "public"."psn_sync_logs" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view own Steam sync logs" ON "public"."steam_sync_logs" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view own Xbox sync logs" ON "public"."xbox_sync_logs" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view responses for their requests or their own respon" ON "public"."trophy_help_responses" FOR SELECT USING ((("auth"."uid"() = "helper_profile_id") OR ("auth"."uid"() IN ( SELECT "r"."profile_id"
    FROM "public"."trophy_help_requests" "r"
   WHERE ("r"."id" = "trophy_help_responses"."request_id")))));
-
-
-
 CREATE POLICY "Users can view their own AI credits" ON "public"."user_ai_credits" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view their own AI usage" ON "public"."user_ai_daily_usage" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view their own PSN trophy profile" ON "public"."psn_user_trophy_profile" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view their own flex room data" ON "public"."flex_room_data" FOR SELECT USING (("auth"."uid"() = "profile_id"));
-
-
-
 CREATE POLICY "Users can view their own meta achievements" ON "public"."user_meta_achievements" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view their own premium status" ON "public"."user_premium_status" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view their own purchase history" ON "public"."user_ai_pack_purchases" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 CREATE POLICY "Users can view their own sync history" ON "public"."user_sync_history" FOR SELECT USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 ALTER TABLE "public"."achievement_comments" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."display_case_items" ENABLE ROW LEVEL SECURITY;
-
-
 CREATE POLICY "display_case_items_user_policy" ON "public"."display_case_items" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 ALTER TABLE "public"."flex_room_data" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."meta_achievements" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."platforms" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."profile_themes" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
-
-
 CREATE POLICY "profiles_delete_policy" ON "public"."profiles" FOR DELETE USING ((( SELECT "auth"."uid"() AS "uid") = "id"));
-
-
-
 CREATE POLICY "profiles_modify_policy" ON "public"."profiles" FOR INSERT WITH CHECK ((( SELECT "auth"."uid"() AS "uid") = "id"));
-
-
-
 CREATE POLICY "profiles_select_policy" ON "public"."profiles" FOR SELECT USING (true);
-
-
-
 CREATE POLICY "profiles_update_policy" ON "public"."profiles" FOR UPDATE USING ((( SELECT "auth"."uid"() AS "uid") = "id"));
-
-
-
 ALTER TABLE "public"."psn_sync_logs" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."psn_user_trophy_profile" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."steam_sync_logs" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."trophy_help_requests" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."trophy_help_responses" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."trophy_room_items" ENABLE ROW LEVEL SECURITY;
-
-
 CREATE POLICY "trophy_room_items_policy" ON "public"."trophy_room_items" USING ((EXISTS ( SELECT 1
    FROM "public"."trophy_room_shelves"
   WHERE (("trophy_room_shelves"."id" = "trophy_room_items"."shelf_id") AND ("trophy_room_shelves"."user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
-
-
-
 ALTER TABLE "public"."trophy_room_shelves" ENABLE ROW LEVEL SECURITY;
-
-
 CREATE POLICY "trophy_room_shelves_policy" ON "public"."trophy_room_shelves" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 ALTER TABLE "public"."user_ai_credits" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."user_ai_daily_usage" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."user_ai_pack_purchases" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."user_meta_achievements" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."user_premium_status" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."user_profile_settings" ENABLE ROW LEVEL SECURITY;
-
-
 CREATE POLICY "user_profile_settings_policy" ON "public"."user_profile_settings" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 ALTER TABLE "public"."user_selected_title" ENABLE ROW LEVEL SECURITY;
-
-
 CREATE POLICY "user_selected_title_policy" ON "public"."user_selected_title" USING ((( SELECT "auth"."uid"() AS "uid") = "user_id"));
-
-
-
 ALTER TABLE "public"."user_stats" ENABLE ROW LEVEL SECURITY;
-
-
 CREATE POLICY "user_stats_modify_delete" ON "public"."user_stats" FOR DELETE USING ((CURRENT_USER = 'service_role'::"name"));
-
-
-
 CREATE POLICY "user_stats_modify_insert" ON "public"."user_stats" FOR INSERT WITH CHECK ((CURRENT_USER = 'service_role'::"name"));
-
-
-
 CREATE POLICY "user_stats_modify_update" ON "public"."user_stats" FOR UPDATE USING ((CURRENT_USER = 'service_role'::"name"));
-
-
-
 CREATE POLICY "user_stats_public_read" ON "public"."user_stats" FOR SELECT USING (true);
-
-
-
 CREATE POLICY "user_stats_select_policy" ON "public"."user_stats" FOR SELECT USING (((CURRENT_USER = 'service_role'::"name") OR (( SELECT "auth"."uid"() AS "uid") = "user_id")));
-
-
-
 ALTER TABLE "public"."user_sync_history" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."xbox_sync_logs" ENABLE ROW LEVEL SECURITY;
-
-
-
-
 ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
-
-
-
-
-
 GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
 GRANT USAGE ON SCHEMA "public" TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 GRANT ALL ON FUNCTION "public"."add_ai_credits"("p_user_id" "uuid", "p_credits" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."add_ai_credits"("p_user_id" "uuid", "p_credits" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."add_ai_credits"("p_user_id" "uuid", "p_credits" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."add_ai_pack_credits"("p_user_id" "uuid", "p_pack_type" character varying, "p_credits" integer, "p_price" numeric, "p_platform" character varying) TO "anon";
 GRANT ALL ON FUNCTION "public"."add_ai_pack_credits"("p_user_id" "uuid", "p_pack_type" character varying, "p_credits" integer, "p_price" numeric, "p_platform" character varying) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."add_ai_pack_credits"("p_user_id" "uuid", "p_pack_type" character varying, "p_credits" integer, "p_price" numeric, "p_platform" character varying) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."auto_refresh_all_leaderboards"() TO "anon";
 GRANT ALL ON FUNCTION "public"."auto_refresh_all_leaderboards"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."auto_refresh_all_leaderboards"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."calculate_achievement_similarity"("game_id_1" bigint, "game_id_2" bigint) TO "anon";
 GRANT ALL ON FUNCTION "public"."calculate_achievement_similarity"("game_id_1" bigint, "game_id_2" bigint) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."calculate_achievement_similarity"("game_id_1" bigint, "game_id_2" bigint) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."calculate_achievement_statusxp"() TO "anon";
 GRANT ALL ON FUNCTION "public"."calculate_achievement_statusxp"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."calculate_achievement_statusxp"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."calculate_statusxp_simple"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."calculate_statusxp_simple"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."calculate_statusxp_simple"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."calculate_statusxp_with_stacks"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."calculate_statusxp_with_stacks"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."calculate_statusxp_with_stacks"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."calculate_user_achievement_statusxp"() TO "anon";
 GRANT ALL ON FUNCTION "public"."calculate_user_achievement_statusxp"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."calculate_user_achievement_statusxp"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."calculate_user_game_statusxp"() TO "anon";
 GRANT ALL ON FUNCTION "public"."calculate_user_game_statusxp"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."calculate_user_game_statusxp"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."can_use_ai"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."can_use_ai"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."can_use_ai"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."can_user_sync"("p_user_id" "uuid", "p_platform" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."can_user_sync"("p_user_id" "uuid", "p_platform" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."can_user_sync"("p_user_id" "uuid", "p_platform" "text") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."can_user_sync_psn"("user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."can_user_sync_psn"("user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."can_user_sync_psn"("user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."check_big_comeback"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_big_comeback"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_big_comeback"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."check_closer"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_closer"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_closer"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."check_game_hopper"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_game_hopper"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_game_hopper"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."check_genre_diversity"("p_user_id" "uuid", "p_required_count" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."check_genre_diversity"("p_user_id" "uuid", "p_required_count" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_genre_diversity"("p_user_id" "uuid", "p_required_count" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."check_glow_up"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_glow_up"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_glow_up"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."check_power_session"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_power_session"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_power_session"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."check_spike_week"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_spike_week"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_spike_week"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."consume_ai_credit"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."consume_ai_credit"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."consume_ai_credit"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_games_with_platforms"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."get_games_with_platforms"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_games_with_platforms"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_grouped_games"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer, "sort_by" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_grouped_games"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer, "sort_by" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_grouped_games"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer, "sort_by" "text") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_grouped_games_fast"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer, "sort_by" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_grouped_games_fast"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer, "sort_by" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_grouped_games_fast"("search_query" "text", "platform_filter" "text", "result_limit" integer, "result_offset" integer, "sort_by" "text") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_most_time_sunk_game"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_most_time_sunk_game"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_most_time_sunk_game"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_most_time_sunk_game_v2"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_most_time_sunk_game_v2"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_most_time_sunk_game_v2"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_platform_achievement_counts"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_platform_achievement_counts"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_platform_achievement_counts"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_platinum_leaderboard"("limit_count" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."get_platinum_leaderboard"("limit_count" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_platinum_leaderboard"("limit_count" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_rarest_achievement_v2"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_rarest_achievement_v2"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_rarest_achievement_v2"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_recent_notable_achievements_v2"("p_user_id" "uuid", "p_limit" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."get_recent_notable_achievements_v2"("p_user_id" "uuid", "p_limit" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_recent_notable_achievements_v2"("p_user_id" "uuid", "p_limit" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_steam_leaderboard"("limit_count" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."get_steam_leaderboard"("limit_count" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_steam_leaderboard"("limit_count" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_superlative_suggestions_v2"("p_user_id" "uuid", "p_category" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_superlative_suggestions_v2"("p_user_id" "uuid", "p_category" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_superlative_suggestions_v2"("p_user_id" "uuid", "p_category" "text") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_sweatiest_platinum_v2"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_sweatiest_platinum_v2"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_sweatiest_platinum_v2"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_user_achievements_for_game"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_id" "text", "p_search_query" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_user_achievements_for_game"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_id" "text", "p_search_query" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_user_achievements_for_game"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_id" "text", "p_search_query" "text") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_user_completions"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_user_completions"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_user_completions"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_user_games_for_platform"("p_user_id" "uuid", "p_platform_id" bigint, "p_search_query" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_user_games_for_platform"("p_user_id" "uuid", "p_platform_id" bigint, "p_search_query" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_user_games_for_platform"("p_user_id" "uuid", "p_platform_id" bigint, "p_search_query" "text") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_user_grouped_games"("p_user_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_user_grouped_games"("p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_user_grouped_games"("p_user_id" "uuid") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."get_xbox_leaderboard"("limit_count" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."get_xbox_leaderboard"("limit_count" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_xbox_leaderboard"("limit_count" integer) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."mark_game_groups_for_refresh"() TO "anon";
 GRANT ALL ON FUNCTION "public"."mark_game_groups_for_refresh"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."mark_game_groups_for_refresh"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."prevent_duplicate_email_profiles"() TO "anon";
 GRANT ALL ON FUNCTION "public"."prevent_duplicate_email_profiles"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."prevent_duplicate_email_profiles"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."recalculate_achievement_rarity"() TO "anon";
 GRANT ALL ON FUNCTION "public"."recalculate_achievement_rarity"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."recalculate_achievement_rarity"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."recompute_user_progress_for_games"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_ids" "text"[]) TO "anon";
 GRANT ALL ON FUNCTION "public"."recompute_user_progress_for_games"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_ids" "text"[]) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."recompute_user_progress_for_games"("p_user_id" "uuid", "p_platform_id" bigint, "p_platform_game_ids" "text"[]) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."refresh_game_groups"() TO "anon";
 GRANT ALL ON FUNCTION "public"."refresh_game_groups"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."refresh_game_groups"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."refresh_game_groups_if_needed"() TO "anon";
 GRANT ALL ON FUNCTION "public"."refresh_game_groups_if_needed"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."refresh_game_groups_if_needed"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."refresh_grouped_games_cache"() TO "anon";
 GRANT ALL ON FUNCTION "public"."refresh_grouped_games_cache"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."refresh_grouped_games_cache"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."refresh_leaderboard_cache"() TO "anon";
 GRANT ALL ON FUNCTION "public"."refresh_leaderboard_cache"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."refresh_leaderboard_cache"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."refresh_leaderboard_global_cache"() TO "anon";
 GRANT ALL ON FUNCTION "public"."refresh_leaderboard_global_cache"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."refresh_leaderboard_global_cache"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."refresh_statusxp_leaderboard"() TO "anon";
 GRANT ALL ON FUNCTION "public"."refresh_statusxp_leaderboard"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."refresh_statusxp_leaderboard"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."trigger_calculate_statusxp"() TO "anon";
 GRANT ALL ON FUNCTION "public"."trigger_calculate_statusxp"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."trigger_calculate_statusxp"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."trigger_refresh_leaderboards_on_sync"() TO "anon";
 GRANT ALL ON FUNCTION "public"."trigger_refresh_leaderboards_on_sync"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."trigger_refresh_leaderboards_on_sync"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."trigger_update_achievement_rarity"() TO "anon";
 GRANT ALL ON FUNCTION "public"."trigger_update_achievement_rarity"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."trigger_update_achievement_rarity"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."unlock_achievement_if_new"("p_user_id" "uuid", "p_achievement_id" "text", "p_unlocked_at" timestamp with time zone) TO "anon";
 GRANT ALL ON FUNCTION "public"."unlock_achievement_if_new"("p_user_id" "uuid", "p_achievement_id" "text", "p_unlocked_at" timestamp with time zone) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."unlock_achievement_if_new"("p_user_id" "uuid", "p_achievement_id" "text", "p_unlocked_at" timestamp with time zone) TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."update_display_case_items_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_display_case_items_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_display_case_items_updated_at"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."update_flex_room_data_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_flex_room_data_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_flex_room_data_updated_at"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."update_flex_room_last_updated"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_flex_room_last_updated"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_flex_room_last_updated"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."update_trophy_help_request_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_trophy_help_request_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_trophy_help_request_updated_at"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_updated_at_column"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."upsert_user_achievements_batch"("p_rows" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."upsert_user_achievements_batch"("p_rows" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."upsert_user_achievements_batch"("p_rows" "jsonb") TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 GRANT ALL ON TABLE "public"."achievement_comments" TO "anon";
 GRANT ALL ON TABLE "public"."achievement_comments" TO "authenticated";
 GRANT ALL ON TABLE "public"."achievement_comments" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."achievements" TO "anon";
 GRANT ALL ON TABLE "public"."achievements" TO "authenticated";
 GRANT ALL ON TABLE "public"."achievements" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."display_case_items" TO "anon";
 GRANT ALL ON TABLE "public"."display_case_items" TO "authenticated";
 GRANT ALL ON TABLE "public"."display_case_items" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."flex_room_data" TO "anon";
 GRANT ALL ON TABLE "public"."flex_room_data" TO "authenticated";
 GRANT ALL ON TABLE "public"."flex_room_data" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."game_groups" TO "anon";
 GRANT ALL ON TABLE "public"."game_groups" TO "authenticated";
 GRANT ALL ON TABLE "public"."game_groups" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."game_groups_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."game_groups_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."game_groups_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."game_groups_refresh_queue" TO "anon";
 GRANT ALL ON TABLE "public"."game_groups_refresh_queue" TO "authenticated";
 GRANT ALL ON TABLE "public"."game_groups_refresh_queue" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."game_groups_refresh_queue_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."game_groups_refresh_queue_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."game_groups_refresh_queue_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."games" TO "anon";
 GRANT ALL ON TABLE "public"."games" TO "authenticated";
 GRANT ALL ON TABLE "public"."games" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."platforms" TO "anon";
 GRANT ALL ON TABLE "public"."platforms" TO "authenticated";
 GRANT ALL ON TABLE "public"."platforms" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."grouped_games_cache" TO "anon";
 GRANT ALL ON TABLE "public"."grouped_games_cache" TO "authenticated";
 GRANT ALL ON TABLE "public"."grouped_games_cache" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."leaderboard_cache" TO "anon";
 GRANT ALL ON TABLE "public"."leaderboard_cache" TO "authenticated";
 GRANT ALL ON TABLE "public"."leaderboard_cache" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."profiles" TO "anon";
 GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
 GRANT ALL ON TABLE "public"."profiles" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_achievements" TO "anon";
 GRANT ALL ON TABLE "public"."user_achievements" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_achievements" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."leaderboard_global_cache" TO "anon";
 GRANT ALL ON TABLE "public"."leaderboard_global_cache" TO "authenticated";
 GRANT ALL ON TABLE "public"."leaderboard_global_cache" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."meta_achievements" TO "anon";
 GRANT ALL ON TABLE "public"."meta_achievements" TO "authenticated";
 GRANT ALL ON TABLE "public"."meta_achievements" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."platforms_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."platforms_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."platforms_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."profile_themes" TO "anon";
 GRANT ALL ON TABLE "public"."profile_themes" TO "authenticated";
 GRANT ALL ON TABLE "public"."profile_themes" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."profile_themes_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."profile_themes_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."profile_themes_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."psn_leaderboard_cache" TO "anon";
 GRANT ALL ON TABLE "public"."psn_leaderboard_cache" TO "authenticated";
 GRANT ALL ON TABLE "public"."psn_leaderboard_cache" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."psn_sync_logs" TO "anon";
 GRANT ALL ON TABLE "public"."psn_sync_logs" TO "authenticated";
 GRANT ALL ON TABLE "public"."psn_sync_logs" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."psn_sync_logs_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."psn_sync_logs_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."psn_sync_logs_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."psn_user_trophy_profile" TO "anon";
 GRANT ALL ON TABLE "public"."psn_user_trophy_profile" TO "authenticated";
 GRANT ALL ON TABLE "public"."psn_user_trophy_profile" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."steam_leaderboard_cache" TO "anon";
 GRANT ALL ON TABLE "public"."steam_leaderboard_cache" TO "authenticated";
 GRANT ALL ON TABLE "public"."steam_leaderboard_cache" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."steam_sync_logs" TO "anon";
 GRANT ALL ON TABLE "public"."steam_sync_logs" TO "authenticated";
 GRANT ALL ON TABLE "public"."steam_sync_logs" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."steam_sync_logs_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."steam_sync_logs_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."steam_sync_logs_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."trophy_help_requests" TO "anon";
 GRANT ALL ON TABLE "public"."trophy_help_requests" TO "authenticated";
 GRANT ALL ON TABLE "public"."trophy_help_requests" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."trophy_help_responses" TO "anon";
 GRANT ALL ON TABLE "public"."trophy_help_responses" TO "authenticated";
 GRANT ALL ON TABLE "public"."trophy_help_responses" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."trophy_room_items" TO "anon";
 GRANT ALL ON TABLE "public"."trophy_room_items" TO "authenticated";
 GRANT ALL ON TABLE "public"."trophy_room_items" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."trophy_room_items_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."trophy_room_items_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."trophy_room_items_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."trophy_room_shelves" TO "anon";
 GRANT ALL ON TABLE "public"."trophy_room_shelves" TO "authenticated";
 GRANT ALL ON TABLE "public"."trophy_room_shelves" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."trophy_room_shelves_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."trophy_room_shelves_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."trophy_room_shelves_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_ai_credits" TO "anon";
 GRANT ALL ON TABLE "public"."user_ai_credits" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_ai_credits" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_ai_daily_usage" TO "anon";
 GRANT ALL ON TABLE "public"."user_ai_daily_usage" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_ai_daily_usage" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_ai_pack_purchases" TO "anon";
 GRANT ALL ON TABLE "public"."user_ai_pack_purchases" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_ai_pack_purchases" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_premium_status" TO "anon";
 GRANT ALL ON TABLE "public"."user_premium_status" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_premium_status" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_ai_status" TO "anon";
 GRANT ALL ON TABLE "public"."user_ai_status" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_ai_status" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_progress" TO "anon";
 GRANT ALL ON TABLE "public"."user_progress" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_progress" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_games" TO "anon";
 GRANT ALL ON TABLE "public"."user_games" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_games" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_meta_achievements" TO "anon";
 GRANT ALL ON TABLE "public"."user_meta_achievements" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_meta_achievements" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."user_meta_achievements_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."user_meta_achievements_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."user_meta_achievements_id_seq" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_profile_settings" TO "anon";
 GRANT ALL ON TABLE "public"."user_profile_settings" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_profile_settings" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_selected_title" TO "anon";
 GRANT ALL ON TABLE "public"."user_selected_title" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_selected_title" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_stats" TO "anon";
 GRANT ALL ON TABLE "public"."user_stats" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_stats" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_sync_history" TO "anon";
 GRANT ALL ON TABLE "public"."user_sync_history" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_sync_history" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."user_sync_status" TO "anon";
 GRANT ALL ON TABLE "public"."user_sync_status" TO "authenticated";
 GRANT ALL ON TABLE "public"."user_sync_status" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."xbox_leaderboard_cache" TO "anon";
 GRANT ALL ON TABLE "public"."xbox_leaderboard_cache" TO "authenticated";
 GRANT ALL ON TABLE "public"."xbox_leaderboard_cache" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."xbox_sync_logs" TO "anon";
 GRANT ALL ON TABLE "public"."xbox_sync_logs" TO "authenticated";
 GRANT ALL ON TABLE "public"."xbox_sync_logs" TO "service_role";
-
-
-
 GRANT ALL ON SEQUENCE "public"."xbox_sync_logs_id_seq" TO "anon";
 GRANT ALL ON SEQUENCE "public"."xbox_sync_logs_id_seq" TO "authenticated";
 GRANT ALL ON SEQUENCE "public"."xbox_sync_logs_id_seq" TO "service_role";
-
-
-
-
-
-
-
-
-
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
-
-
-
-
-
-
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
-
-
-
-
-
-
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

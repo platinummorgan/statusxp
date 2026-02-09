@@ -52,13 +52,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final leaderboardAsync = ref.watch(
-      leaderboardProvider(_selectedType),
-    );
+    final leaderboardAsync = ref.watch(leaderboardProvider(_selectedType));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Leaderboards', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'All-Time Leaderboards',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         backgroundColor: const Color(0xFF0A0E27),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -168,13 +169,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             itemBuilder: (context, index) {
               final entry = entries[index];
               final rank = index + 1;
-              
-              return _buildLeaderboardCard(
-                entry,
-                rank,
-                type,
-                accentColor,
-              );
+
+              return _buildLeaderboardCard(entry, rank, type, accentColor);
             },
           ),
         );
@@ -191,7 +187,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     // Determine medal color for top 3
     Color? medalColor;
     IconData? medalIcon;
-    
+
     if (rank == 1) {
       medalColor = const Color(0xFFFFD700); // Gold
       medalIcon = Icons.workspace_premium;
@@ -243,150 +239,147 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
-          children: [
-            // Rank number or medal with ordinal text
-            SizedBox(
-              width: 60,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (medalIcon != null)
-                    Icon(
-                      medalIcon,
-                      color: medalColor,
-                      size: 36,
-                      shadows: [
-                        Shadow(
-                          color: medalColor!.withOpacity(0.6),
-                          blurRadius: 8,
+            children: [
+              // Rank number or medal with ordinal text
+              SizedBox(
+                width: 60,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (medalIcon != null)
+                      Icon(
+                        medalIcon,
+                        color: medalColor,
+                        size: 36,
+                        shadows: [
+                          Shadow(
+                            color: medalColor!.withOpacity(0.6),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      )
+                    else
+                      Text(
+                        '#$rank',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
                         ),
-                      ],
-                    )
-                  else
+                      ),
+                    const SizedBox(height: 2),
                     Text(
-                      '#$rank',
+                      _getOrdinal(rank),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
+                        color: medalColor ?? Colors.white.withOpacity(0.4),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _getOrdinal(rank),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: medalColor ?? Colors.white.withOpacity(0.4),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  // Rank movement indicator (show for all leaderboards)
-                  _buildRankMovementIndicator(entry),
-                ],
+                    // Rank movement indicator (show for all leaderboards)
+                    _buildRankMovementIndicator(entry),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-            // Avatar
-            CircleAvatar(
-              radius: 24,
-              backgroundImage: entry.avatarUrl != null
-                  ? NetworkImage(entry.avatarUrl!)
-                  : null,
-              backgroundColor: accentColor.withOpacity(0.3),
-              child: entry.avatarUrl == null
-                  ? Icon(Icons.person, color: accentColor, size: 24)
-                  : null,
-            ),
+              // Avatar
+              CircleAvatar(
+                radius: 24,
+                backgroundImage: entry.avatarUrl != null
+                    ? NetworkImage(entry.avatarUrl!)
+                    : null,
+                backgroundColor: accentColor.withOpacity(0.3),
+                child: entry.avatarUrl == null
+                    ? Icon(Icons.person, color: accentColor, size: 24)
+                    : null,
+              ),
 
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-            // User info and score - restructured for longer names
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top row: Full name with YOU badge
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          entry.displayName,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            shadows: isCurrentUser
-                                ? [
-                                    Shadow(
-                                      color: accentColor.withOpacity(0.6),
-                                      blurRadius: 4,
-                                    ),
-                                  ]
-                                : null,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (isCurrentUser) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: accentColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(
-                              color: accentColor,
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            'YOU',
-                            style: TextStyle(
-                              color: accentColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  // Bottom row: Custom display for PSN, Xbox, Steam, StatusXP
-                  if (type == LeaderboardType.platinums)
+              // User info and score - restructured for longer names
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top row: Full name with YOU badge
                     Row(
                       children: [
                         Flexible(
-                          child: _buildPSNTrophyRow(entry, accentColor),
+                          child: Text(
+                            entry.displayName,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              shadows: isCurrentUser
+                                  ? [
+                                      Shadow(
+                                        color: accentColor.withOpacity(0.6),
+                                        blurRadius: 4,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
+                        if (isCurrentUser) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accentColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: accentColor, width: 1),
+                            ),
+                            child: Text(
+                              'YOU',
+                              style: TextStyle(
+                                color: accentColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
-                    )
-                  else if (type == LeaderboardType.xboxAchievements)
-                    _buildXboxGamerscoreRow(entry, accentColor)
-                  else if (type == LeaderboardType.steamAchievements)
-                    _buildSteamAchievementsRow(entry, accentColor)
-                  else if (type == LeaderboardType.statusXP)
-                    _buildStatusXPRow(entry, accentColor)
-                  else
-                    _buildGenericScoreRow(entry, type, accentColor),
-                ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Bottom row: Custom display for PSN, Xbox, Steam, StatusXP
+                    if (type == LeaderboardType.platinums)
+                      Row(
+                        children: [
+                          Flexible(
+                            child: _buildPSNTrophyRow(entry, accentColor),
+                          ),
+                        ],
+                      )
+                    else if (type == LeaderboardType.xboxAchievements)
+                      _buildXboxGamerscoreRow(entry, accentColor)
+                    else if (type == LeaderboardType.steamAchievements)
+                      _buildSteamAchievementsRow(entry, accentColor)
+                    else if (type == LeaderboardType.statusXP)
+                      _buildStatusXPRow(entry, accentColor)
+                    else
+                      _buildGenericScoreRow(entry, type, accentColor),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-    );  // Close InkWell
+    ); // Close InkWell
   }
 
   String _getSubtitle(LeaderboardEntry entry, LeaderboardType type) {
@@ -421,10 +414,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
   String _formatCompact(int number) {
     if (number >= 1000000) {
       final millions = number / 1000000;
-      return millions >= 10 ? '${millions.toStringAsFixed(0)}M' : '${millions.toStringAsFixed(1)}M';
+      return millions >= 10
+          ? '${millions.toStringAsFixed(0)}M'
+          : '${millions.toStringAsFixed(1)}M';
     } else if (number >= 1000) {
       final thousands = number / 1000;
-      return thousands >= 10 ? '${thousands.toStringAsFixed(0)}k' : '${thousands.toStringAsFixed(1)}k';
+      return thousands >= 10
+          ? '${thousands.toStringAsFixed(0)}k'
+          : '${thousands.toStringAsFixed(1)}k';
     }
     return number.toString();
   }
@@ -483,10 +480,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         decoration: BoxDecoration(
           color: const Color(0xFF00A8E1).withOpacity(0.25),
           borderRadius: BorderRadius.circular(3),
-          border: Border.all(
-            color: const Color(0xFF00A8E1),
-            width: 1.5,
-          ),
+          border: Border.all(color: const Color(0xFF00A8E1), width: 1.5),
         ),
         child: const Text(
           'NEW',
@@ -523,11 +517,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            color: color,
-            size: 12,
-          ),
+          Icon(icon, color: color, size: 12),
           const SizedBox(width: 2),
           Text(
             '${entry.rankChange.abs()}',
@@ -535,12 +525,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               color: color,
               fontSize: 10,
               fontWeight: FontWeight.w900,
-              shadows: [
-                Shadow(
-                  color: color.withOpacity(0.6),
-                  blurRadius: 4,
-                ),
-              ],
+              shadows: [Shadow(color: color.withOpacity(0.6), blurRadius: 4)],
             ),
           ),
         ],
@@ -557,17 +542,34 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildTrophyCount('assets/images/platinum_trophy.png', entry.platinumCount ?? 0, isLarge: true, color: accentColor),
+            _buildTrophyCount(
+              'assets/images/platinum_trophy.png',
+              entry.platinumCount ?? 0,
+              isLarge: true,
+              color: accentColor,
+            ),
             const SizedBox(width: 6),
-            _buildTrophyCount('assets/images/gold_trophy.png', entry.goldCount ?? 0),
+            _buildTrophyCount(
+              'assets/images/gold_trophy.png',
+              entry.goldCount ?? 0,
+            ),
             const SizedBox(width: 4),
-            _buildTrophyCount('assets/images/silver_trophy.png', entry.silverCount ?? 0),
+            _buildTrophyCount(
+              'assets/images/silver_trophy.png',
+              entry.silverCount ?? 0,
+            ),
             const SizedBox(width: 4),
-            _buildTrophyCount('assets/images/bronze_trophy.png', entry.bronzeCount ?? 0),
+            _buildTrophyCount(
+              'assets/images/bronze_trophy.png',
+              entry.bronzeCount ?? 0,
+            ),
           ],
         ),
         // Possible trophies keynote
-        if (entry.possiblePlatinum != null || entry.possibleGold != null || entry.possibleSilver != null || entry.possibleBronze != null) ...[
+        if (entry.possiblePlatinum != null ||
+            entry.possibleGold != null ||
+            entry.possibleSilver != null ||
+            entry.possibleBronze != null) ...[
           const SizedBox(height: 2),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -622,10 +624,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             fontSize: 16,
             fontWeight: FontWeight.w900,
             shadows: [
-              Shadow(
-                color: accentColor.withOpacity(0.6),
-                blurRadius: 6,
-              ),
+              Shadow(color: accentColor.withOpacity(0.6), blurRadius: 6),
             ],
           ),
         ),
@@ -678,10 +677,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             fontSize: 16,
             fontWeight: FontWeight.w900,
             shadows: [
-              Shadow(
-                color: accentColor.withOpacity(0.6),
-                blurRadius: 6,
-              ),
+              Shadow(color: accentColor.withOpacity(0.6), blurRadius: 6),
             ],
           ),
         ),
@@ -734,10 +730,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             fontSize: 16,
             fontWeight: FontWeight.w900,
             shadows: [
-              Shadow(
-                color: accentColor.withOpacity(0.6),
-                blurRadius: 6,
-              ),
+              Shadow(color: accentColor.withOpacity(0.6), blurRadius: 6),
             ],
           ),
         ),
@@ -765,7 +758,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  Widget _buildGenericScoreRow(LeaderboardEntry entry, LeaderboardType type, Color accentColor) {
+  Widget _buildGenericScoreRow(
+    LeaderboardEntry entry,
+    LeaderboardType type,
+    Color accentColor,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -790,10 +787,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 fontWeight: FontWeight.w900,
                 height: 1.0,
                 shadows: [
-                  Shadow(
-                    color: accentColor.withOpacity(0.6),
-                    blurRadius: 8,
-                  ),
+                  Shadow(color: accentColor.withOpacity(0.6), blurRadius: 8),
                 ],
               ),
             ),
@@ -815,7 +809,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  Widget _buildTrophyCount(String assetPath, int count, {bool isLarge = false, Color? color}) {
+  Widget _buildTrophyCount(
+    String assetPath,
+    int count, {
+    bool isLarge = false,
+    Color? color,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -839,14 +838,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             color: color ?? Colors.white.withOpacity(isLarge ? 0.8 : 0.5),
             fontSize: isLarge ? 18 : 9,
             fontWeight: isLarge ? FontWeight.w900 : FontWeight.w500,
-            shadows: isLarge && color != null ? [
-              Shadow(
-                color: color.withOpacity(0.6),
-                blurRadius: 6,
-              ),
-            ] : null,
+            shadows: isLarge && color != null
+                ? [Shadow(color: color.withOpacity(0.6), blurRadius: 6)]
+                : null,
           ),
         ),
       ],
     );
-  }}
+  }
+}

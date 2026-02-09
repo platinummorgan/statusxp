@@ -36,13 +36,13 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   String? _customBackgroundUrl; // URL of custom uploaded image
   int? _shuffleSeed; // Store shuffle seed to prevent changing on scroll
   bool _isUploadingCustom = false;
-  
+
   final SubscriptionService _subscriptionService = SubscriptionService();
-  
+
   // Scroll controller for parallax effect
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
-  
+
   // Animation controllers for counting effects
   late AnimationController _statusXPController;
   late AnimationController _platformsController;
@@ -61,85 +61,81 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controllers
     _statusXPController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _platformsController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    
+
     _shimmerController = AnimationController(
       duration: const Duration(milliseconds: 4000),
       vsync: this,
     )..repeat(); // Continuously loop
-    
+
     _statusXPAnimation = CurvedAnimation(
       parent: _statusXPController,
       curve: Curves.easeOutCubic,
     );
-    
+
     _platformsAnimation = CurvedAnimation(
       parent: _platformsController,
       curve: Curves.easeOutCubic,
     );
-    
-    _shimmerAnimation = Tween<double>(
-      begin: -2.0,
-      end: 2.0,
-    ).animate(CurvedAnimation(
-      parent: _shimmerController,
-      curve: Curves.easeInOut,
-    ));
-    
+
+    _shimmerAnimation = Tween<double>(begin: -2.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    );
+
     // Staggered entrance animations
     _userHeaderAnimation = CurvedAnimation(
       parent: _entranceController,
       curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
     );
-    
+
     _statusXPCircleAnimation = CurvedAnimation(
       parent: _entranceController,
       curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
     );
-    
+
     _platformCirclesAnimation = CurvedAnimation(
       parent: _entranceController,
       curve: const Interval(0.4, 0.7, curve: Curves.easeOut),
     );
-    
+
     // Slide animations
     _userHeaderSlide = Tween<Offset>(
       begin: const Offset(0, -0.3),
       end: Offset.zero,
     ).animate(_userHeaderAnimation);
-    
+
     _statusXPCircleSlide = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(_statusXPCircleAnimation);
-    
+
     _platformCirclesSlide = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(_platformCirclesAnimation);
-    
+
     // Listen to scroll for parallax effect
     _scrollController.addListener(() {
       setState(() {
         _scrollOffset = _scrollController.offset;
       });
     });
-    
+
     _checkIfShouldShowHint();
     _loadBackgroundMode();
     // Generate shuffle seed once on load
@@ -198,17 +194,18 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       });
     }
   }
-  
+
   Future<void> _checkAndShowSystemAnnouncement() async {
     final prefs = await SharedPreferences.getInstance();
-    final hasSeenAnnouncement = prefs.getBool('has_seen_full_sync_announcement_jan2026') ?? false;
-    
+    final hasSeenAnnouncement =
+        prefs.getBool('has_seen_full_sync_announcement_jan2026') ?? false;
+
     if (!hasSeenAnnouncement && mounted) {
       // Wait a bit for the screen to load fully
       await Future.delayed(const Duration(milliseconds: 800));
-      
+
       if (!mounted) return;
-      
+
       await showDialog(
         context: context,
         barrierDismissible: false,
@@ -320,28 +317,28 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               style: TextButton.styleFrom(
                 backgroundColor: const Color(0xFF00D9FF),
                 foregroundColor: const Color(0xFF0F0F23),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
               child: const Text(
                 'Got It',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
             ),
           ],
         ),
       );
-      
+
       // Mark as seen after dialog is dismissed
       await prefs.setBool('has_seen_full_sync_announcement_jan2026', true);
     }
   }
-  
+
   Future<void> _loadBackgroundMode() async {
     final prefs = await SharedPreferences.getInstance();
     final mode = prefs.getString('background_mode') ?? 'auto';
@@ -353,7 +350,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       });
     }
   }
-  
+
   Future<void> _setBackgroundMode(String mode, {String? customUrl}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('background_mode', mode);
@@ -369,28 +366,32 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       });
     }
   }
-  
+
   /// Check if it's been >12 hours and trigger auto-sync if needed
   Future<void> _checkAndTriggerAutoSync() async {
     if (_isAutoSyncing) return; // Already syncing
-    
+
     setState(() => _isAutoSyncing = true);
-    
+
     try {
       final psnService = ref.read(psnServiceProvider);
       final xboxService = ref.read(xboxServiceProvider);
       final supabase = ref.read(supabaseClientProvider);
-      
-      final autoSyncService = AutoSyncService(supabase, psnService, xboxService);
+
+      final autoSyncService = AutoSyncService(
+        supabase,
+        psnService,
+        xboxService,
+      );
       final result = await autoSyncService.checkAndSync();
-      
+
       if (result.anySynced && mounted) {
         // Show subtle notification that sync started
         final platforms = <String>[];
         if (result.psnSynced) platforms.add('PSN');
         if (result.xboxSynced) platforms.add('Xbox');
         if (result.steamSynced) platforms.add('Steam');
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Auto-syncing ${platforms.join(' & ')}...'),
@@ -416,54 +417,55 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     return Scaffold(
       appBar: AppBar(
         title: dashboardStatsAsync.maybeWhen(
-          data: (stats) => stats != null ? Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              PsnAvatar(
-                avatarUrl: stats.avatarUrl,
-                isPsPlus: stats.displayPlatform == 'psn' ? stats.isPsPlus : false,
-                size: 32,
-                borderColor: CyberpunkTheme.neonCyan,
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    stats.displayName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                      letterSpacing: 0.5,
+          data: (stats) => stats != null
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PsnAvatar(
+                      avatarUrl: stats.avatarUrl,
+                      isPsPlus: stats.displayPlatform == 'psn'
+                          ? stats.isPsPlus
+                          : false,
+                      size: 32,
+                      borderColor: CyberpunkTheme.neonCyan,
                     ),
-                  ),
-                  Text(
-                    stats.displayPlatform.toUpperCase(),
-                    style: TextStyle(
-                      color: _getPlatformColor(stats.displayPlatform),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          stats.displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        Text(
+                          stats.displayPlatform.toUpperCase(),
+                          style: TextStyle(
+                            color: _getPlatformColor(stats.displayPlatform),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                      ],
                     ),
+                  ],
+                )
+              : const Text(
+                  'StatusXP',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
                   ),
-                ],
-              ),
-            ],
-          ) : const Text(
-            'StatusXP',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.5,
-            ),
-          ),
+                ),
           orElse: () => const Text(
             'StatusXP',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.5,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5),
           ),
         ),
         centerTitle: false,
@@ -474,13 +476,19 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               child: TextButton.icon(
                 onPressed: () async {
                   // Default to Android link (can't detect platform without dart:html)
-                  final url = Uri.parse('https://play.google.com/store/apps/details?id=com.statusxp.statusxp');
-                  
+                  final url = Uri.parse(
+                    'https://play.google.com/store/apps/details?id=com.statusxp.statusxp',
+                  );
+
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   }
                 },
-                icon: const Icon(Icons.phone_android, size: 18, color: CyberpunkTheme.neonCyan),
+                icon: const Icon(
+                  Icons.phone_android,
+                  size: 18,
+                  color: CyberpunkTheme.neonCyan,
+                ),
                 label: const Text(
                   'Also on Android & iOS',
                   style: TextStyle(
@@ -490,11 +498,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   ),
                 ),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   backgroundColor: CyberpunkTheme.neonCyan.withOpacity(0.1),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.3)),
+                    side: BorderSide(
+                      color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                    ),
                   ),
                 ),
               ),
@@ -541,17 +554,20 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     DashboardStats stats,
   ) {
     final gamesAsync = ref.watch(unifiedGamesProvider);
-    
+
     return Stack(
       children: [
         // Dynamic background from latest game with parallax
         Positioned.fill(
           child: Transform.translate(
-            offset: Offset(0, -_scrollOffset * 0.5), // Move at half speed for parallax
+            offset: Offset(
+              0,
+              -_scrollOffset * 0.5,
+            ), // Move at half speed for parallax
             child: _buildDynamicBackground(gamesAsync),
           ),
         ),
-        
+
         // Content overlay
         Container(
           decoration: BoxDecoration(
@@ -636,7 +652,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                             color: const Color(0xFF0A0E27),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.5), width: 1),
+                              side: BorderSide(
+                                color: CyberpunkTheme.neonCyan.withOpacity(0.5),
+                                width: 1,
+                              ),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
@@ -662,9 +681,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                 value: '/games/browse',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.explore, color: CyberpunkTheme.neonGreen, size: 20),
+                                    Icon(
+                                      Icons.explore,
+                                      color: CyberpunkTheme.neonGreen,
+                                      size: 20,
+                                    ),
                                     SizedBox(width: 12),
-                                    Text('Browse All Games', style: TextStyle(color: Colors.white)),
+                                    Text(
+                                      'Browse All Games',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -672,9 +698,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                 value: '/flex-room',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.workspace_premium, color: CyberpunkTheme.goldNeon, size: 20),
+                                    Icon(
+                                      Icons.workspace_premium,
+                                      color: CyberpunkTheme.goldNeon,
+                                      size: 20,
+                                    ),
                                     SizedBox(width: 12),
-                                    Text('Flex Room', style: TextStyle(color: Colors.white)),
+                                    Text(
+                                      'Flex Room',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -699,9 +732,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                 value: '/poster',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.image, color: CyberpunkTheme.neonPink, size: 20),
+                                    Icon(
+                                      Icons.image,
+                                      color: CyberpunkTheme.neonPink,
+                                      size: 20,
+                                    ),
                                     SizedBox(width: 12),
-                                    Text('Status Poster', style: TextStyle(color: Colors.white)),
+                                    Text(
+                                      'Status Poster',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -709,9 +749,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                 value: '/achievements',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.stars, color: CyberpunkTheme.neonOrange, size: 20),
+                                    Icon(
+                                      Icons.stars,
+                                      color: CyberpunkTheme.neonOrange,
+                                      size: 20,
+                                    ),
                                     SizedBox(width: 12),
-                                    Text('Achievements', style: TextStyle(color: Colors.white)),
+                                    Text(
+                                      'Achievements',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -719,9 +766,50 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                 value: '/leaderboards',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.leaderboard, color: CyberpunkTheme.neonGreen, size: 20),
+                                    Icon(
+                                      Icons.leaderboard,
+                                      color: CyberpunkTheme.neonGreen,
+                                      size: 20,
+                                    ),
                                     SizedBox(width: 12),
-                                    Text('Leaderboards', style: TextStyle(color: Colors.white)),
+                                    Text(
+                                      'All-Time Leaderboards',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: '/leaderboards/seasonal',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.timer,
+                                      color: CyberpunkTheme.neonCyan,
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Seasonal Leaderboards',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: '/leaderboards/hall-of-fame',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.workspace_premium,
+                                      color: CyberpunkTheme.goldNeon,
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(
+                                      'Hall of Fame',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -729,9 +817,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                 value: '/coop-partners',
                                 child: Row(
                                   children: [
-                                    Icon(Icons.group, color: CyberpunkTheme.neonCyan, size: 20),
+                                    Icon(
+                                      Icons.group,
+                                      color: CyberpunkTheme.neonCyan,
+                                      size: 20,
+                                    ),
                                     SizedBox(width: 12),
-                                    Text('Co-op Partners', style: TextStyle(color: Colors.white)),
+                                    Text(
+                                      'Co-op Partners',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -739,9 +834,9 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 18),
-                      
+
                       // Embedded Games List
                       _buildEmbeddedGamesList(context),
                     ],
@@ -760,7 +855,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     if (_backgroundMode == 'none') {
       return Container(color: const Color(0xFF0A0E27));
     }
-    
+
     // Handle custom background first
     if (_backgroundMode == 'custom' && _customBackgroundUrl != null) {
       return Stack(
@@ -771,25 +866,25 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             Image.network(
               _customBackgroundUrl!,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0A0E27)),
+              errorBuilder: (_, __, ___) =>
+                  Container(color: const Color(0xFF0A0E27)),
             )
           else
             Image.file(
               File(_customBackgroundUrl!),
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0A0E27)),
+              errorBuilder: (_, __, ___) =>
+                  Container(color: const Color(0xFF0A0E27)),
             ),
           // Blur effect
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
-            child: Container(
-              color: Colors.transparent,
-            ),
+            child: Container(color: Colors.transparent),
           ),
         ],
       );
     }
-    
+
     return gamesAsync.when(
       loading: () => Container(color: const Color(0xFF0A0E27)),
       error: (_, __) => Container(color: const Color(0xFF0A0E27)),
@@ -799,7 +894,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         }
 
         UnifiedGame? backgroundGame;
-        
+
         // Determine which game to show based on mode
         if (_backgroundMode == 'shuffle') {
           // Random game using consistent seed (doesn't change on scroll)
@@ -809,7 +904,8 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           // Most recent game (default)
           DateTime? latestTime;
           for (final game in games) {
-            final gameTime = game.getMostRecentTrophyTime() ?? game.getMostRecentPlayTime();
+            final gameTime =
+                game.getMostRecentTrophyTime() ?? game.getMostRecentPlayTime();
             if (gameTime != null) {
               if (latestTime == null || gameTime.isAfter(latestTime)) {
                 latestTime = gameTime;
@@ -827,7 +923,9 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             // Pinned game not found, fall back to most recent
             DateTime? latestTime;
             for (final game in games) {
-              final gameTime = game.getMostRecentTrophyTime() ?? game.getMostRecentPlayTime();
+              final gameTime =
+                  game.getMostRecentTrophyTime() ??
+                  game.getMostRecentPlayTime();
               if (gameTime != null) {
                 if (latestTime == null || gameTime.isAfter(latestTime)) {
                   latestTime = gameTime;
@@ -841,28 +939,30 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         // Fallback if we couldn't determine a recent game
         if (backgroundGame == null) {
           try {
-            backgroundGame = games.firstWhere((g) => (g.coverUrl ?? '').isNotEmpty);
+            backgroundGame = games.firstWhere(
+              (g) => (g.coverUrl ?? '').isNotEmpty,
+            );
           } catch (_) {
             backgroundGame = games.isNotEmpty ? games.first : null;
           }
         }
 
         // Use cover art if available
-        if (backgroundGame?.coverUrl != null && backgroundGame!.coverUrl!.isNotEmpty) {
+        if (backgroundGame?.coverUrl != null &&
+            backgroundGame!.coverUrl!.isNotEmpty) {
           return Stack(
             fit: StackFit.expand,
             children: [
               Image.network(
                 backgroundGame.coverUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: const Color(0xFF0A0E27)),
+                errorBuilder: (_, __, ___) =>
+                    Container(color: const Color(0xFF0A0E27)),
               ),
               // Blur effect
               BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
-                child: Container(
-                  color: Colors.transparent,
-                ),
+                child: Container(color: Colors.transparent),
               ),
             ],
           );
@@ -959,7 +1059,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.black.withOpacity(0.7),
-                  border: Border.all(color: CyberpunkTheme.neonPurple, width: 4),
+                  border: Border.all(
+                    color: CyberpunkTheme.neonPurple,
+                    width: 4,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: CyberpunkTheme.neonPurple.withOpacity(0.6),
@@ -984,33 +1087,32 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                     AnimatedBuilder(
                       animation: _statusXPAnimation,
                       builder: (context, child) {
-                    final animatedValue = (totalStatusXP * _statusXPAnimation.value).toInt();
-                    return Text(
-                      _formatNumber(animatedValue),
-                      style: TextStyle(
-                        color: CyberpunkTheme.neonPurple,
-                        fontSize: 48,
-                        fontWeight: FontWeight.w900,
-                        height: 1.0,
-                        shadows: [
-                          ...CyberpunkTheme.neonGlow(
+                        final animatedValue =
+                            (totalStatusXP * _statusXPAnimation.value).toInt();
+                        return Text(
+                          _formatNumber(animatedValue),
+                          style: TextStyle(
                             color: CyberpunkTheme.neonPurple,
-                            blurRadius: 12,
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
+                            height: 1.0,
+                            shadows: [
+                              ...CyberpunkTheme.neonGlow(
+                                color: CyberpunkTheme.neonPurple,
+                                blurRadius: 12,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              // Shimmer effect overlay
+              Positioned.fill(child: _buildShimmer(size: 220)),
+            ],
           ),
-          // Shimmer effect overlay
-          Positioned.fill(
-            child: _buildShimmer(size: 220),
-          ),
-        ],
-      ),
           // One-time hint badge
           if (_showStatusXPHint)
             Positioned(
@@ -1022,7 +1124,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   opacity: _showStatusXPHint ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 300),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: CyberpunkTheme.neonPurple.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(12),
@@ -1040,11 +1145,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.touch_app,
-                          color: Colors.white,
-                          size: 12,
-                        ),
+                        Icon(Icons.touch_app, color: Colors.white, size: 12),
                         SizedBox(width: 4),
                         Text(
                           'TAP FOR BREAKDOWN',
@@ -1124,60 +1225,63 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                 boxShadow: [
                   BoxShadow(
                     color: color.withOpacity(0.5),
-                blurRadius: 15,
-                spreadRadius: 2,
+                    blurRadius: 15,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.8,
-                ),
-              ),
-              const SizedBox(height: 4),
-              AnimatedBuilder(
-                animation: _platformsAnimation,
-                builder: (context, child) {
-                  final numValue = int.tryParse(value.replaceAll(',', '')) ?? 0;
-                  final animatedValue = (numValue * _platformsAnimation.value).toInt();
-                  return Text(
-                    _formatNumber(animatedValue),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: color,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      height: 1.0,
-                      shadows: [
-                        Shadow(color: color.withOpacity(0.6), blurRadius: 8),
-                      ],
+                      color: Colors.white.withOpacity(0.6),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.8,
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedBuilder(
+                    animation: _platformsAnimation,
+                    builder: (context, child) {
+                      final numValue =
+                          int.tryParse(value.replaceAll(',', '')) ?? 0;
+                      final animatedValue =
+                          (numValue * _platformsAnimation.value).toInt();
+                      return Text(
+                        _formatNumber(animatedValue),
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          height: 1.0,
+                          shadows: [
+                            Shadow(
+                              color: color.withOpacity(0.6),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-            // Shimmer effect overlay
-            Positioned.fill(
-              child: _buildShimmer(size: 110),
             ),
+            // Shimmer effect overlay
+            Positioned.fill(child: _buildShimmer(size: 110)),
           ],
         ),
         const SizedBox(height: 12),
@@ -1212,8 +1316,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   AnimatedBuilder(
                     animation: _platformsAnimation,
                     builder: (context, child) {
-                      final numValue = int.tryParse(bottomLabel.split(' ')[0]) ?? 0;
-                      final animatedValue = (numValue * _platformsAnimation.value).toInt();
+                      final numValue =
+                          int.tryParse(bottomLabel.split(' ')[0]) ?? 0;
+                      final animatedValue =
+                          (numValue * _platformsAnimation.value).toInt();
                       return Text(
                         animatedValue.toString(),
                         style: TextStyle(
@@ -1275,16 +1381,26 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           color: const Color(0xFF0A0E27),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.5), width: 1),
+            side: BorderSide(
+              color: CyberpunkTheme.neonCyan.withOpacity(0.5),
+              width: 1,
+            ),
           ),
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
             const PopupMenuItem<String>(
               value: '/games/browse',
               child: Row(
                 children: [
-                  Icon(Icons.explore, color: CyberpunkTheme.neonGreen, size: 20),
+                  Icon(
+                    Icons.explore,
+                    color: CyberpunkTheme.neonGreen,
+                    size: 20,
+                  ),
                   SizedBox(width: 12),
-                  Text('Browse All Games', style: TextStyle(color: Colors.white)),
+                  Text(
+                    'Browse All Games',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
             ),
@@ -1302,7 +1418,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               value: '/flex-room',
               child: Row(
                 children: [
-                  Icon(Icons.emoji_events, color: CyberpunkTheme.neonPurple, size: 20),
+                  Icon(
+                    Icons.emoji_events,
+                    color: CyberpunkTheme.neonPurple,
+                    size: 20,
+                  ),
                   SizedBox(width: 12),
                   Text('Flex Room', style: TextStyle(color: Colors.white)),
                 ],
@@ -1312,9 +1432,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               value: '/coop-partners',
               child: Row(
                 children: [
-                  Icon(Icons.handshake, color: CyberpunkTheme.neonOrange, size: 20),
+                  Icon(
+                    Icons.handshake,
+                    color: CyberpunkTheme.neonOrange,
+                    size: 20,
+                  ),
                   SizedBox(width: 12),
-                  Text('Find Co-op Partners', style: TextStyle(color: Colors.white)),
+                  Text(
+                    'Find Co-op Partners',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
             ),
@@ -1332,9 +1459,43 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               value: '/leaderboards',
               child: Row(
                 children: [
-                  Icon(Icons.leaderboard, color: CyberpunkTheme.neonCyan, size: 20),
+                  Icon(
+                    Icons.leaderboard,
+                    color: CyberpunkTheme.neonCyan,
+                    size: 20,
+                  ),
                   SizedBox(width: 12),
-                  Text('Leaderboards', style: TextStyle(color: Colors.white)),
+                  Text(
+                    'All-Time Leaderboards',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/leaderboards/seasonal',
+              child: Row(
+                children: [
+                  Icon(Icons.timer, color: CyberpunkTheme.neonGreen, size: 20),
+                  SizedBox(width: 12),
+                  Text(
+                    'Seasonal Leaderboards',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/leaderboards/hall-of-fame',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.workspace_premium,
+                    color: CyberpunkTheme.goldNeon,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Text('Hall of Fame', style: TextStyle(color: Colors.white)),
                 ],
               ),
             ),
@@ -1344,12 +1505,19 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.4),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: CyberpunkTheme.neonCyan.withOpacity(0.5), width: 1.5),
+              border: Border.all(
+                color: CyberpunkTheme.neonCyan.withOpacity(0.5),
+                width: 1.5,
+              ),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.more_horiz, color: CyberpunkTheme.neonCyan, size: 20),
+                Icon(
+                  Icons.more_horiz,
+                  color: CyberpunkTheme.neonCyan,
+                  size: 20,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'More',
@@ -1517,10 +1685,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     Color color;
     String label;
     String displayText;
-    
+
     final platformLower = platform.platform.toLowerCase();
     final platformOriginal = platform.platform;
-    
+
     if (platformLower.contains('ps') || platformLower == 'playstation') {
       color = const Color(0xFF00A8E1);
       if (platformOriginal.toUpperCase().contains('PS4')) {
@@ -1534,20 +1702,27 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       } else {
         label = 'PS';
       }
-      
+
       // PlayStation: Show trophy breakdown if available
       final completion = platform.completion.toStringAsFixed(0);
-      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%';
-      
+      displayText =
+          '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%';
+
       // Add trophy breakdown if trophy data is available
-      if (platform.platinumCount > 0 || platform.goldCount > 0 || 
-          platform.silverCount > 0 || platform.bronzeCount > 0) {
+      if (platform.platinumCount > 0 ||
+          platform.goldCount > 0 ||
+          platform.silverCount > 0 ||
+          platform.bronzeCount > 0) {
         final trophyParts = <String>[];
-        if (platform.platinumCount > 0) trophyParts.add('Platinum ${platform.platinumCount}');
-        if (platform.goldCount > 0) trophyParts.add('Gold ${platform.goldCount}');
-        if (platform.silverCount > 0) trophyParts.add('Silver ${platform.silverCount}');
-        if (platform.bronzeCount > 0) trophyParts.add('Bronze ${platform.bronzeCount}');
-        
+        if (platform.platinumCount > 0)
+          trophyParts.add('Platinum ${platform.platinumCount}');
+        if (platform.goldCount > 0)
+          trophyParts.add('Gold ${platform.goldCount}');
+        if (platform.silverCount > 0)
+          trophyParts.add('Silver ${platform.silverCount}');
+        if (platform.bronzeCount > 0)
+          trophyParts.add('Bronze ${platform.bronzeCount}');
+
         if (trophyParts.isNotEmpty) {
           displayText = '$displayText 🥈 ${trophyParts.join(' | ')}';
         }
@@ -1563,24 +1738,27 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       } else {
         label = 'XBOX';
       }
-      
+
       // Xbox: Show achievement points (gamerscore)
       final completion = platform.completion.toStringAsFixed(0);
-      final gamerscore = platform.totalScore > 0 
+      final gamerscore = platform.totalScore > 0
           ? '${platform.currentScore}/${platform.totalScore}'
           : '${platform.currentScore}';
-      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion% Achievement Points $gamerscore';
+      displayText =
+          '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion% Achievement Points $gamerscore';
     } else if (platformLower.contains('steam')) {
       color = const Color(0xFF66C0F4);
       label = 'Steam';
-      
+
       // Steam: Simple count without percentage
-      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal}';
+      displayText =
+          '$label ${platform.achievementsEarned}/${platform.achievementsTotal}';
     } else {
       color = Colors.grey;
       label = platform.platform.toUpperCase();
       final completion = platform.completion.toStringAsFixed(0);
-      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} • $completion%';
+      displayText =
+          '$label ${platform.achievementsEarned}/${platform.achievementsTotal} • $completion%';
     }
 
     return Container(
@@ -1646,10 +1824,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                 const SizedBox(height: 8),
                 Text(
                   game.title,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -1661,7 +1836,8 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   String platformLabel;
 
                   final platformCode = platform.platform.toLowerCase();
-                  if (platformCode.contains('ps') || platformCode == 'playstation') {
+                  if (platformCode.contains('ps') ||
+                      platformCode == 'playstation') {
                     platformColor = const Color(0xFF0070CC);
                     platformIcon = Icons.sports_esports;
                     platformLabel = 'PlayStation';
@@ -1688,7 +1864,8 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                           MaterialPageRoute(
                             builder: (context) => GameAchievementsScreen(
                               platformId: platform.platformId,
-                              platformGameId: platform.platformGameId ?? platform.gameId,
+                              platformGameId:
+                                  platform.platformGameId ?? platform.gameId,
                               gameName: game.title,
                               platform: platform.platform,
                               coverUrl: game.coverUrl,
@@ -1731,7 +1908,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                 ],
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios, color: platformColor, size: 20),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: platformColor,
+                              size: 20,
+                            ),
                           ],
                         ),
                       ),
@@ -1834,7 +2015,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                 ],
               ),
               const Divider(color: Colors.white24, height: 24),
-              
+
               // Platform breakdown
               _buildBreakdownRow(
                 'PlayStation',
@@ -1853,9 +2034,9 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                 dashboardStats.steamStats.statusXP,
                 const Color(0xFF66C0F4),
               ),
-              
+
               const Divider(color: Colors.white24, height: 32),
-              
+
               // Total
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1902,10 +2083,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             color: color,
             borderRadius: BorderRadius.circular(2),
             boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.5),
-                blurRadius: 8,
-              ),
+              BoxShadow(color: color.withOpacity(0.5), blurRadius: 8),
             ],
           ),
         ),
@@ -1932,7 +2110,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       ],
     );
   }
-  
+
   /// Shimmer effect overlay for circles
   Widget _buildShimmer({required double size}) {
     return AnimatedBuilder(
@@ -1963,7 +2141,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       },
     );
   }
-  
+
   Widget _buildModeButton({
     required IconData icon,
     required String label,
@@ -1976,22 +2154,24 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected 
+          color: isSelected
               ? CyberpunkTheme.neonPurple.withOpacity(0.2)
               : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
-                ? CyberpunkTheme.neonPurple 
+            color: isSelected
+                ? CyberpunkTheme.neonPurple
                 : Colors.white.withOpacity(0.2),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: CyberpunkTheme.neonPurple.withOpacity(0.3),
-              blurRadius: 8,
-            ),
-          ] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                    blurRadius: 8,
+                  ),
+                ]
+              : null,
         ),
         child: Column(
           children: [
@@ -2022,15 +2202,15 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       ),
     );
   }
-  
+
   Future<void> _uploadCustomBackground(BuildContext context) async {
     // Check if user has premium
     final isPremium = await _subscriptionService.isPremiumActive();
-    
+
     if (!isPremium) {
       // Show premium required dialog
       if (!context.mounted) return;
-      
+
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -2039,10 +2219,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             children: [
               Icon(Icons.star, color: CyberpunkTheme.goldNeon),
               SizedBox(width: 8),
-              Text(
-                'Premium Feature',
-                style: TextStyle(color: Colors.white),
-              ),
+              Text('Premium Feature', style: TextStyle(color: Colors.white)),
             ],
           ),
           content: const Text(
@@ -2069,16 +2246,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       );
       return;
     }
-    
+
     // Premium user - proceed with image picker
     setState(() => _isUploadingCustom = true);
-    
+
     try {
       final ImagePicker picker = ImagePicker();
-      
+
       // Show bottom sheet for gallery vs camera
       if (!context.mounted) return;
-      
+
       final ImageSource? source = await showModalBottomSheet<ImageSource>(
         context: context,
         backgroundColor: const Color(0xFF0A0E27),
@@ -2108,43 +2285,55 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               ),
               const SizedBox(height: 24),
               ListTile(
-                leading: const Icon(Icons.photo_library, color: CyberpunkTheme.neonPurple),
-                title: const Text('Gallery', style: TextStyle(color: Colors.white)),
+                leading: const Icon(
+                  Icons.photo_library,
+                  color: CyberpunkTheme.neonPurple,
+                ),
+                title: const Text(
+                  'Gallery',
+                  style: TextStyle(color: Colors.white),
+                ),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
               if (!kIsWeb) // Camera only available on mobile
                 ListTile(
-                  leading: const Icon(Icons.camera_alt, color: CyberpunkTheme.neonCyan),
-                  title: const Text('Camera', style: TextStyle(color: Colors.white)),
+                  leading: const Icon(
+                    Icons.camera_alt,
+                    color: CyberpunkTheme.neonCyan,
+                  ),
+                  title: const Text(
+                    'Camera',
+                    style: TextStyle(color: Colors.white),
+                  ),
                   onTap: () => Navigator.pop(context, ImageSource.camera),
                 ),
             ],
           ),
         ),
       );
-      
+
       if (source == null) {
         setState(() => _isUploadingCustom = false);
         return;
       }
-      
+
       final XFile? image = await picker.pickImage(
         source: source,
         maxWidth: 1920,
         maxHeight: 1920,
         imageQuality: 85,
       );
-      
+
       if (image == null) {
         setState(() => _isUploadingCustom = false);
         return;
       }
-      
+
       // Save the image path locally
       await _setBackgroundMode('custom', customUrl: image.path);
-      
+
       setState(() => _isUploadingCustom = false);
-      
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -2155,7 +2344,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       }
     } catch (e) {
       setState(() => _isUploadingCustom = false);
-      
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2166,10 +2355,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       }
     }
   }
-  
+
   void _showBackgroundPicker(BuildContext context) {
     final gamesAsync = ref.read(unifiedGamesProvider);
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0A0E27),
@@ -2206,12 +2395,12 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                       _backgroundMode == 'none'
                           ? 'Plain background'
                           : _backgroundMode == 'custom'
-                              ? 'Custom image selected'
-                              : _backgroundMode == 'shuffle' 
-                                  ? 'Shuffling games randomly'
-                                  : _backgroundMode == 'auto' || _backgroundMode == null
-                                      ? 'Showing most recent game'
-                                      : 'Specific game selected',
+                          ? 'Custom image selected'
+                          : _backgroundMode == 'shuffle'
+                          ? 'Shuffling games randomly'
+                          : _backgroundMode == 'auto' || _backgroundMode == null
+                          ? 'Showing most recent game'
+                          : 'Specific game selected',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.white.withOpacity(0.6),
@@ -2239,7 +2428,9 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                             icon: Icons.history,
                             label: 'Auto',
                             description: 'Most Recent',
-                            isSelected: _backgroundMode == 'auto' || _backgroundMode == null,
+                            isSelected:
+                                _backgroundMode == 'auto' ||
+                                _backgroundMode == null,
                             onTap: () {
                               _setBackgroundMode('auto');
                               Navigator.pop(context);
@@ -2264,119 +2455,131 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                     const SizedBox(height: 12),
                     // Second row with Custom button
                     Row(
-                    children: [
-                      Expanded(
-                        child: _buildModeButton(
-                          icon: Icons.add_photo_alternate,
-                          label: 'Custom',
-                          description: 'Upload ⭐',
-                          isSelected: _backgroundMode == 'custom',
-                          onTap: () async {
-                            Navigator.pop(context);
-                            await _uploadCustomBackground(context);
-                          },
+                      children: [
+                        Expanded(
+                          child: _buildModeButton(
+                            icon: Icons.add_photo_alternate,
+                            label: 'Custom',
+                            description: 'Upload ⭐',
+                            isSelected: _backgroundMode == 'custom',
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await _uploadCustomBackground(context);
+                            },
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(child: SizedBox()),
-                      const SizedBox(width: 12),
-                      const Expanded(child: SizedBox()),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Or pick a specific game:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white70,
+                        const SizedBox(width: 12),
+                        const Expanded(child: SizedBox()),
+                        const SizedBox(width: 12),
+                        const Expanded(child: SizedBox()),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Calculate grid height based on number of games
-                  // Each row is approximately 170px (120 / 0.7 aspect ratio + 12 spacing)
-                  // Add 20px padding for safety
-                  SizedBox(
-                    height: ((games.length / 3).ceil() * 182.0) + 20,
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.7,
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Or pick a specific game:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white70,
                       ),
-                      itemCount: games.length,
-                      itemBuilder: (context, index) {
-                        final game = games[index];
-                        final isSelected = game.title == _backgroundMode;
-                        
-                        return GestureDetector(
-                          onTap: () {
-                            _setBackgroundMode(game.title);
-                            Navigator.pop(context);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected 
-                                    ? CyberpunkTheme.neonPurple 
-                                    : Colors.white.withOpacity(0.2),
-                                width: isSelected ? 3 : 1,
-                              ),
-                              boxShadow: isSelected ? [
-                                BoxShadow(
-                                  color: CyberpunkTheme.neonPurple.withOpacity(0.5),
-                                  blurRadius: 12,
-                                ),
-                              ] : null,
+                    ),
+                    const SizedBox(height: 20),
+                    // Calculate grid height based on number of games
+                    // Each row is approximately 170px (120 / 0.7 aspect ratio + 12 spacing)
+                    // Add 20px padding for safety
+                    SizedBox(
+                      height: ((games.length / 3).ceil() * 182.0) + 20,
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 0.7,
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(11),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  if (game.coverUrl != null)
-                                    Image.network(
-                                      game.coverUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
+                        itemCount: games.length,
+                        itemBuilder: (context, index) {
+                          final game = games[index];
+                          final isSelected = game.title == _backgroundMode;
+
+                          return GestureDetector(
+                            onTap: () {
+                              _setBackgroundMode(game.title);
+                              Navigator.pop(context);
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? CyberpunkTheme.neonPurple
+                                      : Colors.white.withOpacity(0.2),
+                                  width: isSelected ? 3 : 1,
+                                ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: CyberpunkTheme.neonPurple
+                                              .withOpacity(0.5),
+                                          blurRadius: 12,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(11),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    if (game.coverUrl != null)
+                                      Image.network(
+                                        game.coverUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          color: Colors.grey.shade900,
+                                          child: const Icon(
+                                            Icons.broken_image,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Container(
                                         color: Colors.grey.shade900,
-                                        child: const Icon(Icons.broken_image, color: Colors.grey),
-                                      ),
-                                    )
-                                  else
-                                    Container(
-                                      color: Colors.grey.shade900,
-                                      child: const Icon(Icons.videogame_asset, color: Colors.grey),
-                                    ),
-                                  if (isSelected)
-                                    Container(
-                                      color: CyberpunkTheme.neonPurple.withOpacity(0.3),
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.check_circle,
-                                          color: Colors.white,
-                                          size: 40,
+                                        child: const Icon(
+                                          Icons.videogame_asset,
+                                          color: Colors.grey,
                                         ),
                                       ),
-                                    ),
-                                ],
+                                    if (isSelected)
+                                      Container(
+                                        color: CyberpunkTheme.neonPurple
+                                            .withOpacity(0.3),
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.check_circle,
+                                            color: Colors.white,
+                                            size: 40,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      );
-    },
-  );
-}}
+            );
+          },
+        );
+      },
+    );
+  }
+}

@@ -18,13 +18,16 @@ import 'package:statusxp/ui/screens/status_poster_screen.dart';
 import 'package:statusxp/ui/screens/settings_screen.dart';
 import 'package:statusxp/ui/screens/landing_page_screen.dart';
 import 'package:statusxp/ui/screens/premium_success_screen.dart';
+import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
 import 'package:statusxp/ui/screens/coop_partners_screen.dart';
 import 'package:statusxp/ui/screens/trophy_help_request_details_screen.dart';
 import 'package:statusxp/ui/screens/achievement_comments_screen.dart';
 import 'package:statusxp/ui/screens/premium_analytics_screen.dart';
+import 'package:statusxp/ui/screens/seasonal_leaderboard_screen.dart';
+import 'package:statusxp/ui/screens/hall_of_fame_screen.dart';
 
 /// StatusXP App Router Configuration
-/// 
+///
 /// Declarative routing using GoRouter for web-compatible navigation.
 /// Supports deep linking and browser back/forward navigation.
 
@@ -65,7 +68,7 @@ final GoRouter appRouter = GoRouter(
         final code = state.uri.queryParameters['code'];
         final error = state.uri.queryParameters['error'];
         final errorDescription = state.uri.queryParameters['error_description'];
-        
+
         if (error != null) {
           return '/settings?error=$error${errorDescription != null ? '&error_description=$errorDescription' : ''}';
         }
@@ -127,17 +130,20 @@ final GoRouter appRouter = GoRouter(
             final platform = state.uri.queryParameters['platform'] ?? 'unknown';
             final coverUrl = state.uri.queryParameters['cover'];
             final platformIdStr = state.uri.queryParameters['platform_id'];
-            final platformGameId = state.uri.queryParameters['platform_game_id'];
-            
+            final platformGameId =
+                state.uri.queryParameters['platform_game_id'];
+
             // Parse platform_id if provided
             int? platformId;
             if (platformIdStr != null) {
               platformId = int.tryParse(platformIdStr);
             }
-            
+
             return GameAchievementsScreen(
               platformId: platformId,
-              platformGameId: platformGameId ?? gameId, // Fallback to gameId for V1 compatibility
+              platformGameId:
+                  platformGameId ??
+                  gameId, // Fallback to gameId for V1 compatibility
               gameName: gameName,
               platform: platform,
               coverUrl: coverUrl,
@@ -202,12 +208,19 @@ final GoRouter appRouter = GoRouter(
           path: '/achievement-comments/:achievementId',
           name: 'achievement-comments',
           builder: (context, state) {
-            final achievementId = int.parse(state.pathParameters['achievementId']!);
-            final achievementName = state.uri.queryParameters['name'] ?? 'Achievement';
+            final achievementId = int.parse(
+              state.pathParameters['achievementId']!,
+            );
+            final achievementName =
+                state.uri.queryParameters['name'] ?? 'Achievement';
             final achievementIconUrl = state.uri.queryParameters['icon'];
-            final platformId = int.parse(state.uri.queryParameters['platformId'] ?? '0');
-            final platformGameId = state.uri.queryParameters['platformGameId'] ?? '';
-            final platformAchievementId = state.uri.queryParameters['platformAchievementId'] ?? '';
+            final platformId = int.parse(
+              state.uri.queryParameters['platformId'] ?? '0',
+            );
+            final platformGameId =
+                state.uri.queryParameters['platformGameId'] ?? '';
+            final platformAchievementId =
+                state.uri.queryParameters['platformAchievementId'] ?? '';
             return AchievementCommentsScreen(
               achievementId: achievementId,
               achievementName: achievementName,
@@ -219,11 +232,25 @@ final GoRouter appRouter = GoRouter(
           },
         ),
 
-        // Leaderboards - Global rankings
+        // Leaderboards - All-time rankings
         GoRoute(
           path: '/leaderboards',
           name: 'leaderboards',
           builder: (context, state) => const LeaderboardScreen(),
+        ),
+
+        // Seasonal Leaderboards - Weekly/monthly competitive windows
+        GoRoute(
+          path: '/leaderboards/seasonal',
+          name: 'seasonal-leaderboards',
+          builder: (context, state) => const SeasonalLeaderboardScreen(),
+        ),
+
+        // Hall of Fame - Historical winners by period
+        GoRoute(
+          path: '/leaderboards/hall-of-fame',
+          name: 'hall-of-fame',
+          builder: (context, state) => const HallOfFameScreen(),
         ),
 
         // Settings - Platform connections and app configuration
@@ -239,6 +266,13 @@ final GoRouter appRouter = GoRouter(
           name: 'analytics',
           builder: (context, state) => const PremiumAnalyticsScreen(),
         ),
+
+        // Premium Subscription - Subscription and billing management
+        GoRoute(
+          path: '/premium-subscription',
+          name: 'premium-subscription',
+          builder: (context, state) => const PremiumSubscriptionScreen(),
+        ),
       ],
     ),
 
@@ -248,18 +282,12 @@ final GoRouter appRouter = GoRouter(
 
   // Error/404 handler
   errorBuilder: (context, state) => Scaffold(
-    appBar: AppBar(
-      title: const Text('Page Not Found'),
-    ),
+    appBar: AppBar(title: const Text('Page Not Found')),
     body: Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.error_outline,
-            size: 64,
-            color: Colors.white38,
-          ),
+          const Icon(Icons.error_outline, size: 64, color: Colors.white38),
           const SizedBox(height: 16),
           Text(
             '404 - Page Not Found',

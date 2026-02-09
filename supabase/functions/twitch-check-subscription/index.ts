@@ -122,7 +122,7 @@ async function updatePremiumStatus(supabase: any, userId: string, isSubscribed: 
         user_id: userId,
         is_premium: true,
         premium_source: 'twitch',
-        expires_at: expiresAt.toISOString(),
+        premium_expires_at: expiresAt.toISOString(),
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id',
@@ -143,7 +143,7 @@ async function updatePremiumStatus(supabase: any, userId: string, isSubscribed: 
         .from('user_premium_status')
         .update({
           is_premium: false,
-          expires_at: new Date().toISOString(),
+          premium_expires_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', userId);

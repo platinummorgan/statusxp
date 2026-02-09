@@ -1,0 +1,267 @@
+# StatusXP Database Schema (Live Snapshot)
+
+Generated: 2026-02-09
+Source dump: sql_archive/DATABASE_SCHEMA_LIVE_2026-02-09.sql
+Source last modified: 02/09/2026 12:04:07
+
+## Object Counts
+- Tables: 38
+- Views: 7
+- Materialized views: 1
+- Functions: 79
+- RLS-enabled tables: 31
+- Policies: 77
+
+## Tables and Columns
+### public.achievement_comments
+- Columns: id, achievement_id, user_id, comment_text, created_at, updated_at, is_hidden, is_flagged, flag_count, platform_id, platform_game_id, platform_achievement_id
+### public.achievements
+- Columns: platform_id, platform_game_id, platform_achievement_id, name, description, icon_url, rarity_global, score_value, metadata, created_at, base_status_xp_old, rarity_multiplier, include_in_score, is_platinum, proxied_icon_url, base_status_xp
+### public.activity_feed
+- Columns: id, user_id, story_text, event_type, change_type, old_value, new_value, change_amount, gold_count, silver_count, bronze_count, game_title, platform_id, username, avatar_url, event_date, created_at, expires_at, is_visible, ai_model, generation_failed
+### public.activity_feed_views
+- Columns: user_id, last_viewed_at, last_viewed_id
+### public.app_updates
+- Columns: id, title, description, release_date, version, created_at
+### public.flex_room_data
+- Columns: user_id, tagline, last_updated, flex_of_all_time_platform_id, flex_of_all_time_platform_game_id, flex_of_all_time_platform_achievement_id, rarest_flex_platform_id, rarest_flex_platform_game_id, rarest_flex_platform_achievement_id, most_time_sunk_platform_id, most_time_sunk_platform_game_id, most_time_sunk_platform_achievement_id, sweatiest_platinum_platform_id, sweatiest_platinum_platform_game_id, sweatiest_platinum_platform_achievement_id, superlatives, created_at, profile_id
+### public.game_groups
+- Columns: id, group_key, game_title_ids, primary_game_id, platforms, similarity_score, created_at, updated_at
+### public.game_groups_refresh_queue
+- Columns: id, needs_refresh, last_refresh_at, created_at
+### public.games
+- Columns: platform_id, platform_game_id, name, cover_url, icon_url, metadata, created_at, updated_at
+### public.leaderboard_cache
+- Columns: user_id, total_statusxp, total_game_entries, last_updated, potential_statusxp, display_name, avatar_url
+### public.leaderboard_history
+- Columns: user_id, rank, total_statusxp, total_game_entries, snapshot_at
+### public.meta_achievements
+- Columns: id, category, default_title, description, icon_emoji, sort_order, created_at, required_platforms
+### public.platforms
+- Columns: id, code, name, primary_color, accent_color, created_at
+### public.profile_themes
+- Columns: id, code, name, background_color, primary_color, accent_color, text_color, metadata
+### public.profiles
+- Columns: id, username, display_name, avatar_url, psn_online_id, xbox_gamertag, steam_id, created_at, updated_at, psn_account_id, psn_npsso_token, psn_access_token, psn_refresh_token, psn_token_expires_at, last_psn_sync_at, psn_sync_status, psn_sync_error, psn_sync_progress, subscription_tier, subscription_expires_at, psn_avatar_url, psn_is_plus, xbox_xuid, xbox_access_token, xbox_refresh_token, xbox_token_expires_at, xbox_sync_status, last_xbox_sync_at, xbox_sync_error, xbox_sync_progress, xbox_user_hash, steam_sync_status, steam_sync_progress, steam_sync_error, last_steam_sync_at, steam_api_key, preferred_display_platform, steam_display_name, xbox_avatar_url, steam_avatar_url, merged_into_user_id, merged_at, show_on_leaderboard, twitch_user_id
+### public.psn_leaderboard_history
+- Columns: user_id, snapshot_at, rank, platinum_count, total_games
+### public.psn_sync_logs
+- Columns: id, user_id, sync_type, status, started_at, completed_at, games_processed, trophies_synced, games_processed_ids, error_message, created_at
+### public.psn_user_trophy_profile
+- Columns: user_id, psn_trophy_level, psn_trophy_progress, psn_trophy_tier, psn_earned_bronze, psn_earned_silver, psn_earned_gold, psn_earned_platinum, last_fetched_at
+### public.steam_leaderboard_history
+- Columns: user_id, snapshot_at, rank, achievement_count, total_games
+### public.steam_sync_logs
+- Columns: id, user_id, sync_type, status, started_at, completed_at, games_processed, achievements_synced, games_processed_ids, error_message, created_at
+### public.trophy_help_requests
+- Columns: id, user_id, game_id, game_title, achievement_id, achievement_name, platform, description, availability, platform_username, status, created_at, updated_at, profile_id
+### public.trophy_help_responses
+- Columns: id, request_id, helper_user_id, message, status, created_at, helper_profile_id
+### public.trophy_room_items
+- Columns: id, shelf_id, slot_index, item_type, trophy_id, game_title_id, label_override, created_at, updated_at
+### public.trophy_room_shelves
+- Columns: id, user_id, name, sort_order, created_at, updated_at
+### public.user_achievements
+- Columns: user_id, platform_id, platform_game_id, platform_achievement_id, earned_at, synced_at
+### public.user_ai_credits
+- Columns: user_id, pack_credits, created_at, updated_at
+### public.user_ai_daily_usage
+- Columns: id, user_id, usage_date, uses_today, created_at, source
+### public.user_ai_pack_purchases
+- Columns: id, user_id, pack_type, credits_purchased, price_paid, purchase_date, platform
+### public.user_meta_achievements
+- Columns: id, user_id, achievement_id, custom_title, unlocked_at
+### public.user_premium_status
+- Columns: user_id, is_premium, premium_since, premium_expires_at, created_at, updated_at, monthly_ai_credits, ai_credits_refreshed_at, premium_source
+### public.user_profile_settings
+- Columns: user_id, profile_theme_id, is_profile_public, show_rarest_trophy, show_hardest_platinum, show_completed_games, time_zone, created_at, updated_at
+### public.user_progress
+- Columns: user_id, platform_id, platform_game_id, current_score, achievements_earned, total_achievements, completion_percentage, first_played_at, last_played_at, synced_at, metadata, last_achievement_earned_at
+### public.user_selected_title
+- Columns: user_id, achievement_id, custom_title, updated_at
+### public.user_stat_snapshots
+- Columns: id, user_id, total_statusxp, platinum_count, gamerscore, psn_gold_count, psn_silver_count, psn_bronze_count, steam_achievement_count, latest_game_title, latest_platform_id, synced_at
+### public.user_stats
+- Columns: user_id, total_games, completed_games, total_trophies, bronze_count, silver_count, gold_count, platinum_count, total_gamerscore, updated_at
+### public.user_sync_history
+- Columns: id, user_id, platform, synced_at, success, profile_id
+### public.xbox_leaderboard_history
+- Columns: user_id, snapshot_at, rank, gamerscore, achievement_count, total_games
+### public.xbox_sync_logs
+- Columns: id, user_id, sync_type, status, started_at, completed_at, games_processed, achievements_synced, error_message, created_at, games_processed_ids
+
+## Views
+- public.grouped_games_cache
+- public.leaderboard_global_cache
+- public.steam_leaderboard_cache
+- public.user_ai_status
+- public.user_games
+- public.user_sync_status
+- public.xbox_leaderboard_cache
+
+## Materialized Views
+- public.psn_leaderboard_cache
+
+## Functions
+- public.add_ai_credits
+- public.add_ai_pack_credits
+- public.auto_refresh_all_leaderboards
+- public.calculate_achievement_similarity
+- public.calculate_achievement_statusxp
+- public.calculate_statusxp_simple
+- public.calculate_statusxp_with_stacks
+- public.calculate_user_achievement_statusxp
+- public.calculate_user_game_statusxp
+- public.can_use_ai
+- public.can_user_sync
+- public.can_user_sync_psn
+- public.check_big_comeback
+- public.check_closer
+- public.check_game_hopper
+- public.check_genre_diversity
+- public.check_glow_up
+- public.check_power_session
+- public.check_spike_week
+- public.cleanup_old_activity_feed
+- public.cleanup_old_snapshots
+- public.consume_ai_credit
+- public.get_activity_feed_grouped
+- public.get_games_with_platforms
+- public.get_grouped_games
+- public.get_grouped_games_fast
+- public.get_leaderboard_with_movement
+- public.get_most_time_sunk_game
+- public.get_most_time_sunk_game_v2
+- public.get_platform_achievement_counts
+- public.get_platinum_leaderboard
+- public.get_psn_leaderboard_with_movement
+- public.get_rarest_achievement_v2
+- public.get_recent_notable_achievements_v2
+- public.get_steam_leaderboard
+- public.get_steam_leaderboard_with_movement
+- public.get_superlative_suggestions_v2
+- public.get_superlative_suggestions_v3
+- public.get_sweatiest_platinum_v2
+- public.get_unread_activity_count
+- public.get_user_achievements_for_game
+- public.get_user_completions
+- public.get_user_games_for_platform
+- public.get_user_grouped_games
+- public.get_user_psn_rank
+- public.get_user_steam_rank
+- public.get_user_trophy_counts
+- public.get_user_xbox_rank
+- public.get_xbox_leaderboard
+- public.get_xbox_leaderboard_with_movement
+- public.handle_new_user
+- public.mark_activity_feed_viewed
+- public.mark_game_groups_for_refresh
+- public.prevent_duplicate_email_profiles
+- public.recalculate_achievement_rarity
+- public.recompute_user_progress_for_games
+- public.refresh_game_groups
+- public.refresh_game_groups_if_needed
+- public.refresh_grouped_games_cache
+- public.refresh_leaderboard_cache
+- public.refresh_leaderboard_global_cache
+- public.refresh_psn_leaderboard_cache
+- public.refresh_statusxp_leaderboard
+- public.refresh_statusxp_leaderboard_for_user
+- public.snapshot_leaderboard
+- public.snapshot_psn_leaderboard
+- public.snapshot_steam_leaderboard
+- public.snapshot_xbox_leaderboard
+- public.trigger_calculate_statusxp
+- public.trigger_refresh_leaderboards_on_sync
+- public.unlock_achievement_if_new
+- public.update_display_case_items_updated_at
+- public.update_flex_room_data_updated_at
+- public.update_flex_room_last_updated
+- public.update_leaderboard_on_achievements_change
+- public.update_leaderboard_on_progress_change
+- public.update_trophy_help_request_updated_at
+- public.update_updated_at_column
+- public.upsert_user_achievements_batch
+
+## RLS-Enabled Tables
+- public.achievement_comments
+- public.achievements
+- public.app_updates
+- public.flex_room_data
+- public.game_groups
+- public.game_groups_refresh_queue
+- public.games
+- public.leaderboard_cache
+- public.meta_achievements
+- public.platforms
+- public.profile_themes
+- public.profiles
+- public.psn_sync_logs
+- public.psn_user_trophy_profile
+- public.steam_sync_logs
+- public.trophy_help_requests
+- public.trophy_help_responses
+- public.trophy_room_items
+- public.trophy_room_shelves
+- public.user_achievements
+- public.user_ai_credits
+- public.user_ai_daily_usage
+- public.user_ai_pack_purchases
+- public.user_meta_achievements
+- public.user_premium_status
+- public.user_profile_settings
+- public.user_progress
+- public.user_selected_title
+- public.user_stats
+- public.user_sync_history
+- public.xbox_sync_logs
+
+## Policy Counts by Table
+- public.achievement_comments: 6
+- public.achievements: 1
+- public.app_updates: 2
+- public.flex_room_data: 4
+- public.game_groups: 1
+- public.game_groups_refresh_queue: 1
+- public.games: 1
+- public.leaderboard_cache: 1
+- public.meta_achievements: 1
+- public.platforms: 1
+- public.profile_themes: 1
+- public.profiles: 4
+- public.psn_sync_logs: 3
+- public.psn_user_trophy_profile: 3
+- public.steam_sync_logs: 3
+- public.trophy_help_requests: 4
+- public.trophy_help_responses: 3
+- public.trophy_room_items: 1
+- public.trophy_room_shelves: 1
+- public.user_achievements: 5
+- public.user_ai_credits: 3
+- public.user_ai_daily_usage: 2
+- public.user_ai_pack_purchases: 2
+- public.user_meta_achievements: 3
+- public.user_premium_status: 3
+- public.user_profile_settings: 1
+- public.user_progress: 5
+- public.user_selected_title: 1
+- public.user_stats: 5
+- public.user_sync_history: 2
+- public.xbox_sync_logs: 3
+
+## Code-to-Schema Compatibility Checks
+### Dart .from() references missing in live schema
+- notifications
+- trophies
+- user_trophies
+
+### Active edge function .from() references missing in live schema
+- notifications
+- user_ai_guides
+- user_trophies
+
+### Source-wide .rpc() calls missing in live schema function list
+- exec
+- exec_sql
+- get_flex_room_achievements
+

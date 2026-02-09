@@ -1,0 +1,40 @@
+name,last_vacuum,last_autovacuum,last_analyze,last_autoanalyze,rowcount,dead_rowcount,autovacuum_threshold,expect_autovacuum,autoanalyze_threshold,expect_autoanalyze
+public.achievement_comments,"","",2026-02-05 17:11,"",             7,             6,            51,no,            51,no
+public.achievements,"","",2026-02-05 17:11,2026-02-09 04:27,"       227,417","        41,810","        45,533",no,"        22,792",yes
+public.activity_feed_views,"",2026-02-08 22:59,"",2026-02-08 21:09,             8,             8,            52,no,            51,no
+public.app_updates,"","",2026-02-05 17:11,"",             8,             1,            52,no,            51,no
+public.flex_room_data,"","",2026-02-05 17:11,"",             2,             5,            50,no,            50,no
+public.game_groups,"","",2026-02-05 17:11,"","         2,125",             0,           475,no,           262,no
+public.game_groups_refresh_queue,"","",2026-02-05 17:11,"",             1,             0,            50,no,            50,no
+public.games,"","",2026-02-05 17:11,2026-02-09 04:38,"         6,423",           607,"         1,335",no,           692,no
+public.leaderboard_cache,"",2026-02-09 14:02,2026-02-05 17:11,2026-02-09 08:22,            49,            40,            60,no,            55,no
+public.leaderboard_history,"","",2026-02-05 17:11,2026-02-08 04:00,           202,             0,            90,no,            70,no
+public.meta_achievements,"","",2026-02-05 17:11,"",           133,             0,            77,no,            63,no
+public.platforms,"","",2026-02-05 17:11,"",             9,             0,            52,no,            51,no
+public.profile_themes,"","",2026-02-05 17:11,"",             0,             0,            50,no,            50,no
+public.profiles,"",2026-02-09 08:22,2026-02-05 17:11,2026-02-09 16:09,            38,             5,            58,no,            54,no
+public.psn_leaderboard_cache,"",2026-02-09 16:00,"",2026-02-09 16:00,            28,            28,            56,no,            53,no
+public.psn_leaderboard_history,"","",2026-02-05 17:11,2026-02-08 04:00,           202,             0,            90,no,            70,no
+public.psn_sync_logs,"","",2026-02-05 17:11,"",           305,           108,           111,no,            80,yes
+public.psn_user_trophy_profile,"","",2026-02-05 17:11,"",            23,             7,            55,no,            52,no
+public.steam_leaderboard_history,"","",2026-02-05 17:11,"",            40,             0,            58,no,            54,no
+public.steam_sync_logs,"","",2026-02-05 17:11,"",           179,            66,            86,no,            68,no
+public.trophy_help_requests,"","",2026-02-05 17:11,"",             2,            10,            50,no,            50,no
+public.trophy_help_responses,"","",2026-02-05 17:11,"",             3,             6,            51,no,            50,no
+public.trophy_room_items,"","",2026-02-05 17:11,"",             0,             0,            50,no,            50,no
+public.trophy_room_shelves,"","",2026-02-05 17:11,"",             0,             0,            50,no,            50,no
+public.user_achievements,"","",2026-02-05 17:11,2026-02-09 04:38,"       141,649","        11,353","        28,380",no,"        14,215",no
+public.user_ai_credits,"","",2026-02-05 17:11,"",             2,             0,            50,no,            50,no
+public.user_ai_daily_usage,"","",2026-02-05 17:11,"",            18,             2,            54,no,            52,no
+public.user_ai_pack_purchases,"","",2026-02-05 17:11,"",             1,             0,            50,no,            50,no
+public.user_meta_achievements,"","",2026-02-05 17:11,"",           237,            23,            97,no,            74,no
+public.user_premium_status,"","",2026-02-05 17:11,"",             4,             1,            51,no,            50,no
+public.user_profile_settings,"","",2026-02-05 17:11,"",             0,             0,            50,no,            50,no
+public.user_progress,"","",2026-02-05 17:11,"","         8,895",           404,"         1,829",no,           940,no
+public.user_selected_title,"","",2026-02-05 17:11,"",             3,             0,            51,no,            50,no
+public.user_stats,"","",2026-02-05 17:11,"",             0,             0,            50,no,            50,no
+public.user_sync_history,"","",2026-02-05 17:11,"",           223,             3,            95,no,            72,no
+public.xbox_leaderboard_history,"","",2026-02-05 17:11,2026-02-09 04:00,           151,             0,            80,no,            65,no
+public.xbox_sync_logs,"",2026-02-06 17:45,2026-02-05 17:11,"",           316,            17,           113,no,            82,no
+public.activity_feed,"","","","",            -1,             1,            50,no,            50,no
+public.user_stat_snapshots,"","","","",            -1,            10,            50,no,            50,no

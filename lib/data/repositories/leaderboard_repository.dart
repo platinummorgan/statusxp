@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/domain/hall_of_fame_entry.dart';
 import 'package:statusxp/domain/leaderboard_entry.dart';
+import 'package:statusxp/domain/seasonal_leaderboard_entry.dart';
 import 'package:statusxp/ui/screens/leaderboard_screen.dart';
 
 /// Leaderboard Repository - Fetches global rankings
@@ -416,6 +418,189 @@ class LeaderboardRepository {
       rethrow;
     }
   }
+
+  Future<List<SeasonalLeaderboardEntry>> getStatusXPSeasonalLeaderboard({
+    required LeaderboardPeriodType periodType,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final response = await _client.rpc('get_statusxp_period_leaderboard', params: {
+      'p_period_type': _periodTypeToSql(periodType),
+      'limit_count': limit,
+      'offset_count': offset,
+    });
+
+    return (response as List).map((row) {
+      return SeasonalLeaderboardEntry(
+        userId: row['user_id'] as String,
+        displayName: row['display_name'] as String? ?? 'Player',
+        avatarUrl: row['avatar_url'] as String?,
+        periodGain: (row['period_gain'] as num?)?.toInt() ?? 0,
+        currentScore: (row['current_total'] as num?)?.toInt() ?? 0,
+        baselineScore: (row['baseline_total'] as num?)?.toInt() ?? 0,
+        gamesCount: (row['total_game_entries'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+  }
+
+  Future<List<SeasonalLeaderboardEntry>> getPSNSeasonalLeaderboard({
+    required LeaderboardPeriodType periodType,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final response = await _client.rpc('get_psn_period_leaderboard', params: {
+      'p_period_type': _periodTypeToSql(periodType),
+      'limit_count': limit,
+      'offset_count': offset,
+    });
+
+    return (response as List).map((row) {
+      final platinumCount = (row['platinum_count'] as num?)?.toInt() ?? 0;
+      return SeasonalLeaderboardEntry(
+        userId: row['user_id'] as String,
+        displayName: row['display_name'] as String? ?? 'Player',
+        avatarUrl: row['avatar_url'] as String?,
+        periodGain: (row['period_gain'] as num?)?.toInt() ?? 0,
+        currentScore: platinumCount,
+        baselineScore: platinumCount - ((row['period_gain'] as num?)?.toInt() ?? 0),
+        gamesCount: (row['total_games'] as num?)?.toInt() ?? 0,
+        platinumCount: platinumCount,
+        goldCount: (row['gold_count'] as num?)?.toInt() ?? 0,
+        silverCount: (row['silver_count'] as num?)?.toInt() ?? 0,
+        bronzeCount: (row['bronze_count'] as num?)?.toInt() ?? 0,
+        totalTrophies: (row['total_trophies'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+  }
+
+  Future<List<SeasonalLeaderboardEntry>> getXboxSeasonalLeaderboard({
+    required LeaderboardPeriodType periodType,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final response = await _client.rpc('get_xbox_period_leaderboard', params: {
+      'p_period_type': _periodTypeToSql(periodType),
+      'limit_count': limit,
+      'offset_count': offset,
+    });
+
+    return (response as List).map((row) {
+      final gamerscore = (row['gamerscore'] as num?)?.toInt() ?? 0;
+      final gain = (row['period_gain'] as num?)?.toInt() ?? 0;
+      return SeasonalLeaderboardEntry(
+        userId: row['user_id'] as String,
+        displayName: row['display_name'] as String? ?? 'Player',
+        avatarUrl: row['avatar_url'] as String?,
+        periodGain: gain,
+        currentScore: gamerscore,
+        baselineScore: gamerscore - gain,
+        gamesCount: (row['total_games'] as num?)?.toInt() ?? 0,
+        potentialScore: (row['potential_gamerscore'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+  }
+
+  Future<List<SeasonalLeaderboardEntry>> getSteamSeasonalLeaderboard({
+    required LeaderboardPeriodType periodType,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final response = await _client.rpc('get_steam_period_leaderboard', params: {
+      'p_period_type': _periodTypeToSql(periodType),
+      'limit_count': limit,
+      'offset_count': offset,
+    });
+
+    return (response as List).map((row) {
+      final achievements = (row['achievement_count'] as num?)?.toInt() ?? 0;
+      final gain = (row['period_gain'] as num?)?.toInt() ?? 0;
+      return SeasonalLeaderboardEntry(
+        userId: row['user_id'] as String,
+        displayName: row['display_name'] as String? ?? 'Player',
+        avatarUrl: row['avatar_url'] as String?,
+        periodGain: gain,
+        currentScore: achievements,
+        baselineScore: achievements - gain,
+        gamesCount: (row['total_games'] as num?)?.toInt() ?? 0,
+        potentialScore: (row['potential_achievements'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+  }
+
+  Future<List<HallOfFameEntry>> getHallOfFame({
+    required LeaderboardPeriodType periodType,
+    SeasonalBoardType? boardType,
+    int limit = 200,
+  }) async {
+    final response = await _client.rpc('get_leaderboard_hall_of_fame', params: {
+      'p_period_type': _periodTypeToSql(periodType),
+      'p_leaderboard_type': boardType != null ? _boardTypeToSql(boardType) : null,
+      'limit_count': limit,
+    });
+
+    return (response as List).map(_mapHallOfFameRow).toList();
+  }
+
+  Future<List<HallOfFameEntry>> getLatestPeriodWinners({
+    required LeaderboardPeriodType periodType,
+  }) async {
+    final response = await _client.rpc('get_latest_period_winners', params: {
+      'p_period_type': _periodTypeToSql(periodType),
+    });
+    return (response as List).map(_mapHallOfFameRow).toList();
+  }
+
+  HallOfFameEntry _mapHallOfFameRow(dynamic row) {
+    return HallOfFameEntry(
+      boardType: _boardTypeFromSql(row['leaderboard_type'] as String?),
+      periodType: _periodTypeFromSql(row['period_type'] as String?),
+      periodStart: DateTime.parse(row['period_start'] as String).toUtc(),
+      periodEnd: DateTime.parse(row['period_end'] as String).toUtc(),
+      winnerUserId: row['winner_user_id'] as String,
+      winnerDisplayName: row['winner_display_name'] as String? ?? 'Player',
+      winnerAvatarUrl: row['winner_avatar_url'] as String?,
+      winnerGain: (row['winner_gain'] as num?)?.toInt() ?? 0,
+      winnerCurrentScore: (row['winner_current_score'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  String _periodTypeToSql(LeaderboardPeriodType periodType) {
+    return periodType == LeaderboardPeriodType.monthly ? 'monthly' : 'weekly';
+  }
+
+  LeaderboardPeriodType _periodTypeFromSql(String? value) {
+    if ((value ?? '').toLowerCase() == 'monthly') {
+      return LeaderboardPeriodType.monthly;
+    }
+    return LeaderboardPeriodType.weekly;
+  }
+
+  String _boardTypeToSql(SeasonalBoardType boardType) {
+    switch (boardType) {
+      case SeasonalBoardType.statusXP:
+        return 'statusxp';
+      case SeasonalBoardType.platinums:
+        return 'psn';
+      case SeasonalBoardType.xbox:
+        return 'xbox';
+      case SeasonalBoardType.steam:
+        return 'steam';
+    }
+  }
+
+  SeasonalBoardType _boardTypeFromSql(String? value) {
+    switch ((value ?? '').toLowerCase()) {
+      case 'psn':
+        return SeasonalBoardType.platinums;
+      case 'xbox':
+        return SeasonalBoardType.xbox;
+      case 'steam':
+        return SeasonalBoardType.steam;
+      case 'statusxp':
+      default:
+        return SeasonalBoardType.statusXP;
+    }
+  }
 }
 
 /// Provider for leaderboard repository
@@ -444,5 +629,52 @@ final leaderboardProvider = FutureProvider.family<List<LeaderboardEntry>, Leader
       case LeaderboardType.steamAchievements:
         return repository.getSteamLeaderboard();
     }
+  },
+);
+
+final seasonalLeaderboardProvider = FutureProvider.family<List<SeasonalLeaderboardEntry>, SeasonalLeaderboardQuery>(
+  (ref, query) async {
+    final repository = ref.watch(leaderboardRepositoryProvider);
+
+    switch (query.boardType) {
+      case SeasonalBoardType.statusXP:
+        return repository.getStatusXPSeasonalLeaderboard(
+          periodType: query.periodType,
+          limit: query.limit,
+          offset: query.offset,
+        );
+      case SeasonalBoardType.platinums:
+        return repository.getPSNSeasonalLeaderboard(
+          periodType: query.periodType,
+          limit: query.limit,
+          offset: query.offset,
+        );
+      case SeasonalBoardType.xbox:
+        return repository.getXboxSeasonalLeaderboard(
+          periodType: query.periodType,
+          limit: query.limit,
+          offset: query.offset,
+        );
+      case SeasonalBoardType.steam:
+        return repository.getSteamSeasonalLeaderboard(
+          periodType: query.periodType,
+          limit: query.limit,
+          offset: query.offset,
+        );
+    }
+  },
+);
+
+final hallOfFameProvider = FutureProvider.family<List<HallOfFameEntry>, LeaderboardPeriodType>(
+  (ref, periodType) async {
+    final repository = ref.watch(leaderboardRepositoryProvider);
+    return repository.getHallOfFame(periodType: periodType, limit: 400);
+  },
+);
+
+final latestPeriodWinnersProvider = FutureProvider.family<List<HallOfFameEntry>, LeaderboardPeriodType>(
+  (ref, periodType) async {
+    final repository = ref.watch(leaderboardRepositoryProvider);
+    return repository.getLatestPeriodWinners(periodType: periodType);
   },
 );

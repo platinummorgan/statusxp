@@ -17,7 +17,7 @@ const corsHeaders = {
 
 interface ExpiringUser {
   user_id: string;
-  expires_at: string;
+  premium_expires_at: string;
   email?: string;
   username?: string;
 }
@@ -50,7 +50,7 @@ serve(async (req) => {
       .from('user_premium_status')
       .select(`
         user_id,
-        expires_at,
+        premium_expires_at,
         profiles!inner(
           email,
           username
@@ -58,8 +58,8 @@ serve(async (req) => {
       `)
       .eq('premium_source', 'twitch')
       .eq('is_premium', true)
-      .gte('expires_at', threeDaysFromNow.toISOString())
-      .lt('expires_at', fourDaysFromNow.toISOString());
+      .gte('premium_expires_at', threeDaysFromNow.toISOString())
+      .lt('premium_expires_at', fourDaysFromNow.toISOString());
 
     if (queryError) {
       console.error('Error querying expiring premiums:', queryError);
@@ -106,7 +106,7 @@ serve(async (req) => {
             title: 'Twitch Premium Ending Soon',
             message: 'Your StatusXP premium membership from Twitch will end in 3 days. Make sure your Twitch subscription is active to keep your premium benefits!',
             data: {
-              expires_at: premium.expires_at,
+              expires_at: premium.premium_expires_at,
               source: 'twitch',
             },
             created_at: new Date().toISOString(),
@@ -120,7 +120,7 @@ serve(async (req) => {
             user_id: premium.user_id,
             username,
             email,
-            expires_at: premium.expires_at,
+            expires_at: premium.premium_expires_at,
           });
         }
       } catch (error) {

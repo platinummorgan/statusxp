@@ -31,12 +31,9 @@ CREATE TABLE IF NOT EXISTS user_stat_snapshots (
   -- Indexes
   CONSTRAINT unique_user_sync UNIQUE(user_id, synced_at)
 );
-
 CREATE INDEX idx_snapshots_user_time ON user_stat_snapshots(user_id, synced_at DESC);
 CREATE INDEX idx_snapshots_cleanup ON user_stat_snapshots(synced_at);
-
 COMMENT ON TABLE user_stat_snapshots IS 'Captures user stats at each sync for before/after comparison';
-
 -- ============================================================
 -- 2. ACTIVITY FEED (AI-Generated Stories)
 -- ============================================================
@@ -85,17 +82,14 @@ CREATE TABLE IF NOT EXISTS activity_feed (
   CHECK (expires_at = (event_date + INTERVAL '7 days')::DATE),
   CHECK (event_type IN ('statusxp_gain', 'platinum_milestone', 'gamerscore_gain', 'trophy_detail', 'steam_achievement_gain'))
 );
-
 CREATE INDEX idx_activity_feed_date ON activity_feed(event_date DESC) WHERE is_visible = true;
 CREATE INDEX idx_activity_feed_expires ON activity_feed(expires_at);
 CREATE INDEX idx_activity_feed_created ON activity_feed(created_at DESC);
 CREATE INDEX idx_activity_feed_user ON activity_feed(user_id);
 CREATE INDEX idx_activity_feed_type ON activity_feed(event_type);
-
 COMMENT ON TABLE activity_feed IS 'AI-generated stories about user achievements (7-day rolling window)';
 COMMENT ON COLUMN activity_feed.expires_at IS 'Auto-delete date (event_date + 7 days)';
 COMMENT ON COLUMN activity_feed.story_text IS 'AI-generated announcement with personality';
-
 -- ============================================================
 -- 3. ACTIVITY FEED VIEWS (Track Read Status)
 -- ============================================================
@@ -106,11 +100,8 @@ CREATE TABLE IF NOT EXISTS activity_feed_views (
   
   PRIMARY KEY(user_id)
 );
-
 CREATE INDEX idx_activity_views_time ON activity_feed_views(last_viewed_at);
-
 COMMENT ON TABLE activity_feed_views IS 'Tracks when users last viewed activity feed for unread counts';
-
 -- ============================================================
 -- 4. AUTO-CLEANUP FUNCTION (Delete Expired Stories)
 -- ============================================================
@@ -129,9 +120,7 @@ BEGIN
   RETURN deleted_count;
 END;
 $$ LANGUAGE plpgsql;
-
 COMMENT ON FUNCTION cleanup_old_activity_feed IS 'Deletes activity feed stories older than 7 days (call daily)';
-
 -- ============================================================
 -- 5. CLEANUP OLD SNAPSHOTS (Keep Last 30 Days)
 -- ============================================================
@@ -150,9 +139,7 @@ BEGIN
   RETURN deleted_count;
 END;
 $$ LANGUAGE plpgsql;
-
 COMMENT ON FUNCTION cleanup_old_snapshots IS 'Deletes snapshots older than 30 days (call daily)';
-
 -- ============================================================
 -- 6. GET UNREAD COUNT FUNCTION
 -- ============================================================
@@ -171,9 +158,7 @@ BEGIN
   );
 END;
 $$ LANGUAGE plpgsql STABLE;
-
 COMMENT ON FUNCTION get_unread_activity_count IS 'Returns count of unread activity feed stories for a user';
-
 -- ============================================================
 -- 7. GET FEED WITH DATE GROUPING
 -- ============================================================
@@ -214,9 +199,7 @@ BEGIN
   LIMIT p_limit;
 END;
 $$ LANGUAGE plpgsql STABLE;
-
 COMMENT ON FUNCTION get_activity_feed_grouped IS 'Returns activity feed grouped by date with story JSON aggregation';
-
 -- ============================================================
 -- 8. MARK FEED AS VIEWED
 -- ============================================================
@@ -229,9 +212,7 @@ BEGIN
   DO UPDATE SET last_viewed_at = NOW();
 END;
 $$ LANGUAGE plpgsql;
-
 COMMENT ON FUNCTION mark_activity_feed_viewed IS 'Updates last viewed timestamp to clear unread badge';
-
 -- ============================================================
 -- 9. GRANT PERMISSIONS
 -- ============================================================
@@ -239,16 +220,14 @@ COMMENT ON FUNCTION mark_activity_feed_viewed IS 'Updates last viewed timestamp 
 GRANT SELECT ON activity_feed TO authenticated;
 GRANT SELECT ON user_stat_snapshots TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON activity_feed_views TO authenticated;
-
 -- Allow service role to manage everything
 GRANT ALL ON activity_feed TO service_role;
 GRANT ALL ON user_stat_snapshots TO service_role;
 GRANT ALL ON activity_feed_views TO service_role;
-
 -- ============================================================
 -- MIGRATION COMPLETE
 -- ============================================================
 -- Next steps:
 -- 1. Run: SELECT cleanup_old_activity_feed(); (test cleanup)
 -- 2. Schedule daily: pg_cron or Supabase edge function
--- 3. Integrate with sync services to create snapshots
+-- 3. Integrate with sync services to create snapshots;

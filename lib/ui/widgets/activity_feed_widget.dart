@@ -5,6 +5,7 @@ import 'package:statusxp/domain/activity_feed_entry.dart';
 import 'package:statusxp/data/repositories/activity_feed_repository.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 
 // ============================================================
 // PROVIDERS
@@ -16,7 +17,9 @@ final activityFeedRepositoryProvider = Provider<ActivityFeedRepository>((ref) {
 });
 
 /// Activity Feed Data Provider
-final activityFeedProvider = FutureProvider<List<ActivityFeedGroup>>((ref) async {
+final activityFeedProvider = FutureProvider<List<ActivityFeedGroup>>((
+  ref,
+) async {
   final repo = ref.watch(activityFeedRepositoryProvider);
   return await repo.getActivityFeedGrouped(limit: 50);
 });
@@ -28,7 +31,9 @@ final unreadCountProvider = FutureProvider<int>((ref) async {
 });
 
 /// Stream version for realtime updates
-final activityFeedStreamProvider = StreamProvider<List<ActivityFeedGroup>>((ref) {
+final activityFeedStreamProvider = StreamProvider<List<ActivityFeedGroup>>((
+  ref,
+) {
   final repo = ref.watch(activityFeedRepositoryProvider);
   return repo.watchActivityFeed();
 });
@@ -49,6 +54,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
   bool _isExpanded = false;
   late AnimationController _shimmerController;
   late Animation<double> _shimmerAnimation;
+  Timer? _pollTimer;
 
   @override
   void initState() {
@@ -57,18 +63,22 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
       duration: const Duration(milliseconds: 4000),
       vsync: this,
     )..repeat();
-    
-    _shimmerAnimation = Tween<double>(
-      begin: -2.0,
-      end: 2.0,
-    ).animate(CurvedAnimation(
-      parent: _shimmerController,
-      curve: Curves.easeInOut,
-    ));
+
+    _shimmerAnimation = Tween<double>(begin: -2.0, end: 2.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    );
+
+    // Poll as a fallback when realtime events are unavailable.
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!mounted) return;
+      ref.invalidate(activityFeedProvider);
+      ref.invalidate(unreadCountProvider);
+    });
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _shimmerController.dispose();
     super.dispose();
   }
@@ -85,7 +95,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
             setState(() {
               _isExpanded = !_isExpanded;
             });
-            
+
             // Mark as viewed when expanded
             if (_isExpanded) {
               final repo = ref.read(activityFeedRepositoryProvider);
@@ -99,7 +109,10 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
             children: [
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(8),
@@ -118,15 +131,13 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                 child: Row(
                   children: [
                     Icon(
-                      _isExpanded
-                          ? Icons.expand_less
-                          : Icons.expand_more,
+                      _isExpanded ? Icons.expand_less : Icons.expand_more,
                       color: CyberpunkTheme.neonPurple,
                       size: 18,
                     ),
                     const SizedBox(width: 8),
-                    Expanded(
-                      child: const Text(
+                    const Expanded(
+                      child: Text(
                         'What are other StatusXPians up to?',
                         style: TextStyle(
                           color: Colors.white,
@@ -144,10 +155,15 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                         final unreadAsync = ref.watch(unreadCountProvider);
                         return unreadAsync.when(
                           data: (unreadCount) {
-                            if (unreadCount == 0) return const SizedBox.shrink();
+                            if (unreadCount == 0) {
+                              return const SizedBox.shrink();
+                            }
                             return Container(
                               margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: CyberpunkTheme.neonCyan,
                                 borderRadius: BorderRadius.circular(10),
@@ -167,13 +183,28 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                         );
                       },
                     ),
+                    IconButton(
+                      tooltip: 'Refresh feed',
+                      onPressed: () {
+                        ref.invalidate(activityFeedProvider);
+                        ref.invalidate(unreadCountProvider);
+                      },
+                      icon: const Icon(
+                        Icons.refresh,
+                        size: 16,
+                        color: CyberpunkTheme.neonCyan,
+                      ),
+                    ),
                   ],
                 ),
               ),
               // Shimmer effect overlay
               Positioned.fill(
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: AnimatedBuilder(
@@ -206,7 +237,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
             ],
           ),
         ),
-        
+
         // Collapsible content
         if (_isExpanded)
           feedAsync.when(
@@ -297,9 +328,7 @@ class _DateGroupState extends State<_DateGroup> {
             child: Row(
               children: [
                 Icon(
-                  _isExpanded
-                      ? Icons.expand_less
-                      : Icons.expand_more,
+                  _isExpanded ? Icons.expand_less : Icons.expand_more,
                   size: 20,
                   color: CyberpunkTheme.neonCyan,
                 ),
@@ -316,7 +345,7 @@ class _DateGroupState extends State<_DateGroup> {
             ),
           ),
         ),
-        
+
         // Stories list
         if (_isExpanded)
           ListView.builder(
@@ -361,17 +390,11 @@ class _StoryTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 4),
-          Text(
-            story.storyText,
-            style: const TextStyle(fontSize: 14),
-          ),
+          Text(story.storyText, style: const TextStyle(fontSize: 14)),
           const SizedBox(height: 4),
           Text(
             _getTimeAgo(story.createdAt),
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
         ],
       ),

@@ -215,17 +215,14 @@ class SubscriptionService {
         return false;
       }
 
-      String? transactionId;
       String premiumSource;
       
       // Web doesn't support purchase completion
       if (kIsWeb) return false;
       
       if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
-        transactionId = purchase.billingClientPurchase.orderId;
         premiumSource = 'google';
       } else if (Platform.isIOS && purchase is AppStorePurchaseDetails) {
-        transactionId = purchase.skPaymentTransaction.transactionIdentifier;
         premiumSource = 'apple';
       } else {
         return false;
@@ -250,20 +247,23 @@ class SubscriptionService {
         'is_premium': true,
         'premium_source': premiumSource,
         'premium_since': purchase.transactionDate ?? DateTime.now().toIso8601String(),
-        'subscription_id': transactionId,
-        'expires_at': null, // IAP subscriptions don't have a fixed expiry (managed by stores)
+        'premium_expires_at': null, // IAP subscriptions don't have a fixed expiry (managed by stores)
         'updated_at': DateTime.now().toIso8601String(),
       });
 
       // Create notification if they had another subscription (generic message)
       if (hasOtherSubscription) {
-        await _supabase.from('notifications').insert({
-          'user_id': userId,
-          'type': 'subscription_changed',
-          'title': 'Premium Source Updated',
-          'message': 'Your premium subscription source has been updated. Please cancel your previous subscription to avoid double charges.',
-          'created_at': DateTime.now().toIso8601String(),
-        });
+        try {
+          await _supabase.from('notifications').insert({
+            'user_id': userId,
+            'type': 'subscription_changed',
+            'title': 'Premium Source Updated',
+            'message': 'Your premium subscription source has been updated. Please cancel your previous subscription to avoid double charges.',
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        } catch (_) {
+          // Best-effort only: premium activation should succeed even if notifications are unavailable.
+        }
       }
 
       return true;

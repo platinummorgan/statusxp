@@ -1,0 +1,176 @@
+total_exec_time,prop_exec_time,ncalls,sync_io_time,query
+00:04:21.276184,77.7%,95,00:00:00,SELECT refresh_psn_leaderboard_cache()
+00:00:24.93304,7.4%,2,00:00:00,"-- Add potential_statusxp column to leaderboard_cache if it doesn't exist
+ALTER TABLE leaderboard_cache 
+ADD COLUMN IF NOT EXISTS potential_statusxp bigint DEFAULT 0"
+00:00:07.588521,2.3%,1,00:00:00,"with _base_query as (select * from public.leaderboard_global_cache order by leaderboard_global_cache.rank asc nulls last limit $1 offset $2)
+  select rank,user_id,case
+        when octet_length(display_name::text) > $3 
+        then left(display_name::text, $4) || $5
+        else display_name::text
+      end as display_name,case
+        when octet_length(avatar_url::text) > $6 
+        then left(avatar_url::text, $7) || $8
+        else avatar_url::text
+      end as avatar_url,statusxp,total_achievements,total_games,updated_at from _base_query"
+00:00:05.927447,1.8%,55,00:00:00,"with f as (
+      
+-- CTE with sane arg_modes, arg_names, and arg_types.
+-- All three are always of the same length.
+-- All three include all args, including OUT and TABLE args.
+with functions as (
+  select
+    *,
+    -- proargmodes is null when all arg modes are IN
+    coalesce(
+      p.proargmodes,
+      array_fill($1::text, array[cardinality(coalesce(p.proallargtypes, p.proargtypes))])
+    ) as arg_modes,
+    -- proargnames is null when all args are unnamed
+    coalesce(
+      p.proargnames,
+      array_fill($2::text, array[cardinality(coalesce(p.proallargtypes, p.proargtypes))])
+    ) as arg_names,
+    -- proallargtypes is null when all arg modes are IN
+    coalesce(p.proallargtypes, p.proargtypes) as arg_types,
+    array_cat(
+      array_fill($3, array[pronargs - pronargdefaults]),
+      array_fill($4, array[pronargdefaults])) as arg_has_defaults
+  from
+    pg_proc as p
+  where
+    p.prokind = $5
+)
+select
+  f.oid as id,
+  n.nspname as schema,
+  f.proname as name,
+  l.lanname as language,
+  case
+    when l.lanname = $6 then $7
+    else f.prosrc
+  end as definition,
+  case
+    when l.lanname = $8 then f.prosrc
+    else pg_get_functiondef(f.oid)
+  end as complete_statement,
+  coalesce(f_args.args, $9) as args,
+  pg_get_function_arguments(f.oid) as argument_types,
+  pg_get_function_identity_arguments(f.oid) as identity_argument_types,
+  f.prorettype as return_type_id,
+  pg_get_function_result(f.oid) as return_type,
+  nullif(rt.typrelid, $10) as return_type_relation_id,
+  f.proretset as is_set_returning_function,
+  case
+    when f.provolatile = $11 then $12
+    when f.provolatile = $13 then $14
+    when f.provolatile = $15 then $16
+  end as behavior,
+  f.prosecdef as security_definer,
+  f_config.config_params as config_params
+from
+  functions f
+  left join pg_namespace n on f.pronamespace = n.oid
+  left join pg_language l on f.prolang = l.oid
+  left join pg_type rt on rt.oid = f.prorettype
+  left join (
+    select
+      oid,
+      jsonb_object_agg(param, value) filter (where param is not null) as config_params
+    from
+      (
+        select
+          oid,
+          (string_to_array(unnest(proconfig), $17))[$18] as param,
+          (string_to_array(unnest(proconfig), $19))[$20] as value
+        from
+          functions
+      ) as t
+    group by
+      oid
+  ) f_config on f_config.oid = f.oid
+  left join (
+    select
+      oid,
+      jsonb_agg(jsonb_build_object(
+        $21, t2.mode,
+        $22, name,
+        $23, type_id,
+        -- Cast null into false boolean
+        $24, COALESCE(has_default, $25)
+      )) as args
+    from
+      (
+        select
+          oid,
+          unnest(arg_modes) as mode,
+          unnest(arg_names) as name,
+          -- Coming from: coalesce(p.proallargtypes, p.proargtypes) postgres won't automatically assume
+          -- integer, we need to cast it to be properly parsed
+          unnest(arg_types)::int8 as type_id,
+          unnest(arg_has_defaults) as has_default
+        from
+          functions
+      ) as t1,
+      lateral (
+        select
+          case
+            when t1.mode = $26 then $27
+            when t1.mode = $28 then $29
+            when t1.mode = $30 then $31
+            when t1.mode = $32 then $33
+            else $34
+          end as mode
+      ) as t2
+    group by
+      t1.oid
+  ) f_args on f_args.oid = f.oid
+
+    )
+    select
+      f.*
+    from f
+   where schema NOT IN ($35,$36,$37)
+
+-- source: dashboard
+-- user: 5ba4f9b8-62f8-43f6-8e78-e0ae14c42451
+-- date: 2026-02-05T17:16:36.934Z"
+00:00:04.732222,1.4%,4,00:00:00,SELECT snapshot_steam_leaderboard()
+00:00:04.6173,1.4%,2,00:00:00,"-- Refresh to populate correct potential scores
+SELECT refresh_statusxp_leaderboard()"
+00:00:04.207449,1.3%,63,00:00:00,"SELECT
+  e.name,
+  n.nspname AS schema,
+  e.default_version,
+  x.extversion AS installed_version,
+  e.comment
+FROM
+  pg_available_extensions() e(name, default_version, comment)
+  LEFT JOIN pg_extension x ON e.name = x.extname
+  LEFT JOIN pg_namespace n ON x.extnamespace = n.oid
+WHERE
+  $1"
+00:00:02.476725,0.7%,1,00:00:00,"-- Check if PSN sync actually stored DLC names
+-- Run this to see what happened
+
+-- 1. Check any PSN achievements with DLC data
+SELECT 
+  g.name as game_name,
+  COUNT(*) as total_achievements,
+  COUNT(*) FILTER (WHERE a.metadata->>$1 IS NOT NULL) as with_dlc_name,
+  COUNT(*) FILTER (WHERE a.metadata->>$2 = $3) as marked_as_dlc,
+  ARRAY_AGG(DISTINCT a.metadata->>$4) FILTER (WHERE a.metadata->>$5 IS NOT NULL) as dlc_names
+FROM achievements a
+JOIN games g ON a.platform_game_id = g.platform_game_id AND a.platform_id = g.platform_id
+WHERE a.platform_id IN ($6, $7)
+GROUP BY g.name
+HAVING COUNT(*) FILTER (WHERE a.metadata->>$8 IS NOT NULL) > $9
+ORDER BY g.name"
+00:00:02.332121,0.7%,4,00:00:00,SELECT snapshot_xbox_leaderboard()
+00:00:01.837413,0.5%,2,00:00:00,"-- Check storage objects
+SELECT 
+    bucket_id,
+    COUNT(*) as files,
+    pg_size_pretty(SUM((metadata->>$1)::bigint)) as size
+FROM storage.objects
+GROUP BY bucket_id"

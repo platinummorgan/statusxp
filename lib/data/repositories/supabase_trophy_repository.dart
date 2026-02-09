@@ -8,6 +8,12 @@ class SupabaseTrophyRepository {
 
   SupabaseTrophyRepository(this._client);
 
+  int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.parse(value.toString());
+  }
+
   /// Get all trophies for a game with earned status for the user
   Future<List<Trophy>> getTrophiesForGame(String userId, int gameTitleId) async {
     try {
@@ -22,6 +28,10 @@ class SupabaseTrophyRepository {
       // Get trophy IDs
       final trophyIds = (trophiesResponse as List).map((t) => t['id']).toList();
 
+      if (trophyIds.isEmpty) {
+        return [];
+      }
+
       // Second, get earned status for these trophies
       final earnedResponse = await _client
           .from('user_trophies')
@@ -32,11 +42,11 @@ class SupabaseTrophyRepository {
       // Create a map of trophy_id -> earned_at
       final earnedMap = <int, String>{};
       for (final row in (earnedResponse as List)) {
-        earnedMap[row['trophy_id'] as int] = row['earned_at'] as String;
+        earnedMap[_toInt(row['trophy_id'])] = row['earned_at'] as String;
       }
 
       return (trophiesResponse).map((row) {
-        final earnedAt = earnedMap[row['id'] as int];
+        final earnedAt = earnedMap[_toInt(row['id'])];
 
         return Trophy(
           id: row['id'].toString(),

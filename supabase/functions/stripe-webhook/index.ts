@@ -82,13 +82,16 @@ serve(async (req) => {
             console.log(`⚠️ User has ${existingPremium.premium_source} IAP - not overwriting with Stripe`);
             
             // Create notification about existing subscription (generic message)
-            await supabase.from('notifications').insert({
+            const { error: notifError } = await supabase.from('notifications').insert({
               user_id: userId,
               type: 'subscription_conflict',
               title: 'Active Subscription Detected',
               message: 'You already have an active premium subscription. Please cancel your existing subscription or wait until it expires before purchasing a new one.',
               created_at: new Date().toISOString(),
             });
+            if (notifError) {
+              console.error('Failed to create subscription conflict notification:', notifError);
+            }
             break;
           }
 
@@ -100,7 +103,7 @@ serve(async (req) => {
               is_premium: true,
               premium_source: 'stripe',
               premium_since: new Date().toISOString(),
-              expires_at: null, // Stripe subscriptions managed by Stripe
+              premium_expires_at: null, // Stripe subscriptions managed by Stripe
               updated_at: new Date().toISOString(),
             }, {
               onConflict: 'user_id'
@@ -113,13 +116,16 @@ serve(async (req) => {
             
             // If we overwrote Twitch, notify user (generic message)
             if (existingPremium?.premium_source === 'twitch') {
-              await supabase.from('notifications').insert({
+              const { error: notifError } = await supabase.from('notifications').insert({
                 user_id: userId,
                 type: 'subscription_changed',
                 title: 'Premium Source Updated',
                 message: 'Your premium subscription source has been updated. Your previous subscription has been replaced.',
                 created_at: new Date().toISOString(),
               });
+              if (notifError) {
+                console.error('Failed to create subscription changed notification:', notifError);
+              }
             }
           }
         }

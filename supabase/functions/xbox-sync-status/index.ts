@@ -54,28 +54,14 @@ serve(async (req) => {
 
     const isLinked = !!profile.xbox_xuid;
 
-    // Get latest sync log (try both table names for compatibility)
-    let latestLog = null;
-    try {
-      const { data } = await supabase
-        .from('xbox_sync_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      latestLog = data;
-    } catch (e) {
-      // Try singular table name if plural doesn't exist
-      const { data } = await supabase
-        .from('xbox_sync_log')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('started_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      latestLog = data;
-    }
+    // Get latest sync log (live schema uses plural table name)
+    const { data: latestLog } = await supabase
+      .from('xbox_sync_logs')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     // Format last sync time
     let lastSyncText = null;

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -114,7 +113,9 @@ Future<void> _initializeApp() async {
   // Optional local env
   try {
     await dotenv.load(fileName: '.env');
-  } catch (_) {}
+  } catch (e) {
+    _safeLog('dotenv load skipped: ${_safeStr(e)}');
+  }
 
   // Initialize Firebase for all platforms
   try {
@@ -404,15 +405,6 @@ bool _isOAuthFlowKey(String key) {
   return key.contains('code-verifier') || 
          key.contains('code_challenge') ||
          key.contains('oauth-state');
-}
-
-Map<String, dynamic>? _tryDecodeMap(String raw) {
-  try {
-    final parsed = jsonDecode(raw);
-    return parsed is Map<String, dynamic> ? parsed : null;
-  } catch (_) {
-    return null;
-  }
 }
 
 Future<void> _attemptWebStorageRecovery() async {

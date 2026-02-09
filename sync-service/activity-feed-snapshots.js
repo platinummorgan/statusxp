@@ -141,13 +141,15 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   
   // Platinum milestone
   if (postSnapshot.platinum_count > preSnapshot.platinum_count) {
+    const platinumDelta = postSnapshot.platinum_count - preSnapshot.platinum_count;
     changes.push({
       type: 'platinum_milestone',
       oldValue: preSnapshot.platinum_count,
       newValue: postSnapshot.platinum_count,
-      change: postSnapshot.platinum_count - preSnapshot.platinum_count,
+      change: platinumDelta,
       changeType: 'milestone',
-      gameTitle: postSnapshot.latest_game_title || 'Unknown Game',
+      // A sync that adds >1 platinum is necessarily multi-game.
+      gameTitle: platinumDelta > 1 ? 'Multiple games' : (postSnapshot.latest_game_title || 'Unknown Game'),
     });
   }
   
@@ -157,6 +159,21 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   const bronzeDiff = postSnapshot.psn_bronze_count - preSnapshot.psn_bronze_count;
   
   if (goldDiff > 0 || silverDiff > 0 || bronzeDiff > 0) {
+    // Determine whether this sync touched one game or many for PS trophies.
+    const { data: psWindowAchievements } = await supabase
+      .from('user_achievements')
+      .select('platform_id,platform_game_id')
+      .eq('user_id', userId)
+      .in('platform_id', [1, 2, 5, 9])
+      .gte('earned_at', preSnapshot.synced_at)
+      .lte('earned_at', postSnapshot.synced_at);
+
+    const distinctGameKeys = new Set(
+      (psWindowAchievements || []).map((a) => `${a.platform_id}:${a.platform_game_id}`)
+    );
+    const gameCount = distinctGameKeys.size;
+    const isMultiGameSync = gameCount > 1;
+
     // Check for rare trophies (< 10% rarity) earned in this sync
     const { data: rareTrophies } = await supabase
       .from('user_achievements')
@@ -202,7 +219,8 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
       oldGold: preSnapshot.psn_gold_count,
       oldSilver: preSnapshot.psn_silver_count,
       oldBronze: preSnapshot.psn_bronze_count,
-      gameTitle: postSnapshot.latest_game_title || 'a game',
+      gameTitle: isMultiGameSync ? 'Multiple games' : (postSnapshot.latest_game_title || 'a game'),
+      gameCount,
       rareTrophies: impressiveRarities.length > 0 ? impressiveRarities : null,
     });
   }
@@ -263,23 +281,35 @@ function combineRelatedChanges(changes) {
   
   // Combine trophy details with StatusXP gain
   if (trophyChange && statusXpChange) {
-    combinedChanges.push({
+    const trophyWithStatusXp = {
       ...trophyChange,
       type: 'trophy_with_statusxp',
       statusxpOld: statusXpChange.oldValue,
       statusxpNew: statusXpChange.newValue,
       statusxpChange: statusXpChange.change,
       changeType: statusXpChange.changeType,
-    });
+    };
+
+    // If this sync also hit a platinum milestone, attach it to the combined story
+    // instead of emitting a second near-duplicate feed item.
+    if (platinumChange) {
+      trophyWithStatusXp.platinumOld = platinumChange.oldValue;
+      trophyWithStatusXp.platinumNew = platinumChange.newValue;
+      trophyWithStatusXp.platinumChange = platinumChange.change;
+    }
+
+    combinedChanges.push(trophyWithStatusXp);
     processedTypes.add('statusxp_gain');
     processedTypes.add('trophy_detail');
+    if (platinumChange) {
+      processedTypes.add('platinum_milestone');
+    }
   }
   
-  // Combine gamerscore with StatusXP
+  // Keep event_type as gamerscore_gain (DB check constraint) but enrich with StatusXP context.
   if (gamerscoreChange && statusXpChange && !processedTypes.has('statusxp_gain')) {
     combinedChanges.push({
       ...gamerscoreChange,
-      type: 'gamerscore_with_statusxp',
       statusxpOld: statusXpChange.oldValue,
       statusxpNew: statusXpChange.newValue,
       statusxpChange: statusXpChange.change,
@@ -288,11 +318,10 @@ function combineRelatedChanges(changes) {
     processedTypes.add('gamerscore_gain');
   }
   
-  // Combine Steam with StatusXP
+  // Keep event_type as steam_achievement_gain (DB check constraint) but enrich with StatusXP context.
   if (steamChange && statusXpChange && !processedTypes.has('statusxp_gain')) {
     combinedChanges.push({
       ...steamChange,
-      type: 'steam_with_statusxp',
       statusxpOld: statusXpChange.oldValue,
       statusxpNew: statusXpChange.newValue,
       statusxpChange: statusXpChange.change,
@@ -332,6 +361,96 @@ async function generateAndInsertStory(userId, change, snapshot) {
     // Calculate expiration (7 days from today)
     const eventDate = new Date().toISOString().split('T')[0];
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Duplicate suppression: skip near-identical stories created recently.
+    const duplicateWindowStart = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const trophyCooldownStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
+    // Cross-type suppression:
+    // If we already have a recent trophy_with_statusxp for the same game, skip a platinum-only story.
+    if (change.type === 'platinum_milestone' && change.gameTitle) {
+      const { data: recentCombined } = await supabase
+        .from('activity_feed')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('event_type', 'trophy_with_statusxp')
+        .eq('game_title', change.gameTitle)
+        .gte('created_at', duplicateWindowStart)
+        .limit(1);
+
+      if (recentCombined?.length) {
+        console.log(`⏭️  Skipping platinum_milestone because trophy_with_statusxp already exists for ${username} in ${change.gameTitle}`);
+        return;
+      }
+    }
+
+    // Cooldown suppression:
+    // avoid near-back-to-back trophy_with_statusxp spam for the same game.
+    if (change.type === 'trophy_with_statusxp' && change.gameTitle) {
+      const { data: recentSameGameTrophy } = await supabase
+        .from('activity_feed')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('event_type', 'trophy_with_statusxp')
+        .eq('game_title', change.gameTitle)
+        .gte('created_at', trophyCooldownStart)
+        .limit(1);
+
+      if (recentSameGameTrophy?.length) {
+        console.log(`⏭️  Skipping trophy_with_statusxp cooldown hit for ${username} in ${change.gameTitle}`);
+        return;
+      }
+    }
+
+    const { data: recentStories, error: recentStoriesError } = await supabase
+      .from('activity_feed')
+      .select(`
+        id,
+        user_id,
+        event_type,
+        old_value,
+        new_value,
+        change_amount,
+        game_title,
+        gold_count,
+        silver_count,
+        bronze_count,
+        created_at
+      `)
+      .eq('user_id', userId)
+      .eq('event_type', change.type)
+      .gte('created_at', duplicateWindowStart)
+      .order('created_at', { ascending: false })
+      .limit(25);
+
+    if (recentStoriesError) {
+      console.warn('⚠️  Duplicate-check query failed, continuing insert:', recentStoriesError.message);
+    } else if (recentStories?.length) {
+      const target = {
+        oldValue: change.oldValue ?? null,
+        newValue: change.newValue ?? null,
+        changeAmount: change.change ?? null,
+        gameTitle: change.gameTitle ?? null,
+        goldCount: change.goldCount || 0,
+        silverCount: change.silverCount || 0,
+        bronzeCount: change.bronzeCount || 0,
+      };
+
+      const hasDuplicate = recentStories.some((story) => (
+        (story.old_value ?? null) === target.oldValue &&
+        (story.new_value ?? null) === target.newValue &&
+        (story.change_amount ?? null) === target.changeAmount &&
+        (story.game_title ?? null) === target.gameTitle &&
+        (story.gold_count ?? 0) === target.goldCount &&
+        (story.silver_count ?? 0) === target.silverCount &&
+        (story.bronze_count ?? 0) === target.bronzeCount
+      ));
+
+      if (hasDuplicate) {
+        console.log(`⏭️  Skipping duplicate activity story: ${change.type} for ${username}`);
+        return;
+      }
+    }
     
     // Insert into activity_feed
     const { error } = await supabase
@@ -380,7 +499,7 @@ async function getDisplayName(userId, eventType) {
   if (!profile) return 'Unknown User';
   
   // Use platform-specific name based on event type
-  if (eventType === 'platinum_milestone' || eventType === 'trophy_detail') {
+  if (eventType === 'platinum_milestone' || eventType === 'trophy_detail' || eventType === 'trophy_with_statusxp') {
     return profile.psn_online_id || profile.username || 'PSN User';
   }
   

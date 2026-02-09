@@ -18,12 +18,18 @@ class Trophy {
     this.rarityGlobal,
   });
 
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.parse(value.toString());
+  }
+
   factory Trophy.fromJson(Map<String, dynamic> json) {
     return Trophy(
-      id: json['id'] as int,
-      gameTitleId: json['game_title_id'] as int,
+      id: _toInt(json['id']),
+      gameTitleId: _toInt(json['game_title_id']),
       name: json['name'] as String,
-      description: json['description'] as String,
+      description: (json['description'] as String?) ?? '',
       tier: json['tier'] as String,
       rarityGlobal: (json['rarity_global'] as num?)?.toDouble(),
     );
@@ -44,11 +50,17 @@ class UserTrophy {
     required this.earnedAt,
   });
 
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.parse(value.toString());
+  }
+
   factory UserTrophy.fromJson(Map<String, dynamic> json) {
     return UserTrophy(
-      id: json['id'] as int,
+      id: _toInt(json['id']),
       userId: json['user_id'] as String,
-      trophyId: json['trophy_id'] as int,
+      trophyId: _toInt(json['trophy_id']),
       earnedAt: DateTime.parse(json['earned_at'] as String),
     );
   }
@@ -98,24 +110,26 @@ class SupabaseTrophiesRepository {
   /// Get user trophies for a specific game.
   Future<List<UserTrophy>> getUserTrophiesForGame(String userId, int gameTitleId) async {
     try {
-      final response = await _client
+      final trophiesForGame = await _client
+          .from('trophies')
+          .select('id')
+          .eq('game_title_id', gameTitleId);
+
+      final trophyIds = (trophiesForGame as List)
+          .map((row) => row['id'])
+          .toList();
+
+      if (trophyIds.isEmpty) {
+        return [];
+      }
+
+      final userTrophies = await _client
           .from('user_trophies')
-          .select('''
-            id,
-            user_id,
-            trophy_id,
-            earned_at,
-            trophies!inner(game_title_id)
-          ''')
-          .eq('user_id', userId);
+          .select('id, user_id, trophy_id, earned_at')
+          .eq('user_id', userId)
+          .inFilter('trophy_id', trophyIds);
 
-      // Filter by game_title_id
-      final filtered = (response as List).where((row) {
-        final trophy = row['trophies'] as Map<String, dynamic>;
-        return trophy['game_title_id'] == gameTitleId;
-      }).toList();
-
-      return filtered
+      return (userTrophies as List)
           .map((json) => UserTrophy.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {

@@ -256,7 +256,7 @@ serve(async (req) => {
       // Check if user already has premium from another source (Apple/Google/Stripe)
       const { data: existingPremium } = await supabaseAdmin
         .from('user_premium_status')
-        .select('premium_source, is_premium, expires_at')
+        .select('premium_source, is_premium, premium_expires_at')
         .eq('user_id', user.id)
         .single();
 
@@ -272,13 +272,16 @@ serve(async (req) => {
         console.log(`User already has active premium from ${existingPremium.premium_source}, not overwriting with Twitch`);
         
         // Create notification (generic message - don't mention Twitch)
-        await supabaseAdmin.from('notifications').insert({
+        const { error: notifError } = await supabaseAdmin.from('notifications').insert({
           user_id: user.id,
           type: 'subscription_conflict',
           title: 'Active Subscription Detected',
           message: 'You already have an active premium subscription. Please cancel your existing subscription or wait until it expires before linking a new premium source.',
           created_at: new Date().toISOString(),
         });
+        if (notifError) {
+          console.error('Failed to create subscription conflict notification:', notifError);
+        }
         
         // Don't overwrite - Apple/Google/Stripe take precedence over Twitch
       } else {
@@ -287,16 +290,16 @@ serve(async (req) => {
         // Check if user already has active Twitch premium to stack time
         const { data: existingTwitchPremium } = await supabaseAdmin
           .from('user_premium_status')
-          .select('premium_source, expires_at')
+          .select('premium_source, premium_expires_at')
           .eq('user_id', user.id)
           .eq('premium_source', 'twitch')
           .single();
 
         let premiumExpiresAt: Date;
 
-        if (existingTwitchPremium?.expires_at) {
+        if (existingTwitchPremium?.premium_expires_at) {
           // User already has Twitch premium - add 33 days to existing time
-          const currentExpiry = new Date(existingTwitchPremium.expires_at);
+          const currentExpiry = new Date(existingTwitchPremium.premium_expires_at);
           const now = new Date();
           
           // If current expiry is in the future, add to that date
@@ -319,7 +322,7 @@ serve(async (req) => {
             user_id: user.id,
             is_premium: true,
             premium_source: 'twitch',
-            expires_at: premiumExpiresAt.toISOString(),
+            premium_expires_at: premiumExpiresAt.toISOString(),
             updated_at: new Date().toISOString(),
           }, {
             onConflict: 'user_id',

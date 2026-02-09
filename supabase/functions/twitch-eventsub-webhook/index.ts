@@ -73,7 +73,7 @@ async function grantPremium(supabase: any, userId: string) {
   // Check if user already has premium from any source
   const { data: existingPremium } = await supabase
     .from('user_premium_status')
-    .select('premium_source, expires_at, is_premium')
+    .select('premium_source, premium_expires_at, is_premium')
     .eq('user_id', userId)
     .single();
 
@@ -86,13 +86,16 @@ async function grantPremium(supabase: any, userId: string) {
     console.log(`User has ${existingPremium.premium_source} premium (higher priority) - not overwriting with Twitch`);
     
     // Create notification (generic message - don't mention Twitch)
-    await supabase.from('notifications').insert({
+    const { error: notifError } = await supabase.from('notifications').insert({
       user_id: userId,
       type: 'subscription_conflict',
       title: 'Active Subscription Detected',
       message: 'You already have an active premium subscription. Please cancel your existing subscription or wait until it expires.',
       created_at: new Date().toISOString(),
     });
+    if (notifError) {
+      console.error('Failed to create subscription conflict notification:', notifError);
+    }
     
     return;
   }
@@ -101,7 +104,7 @@ async function grantPremium(supabase: any, userId: string) {
 
   if (existingPremium?.premium_source === 'twitch' && existingPremium.is_premium) {
     // User already has Twitch premium - add 33 days to their current expiry
-    const currentExpiry = new Date(existingPremium.expires_at);
+    const currentExpiry = new Date(existingPremium.premium_expires_at);
     const now = new Date();
     
     // If their current expiry is in the future, add to that date
@@ -124,7 +127,7 @@ async function grantPremium(supabase: any, userId: string) {
       user_id: userId,
       is_premium: true,
       premium_source: 'twitch',
-      expires_at: expiresAt.toISOString(),
+      premium_expires_at: expiresAt.toISOString(),
       updated_at: new Date().toISOString(),
     }, {
       onConflict: 'user_id',
@@ -145,14 +148,14 @@ async function revokePremium(supabase: any, userId: string) {
   // First check if their premium is from Twitch and when it expires
   const { data: premiumStatus } = await supabase
     .from('user_premium_status')
-    .select('premium_source, expires_at')
+    .select('premium_source, premium_expires_at')
     .eq('user_id', userId)
     .single();
 
   // Only revoke if premium was granted via Twitch
   if (premiumStatus?.premium_source === 'twitch') {
-    // Check if grace period has expired (expires_at is in the past)
-    const expiryDate = new Date(premiumStatus.expires_at);
+    // Check if grace period has expired (premium_expires_at is in the past)
+    const expiryDate = new Date(premiumStatus.premium_expires_at);
     const now = new Date();
     
     if (expiryDate > now) {
@@ -166,7 +169,7 @@ async function revokePremium(supabase: any, userId: string) {
       .update({
         is_premium: false,
         premium_source: null,
-        expires_at: new Date().toISOString(), // Set to now
+        premium_expires_at: new Date().toISOString(), // Set to now
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);

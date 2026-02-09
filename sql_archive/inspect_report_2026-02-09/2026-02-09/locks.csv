@@ -1,0 +1,49 @@
+pid,relname,transactionid,granted,stmt,age
+221483,null,null,t,"
+with tables as (
+SELECT
+  c.oid :: int8 AS id,
+  nc.nspname AS schema,
+  c.relname AS name,
+  c.relrowsecurity AS rls_enabled,
+  c.relforcerowsecurity AS rls_forced,
+  CASE
+    WHEN c.relreplident = 'd' THEN 'DEFAULT'
+    WHEN c.relreplident = 'i' THEN 'INDEX'
+    WHEN c.relreplident = 'f' THEN 'FULL'
+    ELSE 'NOTHING'
+  END AS replica_identity,
+  pg_total_relation_size(format('%I.%I', nc.nspname, c.relname)) :: int8 AS bytes,
+  pg_size_pretty(
+    pg_total_relation_size(format('%I.%I', nc.nspname, c.relname))
+  ) AS size,
+  pg_stat_get_live_tuples(c.oid) AS live_rows_estimate,
+  pg_stat_get_dead_tuples(c.oid) AS dead_rows_estimate,
+  obj_description(c.oid) AS comment,
+  coalesce(pk.primary_keys, '[]') as primary_keys,
+  coalesce(
+    jsonb_agg(relationships) filter (where relationships is not null),
+    '[]'
+  ) as relationships
+FROM
+  pg_namespace nc
+  JOIN pg_class c ON nc.oid = c.relnamespace
+  left join (
+    select
+      c.oid::int8 as table_id,
+      jsonb_agg(
+        jsonb_build_object(
+          ",00:00:00.042384
+221482,null,null,t,"COPY (SELECT
+  pg_stat_activity.pid,
+  COALESCE(pg_class.relname, 'null') AS relname,
+  COALESCE(pg_locks.transactionid::text, 'null') AS transactionid,
+  pg_locks.granted,
+  pg_stat_activity.query AS stmt,
+  age(now(), pg_stat_activity.query_start)::text AS age
+FROM pg_stat_activity, pg_locks LEFT OUTER JOIN pg_class ON (pg_locks.relation = pg_class.oid)
+WHERE pg_stat_activity.query <> '<insufficient privilege>'
+AND pg_locks.pid = pg_stat_activity.pid
+AND pg_locks.mode = 'ExclusiveLock'
+ORDER BY query_start
+) TO STDOUT WITH CSV HEADER",00:00:00
