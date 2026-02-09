@@ -9,6 +9,10 @@ const supabase = createClient(
 
 const ENV_BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '5', 10);
 const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '1', 10);
+const XBOX_PROGRESS_UPDATE_EVERY = Math.max(1, parseInt(process.env.XBOX_PROGRESS_UPDATE_EVERY || '10', 10));
+const XBOX_GAME_YIELD_MS = Math.max(0, parseInt(process.env.XBOX_GAME_YIELD_MS || '0', 10));
+const XBOX_LOOKUP_CHUNK_SIZE = Math.max(25, parseInt(process.env.XBOX_LOOKUP_CHUNK_SIZE || '200', 10));
+const XBOX_ENABLE_CONSISTENCY_CHECKS = process.env.XBOX_ENABLE_CONSISTENCY_CHECKS !== 'false';
 
 // Helper to download external avatar and upload to Supabase Storage
 async function uploadExternalAvatar(externalUrl, userId, platform) {
@@ -354,6 +358,7 @@ async function refreshXboxToken(refreshToken, userId) {
 
 export async function syncXboxAchievements(userId, xuid, userHash, accessToken, refreshToken, syncLogId, options = {}) {
   console.log(`Starting Xbox sync for user ${userId}, syncLogId=${syncLogId}`);
+  const syncStartedAtMs = Date.now();
   
   // CRITICAL: Validate profile exists before starting sync
   const { data: profileValidation, error: profileError } = await supabase
@@ -420,7 +425,16 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
     // Calculate actual values from env and options
     const BATCH_SIZE = parseInt(options.batchSize, 10) || ENV_BATCH_SIZE;
-    const MAX_CONCURRENT = parseInt(options.maxConcurrent, 10) || ENV_MAX_CONCURRENT;
+    const configuredMaxConcurrent = parseInt(options.maxConcurrent, 10) || ENV_MAX_CONCURRENT;
+    const MAX_CONCURRENT = configuredMaxConcurrent > 1 ? 1 : configuredMaxConcurrent;
+    const shouldPersistProgress = (processed, total) =>
+      processed === total || processed % XBOX_PROGRESS_UPDATE_EVERY === 0;
+    if (configuredMaxConcurrent > 1) {
+      console.warn(
+        `XBOX MAX_CONCURRENT=${configuredMaxConcurrent} requested, but only sequential path is validated. ` +
+        `Forcing MAX_CONCURRENT=1 to protect sync reliability.`
+      );
+    }
 
     console.log(`Using BATCH_SIZE=${BATCH_SIZE}, MAX_CONCURRENT=${MAX_CONCURRENT}`);
 
@@ -478,6 +492,30 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
     logMemory('After filtering gamesWithProgress');
+
+    // Preload existing Xbox game rows by titleId to avoid per-game lookup queries.
+    const xboxTitleIds = [...new Set((gamesWithProgress || []).map((t) => String(t.titleId)).filter(Boolean))];
+    const existingXboxGamesByTitleId = new Map();
+    for (let idx = 0; idx < xboxTitleIds.length; idx += XBOX_LOOKUP_CHUNK_SIZE) {
+      const idsChunk = xboxTitleIds.slice(idx, idx + XBOX_LOOKUP_CHUNK_SIZE);
+      const { data: gamesChunk, error: gamesChunkError } = await supabase
+        .from('games')
+        .select('platform_id, platform_game_id, name, cover_url, metadata')
+        .in('platform_id', [10, 11, 12])
+        .in('platform_game_id', idsChunk);
+      if (gamesChunkError) {
+        console.error(`⚠️ Failed preloading Xbox games chunk (${idx}/${xboxTitleIds.length}):`, gamesChunkError.message);
+        continue;
+      }
+      for (const row of gamesChunk || []) {
+        const key = String(row.platform_game_id);
+        if (!existingXboxGamesByTitleId.has(key)) {
+          existingXboxGamesByTitleId.set(key, []);
+        }
+        existingXboxGamesByTitleId.get(key).push(row);
+      }
+    }
+    console.log(`Preloaded ${existingXboxGamesByTitleId.size} existing Xbox title rows for this sync run`);
 
     // V2 Schema: Each Xbox version has its own platform_id
     // Xbox360=10, XboxOne=11, XboxSeriesX=12
@@ -592,13 +630,13 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             // Find or create game using unique Xbox titleId
             const trimmedName = title.name.trim();
+            const titleId = String(title.titleId);
+            const existingCandidates = existingXboxGamesByTitleId.get(titleId) || [];
             
             // Check if game already exists on ANY platform to prevent duplicates
-            const { data: existingOnAnyPlatform } = await supabase
-              .from('games')
-              .select('platform_id, platform_game_id, name')
-              .eq('platform_game_id', title.titleId)
-              .maybeSingle();
+            const existingOnAnyPlatform =
+              existingCandidates.find((g) => Number(g.platform_id) === Number(platformId)) ||
+              (existingCandidates.length > 0 ? existingCandidates[0] : null);
             
             if (existingOnAnyPlatform) {
               const platformNames = { 10: 'Xbox 360', 11: 'Xbox One', 12: 'Xbox Series X|S' };
@@ -610,12 +648,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
             
             // First try to find by Xbox titleId (platform_game_id) with composite key
-            const { data: existingGameById } = await supabase
-              .from('games')
-              .select('platform_game_id, cover_url, metadata')
-              .eq('platform_id', platformId)
-              .eq('platform_game_id', title.titleId)
-              .maybeSingle();
+            const existingGameById =
+              existingCandidates.find((g) => Number(g.platform_id) === Number(platformId)) || null;
             
             let gameTitle;
             if (existingGameById) {
@@ -676,6 +710,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 continue;
               }
               gameTitle = newGame;
+              const cacheKey = String(newGame.platform_game_id);
+              if (!existingXboxGamesByTitleId.has(cacheKey)) {
+                existingXboxGamesByTitleId.set(cacheKey, []);
+              }
+              existingXboxGamesByTitleId.get(cacheKey).push(newGame);
             }
 
             if (!gameTitle) continue;
@@ -707,14 +746,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             let missingAchievements = false;
             let hasAchievementDefs = true;
             let suspiciousZeroAchievements = false;
-            if (!isNewGame && !countsChanged && !syncFailed) {
+            if (!isNewGame && !countsChanged && !syncFailed && apiGamerscore > 0 && apiEarnedAchievements === 0 && existingUserGame?.achievements_earned === 0) {
+              suspiciousZeroAchievements = true;
+              console.log(`🔍 ZERO ACHIEVEMENTS WITH SCORE: ${title.name} (API score: ${apiGamerscore})`);
+            }
+            if (XBOX_ENABLE_CONSISTENCY_CHECKS && !isNewGame && !countsChanged && !syncFailed) {
               try {
-                // If API reports gamerscore but 0 achievements, force a reprocess (likely Xbox 360 issue)
-                if (apiGamerscore > 0 && apiEarnedAchievements === 0 && existingUserGame?.achievements_earned === 0) {
-                  suspiciousZeroAchievements = true;
-                  console.log(`🔍 ZERO ACHIEVEMENTS WITH SCORE: ${title.name} (API score: ${apiGamerscore})`);
-                }
-
                 const { count: gameAchievementsCount } = await supabase
                   .from('achievements')
                   .select('*', { count: 'exact', head: true })
@@ -748,7 +785,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               console.log(`⏭️  Skip ${title.name} - no changes`);
               processedGames++;
               const progressPercent = Math.floor((processedGames / gamesWithProgress.length) * 100);
-              await supabase.from('profiles').update({ xbox_sync_progress: progressPercent }).eq('id', userId);
+              if (shouldPersistProgress(processedGames, gamesWithProgress.length)) {
+                await supabase.from('profiles').update({ xbox_sync_progress: progressPercent }).eq('id', userId);
+              }
               continue;
             }
             if (forceFullSync) {
@@ -841,28 +880,16 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               }
             }
 
-            // Check if this game needs rarity refresh (30+ days since last update)
-            const { data: rarityCheckGame } = await supabase
-              .from('achievements')
-              .select('rarity_last_updated_at')
-              .eq('game_title_id', gameTitle.id)
-              .eq('platform', 'xbox')
-              .order('rarity_last_updated_at', { ascending: false })
-              .limit(1)
-              .single();
-
-            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-            const needsRarityUpdate = !rarityCheckGame?.rarity_last_updated_at || 
-                                      new Date(rarityCheckGame.rarity_last_updated_at) < thirtyDaysAgo;
-
-            // Check if any achievements for this game have NULL rarity
+            // Reuse the precomputed rarity freshness from user_progress metadata.
+            // Optional null-rarity validation can be re-enabled via env.
+            const needsRarityUpdate = needRarityRefresh || isNewGame;
             let hasNullRarity = false;
-            if (!needsRarityUpdate) {
+            if (XBOX_ENABLE_CONSISTENCY_CHECKS && !needsRarityUpdate) {
               const { data: nullCheck } = await supabase
                 .from('achievements')
-                .select('id')
-                .eq('game_title_id', gameTitle.id)
-                .eq('platform', 'xbox')
+                .select('platform_achievement_id')
+                .eq('platform_id', platformId)
+                .eq('platform_game_id', gameTitle.platform_game_id)
                 .is('rarity_global', null)
                 .limit(1)
                 .maybeSingle();
@@ -967,6 +994,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
             // Process achievements for this title
             let mostRecentAchievementDate = null;
+            const achievementsToUpsert = [];
+            const unlockedUserAchievementCandidates = [];
+            const successfulAchievementIds = new Set();
+            const UPSERT_CHUNK_SIZE = parseInt(process.env.XBOX_UPSERT_CHUNK_SIZE || '200', 10);
             
             for (const achievement of achievementsForTitle) {
               // Track the most recent achievement earned date
@@ -1044,35 +1075,80 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               if (proxiedIconUrl) {
                 achievementData.proxied_icon_url = proxiedIconUrl;
               }
-              
-              // Upsert achievement (race-condition safe)
-              const { data: achievementRecord, error: achError } = await supabase
-                .from('achievements')
-                .upsert(achievementData, {
-                  onConflict: 'platform_id,platform_game_id,platform_achievement_id'
-                })
-                .select()
-                .single();
 
-              if (achError || !achievementRecord) {
-                console.error(`❌ Failed to upsert achievement ${achievement.name}:`, achError?.message);
-                continue;
-              }
+              achievementsToUpsert.push(achievementData);
 
               // Upsert user_achievement if unlocked
               if (achievement.progressState === 'Achieved') {
-                await supabase
+                unlockedUserAchievementCandidates.push({
+                  user_id: userId,
+                  platform_id: platformId,
+                  platform_game_id: gameTitle.platform_game_id,
+                  platform_achievement_id: achievement.id,
+                  earned_at: earnedAt,
+                });
+              }
+            }
+
+            // Batch upsert achievements first to satisfy FK for user_achievements.
+            for (let i = 0; i < achievementsToUpsert.length; i += UPSERT_CHUNK_SIZE) {
+              const chunk = achievementsToUpsert.slice(i, i + UPSERT_CHUNK_SIZE);
+              const chunkIds = chunk.map((row) => row.platform_achievement_id);
+
+              const { error: chunkError } = await supabase
+                .from('achievements')
+                .upsert(chunk, {
+                  onConflict: 'platform_id,platform_game_id,platform_achievement_id'
+                });
+
+              if (!chunkError) {
+                for (const id of chunkIds) successfulAchievementIds.add(id);
+                continue;
+              }
+
+              console.warn(`⚠️ Xbox achievements batch upsert failed, retrying row-by-row: ${chunkError.message}`);
+              for (const row of chunk) {
+                const { error: rowError } = await supabase
+                  .from('achievements')
+                  .upsert(row, {
+                    onConflict: 'platform_id,platform_game_id,platform_achievement_id'
+                  });
+                if (rowError) {
+                  console.error(`❌ Failed to upsert achievement ${row.platform_achievement_id}:`, rowError.message);
+                  continue;
+                }
+                successfulAchievementIds.add(row.platform_achievement_id);
+              }
+            }
+
+            // Only write unlocked rows whose achievement definition exists.
+            const userAchievementsToUpsert = unlockedUserAchievementCandidates.filter((row) =>
+              successfulAchievementIds.has(row.platform_achievement_id)
+            );
+
+            for (let i = 0; i < userAchievementsToUpsert.length; i += UPSERT_CHUNK_SIZE) {
+              const chunk = userAchievementsToUpsert.slice(i, i + UPSERT_CHUNK_SIZE);
+              const { error: chunkError } = await supabase
+                .from('user_achievements')
+                .upsert(chunk, {
+                  onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id',
+                });
+
+              if (!chunkError) {
+                totalAchievements += chunk.length;
+                continue;
+              }
+
+              console.warn(`⚠️ Xbox user_achievements batch upsert failed, retrying row-by-row: ${chunkError.message}`);
+              for (const row of chunk) {
+                const { error: rowError } = await supabase
                   .from('user_achievements')
-                  .upsert({
-                    user_id: userId,
-                    platform_id: platformId,
-                    platform_game_id: gameTitle.platform_game_id,
-                    platform_achievement_id: achievementRecord.platform_achievement_id,
-                    earned_at: earnedAt,
-                  }, {
+                  .upsert(row, {
                     onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id',
                   });
-                
+                if (rowError) {
+                  throw new Error(`Failed to upsert user_achievement ${row.platform_achievement_id}: ${rowError.message}`);
+                }
                 totalAchievements++;
               }
             }
@@ -1093,14 +1169,18 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const progress = Math.floor((processedGames / gamesWithProgress.length) * 100);
             
             // Update progress
-            await supabase
-              .from('profiles')
-              .update({ xbox_sync_progress: progress })
-              .eq('id', userId);
+            if (shouldPersistProgress(processedGames, gamesWithProgress.length)) {
+              await supabase
+                .from('profiles')
+                .update({ xbox_sync_progress: progress })
+                .eq('id', userId);
+            }
 
             console.log(`Processed ${processedGames}/${gamesWithProgress.length} games (${progress}%)`);
             // Briefly yield to the event loop to reduce temporary memory spikes
-            await new Promise((r) => setTimeout(r, 25));
+            if (XBOX_GAME_YIELD_MS > 0) {
+              await new Promise((r) => setTimeout(r, XBOX_GAME_YIELD_MS));
+            }
           } catch (error) {
             console.error(`❌ Error processing title ${title.name}:`, error);
             
@@ -1137,10 +1217,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
             processedGames++;
             const progress = Math.floor((processedGames / gamesWithProgress.length) * 100);
-            await supabase
-              .from('profiles')
-              .update({ xbox_sync_progress: progress })
-              .eq('id', userId);
+            if (shouldPersistProgress(processedGames, gamesWithProgress.length)) {
+              await supabase
+                .from('profiles')
+                .update({ xbox_sync_progress: progress })
+                .eq('id', userId);
+            }
             
             // Continue with next game
           }
@@ -1247,10 +1329,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
               processedGames++;
               const progress = Math.floor((processedGames / gamesWithProgress.length) * 100);
-              await supabase
-                .from('profiles')
-                .update({ xbox_sync_progress: progress })
-                .eq('id', userId);
+              if (shouldPersistProgress(processedGames, gamesWithProgress.length)) {
+                await supabase
+                  .from('profiles')
+                  .update({ xbox_sync_progress: progress })
+                  .eq('id', userId);
+              }
             } catch (error) {
               console.error(`Error processing title ${title.name}:`, error);
             }
@@ -1312,6 +1396,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       .eq('id', syncLogId);
 
     console.log(`Xbox sync completed: ${processedGames} games, ${totalAchievements} achievements`);
+    console.log(`Xbox sync duration: ${Math.round((Date.now() - syncStartedAtMs) / 1000)}s`);
 
   } catch (error) {
     console.error('Xbox sync failed:', error);
