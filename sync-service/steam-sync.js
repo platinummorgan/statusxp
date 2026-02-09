@@ -246,6 +246,10 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
     let processedGames = 0;
     let totalAchievements = 0;
+    let titlesSeen = 0;
+    let titlesSkipped = 0;
+    let titlesFailed = 0;
+    let titlesFullyProcessed = 0;
 
     const BATCH_SIZE = parseInt(options.batchSize, 10) || ENV_BATCH_SIZE;
     const configuredMaxConcurrent = parseInt(options.maxConcurrent, 10) || ENV_MAX_CONCURRENT;
@@ -295,6 +299,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       if (MAX_CONCURRENT <= 1) {
         for (let batchIndex = 0; batchIndex < batch.length; batchIndex++) {
           const game = batch[batchIndex];
+          titlesSeen++;
           
           // Check for cancellation every 5 games within batch
           if (batchIndex > 0 && batchIndex % 5 === 0) {
@@ -347,6 +352,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
             if (playtimeUnchanged && lastSyncAttempt && lastSyncAttempt > fastSkipCutoff) {
               console.log(`⏭️  Fast skip ${game.name} - playtime unchanged (last sync ${fastSkipHours}h)`);
+              titlesSkipped++;
               await supabase
                 .from('user_progress')
                 .update({
@@ -410,13 +416,18 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             const contentType = schemaResponse.headers.get('content-type');
             if (!schemaResponse.ok || !contentType?.includes('application/json')) {
               console.log(`⚠️ Schema fetch failed for ${game.appid} (status ${schemaResponse.status}, type ${contentType}) - skipping game`);
+              titlesSkipped++;
               continue;
             }
             
             const schemaData = await schemaResponse.json();
             const achievements = schemaData.game?.availableGameStats?.achievements || [];
 
-            if (achievements.length === 0) continue;
+            if (achievements.length === 0) {
+              console.log(`⏭️  Skip ${game.name} - no achievements in Steam schema`);
+              titlesSkipped++;
+              continue;
+            }
 
             // Get player achievements to check counts
             const playerAchievementsResponse = await fetch(
@@ -428,6 +439,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             const playerContentType = playerAchievementsResponse.headers.get('content-type');
             if (!playerAchievementsResponse.ok || !playerContentType?.includes('application/json')) {
               console.log(`⚠️ Player achievements fetch failed for ${game.appid} (status ${playerAchievementsResponse.status}) - skipping game`);
+              titlesSkipped++;
               continue;
             }
             
@@ -497,13 +509,17 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               
               if (insertError) {
                 console.error('❌ Failed to upsert game:', game.name, 'Error:', insertError);
+                titlesFailed++;
                 continue;
               }
               gameTitle = newGame;
               existingSteamGamesMap.set(String(newGame.platform_game_id), newGame);
             }
 
-            if (!gameTitle) continue;
+            if (!gameTitle) {
+              titlesFailed++;
+              continue;
+            }
 
             // Cheap diff: Check if game data changed
             const existingUserGame = userGamesMap.get(`${gameTitle.platform_game_id}_${platformId}`);
@@ -606,6 +622,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             }
             if (!needsProcessing) {
               console.log(`⏭️  Skip ${game.name} - no changes`);
+              titlesSkipped++;
               processedGames++;
               const progressPercent = Math.floor((processedGames / ownedGames.length) * 100);
               if (shouldPersistProgress(processedGames, ownedGames.length)) {
@@ -869,6 +886,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               }
             }
 
+            titlesFullyProcessed++;
             processedGames++;
             const progressPercent = Math.floor((processedGames / ownedGames.length) * 100);
             
@@ -888,6 +906,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             
           } catch (error) {
             console.error(`Error processing game ${game.name}:`, error);
+            titlesFailed++;
             
             // Mark sync as failed for this game
             try {
@@ -923,6 +942,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       
       logMemory(`After processing Steam batch ${i / BATCH_SIZE + 1}`);
     }
+
+    const titlesUnaccounted = Math.max(0, titlesSeen - (titlesSkipped + titlesFailed + titlesFullyProcessed));
+    console.log(
+      `Steam sync summary: seen=${titlesSeen}, fully_processed=${titlesFullyProcessed}, ` +
+      `skipped=${titlesSkipped}, failed=${titlesFailed}, unaccounted=${titlesUnaccounted}, ` +
+      `progress_counter=${processedGames}/${ownedGames.length}`
+    );
 
     // Refresh StatusXP leaderboard for this user only
     console.log('Running refresh_statusxp_leaderboard_for_user...');
@@ -961,6 +987,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
         completed_at: new Date().toISOString(),
         games_processed: processedGames,
         achievements_synced: totalAchievements,
+        error_message: null,
       })
       .eq('id', syncLogId);
 
