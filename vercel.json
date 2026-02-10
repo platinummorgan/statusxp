@@ -6,7 +6,11 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/((?!.well-known).*)",
+      "source": "/login-callback",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!(\\.well-known|assets|favicon|manifest|icons)).*)",
       "destination": "/index.html"
     }
   ],
