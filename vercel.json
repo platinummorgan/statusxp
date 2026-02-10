@@ -10,7 +10,15 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?!(\\.well-known|assets|favicon|manifest|icons)).*)",
+      "source": "/.well-known/:path*",
+      "destination": "/.well-known/:path*"
+    },
+    {
+      "source": "/:path*.:ext*",
+      "destination": "/:path*.:ext*"
+    },
+    {
+      "source": "/:path*",
       "destination": "/index.html"
     }
   ],
