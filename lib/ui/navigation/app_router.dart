@@ -79,6 +79,17 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
+    // Apple/Google OAuth Callback - Redirect to dashboard after authentication
+    GoRoute(
+      path: '/login-callback',
+      name: 'login-callback',
+      redirect: (context, state) {
+        // After OAuth, Supabase redirects here with auth tokens in URL hash
+        // Just redirect to dashboard - AuthGate will handle the session
+        return '/';
+      },
+    ),
+
     ShellRoute(
       builder: (context, state, child) => AuthGate(child: child),
       routes: [
