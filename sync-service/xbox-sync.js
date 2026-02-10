@@ -13,6 +13,10 @@ const XBOX_PROGRESS_UPDATE_EVERY = Math.max(1, parseInt(process.env.XBOX_PROGRES
 const XBOX_GAME_YIELD_MS = Math.max(0, parseInt(process.env.XBOX_GAME_YIELD_MS || '0', 10));
 const XBOX_LOOKUP_CHUNK_SIZE = Math.max(25, parseInt(process.env.XBOX_LOOKUP_CHUNK_SIZE || '200', 10));
 const XBOX_ENABLE_CONSISTENCY_CHECKS = process.env.XBOX_ENABLE_CONSISTENCY_CHECKS !== 'false';
+const XBOX_TITLE_HISTORY_MAX_PAGES = Math.max(1, parseInt(process.env.XBOX_TITLE_HISTORY_MAX_PAGES || '50', 10));
+const OPENXBL_FETCH_TIMEOUT_MS = Math.max(1000, parseInt(process.env.OPENXBL_FETCH_TIMEOUT_MS || '15000', 10));
+const OPENXBL_MAX_RETRIES = Math.max(1, parseInt(process.env.OPENXBL_MAX_RETRIES || '3', 10));
+const OPENXBL_RETRY_BASE_MS = Math.max(100, parseInt(process.env.OPENXBL_RETRY_BASE_MS || '750', 10));
 
 // Helper to download external avatar and upload to Supabase Storage
 async function uploadExternalAvatar(externalUrl, userId, platform) {
@@ -105,6 +109,115 @@ function logMemory(label) {
   } catch (e) {
     console.log('logMemory error', e.message);
   }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseXboxNumericSetting(value) {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).replace(/[^0-9-]/g, '');
+  if (!normalized || normalized === '-') return null;
+  const parsed = Number.parseInt(normalized, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isRetryableOpenXblStatus(status) {
+  return status === 429 || status === 408 || (status >= 500 && status <= 599);
+}
+
+function isRetryableOpenXblError(error) {
+  const raw = `${error?.message || error || ''} ${error?.cause?.code || ''}`;
+  const msg = raw.toLowerCase();
+  return (
+    msg.includes('terminated') ||
+    msg.includes('und_err_socket') ||
+    msg.includes('socket') ||
+    msg.includes('fetch failed') ||
+    msg.includes('econnreset') ||
+    msg.includes('timed out') ||
+    msg.includes('timeout') ||
+    msg.includes('aborted')
+  );
+}
+
+async function fetchOpenXblJsonWithRetry(url, openXBLKey, contextLabel) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= OPENXBL_MAX_RETRIES; attempt++) {
+    try {
+      const signal = typeof AbortSignal?.timeout === 'function'
+        ? AbortSignal.timeout(OPENXBL_FETCH_TIMEOUT_MS)
+        : undefined;
+
+      const response = await fetch(url, {
+        headers: { 'x-authorization': openXBLKey },
+        signal,
+      });
+
+      if (!response.ok) {
+        if (attempt < OPENXBL_MAX_RETRIES && isRetryableOpenXblStatus(response.status)) {
+          const delayMs = OPENXBL_RETRY_BASE_MS * Math.pow(2, attempt - 1);
+          console.warn(`[OPENXBL] ${contextLabel} attempt ${attempt}/${OPENXBL_MAX_RETRIES} failed with status ${response.status}. Retrying in ${delayMs}ms...`);
+          await sleep(delayMs);
+          continue;
+        }
+        return { ok: false, status: response.status, data: null };
+      }
+
+      const data = await response.json();
+      return { ok: true, status: response.status, data };
+    } catch (error) {
+      lastError = error;
+      if (attempt < OPENXBL_MAX_RETRIES && isRetryableOpenXblError(error)) {
+        const delayMs = OPENXBL_RETRY_BASE_MS * Math.pow(2, attempt - 1);
+        console.warn(`[OPENXBL] ${contextLabel} attempt ${attempt}/${OPENXBL_MAX_RETRIES} threw ${error?.message || error}. Retrying in ${delayMs}ms...`);
+        await sleep(delayMs);
+        continue;
+      }
+      return { ok: false, status: null, data: null, error };
+    }
+  }
+
+  return { ok: false, status: null, data: null, error: lastError };
+}
+
+async function fetchXboxJsonWithRetry(url, requestInit, contextLabel) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= OPENXBL_MAX_RETRIES; attempt++) {
+    try {
+      const signal = typeof AbortSignal?.timeout === 'function'
+        ? AbortSignal.timeout(OPENXBL_FETCH_TIMEOUT_MS)
+        : undefined;
+      const response = await fetch(url, { ...requestInit, signal });
+
+      if (!response.ok) {
+        if (attempt < OPENXBL_MAX_RETRIES && isRetryableOpenXblStatus(response.status)) {
+          const delayMs = OPENXBL_RETRY_BASE_MS * Math.pow(2, attempt - 1);
+          console.warn(`[XBOX API] ${contextLabel} attempt ${attempt}/${OPENXBL_MAX_RETRIES} failed with status ${response.status}. Retrying in ${delayMs}ms...`);
+          await sleep(delayMs);
+          continue;
+        }
+        return { ok: false, status: response.status, data: null, headers: response.headers };
+      }
+
+      const data = await response.json();
+      return { ok: true, status: response.status, data, headers: response.headers };
+    } catch (error) {
+      lastError = error;
+      if (attempt < OPENXBL_MAX_RETRIES && isRetryableOpenXblError(error)) {
+        const delayMs = OPENXBL_RETRY_BASE_MS * Math.pow(2, attempt - 1);
+        console.warn(`[XBOX API] ${contextLabel} attempt ${attempt}/${OPENXBL_MAX_RETRIES} threw ${error?.message || error}. Retrying in ${delayMs}ms...`);
+        await sleep(delayMs);
+        continue;
+      }
+      return { ok: false, status: null, data: null, error };
+    }
+  }
+
+  return { ok: false, status: null, data: null, error: lastError };
 }
 
 function mapXboxPlatformToPlatformId(devices) {
@@ -274,8 +387,9 @@ async function refreshXboxToken(refreshToken, userId) {
   console.log('[GAMERTAG FETCH] Starting gamertag fetch for xuid:', xuid);
   let gamertag = 'Unknown';
   let avatarUrl = null;
+  let profileGamerscore = null;
   try {
-    const profileUrl = `https://profile.xboxlive.com/users/xuid(${xuid})/profile/settings?settings=Gamertag,GameDisplayPicRaw`;
+    const profileUrl = `https://profile.xboxlive.com/users/xuid(${xuid})/profile/settings?settings=Gamertag,GameDisplayPicRaw,Gamerscore`;
     console.log('[GAMERTAG FETCH] URL:', profileUrl);
     const profileResponse = await fetch(profileUrl, {
       headers: {
@@ -291,6 +405,7 @@ async function refreshXboxToken(refreshToken, userId) {
       const settings = profileData.profileUsers?.[0]?.settings || [];
       const gamertagSetting = settings.find(s => s.id === 'Gamertag');
       const avatarSetting = settings.find(s => s.id === 'GameDisplayPicRaw');
+      const gamerscoreSetting = settings.find(s => s.id === 'Gamerscore');
       if (gamertagSetting) {
         gamertag = gamertagSetting.value;
         console.log('[GAMERTAG FETCH] ✅ SUCCESS - Fetched Xbox gamertag:', gamertag);
@@ -300,6 +415,10 @@ async function refreshXboxToken(refreshToken, userId) {
       if (avatarSetting) {
         avatarUrl = avatarSetting.value;
         console.log('[GAMERTAG FETCH] ✅ SUCCESS - Fetched Xbox avatar URL:', avatarUrl);
+      }
+      if (gamerscoreSetting) {
+        profileGamerscore = parseXboxNumericSetting(gamerscoreSetting.value);
+        console.log('[GAMERTAG FETCH] ✅ SUCCESS - Fetched Xbox profile gamerscore:', profileGamerscore);
       }
     } else {
       console.log('[GAMERTAG FETCH] ❌ FAILED - Bad response status');
@@ -343,16 +462,30 @@ async function refreshXboxToken(refreshToken, userId) {
       updateData.xbox_avatar_url = avatarUrl;
     }
   }
-  const updateProfile = await supabase
+  if (profileGamerscore !== null) {
+    updateData.xbox_profile_gamerscore = profileGamerscore;
+  }
+
+  let updateProfile = await supabase
     .from('profiles')
     .update(updateData)
     .eq('id', userId);
+
+  // Safe rollout: if DB migration isn't applied yet, retry without the new column.
+  if (updateProfile.error?.message?.includes('xbox_profile_gamerscore')) {
+    const { xbox_profile_gamerscore, ...fallbackUpdateData } = updateData;
+    updateProfile = await supabase
+      .from('profiles')
+      .update(fallbackUpdateData)
+      .eq('id', userId);
+  }
   console.log('[GAMERTAG SAVE] Save result:', updateProfile.error || 'OK');
 
   return {
     accessToken: xstsData.Token,
     xuid,
     userHash,
+    profileGamerscore,
   };
 }
 
@@ -410,6 +543,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     accessToken = refreshed.accessToken;
     xuid = refreshed.xuid;
     userHash = refreshed.userHash;
+    const profileGamerscore = refreshed.profileGamerscore;
 
     // Set initial status
     const profileUpdateRes = await supabase
@@ -438,22 +572,60 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
     console.log(`Using BATCH_SIZE=${BATCH_SIZE}, MAX_CONCURRENT=${MAX_CONCURRENT}`);
 
-    // Fetch all games
-    const titleHistoryResponse = await fetch(
-      `https://titlehub.xboxlive.com/users/xuid(${xuid})/titles/titlehistory/decoration/achievement`,
-      {
-        headers: {
-          'x-xbl-contract-version': '2',
-          'Accept-Language': 'en-US',
-          Authorization: `XBL3.0 x=${userHash};${accessToken}`,
-        },
-      }
-    );
+    // Fetch all title history pages (continuation token) to avoid silently missing old titles.
+    const baseTitleHistoryUrl = `https://titlehub.xboxlive.com/users/xuid(${xuid})/titles/titlehistory/decoration/achievement`;
+    const titleHistoryHeaders = {
+      'x-xbl-contract-version': '2',
+      'Accept-Language': 'en-US',
+      Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+    };
+    const dedupedTitles = [];
+    const seenTitleIds = new Set();
+    let continuationToken = null;
+    let titleHistoryPage = 0;
 
-    const titleHistory = await titleHistoryResponse.json();
-    console.log('Fetched title history - titles length:', (titleHistory?.titles || []).length);
+    do {
+      const url = continuationToken
+        ? `${baseTitleHistoryUrl}?continuationToken=${encodeURIComponent(continuationToken)}`
+        : baseTitleHistoryUrl;
+
+      const historyResult = await fetchXboxJsonWithRetry(
+        url,
+        { headers: titleHistoryHeaders },
+        `title history page ${titleHistoryPage + 1}`
+      );
+      if (!historyResult.ok) {
+        throw new Error(`Failed to fetch title history page ${titleHistoryPage + 1} (${historyResult.status ?? 'network error'})`);
+      }
+
+      const pageTitles = historyResult.data?.titles || [];
+      for (const pageTitle of pageTitles) {
+        const key = String(pageTitle?.titleId || '');
+        if (!key || seenTitleIds.has(key)) continue;
+        seenTitleIds.add(key);
+        dedupedTitles.push(pageTitle);
+      }
+
+      continuationToken =
+        historyResult.data?.pagingInfo?.continuationToken ||
+        historyResult.headers?.get?.('x-continuation-token') ||
+        null;
+
+      titleHistoryPage++;
+      console.log(
+        `[XBOX TITLE HISTORY] Page ${titleHistoryPage}: ${pageTitles.length} titles, ` +
+        `deduped total=${dedupedTitles.length}, nextToken=${continuationToken ? 'yes' : 'no'}`
+      );
+
+      if (titleHistoryPage >= XBOX_TITLE_HISTORY_MAX_PAGES) {
+        console.warn(`[XBOX TITLE HISTORY] Reached page safety limit (${XBOX_TITLE_HISTORY_MAX_PAGES}).`);
+        break;
+      }
+    } while (continuationToken);
+
+    console.log('Fetched title history - deduped titles length:', dedupedTitles.length);
     
-    if (!titleHistory?.titles || titleHistory.titles.length === 0) {
+    if (dedupedTitles.length === 0) {
       console.log('No Xbox titles found - marking sync as success with 0 games');
       await supabase
         .from('profiles')
@@ -476,7 +648,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       return;
     }
 
-    const gamesWithProgress = titleHistory.titles.filter(t => {
+    const gamesWithProgress = dedupedTitles.filter(t => {
       const currentGamerscore = t.achievement?.currentGamerscore || 0;
       const currentAchievements = t.achievement?.currentAchievements || 0;
       if (currentGamerscore > 0 || currentAchievements > 0) return true;
@@ -489,6 +661,15 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       // Xbox 360 titles can report 0 current progress; include if the title has achievements
       return isXbox360 && (totalGamerscore > 0 || totalAchievements > 0);
     });
+
+    const titleHistoryGamerscoreTotal = gamesWithProgress.reduce((sum, title) => {
+      return sum + (Number(title?.achievement?.currentGamerscore) || 0);
+    }, 0);
+    if (Number.isFinite(profileGamerscore) && profileGamerscore !== titleHistoryGamerscoreTotal) {
+      console.warn(
+        `[XBOX SCORE MISMATCH] profile=${profileGamerscore}, titleHistory=${titleHistoryGamerscoreTotal}, delta=${profileGamerscore - titleHistoryGamerscoreTotal}`
+      );
+    }
 
     console.log(`Found ${gamesWithProgress.length} games with achievements`);
     logMemory('After filtering gamesWithProgress');
@@ -606,13 +787,15 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
           }
           
-          try {
+        let gameTitle = null;
+        let platformId = null;
+        try {
             console.log(`Processing game: ${title.name} (${title.titleId})`);
             
             // Detect platform version and map to platform_id
             // Xbox360=10, XboxOne=11, XboxSeriesX=12
             const platformMapping = mapXboxPlatformToPlatformId(title.devices);
-            let platformId = platformMapping.platformId;
+            platformId = platformMapping.platformId;
             let platformVersion = platformMapping.platformVersion;
             let isPCOnly = platformMapping.isPCOnly;
             
@@ -651,7 +834,6 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const existingGameById =
               existingCandidates.find((g) => Number(g.platform_id) === Number(platformId)) || null;
             
-            let gameTitle;
             if (existingGameById) {
               // Found by composite key - this is the exact game
               if (!existingGameById.cover_url && title.displayImage) {
@@ -812,19 +994,23 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 ? `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}&continuationToken=${continuationToken}`
                 : `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}`;
               
-              const achievementsResponse = await fetch(url, {
-                headers: {
-                  'x-xbl-contract-version': '2',
-                  Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+              const achievementsResult = await fetchXboxJsonWithRetry(
+                url,
+                {
+                  headers: {
+                    'x-xbl-contract-version': '2',
+                    Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+                  },
                 },
-              });
+                `achievements page ${pageCount + 1} for ${title.name}`
+              );
 
-              if (!achievementsResponse.ok) {
-                console.error(`[XBOX ACHIEVEMENTS] Failed to fetch achievements page ${pageCount + 1} for ${title.name}: ${achievementsResponse.status}`);
+              if (!achievementsResult.ok) {
+                console.error(`[XBOX ACHIEVEMENTS] Failed to fetch achievements page ${pageCount + 1} for ${title.name}: ${achievementsResult.status}`);
                 break;
               }
 
-              const achievementsData = await achievementsResponse.json();
+              const achievementsData = achievementsResult.data;
               const pageAchievements = achievementsData?.achievements || [];
               
               // LOG FIRST ACHIEVEMENT TO SEE FULL STRUCTURE
@@ -855,22 +1041,24 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const openXBLKey = process.env.OPENXBL_API_KEY;
               if (openXBLKey) {
                 try {
-                  const openXblResponse = await fetch(
+                  const openXblResult = await fetchOpenXblJsonWithRetry(
                     `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
-                    { headers: { 'x-authorization': openXBLKey } }
+                    openXBLKey,
+                    `player achievements fallback for ${title.name}`
                   );
 
-                  if (openXblResponse.ok) {
-                    const openXblData = await openXblResponse.json();
-                    const openXblAchievements = openXblData?.achievements || [];
+                  if (openXblResult.ok) {
+                    const openXblAchievements = openXblResult.data?.achievements || [];
                     if (openXblAchievements.length > 0) {
                       achievementsForTitle.push(...openXblAchievements);
                       totalAchievementsFromAPI = achievementsForTitle.length;
                       usedOpenXblPlayerFallback = true;
                       console.log(`[OPENXBL] Using player achievements fallback for ${title.name} (${totalAchievementsFromAPI} achievements)`);
                     }
+                  } else if (openXblResult.error) {
+                    console.error(`[OPENXBL] Player endpoint error for ${title.name}:`, openXblResult.error);
                   } else {
-                    console.log(`[OPENXBL] Player endpoint failed (${openXblResponse.status}) for ${title.name}`);
+                    console.log(`[OPENXBL] Player endpoint failed (${openXblResult.status}) for ${title.name}`);
                   }
                 } catch (openXblError) {
                   console.error(`[OPENXBL] Player endpoint error for ${title.name}:`, openXblError);
@@ -906,18 +1094,14 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 const openXBLKey = process.env.OPENXBL_API_KEY;
                 if (openXBLKey) {
                   // Use title endpoint (requires paid tier) for complete rarity data
-                  const rarityResponse = await fetch(
+                  const rarityResult = await fetchOpenXblJsonWithRetry(
                     `https://xbl.io/api/v2/achievements/title/${title.titleId}`,
-                    {
-                      headers: {
-                        'x-authorization': openXBLKey,
-                      },
-                    }
+                    openXBLKey,
+                    `title rarity fetch for ${title.name}`
                   );
                   
-                  if (rarityResponse.ok) {
-                    const rarityData = await rarityResponse.json();
-                    const achievementsWithRarity = rarityData?.achievements || [];
+                  if (rarityResult.ok) {
+                    const achievementsWithRarity = rarityResult.data?.achievements || [];
                     for (const ach of achievementsWithRarity) {
                       if (ach.rarity?.currentPercentage !== undefined) {
                         openXBLRarityMap.set(ach.id, ach.rarity.currentPercentage);
@@ -925,26 +1109,28 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                     }
                     console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements (title endpoint)`);
                   } else {
-                    console.log(`[OPENXBL] Title endpoint failed (${rarityResponse.status}), trying player endpoint fallback`);
+                    if (rarityResult.error) {
+                      console.log(`[OPENXBL] Title endpoint failed (error), trying player endpoint fallback`);
+                    } else {
+                      console.log(`[OPENXBL] Title endpoint failed (${rarityResult.status}), trying player endpoint fallback`);
+                    }
                     // Fallback to player endpoint if title endpoint fails
-                    const playerRarityResponse = await fetch(
+                    const playerRarityResult = await fetchOpenXblJsonWithRetry(
                       `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
-                      {
-                        headers: {
-                          'x-authorization': openXBLKey,
-                        },
-                      }
+                      openXBLKey,
+                      `player rarity fallback for ${title.name}`
                     );
                     
-                    if (playerRarityResponse.ok) {
-                      const playerRarityData = await playerRarityResponse.json();
-                      const playerAchievements = playerRarityData?.achievements || [];
+                    if (playerRarityResult.ok) {
+                      const playerAchievements = playerRarityResult.data?.achievements || [];
                       for (const ach of playerAchievements) {
                         if (ach.rarity?.currentPercentage !== undefined) {
                           openXBLRarityMap.set(ach.id, ach.rarity.currentPercentage);
                         }
                       }
                       console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements (player endpoint fallback)`);
+                    } else if (playerRarityResult.error) {
+                      console.error(`[OPENXBL] Player rarity fallback error for ${title.name}:`, playerRarityResult.error);
                     }
                   }
                 }
