@@ -23,6 +23,10 @@ import 'package:statusxp/ui/screens/coop_partners_screen.dart';
 import 'package:statusxp/ui/screens/trophy_help_request_details_screen.dart';
 import 'package:statusxp/ui/screens/achievement_comments_screen.dart';
 import 'package:statusxp/ui/screens/premium_analytics_screen.dart';
+import 'package:statusxp/ui/screens/premium_achievement_radar_screen.dart';
+import 'package:statusxp/ui/screens/premium_goals_pace_screen.dart';
+import 'package:statusxp/ui/screens/premium_rival_compare_screen.dart';
+import 'package:statusxp/ui/screens/premium_sync_intelligence_screen.dart';
 import 'package:statusxp/ui/screens/seasonal_leaderboard_screen.dart';
 import 'package:statusxp/ui/screens/hall_of_fame_screen.dart';
 
@@ -88,6 +92,13 @@ final GoRouter appRouter = GoRouter(
         // Just redirect to dashboard - AuthGate will handle the session
         return '/';
       },
+    ),
+
+    // Legacy OAuth callback path compatibility
+    GoRoute(
+      path: '/auth/callback',
+      name: 'auth-callback-legacy',
+      redirect: (context, state) => '/login-callback',
     ),
 
     ShellRoute(
@@ -276,6 +287,34 @@ final GoRouter appRouter = GoRouter(
           path: '/analytics',
           name: 'analytics',
           builder: (context, state) => const PremiumAnalyticsScreen(),
+        ),
+
+        // Premium Sync Intelligence - Diagnostics and sync recommendations
+        GoRoute(
+          path: '/sync-intelligence',
+          name: 'sync-intelligence',
+          builder: (context, state) => const PremiumSyncIntelligenceScreen(),
+        ),
+
+        // Premium Goals & Pace Coach
+        GoRoute(
+          path: '/goals-pace',
+          name: 'goals-pace',
+          builder: (context, state) => const PremiumGoalsPaceScreen(),
+        ),
+
+        // Premium Rival Comparison
+        GoRoute(
+          path: '/rival-compare',
+          name: 'rival-compare',
+          builder: (context, state) => const PremiumRivalCompareScreen(),
+        ),
+
+        // Premium Achievement Radar
+        GoRoute(
+          path: '/achievement-radar',
+          name: 'achievement-radar',
+          builder: (context, state) => const PremiumAchievementRadarScreen(),
         ),
 
         // Premium Subscription - Subscription and billing management

@@ -12,11 +12,15 @@ import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/ui/widgets/title_selector_modal.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 /// Flex Room - Cross-platform curated museum of gaming achievements
 /// User's hand-picked showcase across PS / Xbox / Steam
+enum FlexRoomViewTab { showcase, recent }
+
 class FlexRoomScreen extends ConsumerStatefulWidget {
-  final String? viewerId; // If null, show current user's room. If provided, show that user's room.
-  
+  final String?
+  viewerId; // If null, show current user's room. If provided, show that user's room.
+
   const FlexRoomScreen({super.key, this.viewerId});
 
   @override
@@ -25,13 +29,52 @@ class FlexRoomScreen extends ConsumerStatefulWidget {
 
 class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   bool _isEditMode = false;
+  FlexRoomViewTab _activeTab = FlexRoomViewTab.showcase;
   FlexRoomData? _editingData;
-  FlexRoomData? _savedData; // Cache of last saved/loaded data to prevent flicker
+  FlexRoomData?
+  _savedData; // Cache of last saved/loaded data to prevent flicker
   String? _avatarUrl;
   bool _isPsPlus = false;
   String _username = 'Player';
   String _selectedTitle = 'Completionist'; // Default title
   String? _achievementIcon; // Icon emoji for selected achievement title
+
+  Future<void> _toggleEditMode(String userId) async {
+    if (_isEditMode && _editingData != null) {
+      final dataToSave = _editingData!;
+
+      setState(() {
+        _savedData = dataToSave;
+        _isEditMode = false;
+        _editingData = null;
+      });
+
+      final repository = ref.read(flexRoomRepositoryProvider);
+      final success = await repository.updateFlexRoomData(dataToSave);
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Flex Room saved!')));
+      } else {
+        ref.invalidate(flexRoomDataProvider(userId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to save changes'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isEditMode = true;
+      _activeTab = FlexRoomViewTab.showcase;
+    });
+  }
 
   @override
   void initState() {
@@ -53,17 +96,23 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
 
   Future<void> _loadUserProfile() async {
     final currentUserId = ref.read(currentUserIdProvider);
-    final userId = widget.viewerId ?? currentUserId ?? ''; // View someone else's profile or your own
+    final userId =
+        widget.viewerId ??
+        currentUserId ??
+        ''; // View someone else's profile or your own
     final supabase = Supabase.instance.client;
-    
+
     try {
       final profile = await supabase
           .from('profiles')
-          .select('psn_online_id, psn_avatar_url, psn_is_plus, steam_display_name, steam_avatar_url, xbox_gamertag, xbox_avatar_url, preferred_display_platform')
+          .select(
+            'psn_online_id, psn_avatar_url, psn_is_plus, steam_display_name, steam_avatar_url, xbox_gamertag, xbox_avatar_url, preferred_display_platform',
+          )
           .eq('id', userId)
           .single();
       if (mounted) {
-        final preferredPlatform = profile['preferred_display_platform'] as String? ?? 'psn';
+        final preferredPlatform =
+            profile['preferred_display_platform'] as String? ?? 'psn';
         setState(() {
           // Use preferred platform for display
           switch (preferredPlatform) {
@@ -82,32 +131,38 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               _isPsPlus = profile['psn_is_plus'] as bool? ?? false;
           }
         });
-      } else {
-      }
-      
+      } else {}
+
       // Load selected title
       final titleData = await supabase
           .from('user_selected_title')
-          .select('achievement_id, custom_title, meta_achievements!inner(default_title, icon_emoji)')
+          .select(
+            'achievement_id, custom_title, meta_achievements!inner(default_title, icon_emoji)',
+          )
           .eq('user_id', userId)
           .maybeSingle();
       if (titleData != null && mounted) {
         setState(() {
-          _selectedTitle = titleData['custom_title'] as String? ?? 
-              (titleData['meta_achievements']?['default_title'] as String?) ?? 
+          _selectedTitle =
+              titleData['custom_title'] as String? ??
+              (titleData['meta_achievements']?['default_title'] as String?) ??
               'Completionist';
-          _achievementIcon = titleData['meta_achievements']?['icon_emoji'] as String?;
+          _achievementIcon =
+              titleData['meta_achievements']?['icon_emoji'] as String?;
         });
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   @override
   Widget build(BuildContext context) {
     final currentUserId = ref.watch(currentUserIdProvider);
-    final userId = widget.viewerId ?? currentUserId ?? ''; // View someone else's room or your own
-    final isOwner = userId == currentUserId && currentUserId != null; // Only owner can edit
+    final userId =
+        widget.viewerId ??
+        currentUserId ??
+        ''; // View someone else's room or your own
+    final isOwner =
+        userId == currentUserId && currentUserId != null; // Only owner can edit
     final flexRoomAsyncValue = ref.watch(flexRoomDataProvider(userId));
 
     return Scaffold(
@@ -128,54 +183,16 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 _isEditMode ? Icons.check : Icons.edit,
                 color: _isEditMode ? CyberpunkTheme.neonOrange : Colors.white,
               ),
-              onPressed: () async {
-              if (_isEditMode && _editingData != null) {
-                // Capture the data to save before clearing state
-                final dataToSave = _editingData!;
-                
-                // Update saved data and exit edit mode immediately
-                setState(() {
-                  _savedData = dataToSave; // Cache the new data
-                  _isEditMode = false;
-                  _editingData = null;
-                });
-                
-                // Save to database in background
-                final repository = ref.read(flexRoomRepositoryProvider);
-                final success = await repository.updateFlexRoomData(dataToSave);
-                
-                if (mounted) {
-                  if (success) {
-                    // DO NOT invalidate immediately - the saved data is already in _savedData cache
-                    // The provider will be refetched naturally on next screen visit
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Flex Room saved!')),
-                    );
-                  } else {
-                    // Only refresh on error to revert
-                    ref.invalidate(flexRoomDataProvider(userId));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to save changes'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              } else {
-                // Entering edit mode
-                setState(() {
-                  _isEditMode = true;
-                });
-              }
-            },
-          ),
+              onPressed: () => _toggleEditMode(userId),
+            ),
         ],
       ),
       body: flexRoomAsyncValue.when(
         loading: () => const Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonPurple),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              CyberpunkTheme.neonPurple,
+            ),
           ),
         ),
         error: (error, stack) => Center(
@@ -238,13 +255,17 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               ? _editingData!
               : (_savedData ?? flexRoomData);
 
-          return _buildFlexRoomContent(displayData, isOwner);
+          return _buildFlexRoomContent(displayData, isOwner, userId);
         },
       ),
     );
   }
 
-  Widget _buildFlexRoomContent(FlexRoomData flexRoomData, bool isOwner) {
+  Widget _buildFlexRoomContent(
+    FlexRoomData flexRoomData,
+    bool isOwner,
+    String userId,
+  ) {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -264,27 +285,201 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
             // Hero Banner
             _buildHeroBanner(flexRoomData, isOwner),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Cross-Platform Flex Row
-            _buildCrossPlatformFlexRow(flexRoomData),
+            if (isOwner) _buildOwnerEditAction(userId),
+
+            const SizedBox(height: 16),
+
+            _buildViewTabSwitcher(),
+
+            const SizedBox(height: 20),
+
+            if (_activeTab == FlexRoomViewTab.showcase) ...[
+              _buildCrossPlatformFlexRow(flexRoomData),
+              const SizedBox(height: 28),
+              _buildFlexStatsStrip(flexRoomData),
+              const SizedBox(height: 28),
+              _buildSuperlativeWall(flexRoomData),
+            ] else ...[
+              _buildFlexStatsStrip(flexRoomData),
+              const SizedBox(height: 20),
+              _buildRecentFlexes(flexRoomData, showEmptyState: true),
+            ],
 
             const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Flex Stats Strip
-            _buildFlexStatsStrip(flexRoomData),
+  Widget _buildOwnerEditAction(String userId) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0E27).withOpacity(0.55),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _isEditMode
+                ? CyberpunkTheme.neonOrange.withOpacity(0.5)
+                : CyberpunkTheme.neonCyan.withOpacity(0.35),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _isEditMode ? Icons.edit_note : Icons.tune,
+              color: _isEditMode
+                  ? CyberpunkTheme.neonOrange
+                  : CyberpunkTheme.neonCyan,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _isEditMode
+                    ? 'Edit mode is active. Tap save when done.'
+                    : 'Customize your showcase cards and highlights.',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.78),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            ElevatedButton(
+              onPressed: () => _toggleEditMode(userId),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _isEditMode
+                    ? CyberpunkTheme.neonOrange
+                    : CyberpunkTheme.neonCyan,
+                foregroundColor: const Color(0xFF050814),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                _isEditMode ? 'Save' : 'Edit',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            const SizedBox(height: 32),
+  Widget _buildViewTabSwitcher() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0E27).withOpacity(0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: CyberpunkTheme.neonPurple.withOpacity(0.35),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildTabButton(
+                tab: FlexRoomViewTab.showcase,
+                label: 'Showcase',
+                icon: Icons.auto_awesome,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildTabButton(
+                tab: FlexRoomViewTab.recent,
+                label: 'Recent Flexes',
+                icon: Icons.history,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // Superlative Wall
-            _buildSuperlativeWall(flexRoomData),
+  Widget _buildTabButton({
+    required FlexRoomViewTab tab,
+    required String label,
+    required IconData icon,
+  }) {
+    final isActive = _activeTab == tab;
 
-            const SizedBox(height: 32),
-
-            // Recent Flexes
-            _buildRecentFlexes(flexRoomData),
-
-            const SizedBox(height: 32),
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: () {
+        if (_activeTab != tab) {
+          setState(() {
+            _activeTab = tab;
+          });
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive
+              ? CyberpunkTheme.neonPurple.withOpacity(0.25)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isActive
+                ? CyberpunkTheme.neonPurple.withOpacity(0.75)
+                : Colors.white.withOpacity(0.12),
+          ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: CyberpunkTheme.neonPurple.withOpacity(0.25),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isActive
+                  ? CyberpunkTheme.neonCyan
+                  : Colors.white.withOpacity(0.7),
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isActive
+                      ? Colors.white
+                      : Colors.white.withOpacity(0.76),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),
@@ -351,28 +546,30 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
 
           // Tagline (tappable to select title)
           InkWell(
-            onTap: isOwner ? () async {
-              final userId = ref.read(currentUserIdProvider);
-              if (userId == null) return;
-              
-              final newTitle = await showModalBottomSheet<String>(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (context) => TitleSelectorModal(
-                  userId: userId,
-                  currentTitleId: null, // TODO: Track current title ID
-                ),
-              );
+            onTap: isOwner
+                ? () async {
+                    final userId = ref.read(currentUserIdProvider);
+                    if (userId == null) return;
 
-              if (newTitle != null && mounted) {
-                setState(() {
-                  _selectedTitle = newTitle;
-                });
-                // Reload profile to get the new icon
-                _loadUserProfile();
-              }
-            } : null,
+                    final newTitle = await showModalBottomSheet<String>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => TitleSelectorModal(
+                        userId: userId,
+                        currentTitleId: null, // TODO: Track current title ID
+                      ),
+                    );
+
+                    if (newTitle != null && mounted) {
+                      setState(() {
+                        _selectedTitle = newTitle;
+                      });
+                      // Reload profile to get the new icon
+                      _loadUserProfile();
+                    }
+                  }
+                : null,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -452,11 +649,15 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
 
         const SizedBox(height: 12),
 
-        SizedBox(
-          height: 200,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.count(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: kIsWeb ? 0.85 : 0.82,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             children: [
               _buildFlexCard(
                 'Flex of All Time',
@@ -464,6 +665,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 CyberpunkTheme.neonPurple,
                 'flex_of_all_time',
                 data,
+                useGridLayout: true,
               ),
               _buildFlexCard(
                 'Rarest Flex',
@@ -471,6 +673,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 CyberpunkTheme.neonOrange,
                 'rarest_flex',
                 data,
+                useGridLayout: true,
               ),
               _buildFlexCard(
                 'Most Time-Sunk',
@@ -478,6 +681,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 CyberpunkTheme.neonCyan,
                 'most_time_sunk',
                 data,
+                useGridLayout: true,
               ),
               _buildFlexCard(
                 'Sweatiest Platinum',
@@ -485,6 +689,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 const Color(0xFFFF1744),
                 'sweatiest_platinum',
                 data,
+                useGridLayout: true,
               ),
             ],
           ),
@@ -498,8 +703,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
     FlexTile? tile,
     Color accentColor,
     String categoryId,
-    FlexRoomData data,
-  ) {
+    FlexRoomData data, {
+    bool useGridLayout = false,
+  }) {
     return InkWell(
       onTap: tile != null && !_isEditMode
           ? () => _showAchievementDetailsDialog(tile, label)
@@ -507,13 +713,17 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       child: Stack(
         children: [
           Container(
-            width: kIsWeb ? 120 : 160,
-            margin: const EdgeInsets.only(right: 12),
+            width: useGridLayout ? double.infinity : (kIsWeb ? 120 : 160),
+            margin: useGridLayout
+                ? EdgeInsets.zero
+                : const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               color: const Color(0xFF0A0E27).withOpacity(0.8),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: tile != null ? accentColor : Colors.white.withOpacity(0.1),
+                color: tile != null
+                    ? accentColor
+                    : Colors.white.withOpacity(0.1),
                 width: 2,
               ),
               boxShadow: tile != null
@@ -534,7 +744,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           if (_isEditMode && tile != null)
             Positioned(
               top: 4,
-              right: 16,
+              right: useGridLayout ? 4 : 16,
               child: InkWell(
                 onTap: () {
                   // Remove the cross-platform flex tile
@@ -567,7 +777,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                     default:
                       return;
                   }
-                  
+
                   setState(() {
                     _editingData = updatedData;
                   });
@@ -584,11 +794,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    size: 14,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.close, size: 14, color: Colors.white),
                 ),
               ),
             ),
@@ -706,7 +912,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               final repository = ref.read(flexRoomRepositoryProvider);
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
-              
+
               // TODO: Re-enable when SQL functions are executed
               // final suggestions =
               //     await repository.getSmartSuggestions(userId, categoryId);
@@ -796,32 +1002,30 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       if (data.sweattiestPlatinum != null) data.sweattiestPlatinum!,
       ...data.superlatives.values,
     ];
-    
+
     // Calculate stats
     final rarestRarity = allTiles.isNotEmpty
         ? allTiles
-            .where((t) => t.rarityPercent != null)
-            .map((t) => t.rarityPercent!)
-            .fold<double>(100.0, (min, val) => val < min ? val : min)
+              .where((t) => t.rarityPercent != null)
+              .map((t) => t.rarityPercent!)
+              .fold<double>(100.0, (min, val) => val < min ? val : min)
         : 0.0;
-    
+
     final avgRarity = allTiles.isNotEmpty
         ? allTiles
-            .where((t) => t.rarityPercent != null)
-            .map((t) => t.rarityPercent!)
-            .fold<double>(0.0, (sum, val) => sum + val) / allTiles.where((t) => t.rarityPercent != null).length
+                  .where((t) => t.rarityPercent != null)
+                  .map((t) => t.rarityPercent!)
+                  .fold<double>(0.0, (sum, val) => sum + val) /
+              allTiles.where((t) => t.rarityPercent != null).length
         : 0.0;
-    
+
     final totalFlexXP = allTiles
         .where((t) => t.statusXP != null)
         .map((t) => t.statusXP!)
         .fold<int>(0, (sum, val) => sum + val);
-    
-    final platforms = allTiles
-        .map((t) => t.platform)
-        .toSet()
-        .length;
-    
+
+    final platforms = allTiles.map((t) => t.platform).toSet().length;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -836,15 +1040,27 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('Rarest', '${rarestRarity.toStringAsFixed(1)}%', CyberpunkTheme.neonOrange),
-          _buildStatItem('Avg Rarity', '${avgRarity.toStringAsFixed(1)}%', CyberpunkTheme.neonPurple),
-          _buildStatItem('Flex XP', _formatFlexXP(totalFlexXP), CyberpunkTheme.neonPurple),
+          _buildStatItem(
+            'Rarest',
+            '${rarestRarity.toStringAsFixed(1)}%',
+            CyberpunkTheme.neonOrange,
+          ),
+          _buildStatItem(
+            'Avg Rarity',
+            '${avgRarity.toStringAsFixed(1)}%',
+            CyberpunkTheme.neonPurple,
+          ),
+          _buildStatItem(
+            'Flex XP',
+            _formatFlexXP(totalFlexXP),
+            CyberpunkTheme.neonPurple,
+          ),
           _buildStatItem('Platforms', '$platforms', Colors.white),
         ],
       ),
     );
   }
-  
+
   String _formatFlexXP(int xp) {
     if (xp >= 1000) {
       return '${(xp / 1000).toStringAsFixed(1)}k';
@@ -940,7 +1156,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               final repository = ref.read(flexRoomRepositoryProvider);
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
-              
+
               // TODO: Re-enable when SQL functions are executed
               // final suggestions =
               //     await repository.getSmartSuggestions(userId, categoryId);
@@ -962,8 +1178,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
 
               if (selected != null && mounted) {
                 // Update superlatives map
-                final newSuperlatives =
-                    Map<String, FlexTile>.from(currentData.superlatives);
+                final newSuperlatives = Map<String, FlexTile>.from(
+                  currentData.superlatives,
+                );
                 newSuperlatives[categoryId] = selected;
 
                 setState(() {
@@ -975,8 +1192,8 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               }
             }
           : isEmpty
-              ? null
-              : () => _showAchievementDetailsDialog(tile, label),
+          ? null
+          : () => _showAchievementDetailsDialog(tile, label),
       onLongPress: !isEmpty && _isEditMode
           ? () {
               // Show remove option
@@ -995,8 +1212,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        final newSuperlatives =
-                            Map<String, FlexTile>.from(currentData.superlatives);
+                        final newSuperlatives = Map<String, FlexTile>.from(
+                          currentData.superlatives,
+                        );
                         newSuperlatives.remove(categoryId);
 
                         setState(() {
@@ -1042,8 +1260,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 right: 4,
                 child: InkWell(
                   onTap: () {
-                    final newSuperlatives =
-                        Map<String, FlexTile>.from(currentData.superlatives);
+                    final newSuperlatives = Map<String, FlexTile>.from(
+                      currentData.superlatives,
+                    );
                     newSuperlatives.remove(categoryId);
 
                     setState(() {
@@ -1193,9 +1412,48 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
     );
   }
 
-  Widget _buildRecentFlexes(FlexRoomData data) {
+  Widget _buildRecentFlexes(FlexRoomData data, {bool showEmptyState = false}) {
     if (data.recentFlexes.isEmpty) {
-      return const SizedBox.shrink();
+      if (!showEmptyState) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0E27).withOpacity(0.6),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: CyberpunkTheme.neonCyan.withOpacity(0.25)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.history_toggle_off,
+              size: 28,
+              color: Colors.white.withOpacity(0.45),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No recent flexes yet.',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.72),
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'After your next sync, new achievements will appear here.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.45),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return Column(
@@ -1332,317 +1590,354 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   void _showAchievementDetailsDialog(FlexTile tile, String categoryLabel) {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0A0E27),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: CyberpunkTheme.neonOrange.withOpacity(0.5),
-              width: 2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: CyberpunkTheme.neonOrange.withOpacity(0.3),
-                blurRadius: 30,
-                spreadRadius: 5,
-              ),
-            ],
+      builder: (context) {
+        final maxHeight = MediaQuery.of(context).size.height * 0.86;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Header with close button
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 400, maxHeight: maxHeight),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A0E27),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: CyberpunkTheme.neonOrange.withOpacity(0.5),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: CyberpunkTheme.neonOrange.withOpacity(0.3),
+                    blurRadius: 30,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Text(
-                        categoryLabel.toUpperCase(),
-                        style: const TextStyle(
-                          color: CyberpunkTheme.neonOrange,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Achievement Icon (large)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                height: 120,
-                width: 120,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _getPlatformColor(tile.platform).withOpacity(0.5),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _getPlatformColor(tile.platform).withOpacity(0.3),
-                      blurRadius: 20,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: tile.iconUrl != null
-                      ? Image.network(
-                          tile.iconUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(
-                            _getPlatformIcon(tile.platform),
-                            size: 60,
-                            color: _getPlatformColor(tile.platform),
-                          ),
-                        )
-                      : Icon(
-                          _getPlatformIcon(tile.platform),
-                          size: 60,
-                          color: _getPlatformColor(tile.platform),
-                        ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Achievement Name
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  tile.achievementName,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              // Game Name with Cover
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (tile.gameCoverUrl != null) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: Image.network(
-                          tile.gameCoverUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    Flexible(
-                      child: Text(
-                        tile.gameName,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Stats Grid
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1a1f3a).withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: CyberpunkTheme.neonPurple.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Rarity & StatusXP
-                      Row(
+                    // Header with close button
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: _buildDialogStatItem(
-                              'RARITY',
-                              '${tile.rarityPercent?.toStringAsFixed(1) ?? '0.0'}%',
-                              _getRarityColor(tile.rarityBand),
+                            child: Text(
+                              categoryLabel.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: CyberpunkTheme.neonOrange,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.5,
+                              ),
                             ),
                           ),
-                          Container(
-                            width: 1,
-                            height: 40,
-                            color: Colors.white.withOpacity(0.2),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                           ),
+                        ],
+                      ),
+                    ),
+
+                    // Achievement Icon (large)
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      height: 120,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _getPlatformColor(
+                            tile.platform,
+                          ).withOpacity(0.5),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _getPlatformColor(
+                              tile.platform,
+                            ).withOpacity(0.3),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: tile.iconUrl != null
+                            ? Image.network(
+                                tile.iconUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Icon(
+                                  _getPlatformIcon(tile.platform),
+                                  size: 60,
+                                  color: _getPlatformColor(tile.platform),
+                                ),
+                              )
+                            : Icon(
+                                _getPlatformIcon(tile.platform),
+                                size: 60,
+                                color: _getPlatformColor(tile.platform),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Achievement Name
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        tile.achievementName,
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Game Name with Cover
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          if (tile.gameCoverUrl != null) ...[
+                            SizedBox(
+                              width: 36,
+                              height: 36,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: Image.network(
+                                  tile.gameCoverUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      const SizedBox.shrink(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
                           Expanded(
-                            child: _buildDialogStatItem(
-                              'STATUS XP',
-                              '${tile.statusXP}',
-                              CyberpunkTheme.neonCyan,
+                            child: Text(
+                              tile.gameName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
                       ),
+                    ),
 
-                      const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                      // Rarity Band & Platform
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDialogStatItem(
-                              'TIER',
-                              tile.rarityBand?.replaceAll('_', ' ') ?? 'COMMON',
-                              _getRarityColor(tile.rarityBand),
-                            ),
-                          ),
-                          Container(
+                    // Stats Grid
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1a1f3a).withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: CyberpunkTheme.neonPurple.withOpacity(0.3),
                             width: 1,
-                            height: 40,
-                            color: Colors.white.withOpacity(0.2),
                           ),
-                          Expanded(
-                            child: Column(
+                        ),
+                        child: Column(
+                          children: [
+                            // Rarity & StatusXP
+                            Row(
                               children: [
-                                Icon(
-                                  _getPlatformIcon(tile.platform),
-                                  size: 24,
-                                  color: _getPlatformColor(tile.platform),
+                                Expanded(
+                                  child: _buildDialogStatItem(
+                                    'RARITY',
+                                    '${tile.rarityPercent?.toStringAsFixed(1) ?? '0.0'}%',
+                                    _getRarityColor(tile.rarityBand),
+                                  ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  tile.platform.toUpperCase(),
-                                  style: TextStyle(
-                                    color: _getPlatformColor(tile.platform),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
+                                Container(
+                                  width: 1,
+                                  height: 40,
+                                  color: Colors.white.withOpacity(0.2),
+                                ),
+                                Expanded(
+                                  child: _buildDialogStatItem(
+                                    'STATUS XP',
+                                    '${tile.statusXP}',
+                                    CyberpunkTheme.neonCyan,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
 
-                      const SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                      // Earned Date
-                      Text(
-                        'Earned ${_formatEarnedDate(tile.earnedAt ?? DateTime.now())}',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
+                            // Rarity Band & Platform
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildDialogStatItem(
+                                    'TIER',
+                                    tile.rarityBand?.replaceAll('_', ' ') ??
+                                        'COMMON',
+                                    _getRarityColor(tile.rarityBand),
+                                  ),
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 40,
+                                  color: Colors.white.withOpacity(0.2),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        _getPlatformIcon(tile.platform),
+                                        size: 24,
+                                        color: _getPlatformColor(tile.platform),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        tile.platform.toUpperCase(),
+                                        style: TextStyle(
+                                          color: _getPlatformColor(
+                                            tile.platform,
+                                          ),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            // Earned Date
+                            Text(
+                              'Earned ${_formatEarnedDate(tile.earnedAt ?? DateTime.now())}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                                fontSize: 12,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
 
-              const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-              // View Trophy List Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context); // Close dialog
-                      if (tile.gameId != null || tile.platformGameId != null) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => GameAchievementsScreen(
-                              platformId: tile.platformId,
-                              platformGameId: tile.platformGameId ?? tile.gameId,
-                              gameName: tile.gameName,
-                              platform: tile.platform,
-                              coverUrl: tile.gameCoverUrl,
+                    // View Trophy List Button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context); // Close dialog
+                            if (tile.gameId != null ||
+                                tile.platformGameId != null) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => GameAchievementsScreen(
+                                    platformId: tile.platformId,
+                                    platformGameId:
+                                        tile.platformGameId ?? tile.gameId,
+                                    gameName: tile.gameName,
+                                    platform: tile.platform,
+                                    coverUrl: tile.gameCoverUrl,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _getPlatformColor(tile.platform),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
                             ),
+                            elevation: 0,
+                            shadowColor: Colors.transparent,
                           ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.list, size: 20),
-                    label: const Text(
-                      'VIEW TROPHY LIST',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1,
+                          child: const Wrap(
+                            alignment: WrapAlignment.center,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            children: [
+                              Icon(Icons.list, size: 20),
+                              Text(
+                                'VIEW TROPHY LIST',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _getPlatformColor(tile.platform),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                    ),
-                  ),
+
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
-
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildDialogStatItem(String label, String value, Color color) {
     return Column(
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            shadows: [
-              Shadow(
-                color: color.withOpacity(0.5),
-                blurRadius: 8,
-              ),
-            ],
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(
+              color: color,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              shadows: [Shadow(color: color.withOpacity(0.5), blurRadius: 8)],
+            ),
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: Colors.white.withOpacity(0.5),
             fontSize: 10,

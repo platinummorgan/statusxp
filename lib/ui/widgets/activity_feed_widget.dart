@@ -108,7 +108,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
           child: Stack(
             children: [
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
@@ -145,8 +145,8 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
+                        softWrap: true,
+                        maxLines: 2,
                       ),
                     ),
                     // Badge indicator
@@ -182,18 +182,6 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                           error: (_, __) => const SizedBox.shrink(),
                         );
                       },
-                    ),
-                    IconButton(
-                      tooltip: 'Refresh feed',
-                      onPressed: () {
-                        ref.invalidate(activityFeedProvider);
-                        ref.invalidate(unreadCountProvider);
-                      },
-                      icon: const Icon(
-                        Icons.refresh,
-                        size: 16,
-                        color: CyberpunkTheme.neonCyan,
-                      ),
                     ),
                   ],
                 ),
@@ -256,6 +244,36 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
               return Column(
                 children: [
                   const Divider(height: 1),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12, top: 4),
+                      child: TextButton.icon(
+                        onPressed: () {
+                          ref.invalidate(activityFeedProvider);
+                          ref.invalidate(unreadCountProvider);
+                        },
+                        icon: const Icon(
+                          Icons.refresh,
+                          size: 14,
+                          color: CyberpunkTheme.neonCyan,
+                        ),
+                        label: const Text(
+                          'Refresh',
+                          style: TextStyle(
+                            color: CyberpunkTheme.neonCyan,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(0, 30),
+                          visualDensity: VisualDensity.compact,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ),
+                  ),
                   ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),

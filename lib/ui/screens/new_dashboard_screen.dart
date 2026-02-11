@@ -30,6 +30,14 @@ class NewDashboardScreen extends ConsumerStatefulWidget {
 
 class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     with TickerProviderStateMixin {
+  static const Set<String> _premiumFeatureRoutes = {
+    '/analytics',
+    '/sync-intelligence',
+    '/goals-pace',
+    '/rival-compare',
+    '/achievement-radar',
+  };
+
   bool _showStatusXPHint = false;
   bool _isAutoSyncing = false;
   String? _backgroundMode; // 'auto', 'shuffle', game title, or 'custom:url'
@@ -645,10 +653,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                           ),
                           const Spacer(),
                           PopupMenuButton<String>(
-                            onSelected: (String value) {
-                              HapticFeedback.lightImpact();
-                              context.push(value);
-                            },
+                            onSelected: _handleMenuSelection,
                             color: const Color(0xFF0A0E27),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -676,161 +681,230 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                 ),
                               ],
                             ),
-                            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                              const PopupMenuItem<String>(
-                                value: '/games/browse',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.explore,
-                                      color: CyberpunkTheme.neonGreen,
-                                      size: 20,
+                            itemBuilder: (BuildContext context) =>
+                                <PopupMenuEntry<String>>[
+                                  const PopupMenuItem<String>(
+                                    value: '/games/browse',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.explore,
+                                          color: CyberpunkTheme.neonGreen,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Browse All Games',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'Browse All Games',
-                                      style: TextStyle(color: Colors.white),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/flex-room',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.workspace_premium,
+                                          color: CyberpunkTheme.goldNeon,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Flex Room',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: '/flex-room',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.workspace_premium,
-                                      color: CyberpunkTheme.goldNeon,
-                                      size: 20,
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/analytics',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.analytics,
+                                          color: CyberpunkTheme.neonPurple,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Premium Analytics',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'Flex Room',
-                                      style: TextStyle(color: Colors.white),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/sync-intelligence',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.memory,
+                                          color: CyberpunkTheme.neonCyan,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Sync Intelligence (Premium)',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                              // TODO: Re-enable Analytics when premium feature is ready
-                              // const PopupMenuItem<String>(
-                              //   value: '/analytics',
-                              //   child: Row(
-                              //     children: [
-                              //       Icon(Icons.analytics, color: CyberpunkTheme.neonPurple, size: 20),
-                              //       SizedBox(width: 12),
-                              //       Row(
-                              //         children: [
-                              //           Text('Analytics', style: TextStyle(color: Colors.white)),
-                              //           SizedBox(width: 6),
-                              //           Icon(Icons.workspace_premium, color: CyberpunkTheme.goldNeon, size: 14),
-                              //         ],
-                              //       ),
-                              //     ],
-                              //   ),
-                              // ),
-                              const PopupMenuItem<String>(
-                                value: '/poster',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.image,
-                                      color: CyberpunkTheme.neonPink,
-                                      size: 20,
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/goals-pace',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.speed,
+                                          color: CyberpunkTheme.neonOrange,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Goals & Pace Coach (Premium)',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'Status Poster',
-                                      style: TextStyle(color: Colors.white),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/rival-compare',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.compare_arrows,
+                                          color: CyberpunkTheme.neonGreen,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Rival Compare (Premium)',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: '/achievements',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.stars,
-                                      color: CyberpunkTheme.neonOrange,
-                                      size: 20,
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/achievement-radar',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.radar,
+                                          color: CyberpunkTheme.neonPink,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Achievement Radar (Premium)',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'Achievements',
-                                      style: TextStyle(color: Colors.white),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/poster',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.image,
+                                          color: CyberpunkTheme.neonPink,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Status Poster',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: '/leaderboards',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.leaderboard,
-                                      color: CyberpunkTheme.neonGreen,
-                                      size: 20,
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/achievements',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.stars,
+                                          color: CyberpunkTheme.neonOrange,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Achievements',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'All-Time Leaderboards',
-                                      style: TextStyle(color: Colors.white),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/leaderboards',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.leaderboard,
+                                          color: CyberpunkTheme.neonGreen,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'All-Time Leaderboards',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: '/leaderboards/seasonal',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.timer,
-                                      color: CyberpunkTheme.neonCyan,
-                                      size: 20,
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/leaderboards/seasonal',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.timer,
+                                          color: CyberpunkTheme.neonCyan,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Seasonal Leaderboards',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'Seasonal Leaderboards',
-                                      style: TextStyle(color: Colors.white),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/leaderboards/hall-of-fame',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.workspace_premium,
+                                          color: CyberpunkTheme.goldNeon,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Hall of Fame',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: '/leaderboards/hall-of-fame',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.workspace_premium,
-                                      color: CyberpunkTheme.goldNeon,
-                                      size: 20,
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: '/coop-partners',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.group,
+                                          color: CyberpunkTheme.neonCyan,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Co-op Partners',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'Hall of Fame',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem<String>(
-                                value: '/coop-partners',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.group,
-                                      color: CyberpunkTheme.neonCyan,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 12),
-                                    Text(
-                                      'Co-op Partners',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                                  ),
+                                ],
                           ),
                         ],
                       ),
@@ -1374,10 +1448,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       children: [
         const Spacer(),
         PopupMenuButton<String>(
-          onSelected: (String value) {
-            HapticFeedback.lightImpact();
-            context.push(value);
-          },
+          onSelected: _handleMenuSelection,
           color: const Color(0xFF0A0E27),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -1452,6 +1523,79 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   Icon(Icons.stars, color: CyberpunkTheme.neonOrange, size: 20),
                   SizedBox(width: 12),
                   Text('Achievements', style: TextStyle(color: Colors.white)),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/analytics',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.analytics,
+                    color: CyberpunkTheme.neonPurple,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Premium Analytics',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/sync-intelligence',
+              child: Row(
+                children: [
+                  Icon(Icons.memory, color: CyberpunkTheme.neonCyan, size: 20),
+                  SizedBox(width: 12),
+                  Text(
+                    'Sync Intelligence (Premium)',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/goals-pace',
+              child: Row(
+                children: [
+                  Icon(Icons.speed, color: CyberpunkTheme.neonOrange, size: 20),
+                  SizedBox(width: 12),
+                  Text(
+                    'Goals & Pace Coach (Premium)',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/rival-compare',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.compare_arrows,
+                    color: CyberpunkTheme.neonGreen,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Rival Compare (Premium)',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/achievement-radar',
+              child: Row(
+                children: [
+                  Icon(Icons.radar, color: CyberpunkTheme.neonPink, size: 20),
+                  SizedBox(width: 12),
+                  Text(
+                    'Achievement Radar (Premium)',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
             ),
@@ -1714,14 +1858,18 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           platform.silverCount > 0 ||
           platform.bronzeCount > 0) {
         final trophyParts = <String>[];
-        if (platform.platinumCount > 0)
+        if (platform.platinumCount > 0) {
           trophyParts.add('Platinum ${platform.platinumCount}');
-        if (platform.goldCount > 0)
+        }
+        if (platform.goldCount > 0) {
           trophyParts.add('Gold ${platform.goldCount}');
-        if (platform.silverCount > 0)
+        }
+        if (platform.silverCount > 0) {
           trophyParts.add('Silver ${platform.silverCount}');
-        if (platform.bronzeCount > 0)
+        }
+        if (platform.bronzeCount > 0) {
           trophyParts.add('Bronze ${platform.bronzeCount}');
+        }
 
         if (trophyParts.isNotEmpty) {
           displayText = '$displayText 🥈 ${trophyParts.join(' | ')}';
@@ -2199,6 +2347,76 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _handleMenuSelection(String route) async {
+    HapticFeedback.lightImpact();
+
+    if (_premiumFeatureRoutes.contains(route)) {
+      final isPremium = await _subscriptionService.isPremiumActive();
+      if (!mounted) return;
+
+      if (!isPremium) {
+        _showPremiumUpgradeDialog(_premiumFeatureLabel(route));
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    context.push(route);
+  }
+
+  String _premiumFeatureLabel(String route) {
+    switch (route) {
+      case '/analytics':
+        return 'Premium Analytics';
+      case '/sync-intelligence':
+        return 'Sync Intelligence';
+      case '/goals-pace':
+        return 'Goals & Pace Coach';
+      case '/rival-compare':
+        return 'Rival Compare';
+      case '/achievement-radar':
+        return 'Achievement Radar';
+      default:
+        return 'Premium Feature';
+    }
+  }
+
+  void _showPremiumUpgradeDialog(String featureName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1F3A),
+        title: const Row(
+          children: [
+            Icon(Icons.star, color: CyberpunkTheme.goldNeon),
+            SizedBox(width: 8),
+            Text('Premium Required', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        content: Text(
+          '$featureName is a Premium feature. Do you want to upgrade now?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Not Now'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              context.push('/premium-subscription');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: CyberpunkTheme.neonPurple,
+            ),
+            child: const Text('Upgrade'),
+          ),
+        ],
       ),
     );
   }

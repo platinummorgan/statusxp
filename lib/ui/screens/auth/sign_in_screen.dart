@@ -15,10 +15,7 @@ import 'package:statusxp/theme/colors.dart';
 class SignInScreen extends ConsumerStatefulWidget {
   final bool autoPromptBiometric;
 
-  const SignInScreen({
-    super.key,
-    this.autoPromptBiometric = false,
-  });
+  const SignInScreen({super.key, this.autoPromptBiometric = false});
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -27,7 +24,7 @@ class SignInScreen extends ConsumerStatefulWidget {
 class _SignInScreenState extends ConsumerState<SignInScreen>
     with WidgetsBindingObserver {
   final BiometricAuthService _biometricService = BiometricAuthService();
-  
+
   bool _isLoading = false;
   bool _showBiometricOption = false;
   bool _hasAutoPrompted = false;
@@ -62,7 +59,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   Future<void> _checkBiometricAvailability() async {
     if (kIsWeb) return;
     final biometricAvailable = await _biometricService.isBiometricAvailable();
-    
+
     if (mounted) {
       setState(() {
         // Always show biometric button if device supports it - never hide it
@@ -86,7 +83,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       final isEnabled = await _biometricService.isBiometricEnabled();
       if (!isEnabled) return;
 
-      final hasStoredCredentials = await _biometricService.hasStoredCredentials();
+      final hasStoredCredentials = await _biometricService
+          .hasStoredCredentials();
       final hasStoredToken = await _biometricService.hasStoredRefreshToken();
       final hasActiveSession =
           Supabase.instance.client.auth.currentSession != null;
@@ -95,8 +93,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       }
 
       final currentState = WidgetsBinding.instance.lifecycleState;
-      if (currentState != null &&
-          currentState != AppLifecycleState.resumed) {
+      if (currentState != null && currentState != AppLifecycleState.resumed) {
         _hasAutoPrompted = false;
         return;
       }
@@ -109,11 +106,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   /// Sign in with biometric authentication
   Future<void> _signInWithBiometric() async {
     setState(() => _isLoading = true);
-    
+
     try {
       // Check if biometric is actually enabled
       final isEnabled = await _biometricService.isBiometricEnabled();
-      
+
       if (!isEnabled) {
         // Biometric not set up yet
         if (mounted) {
@@ -137,31 +134,33 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         }
         return;
       }
-      
+
       // Authenticate with biometric
       final result = await _biometricService.authenticate(
         reason: 'Sign in to StatusXP',
       );
-      
+
       if (!result.success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result.errorMessage ?? 'Biometric authentication failed'),
+              content: Text(
+                result.errorMessage ?? 'Biometric authentication failed',
+              ),
               backgroundColor: Colors.red,
             ),
           );
         }
         return;
       }
-      
+
       // Biometric successful - check if we have stored credentials
       final credentials = await _biometricService.getStoredCredentials();
-      
+
       if (credentials != null) {
         final email = credentials['email'];
         final password = credentials['password'];
-        
+
         if (email != null && password != null) {
           // Email/password user - sign in with stored credentials
           final authService = ref.read(authServiceProvider);
@@ -177,7 +176,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Invalid credentials stored. Please sign in again.'),
+                content: Text(
+                  'Invalid credentials stored. Please sign in again.',
+                ),
                 backgroundColor: Colors.red,
               ),
             );
@@ -198,12 +199,16 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         if (storedToken != null && !storedToken.isExpired) {
           try {
             final authService = AuthService(Supabase.instance.client);
-            final restored = await authService.restoreSessionFromRefreshToken(storedToken.refreshToken);
+            final restored = await authService.restoreSessionFromRefreshToken(
+              storedToken.refreshToken,
+            );
             if (restored) {
               // Update stored token with new one from refreshed session
               final newToken = authService.refreshToken;
               final newExpiry = authService.refreshTokenExpiry;
-              if (newToken != null && newExpiry != null && authService.currentUser != null) {
+              if (newToken != null &&
+                  newExpiry != null &&
+                  authService.currentUser != null) {
                 await _biometricService.storeRefreshToken(
                   refreshToken: newToken,
                   userId: authService.currentUser!.id,
@@ -232,7 +237,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             return;
           }
         }
-        
+
         // No stored refresh token and no active session
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -247,10 +252,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -297,9 +299,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       final refreshed = await Supabase.instance.client.auth.refreshSession();
       final refreshedSession =
           refreshed.session ?? Supabase.instance.client.auth.currentSession;
-      if (refreshedSession != null && refreshedSession.refreshToken != null && refreshedSession.expiresAt != null) {
+      if (refreshedSession != null &&
+          refreshedSession.refreshToken != null &&
+          refreshedSession.expiresAt != null) {
         // Store the new refresh token
-        final expiresAt = DateTime.fromMillisecondsSinceEpoch(refreshedSession.expiresAt! * 1000);
+        final expiresAt = DateTime.fromMillisecondsSinceEpoch(
+          refreshedSession.expiresAt! * 1000,
+        );
         await _biometricService.storeRefreshToken(
           refreshToken: refreshedSession.refreshToken!,
           userId: refreshedSession.user.id,
@@ -330,14 +336,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     final authService = ref.read(authServiceProvider);
     try {
       final currentUser = authService.currentUser;
-      
+
       await authService.signInWithGoogle();
       _clearLocalLock();
-      
+
       // Mark that user has signed in at least once
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_signed_in_before', true);
-      
+
       // Show success message if we linked an account
       if (currentUser != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -354,7 +360,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         // Show user-friendly error message
         String errorMessage = e.message;
         if (e.message.contains('already linked')) {
-          errorMessage = 'This Google account is already linked to another StatusXP account. Please sign in with that account first, or use a different sign-in method.';
+          errorMessage =
+              'This Google account is already linked to another StatusXP account. Please sign in with that account first, or use a different sign-in method.';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -386,14 +393,14 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     final authService = ref.read(authServiceProvider);
     try {
       final currentUser = authService.currentUser;
-      
+
       await authService.signInWithApple();
       _clearLocalLock();
-      
+
       // Mark that user has signed in at least once
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_signed_in_before', true);
-      
+
       // Show success message if we linked an account
       if (currentUser != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -410,9 +417,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
         // Show user-friendly error message
         String errorMessage = e.message;
         if (e.message.contains('already linked')) {
-          errorMessage = 'This Apple ID is already linked to your account. Please sign in with your email first, then you can use Apple Sign-In.';
-        } else if (e.message.contains('PlatformException') || e.message.contains('Error while launching')) {
-          errorMessage = 'Apple Sign-In configuration error. Please try signing in with email or Google instead.';
+          errorMessage =
+              'This Apple ID is already linked to your account. Please sign in with your email first, then you can use Apple Sign-In.';
+        } else if (e.message.contains('PlatformException') ||
+            e.message.contains('Error while launching')) {
+          errorMessage =
+              'Apple Sign-In configuration error. Please try signing in with email or Google instead.';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -425,14 +435,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     } catch (e) {
       if (mounted) {
         String errorMessage = 'Apple Sign-In failed: $e';
-        if (e.toString().contains('PlatformException') || e.toString().contains('Error while launching')) {
-          errorMessage = 'Apple Sign-In is not properly configured on this device. Please use email or Google sign-in instead.';
+        if (e.toString().contains('PlatformException') ||
+            e.toString().contains('Error while launching')) {
+          errorMessage =
+              'Apple Sign-In is not properly configured on this device. Please use email or Google sign-in instead.';
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -446,7 +455,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   void _showForgotPasswordDialog(BuildContext parentContext) {
     final resetEmailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    
+
     showDialog(
       context: parentContext,
       builder: (context) => AlertDialog(
@@ -500,21 +509,23 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     duration: Duration(seconds: 2),
                   ),
                 );
-                
+
                 try {
                   // Send password reset email with platform-specific redirect
-                  const redirectUrl = kIsWeb 
+                  const redirectUrl = kIsWeb
                       ? 'https://statusxp.com/reset-password'
                       : 'com.statusxp.statusxp://reset-password';
                   await Supabase.instance.client.auth.resetPasswordForEmail(
                     resetEmailController.text.trim(),
                     redirectTo: redirectUrl,
                   );
-                  
+
                   if (parentContext.mounted) {
                     ScaffoldMessenger.of(parentContext).showSnackBar(
                       const SnackBar(
-                        content: Text('✅ Password reset link sent! Check your email.'),
+                        content: Text(
+                          '✅ Password reset link sent! Check your email.',
+                        ),
                         backgroundColor: Colors.green,
                         duration: Duration(seconds: 5),
                       ),
@@ -542,139 +553,359 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final isPhone = media.size.width < 600;
+    final isCompact = media.size.height < 760 || media.size.width < 380;
+    final useFramedCard = !isPhone;
+    final logoSize = isCompact ? 74.0 : 96.0;
+    final horizontalPadding = isPhone ? 10.0 : (isCompact ? 16.0 : 20.0);
+    final cardPadding = isCompact
+        ? const EdgeInsets.fromLTRB(12, 12, 12, 10)
+        : const EdgeInsets.fromLTRB(16, 16, 16, 12);
+    final cardMaxWidth = isPhone ? 430.0 : (isCompact ? 340.0 : 390.0);
+    final buttonMaxWidth = isPhone
+        ? double.infinity
+        : (isCompact ? 258.0 : 300.0);
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 40),
-                
-                // App Logo/Icon
-                Center(
-                  child: Image.asset(
-                    'assets/images/app_icon.png',
-                    width: 120,
-                    height: 120,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback to icon if image fails to load
-                      return Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: accentPrimary,
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                        child: const Icon(
-                          Icons.videogame_asset,
-                          size: 64,
-                          color: Colors.white,
-                        ),
-                      );
-                    },
-                  ),
+      backgroundColor: backgroundDark,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    backgroundDark,
+                    surfaceDark.withOpacity(0.95),
+                    backgroundDark,
+                  ],
                 ),
-                const SizedBox(height: 24),
-                
-                // App Name
-                const Text(
-                  'StatusXP',
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    letterSpacing: 1,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Track your gaming achievements',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black54,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 60),
-                
-                // Continue with Biometric (only if available)
-                if (_showBiometricOption) ...[
-                  _buildOptionButton(
-                    icon: Icons.fingerprint,
-                    label: 'Continue with Biometric',
-                    gradient: const LinearGradient(
-                      colors: [accentPrimary, accentSecondary],
-                    ),
-                    onTap: _isLoading ? null : _signInWithBiometric,
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                
-                // Continue with Google
-                _buildOptionButton(
-                  imagePath: 'assets/images/google_logo.png',
-                  label: 'Continue with Google',
-                  backgroundColor: Colors.white,
-                  borderColor: Colors.grey.shade300,
-                  textColor: Colors.black87,
-                  onTap: _isLoading ? null : _signInWithGoogle,
-                ),
-                const SizedBox(height: 16),
-                
-                // Continue with Apple (works on web via JS, iOS/macOS natively)
-                _buildOptionButton(
-                  icon: Icons.apple,
-                  label: 'Continue with Apple',
-                  backgroundColor: Colors.black,
-                  textColor: Colors.white,
-                  onTap: _isLoading ? null : _signInWithApple,
-                ),
-                const SizedBox(height: 16),
-                
-                // Continue with Login (Email/Password)
-                _buildOptionButton(
-                  icon: Icons.email_outlined,
-                  label: 'Continue with Login',
-                  backgroundColor: Colors.black87,
-                  textColor: Colors.white,
-                  onTap: _isLoading ? null : _showEmailPasswordForm,
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Forgot Password Link (visible to all users)
-                TextButton(
-                  onPressed: _isLoading ? null : () => _showForgotPasswordDialog(context),
-                  child: const Text(
-                    'Forgot your password?',
-                    style: TextStyle(
-                      color: accentPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                
-                // Loading indicator
-                if (_isLoading) ...[
-                  const SizedBox(height: 24),
-                  const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
-        ),
+          Positioned(
+            top: -100,
+            right: -64,
+            child: Container(
+              width: 220,
+              height: 220,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: accentPrimary.withOpacity(0.16),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -110,
+            left: -58,
+            child: Container(
+              width: 230,
+              height: 230,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: accentSecondary.withOpacity(0.12),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: isPhone ? Alignment.topCenter : Alignment.center,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: isPhone ? 8 : (isCompact ? 16 : 24),
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: cardMaxWidth),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: surfaceDark.withOpacity(
+                        useFramedCard ? 0.92 : 0.76,
+                      ),
+                      borderRadius: BorderRadius.circular(
+                        useFramedCard ? 18 : 14,
+                      ),
+                      border: useFramedCard
+                          ? Border.all(color: accentPrimary.withOpacity(0.24))
+                          : null,
+                      boxShadow: useFramedCard
+                          ? [
+                              BoxShadow(
+                                color: accentSecondary.withOpacity(0.08),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.26),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    padding: cardPadding,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accentPrimary.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: accentPrimary.withOpacity(0.35),
+                              ),
+                            ),
+                            child: const Text(
+                              'NEURAL ACCESS',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                letterSpacing: 1.1,
+                                fontWeight: FontWeight.w700,
+                                color: accentPrimary,
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: isCompact ? 8 : 12),
+
+                        // Keep existing app logo as requested.
+                        Center(
+                          child: Container(
+                            width: logoSize,
+                            height: logoSize,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accentPrimary.withOpacity(0.25),
+                                  blurRadius: 26,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Image.asset(
+                              'assets/images/app_icon.png',
+                              width: 124,
+                              height: 124,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 124,
+                                  height: 124,
+                                  decoration: BoxDecoration(
+                                    color: accentPrimary,
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  child: const Icon(
+                                    Icons.videogame_asset,
+                                    size: 64,
+                                    color: Colors.white,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: isCompact ? 8 : 12),
+
+                        Text(
+                          'StatusXP',
+                          style: TextStyle(
+                            fontSize: isCompact ? 22 : 27,
+                            fontWeight: FontWeight.w800,
+                            color: textPrimary,
+                            letterSpacing: 0.2,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Sync trophies. Build rank. Dominate leaderboards.',
+                          style: TextStyle(
+                            fontSize: isCompact ? 11.6 : 12.6,
+                            height: 1.4,
+                            color: textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        if (!isCompact && media.size.height > 760) ...[
+                          const Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _AuthFeaturePill(
+                                icon: Icons.sync,
+                                label: 'Fast Sync',
+                              ),
+                              _AuthFeaturePill(
+                                icon: Icons.emoji_events_outlined,
+                                label: 'Leaderboards',
+                              ),
+                              _AuthFeaturePill(
+                                icon: Icons.public,
+                                label: 'Cross-Platform',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                        ] else
+                          const SizedBox(height: 6),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Divider(
+                                color: Colors.white.withOpacity(0.14),
+                                thickness: 1,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              child: Text(
+                                'CHOOSE SIGN IN METHOD',
+                                style: TextStyle(
+                                  color: textMuted.withOpacity(0.85),
+                                  fontSize: isCompact ? 10 : 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.9,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(
+                                color: Colors.white.withOpacity(0.14),
+                                thickness: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+
+                        if (_showBiometricOption) ...[
+                          Center(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: buttonMaxWidth,
+                              ),
+                              child: _buildOptionButton(
+                                icon: Icons.fingerprint,
+                                label: 'Biometric',
+                                gradient: const LinearGradient(
+                                  colors: [accentPrimary, accentSecondary],
+                                ),
+                                borderColor: accentPrimary.withOpacity(0.8),
+                                onTap: _isLoading ? null : _signInWithBiometric,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                        ],
+
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: buttonMaxWidth,
+                            ),
+                            child: _buildOptionButton(
+                              imagePath: 'assets/images/google_logo.png',
+                              label: 'Google',
+                              backgroundColor: Colors.white,
+                              borderColor: Colors.white.withOpacity(0.85),
+                              textColor: Colors.black87,
+                              onTap: _isLoading ? null : _signInWithGoogle,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: buttonMaxWidth,
+                            ),
+                            child: _buildOptionButton(
+                              icon: Icons.apple,
+                              label: 'Apple',
+                              backgroundColor: Colors.black,
+                              borderColor: accentSecondary.withOpacity(0.75),
+                              textColor: Colors.white,
+                              onTap: _isLoading ? null : _signInWithApple,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: buttonMaxWidth,
+                            ),
+                            child: _buildOptionButton(
+                              icon: Icons.email_outlined,
+                              label: 'Email',
+                              backgroundColor: surfaceLight,
+                              borderColor: accentPrimary.withOpacity(0.55),
+                              textColor: textPrimary,
+                              onTap: _isLoading ? null : _showEmailPasswordForm,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+                        TextButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () => _showForgotPasswordDialog(context),
+                          child: const Text(
+                            'Forgot your password?',
+                            style: TextStyle(
+                              color: accentPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+
+                        if (!isCompact) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'New to StatusXP? Use Email to create your account.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: textSecondary.withOpacity(0.8),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+
+                        if (_isLoading) ...[
+                          const SizedBox(height: 8),
+                          const Center(child: CircularProgressIndicator()),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
-  
+
   Widget _buildOptionButton({
     IconData? icon,
     String? imagePath,
@@ -685,56 +916,110 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     Color? textColor,
     VoidCallback? onTap,
   }) {
+    final effectiveTextColor = textColor ?? Colors.white;
+    final isDisabled = onTap == null;
+    final isLightButton = backgroundColor == Colors.white;
+    final baseColor = backgroundColor ?? surfaceLight;
+
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-        decoration: BoxDecoration(
-          gradient: gradient,
-          color: backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          border: borderColor != null
-              ? Border.all(color: borderColor, width: 1.5)
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (imagePath != null)
-              Image.asset(
-                imagePath,
-                width: 28,
-                height: 28,
-              )
-            else if (icon != null)
-              Icon(
-                icon,
-                size: 28,
-                color: textColor ?? Colors.white,
+      borderRadius: BorderRadius.circular(9),
+      child: Opacity(
+        opacity: isDisabled ? 0.65 : 1.0,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 9),
+          decoration: BoxDecoration(
+            gradient: gradient,
+            color: gradient == null ? baseColor : null,
+            borderRadius: BorderRadius.circular(9),
+            border: borderColor != null
+                ? Border.all(color: borderColor, width: 1.1)
+                : Border.all(
+                    color: isLightButton
+                        ? Colors.white.withOpacity(0.65)
+                        : accentPrimary.withOpacity(0.35),
+                    width: 1,
+                  ),
+            boxShadow: [
+              BoxShadow(
+                color: isLightButton
+                    ? Colors.black.withOpacity(0.12)
+                    : accentPrimary.withOpacity(0.09),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: textColor ?? Colors.white,
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: isLightButton
+                        ? Colors.black.withOpacity(0.08)
+                        : accentSecondary.withOpacity(0.25),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(8),
+                      topRight: Radius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: isLightButton
+                          ? Colors.black.withOpacity(0.08)
+                          : Colors.black.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isLightButton
+                            ? Colors.black.withOpacity(0.15)
+                            : accentPrimary.withOpacity(0.35),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Center(
+                      child: imagePath != null
+                          ? Image.asset(imagePath, width: 14, height: 14)
+                          : icon != null
+                          ? Icon(icon, size: 14, color: effectiveTextColor)
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: effectiveTextColor,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-  
+
   // Show email/password dialog
   void _showEmailPasswordForm() {
     showModalBottomSheet(
@@ -753,28 +1038,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       ),
     );
   }
-  
+
   Future<void> _signInWithPassword(String email, String password) async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authService = ref.read(authServiceProvider);
-      await authService.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      await authService.signInWithPassword(email: email, password: password);
       _clearLocalLock();
-      
+
       // Mark that user has signed in at least once
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_signed_in_before', true);
-      
+
       // Store credentials for biometric auth (if enabled)
       final biometricEnabled = await _biometricService.isBiometricEnabled();
       if (biometricEnabled) {
         await _biometricService.storeCredentials(email, password);
       }
-      
+
       // Refresh biometric button visibility
       if (mounted) {
         await _checkBiometricAvailability();
@@ -782,10 +1064,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -796,12 +1075,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             backgroundColor: Colors.red,
           ),
         );
-      
-      // Store credentials for biometric auth (if enabled)
-      final biometricEnabled = await _biometricService.isBiometricEnabled();
-      if (biometricEnabled) {
-        await _biometricService.storeCredentials(email, password);
-      }
+
+        // Store credentials for biometric auth (if enabled)
+        final biometricEnabled = await _biometricService.isBiometricEnabled();
+        if (biometricEnabled) {
+          await _biometricService.storeCredentials(email, password);
+        }
       }
     } finally {
       if (mounted) {
@@ -809,24 +1088,18 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       }
     }
   }
-  
+
   Future<void> _signUpWithPassword(String email, String password) async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authService = ref.read(authServiceProvider);
-      await authService.signUp(
-        email: email,
-        password: password,
-      );
+      await authService.signUp(email: email, password: password);
       _clearLocalLock();
     } on AuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
@@ -850,14 +1123,45 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
 class _EmailPasswordSheet extends StatefulWidget {
   final Function(String email, String password) onSignIn;
   final Function(String email, String password) onSignUp;
-  
-  const _EmailPasswordSheet({
-    required this.onSignIn,
-    required this.onSignUp,
-  });
+
+  const _EmailPasswordSheet({required this.onSignIn, required this.onSignUp});
 
   @override
   State<_EmailPasswordSheet> createState() => _EmailPasswordSheetState();
+}
+
+class _AuthFeaturePill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _AuthFeaturePill({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withOpacity(0.14)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: accentPrimary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
@@ -876,7 +1180,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
   void _showForgotPasswordDialog(BuildContext parentContext) {
     final resetEmailController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-    
+
     showDialog(
       context: parentContext,
       builder: (context) => AlertDialog(
@@ -930,21 +1234,23 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                     duration: Duration(seconds: 2),
                   ),
                 );
-                
+
                 try {
                   // Send password reset email with platform-specific redirect
-                  const redirectUrl = kIsWeb 
+                  const redirectUrl = kIsWeb
                       ? 'https://statusxp.com/reset-password'
                       : 'com.statusxp.statusxp://reset-password';
                   await Supabase.instance.client.auth.resetPasswordForEmail(
                     resetEmailController.text.trim(),
                     redirectTo: redirectUrl,
                   );
-                  
+
                   if (parentContext.mounted) {
                     ScaffoldMessenger.of(parentContext).showSnackBar(
                       const SnackBar(
-                        content: Text('✅ Password reset link sent! Check your email.'),
+                        content: Text(
+                          '✅ Password reset link sent! Check your email.',
+                        ),
                         backgroundColor: Colors.green,
                         duration: Duration(seconds: 5),
                       ),
@@ -1000,7 +1306,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Title
               Text(
                 _isLoginMode ? 'Sign In' : 'Create Account',
@@ -1012,7 +1318,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              
+
               // Email Field
               TextFormField(
                 controller: _emailController,
@@ -1032,7 +1338,10 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: accentPrimary, width: 2),
+                    borderSide: const BorderSide(
+                      color: accentPrimary,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
                   fillColor: Colors.grey.shade50,
@@ -1048,7 +1357,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Password Field
               TextFormField(
                 controller: _passwordController,
@@ -1068,7 +1377,10 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: accentPrimary, width: 2),
+                    borderSide: const BorderSide(
+                      color: accentPrimary,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
                   fillColor: Colors.grey.shade50,
@@ -1084,7 +1396,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                 },
               ),
               const SizedBox(height: 24),
-              
+
               // Submit Button
               ElevatedButton(
                 onPressed: () {
@@ -1119,7 +1431,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Forgot Password (only show in login mode)
               if (_isLoginMode)
                 Align(
@@ -1139,7 +1451,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                     ),
                   ),
                 ),
-              
+
               // Toggle between sign in / sign up
               TextButton(
                 onPressed: () {
@@ -1151,9 +1463,7 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
                   _isLoginMode
                       ? "Don't have an account? Sign Up"
                       : 'Already have an account? Sign In',
-                  style: const TextStyle(
-                    color: Colors.black54,
-                  ),
+                  style: const TextStyle(color: Colors.black54),
                 ),
               ),
             ],

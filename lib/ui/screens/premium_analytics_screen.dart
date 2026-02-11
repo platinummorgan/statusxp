@@ -9,7 +9,10 @@ import 'package:statusxp/ui/widgets/charts/platform_pie_chart.dart';
 import 'package:statusxp/ui/widgets/charts/rarity_bar_chart.dart';
 import 'package:statusxp/ui/widgets/charts/trophy_type_chart.dart';
 import 'package:statusxp/ui/widgets/charts/monthly_activity_chart.dart';
+import 'package:statusxp/ui/widgets/charts/daily_trend_chart.dart';
+import 'package:statusxp/ui/widgets/charts/platform_split_window_chart.dart';
 import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:go_router/go_router.dart';
 
 /// Provider for analytics repository
@@ -22,25 +25,27 @@ final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
 final analyticsDataProvider = FutureProvider<AnalyticsData>((ref) async {
   final repository = ref.watch(analyticsRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
-  
+
   if (userId == null) {
     throw Exception('Not authenticated');
   }
-  
+
   return repository.getAnalyticsData(userId);
 });
 
 /// Premium Analytics Screen
-/// 
+///
 /// Shows comprehensive gaming analytics with beautiful charts
 class PremiumAnalyticsScreen extends ConsumerStatefulWidget {
   const PremiumAnalyticsScreen({super.key});
 
   @override
-  ConsumerState<PremiumAnalyticsScreen> createState() => _PremiumAnalyticsScreenState();
+  ConsumerState<PremiumAnalyticsScreen> createState() =>
+      _PremiumAnalyticsScreenState();
 }
 
-class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen> {
+class _PremiumAnalyticsScreenState
+    extends ConsumerState<PremiumAnalyticsScreen> {
   final SubscriptionService _subscriptionService = SubscriptionService();
   bool _isChecking = true;
   bool _isPremium = false;
@@ -76,7 +81,7 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
         backgroundColor: surfaceLight,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: accentPrimary.withOpacity(0.3)),
+          side: BorderSide(color: accentPrimary.withValues(alpha: 0.3)),
         ),
         title: const Row(
           children: [
@@ -103,9 +108,7 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
               context.pop(); // Return to dashboard
               context.push('/premium-subscription');
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: accentPrimary,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: accentPrimary),
             child: const Text('Upgrade to Premium'),
           ),
         ],
@@ -118,18 +121,14 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
     if (_isChecking) {
       return const Scaffold(
         backgroundColor: backgroundDark,
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (!_isPremium) {
       return const Scaffold(
         backgroundColor: backgroundDark,
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -138,23 +137,37 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
     return Scaffold(
       backgroundColor: backgroundDark,
       appBar: AppBar(
-        backgroundColor: surfaceLight,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xCC13172B), Color(0xCC1A122B)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+          ),
+        ),
         title: Row(
           children: [
             const Text(
               'Analytics',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [accentPrimary.withOpacity(0.3), accentSecondary.withOpacity(0.3)],
+                  colors: [
+                    accentPrimary.withValues(alpha: 0.25),
+                    accentSecondary.withValues(alpha: 0.25),
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: accentPrimary.withValues(alpha: 0.55),
+                ),
               ),
               child: const Text(
                 'PREMIUM',
@@ -172,30 +185,60 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
           onPressed: () => context.pop(),
         ),
       ),
-      body: analyticsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: accentPrimary),
-        ),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(
-                'Failed to load analytics',
-                style: TextStyle(color: Colors.grey[400], fontSize: 16),
+      body: Container(
+        decoration: CyberpunkTheme.gradientBackground(),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -120,
+              right: -100,
+              child: _ambientGlow(
+                size: 250,
+                color: accentSecondary.withValues(alpha: 0.16),
               ),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                textAlign: TextAlign.center,
+            ),
+            Positioned(
+              bottom: -120,
+              left: -80,
+              child: _ambientGlow(
+                size: 260,
+                color: accentPrimary.withValues(alpha: 0.14),
               ),
-            ],
-          ),
+            ),
+            analyticsAsync.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: accentPrimary),
+              ),
+              error: (error, stack) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Failed to load analytics',
+                        style: TextStyle(color: textPrimary, fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: const TextStyle(color: textMuted, fontSize: 12),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              data: (analytics) => _buildAnalyticsContent(context, analytics),
+            ),
+          ],
         ),
-        data: (analytics) => _buildAnalyticsContent(context, analytics),
       ),
     );
   }
@@ -214,138 +257,245 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [            // Debug info card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Debug Info',
-                    style: TextStyle(
-                      color: Colors.orange,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'User ID: ${ref.read(currentUserIdProvider)}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                  Text(
-                    'Total Trophies: ${analytics.timelineData.totalTrophies}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                  Text(
-                    'PSN: ${analytics.platformDistribution.psnCount}, Xbox: ${analytics.platformDistribution.xboxCount}, Steam: ${analytics.platformDistribution.steamCount}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                  Text(
-                    'Timeline Points: PSN=${analytics.timelineData.psnPoints.length}, Xbox=${analytics.timelineData.xboxPoints.length}, Steam=${analytics.timelineData.steamPoints.length}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                  Text(
-                    'Rarity Total: ${analytics.rarityDistribution.total}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                  if (analytics.timelineData.psnPoints.isNotEmpty || 
-                      analytics.timelineData.xboxPoints.isNotEmpty || 
-                      analytics.timelineData.steamPoints.isNotEmpty)
-                    Text(
-                      'First Trophy: ${analytics.timelineData.firstTrophy}',
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Trophy Timeline
-            _buildChartSection(
-              'Trophy & Achievement Journey',
-              'Your progress across PSN, Xbox, and Steam over time',
-              TrophyTimelineChart(data: analytics.timelineData),
-            ),
-            const SizedBox(height: 24),
-
-            // Monthly Activity
-            _buildChartSection(
-              'Monthly Activity',
-              'Trophies and achievements earned per month',
-              MonthlyActivityChart(data: analytics.monthlyActivity),
-            ),
-            const SizedBox(height: 24),
-
-            // Platform Distribution
-            _buildChartSection(
-              'Platform Distribution',
-              'Where you trophy hunt most',
-              PlatformPieChart(data: analytics.platformDistribution),
-            ),
-            const SizedBox(height: 24),
-
-            // Rarity Distribution
-            _buildChartSection(
-              'Rarity Distribution',
-              'How rare are your trophies?',
-              RarityBarChart(data: analytics.rarityDistribution),
-            ),
-            const SizedBox(height: 24),
-
-            // Trophy Type Breakdown (PSN)
-            if (analytics.trophyTypeBreakdown.total > 0) ...[
+            children: [
               _buildChartSection(
-                'Trophy Types (PSN)',
-                'Bronze, Silver, Gold, Platinum',
-                TrophyTypeChart(data: analytics.trophyTypeBreakdown),
+                'Recent Trend',
+                'Daily achievements over the last 30 days',
+                DailyTrendChart(data: analytics.dailyTrendData),
+                accent: accentPrimary,
               ),
-              const SizedBox(height: 80), // Extra padding at bottom to prevent overflow
+              const SizedBox(height: 24),
+              _buildChartSection(
+                'Platform Split',
+                'Compare short-term and monthly platform focus',
+                PlatformSplitWindowChart(data: analytics.platformSplitTrend),
+                accent: accentSuccess,
+              ),
+              const SizedBox(height: 24),
+              _buildChartSection(
+                'Seasonal Pace',
+                'Where you stand in active weekly and monthly races',
+                _buildSeasonalPaceSection(analytics.seasonalPaceData),
+                accent: accentSecondary,
+              ),
+              const SizedBox(height: 24),
+              _buildChartSection(
+                'Trophy & Achievement Journey',
+                'Your progress across PSN, Xbox, and Steam over time',
+                TrophyTimelineChart(data: analytics.timelineData),
+                accent: accentPrimary,
+              ),
+              const SizedBox(height: 24),
+              _buildChartSection(
+                'Monthly Activity',
+                'Trophies and achievements earned per month',
+                MonthlyActivityChart(data: analytics.monthlyActivity),
+                accent: accentWarning,
+              ),
+              const SizedBox(height: 24),
+              _buildChartSection(
+                'Platform Distribution',
+                'Where you trophy hunt most',
+                PlatformPieChart(data: analytics.platformDistribution),
+                accent: accentSuccess,
+              ),
+              const SizedBox(height: 24),
+              _buildChartSection(
+                'Rarity Distribution',
+                'How rare are your trophies?',
+                RarityBarChart(data: analytics.rarityDistribution),
+                accent: accentSecondary,
+              ),
+              const SizedBox(height: 24),
+              if (analytics.trophyTypeBreakdown.total > 0) ...[
+                _buildChartSection(
+                  'Trophy Types (PSN)',
+                  'Bronze, Silver, Gold, Platinum',
+                  TrophyTypeChart(data: analytics.trophyTypeBreakdown),
+                  accent: accentPrimary,
+                ),
+                const SizedBox(height: 80),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
 
-  Widget _buildChartSection(String title, String subtitle, Widget chart) {
+  Widget _buildChartSection(
+    String title,
+    String subtitle,
+    Widget chart, {
+    Color accent = accentPrimary,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: surfaceLight,
+        gradient: LinearGradient(
+          colors: [
+            accent.withValues(alpha: 0.14),
+            surfaceLight.withValues(alpha: 0.95),
+            surfaceLight.withValues(alpha: 0.95),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: accent.withValues(alpha: 0.32)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.1),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: accent,
+              shadows: CyberpunkTheme.neonGlow(color: accent, blurRadius: 4),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[400],
-            ),
+            style: const TextStyle(fontSize: 13, color: textSecondary),
           ),
           const SizedBox(height: 20),
           chart,
         ],
       ),
+    );
+  }
+
+  Widget _buildSeasonalPaceSection(SeasonalPaceData data) {
+    return Column(
+      children: [
+        _buildSeasonalPaceCard(data.weekly),
+        const SizedBox(height: 12),
+        _buildSeasonalPaceCard(data.monthly),
+      ],
+    );
+  }
+
+  Widget _buildSeasonalPaceCard(SeasonalPaceSnapshot snapshot) {
+    final isWeekly = snapshot.periodLabel.toLowerCase().contains('week');
+    final accent = isWeekly ? accentPrimary : accentSecondary;
+    final rankText = snapshot.currentRank > 0
+        ? '#${snapshot.currentRank} of ${snapshot.totalPlayers}'
+        : 'Unranked';
+    final progress = (snapshot.progressPercent / 100).clamp(0, 1).toDouble();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            accent.withValues(alpha: 0.12),
+            Colors.black.withValues(alpha: 0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                snapshot.periodLabel,
+                style: TextStyle(
+                  color: accent,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                rankText,
+                style: const TextStyle(
+                  color: textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              minHeight: 8,
+              value: progress,
+              backgroundColor: Colors.white.withValues(alpha: 0.1),
+              valueColor: AlwaysStoppedAnimation(accent),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 14,
+            runSpacing: 8,
+            children: [
+              _paceStat('Gain', snapshot.currentGain.toString()),
+              _paceStat('Projected', snapshot.projectedGain.toString()),
+              _paceStat('Gap to #1', snapshot.gapToFirst.toString()),
+              _paceStat('Day', '${snapshot.daysElapsed}/${snapshot.daysTotal}'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _ambientGlow({required double size, required Color color}) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color, Colors.transparent],
+            stops: const [0.0, 1.0],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _paceStat(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            color: textMuted,
+            fontSize: 10,
+            letterSpacing: 0.8,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: const TextStyle(
+            color: textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }

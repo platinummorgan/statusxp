@@ -31,6 +31,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _isLoadingProfile = true;
   Map<String, dynamic>? _profile;
   bool _showOnLeaderboard = true;
+  bool _isLinkingAuthProvider = false;
 
   final BiometricAuthService _biometricService = BiometricAuthService();
   String _appVersion = '...';
@@ -150,9 +151,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'steam_sync_status': 'never_synced',
         };
       } else if (platform == 'Twitch') {
-        updates = {
-          'twitch_user_id': null,
-        };
+        updates = {'twitch_user_id': null};
       }
 
       await supabase.from('profiles').update(updates).eq('id', userId);
@@ -164,26 +163,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _loadProfile();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to disconnect: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to disconnect: $e')));
     }
   }
 
   Future<void> _showTwitchStatusDialog() async {
     try {
       final twitchService = ref.read(twitchServiceProvider);
-      
+
       // Show loading
       if (mounted) {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
-          ),
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
       }
 
@@ -243,7 +239,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text('Your Twitch account is linked, but you don\'t have an active subscription.'),
+                const Text(
+                  'Your Twitch account is linked, but you don\'t have an active subscription.',
+                ),
                 const SizedBox(height: 8),
                 const Text('Subscribe to unlock premium features!'),
               ],
@@ -268,7 +266,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } catch (e) {
       if (!mounted) return;
       Navigator.of(context).pop(); // Close loading if shown
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to check Twitch status: $e'),
@@ -285,9 +283,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error opening link: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error opening link: $e')));
     }
   }
 
@@ -321,7 +319,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               'This app is built with passion and zero ads. Your support helps keep it that way and motivates continued development!',
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.color?.withOpacity(0.7),
               ),
             ),
             const SizedBox(height: 24),
@@ -344,7 +344,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 }
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF0070BA), Color(0xFF1546A0)],
@@ -394,7 +397,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.open_in_new, color: Colors.white70, size: 18),
+                    const Icon(
+                      Icons.open_in_new,
+                      color: Colors.white70,
+                      size: 18,
+                    ),
                   ],
                 ),
               ),
@@ -402,7 +409,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -452,7 +462,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'This action CANNOT be undone.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -473,7 +486,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'This action is permanent and cannot be reversed.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () async {
               final input = await showDialog<String>(
@@ -484,14 +500,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('Type DELETE'),
                     content: TextField(
                       controller: controller,
-                      decoration: const InputDecoration(hintText: 'Type DELETE here'),
+                      decoration: const InputDecoration(
+                        hintText: 'Type DELETE here',
+                      ),
                       autofocus: true,
                     ),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
                       FilledButton(
-                        onPressed: () => Navigator.pop(context, controller.text),
-                        style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () =>
+                            Navigator.pop(context, controller.text),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
                         child: const Text('Confirm'),
                       ),
                     ],
@@ -545,10 +569,182 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  Set<String> _getLinkedAuthProviders() {
+    final user = Supabase.instance.client.auth.currentUser;
+    final appMetadata = user?.appMetadata ?? <String, dynamic>{};
+    final providersRaw = appMetadata['providers'];
+    final providers = <String>{};
+
+    if (providersRaw is List) {
+      for (final provider in providersRaw) {
+        if (provider is String && provider.isNotEmpty) {
+          providers.add(provider.toLowerCase());
+        }
+      }
+    }
+
+    final primaryProvider = appMetadata['provider'];
+    if (primaryProvider is String && primaryProvider.isNotEmpty) {
+      providers.add(primaryProvider.toLowerCase());
+    }
+
+    return providers;
+  }
+
+  String _friendlyLinkErrorMessage(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('manual linking is disabled')) {
+      return 'Account linking is disabled in Supabase. '
+          'Enable it in Supabase Dashboard > Authentication > Settings > Manual Linking.';
+    }
+    if (lower.contains('unable to exchange external code') ||
+        lower.contains('unexpected_failure') ||
+        lower.contains('server_error')) {
+      return 'Apple provider exchange failed. '
+          'Check Supabase Apple provider config (Services ID, Team ID, Key ID, '
+          'client secret/private key, and callback URL).';
+    }
+    return message;
+  }
+
+  Future<void> _linkGoogleAccount() async {
+    if (_isLinkingAuthProvider) return;
+    setState(() => _isLinkingAuthProvider = true);
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithGoogle();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google sign-in method linked.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() {});
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_friendlyLinkErrorMessage(e.message)),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final errorMessage = _friendlyLinkErrorMessage(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to link Google: $errorMessage'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLinkingAuthProvider = false);
+      }
+    }
+  }
+
+  Future<void> _linkAppleAccount() async {
+    if (_isLinkingAuthProvider) return;
+    setState(() => _isLinkingAuthProvider = true);
+
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.signInWithApple();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Apple sign-in method linked.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() {});
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_friendlyLinkErrorMessage(e.message)),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final errorMessage = _friendlyLinkErrorMessage(e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to link Apple: $errorMessage'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLinkingAuthProvider = false);
+      }
+    }
+  }
+
+  Future<void> _enableEmailPasswordSignIn() async {
+    if (_isLinkingAuthProvider) return;
+
+    final user = Supabase.instance.client.auth.currentUser;
+    final email = user?.email;
+    if (email == null || email.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No email is available on this account.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLinkingAuthProvider = true);
+    try {
+      final authService = ref.read(authServiceProvider);
+      await authService.resetPassword(email: email);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Password setup link sent to $email'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not send password setup link: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLinkingAuthProvider = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final psnSyncStatus = ref.watch(psnSyncStatusProvider);
     final xboxSyncStatus = ref.watch(xboxSyncStatusProvider);
+    final linkedAuthProviders = _getLinkedAuthProviders();
+    final userEmail = Supabase.instance.client.auth.currentUser?.email;
+    final hasEmailProvider = linkedAuthProviders.contains('email');
+    final hasGoogleProvider = linkedAuthProviders.contains('google');
+    final hasAppleProvider = linkedAuthProviders.contains('apple');
 
     return Scaffold(
       appBar: AppBar(
@@ -571,8 +767,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   title: 'PlayStation',
                   subtitle: _profile?['psn_account_id'] != null
                       ? (_profile?['psn_online_id'] != null
-                          ? 'Connected as ${_profile!['psn_online_id']}'
-                          : 'Connected (sync needed)')
+                            ? 'Connected as ${_profile!['psn_online_id']}'
+                            : 'Connected (sync needed)')
                       : 'Not connected',
                   isConnected: _profile?['psn_account_id'] != null,
                   syncStatus: psnSyncStatus.maybeWhen(
@@ -589,7 +785,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     } else {
                       final result = await Navigator.push<bool>(
                         context,
-                        MaterialPageRoute(builder: (context) => const PSNConnectScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const PSNConnectScreen(),
+                        ),
                       );
                       if (result == true) _loadProfile();
                     }
@@ -623,7 +821,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     } else {
                       final result = await Navigator.push<bool>(
                         context,
-                        MaterialPageRoute(builder: (context) => const XboxConnectScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const XboxConnectScreen(),
+                        ),
                       );
                       if (result == true) _loadProfile();
                     }
@@ -646,17 +846,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.orange.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange.withOpacity(0.4)),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.4),
+                        ),
                       ),
                       child: const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                          ),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Xbox needs relinking. Disconnect then reconnect to restore syncing.',
-                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -683,13 +891,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     if (_profile?['steam_id'] != null) {
                       await Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const SteamSyncScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const SteamSyncScreen(),
+                        ),
                       );
                       _loadProfile();
                     } else {
                       final result = await Navigator.push<bool>(
                         context,
-                        MaterialPageRoute(builder: (context) => const SteamConfigureScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const SteamConfigureScreen(),
+                        ),
                       );
                       if (result == true) _loadProfile();
                     }
@@ -735,6 +947,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 24),
 
+                _buildSectionHeader('Sign-In Methods'),
+
+                _buildAuthMethodTile(
+                  icon: Icons.email_outlined,
+                  title: 'Email & Password',
+                  isConnected: hasEmailProvider,
+                  connectedLabel: 'Linked',
+                  notConnectedLabel: userEmail != null
+                      ? 'Send password setup link to $userEmail'
+                      : 'No email available on this account',
+                  onLink: _enableEmailPasswordSignIn,
+                ),
+
+                const Divider(height: 1),
+
+                _buildAuthMethodTile(
+                  icon: Icons.g_mobiledata,
+                  title: 'Google',
+                  isConnected: hasGoogleProvider,
+                  onLink: _linkGoogleAccount,
+                ),
+
+                const Divider(height: 1),
+
+                _buildAuthMethodTile(
+                  icon: Icons.apple,
+                  title: 'Apple',
+                  isConnected: hasAppleProvider,
+                  onLink: _linkAppleAccount,
+                ),
+
+                const SizedBox(height: 24),
+
                 _buildSectionHeader('App Settings'),
 
                 // Premium
@@ -746,13 +991,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     return ListTile(
                       leading: Icon(
                         Icons.diamond,
-                        color: isPremium ? const Color(0xFFFFD700) : accentPrimary,
+                        color: isPremium
+                            ? const Color(0xFFFFD700)
+                            : accentPrimary,
                       ),
-                      title: Text(isPremium ? 'Premium Active' : 'Upgrade to Premium'),
-                      subtitle: Text(isPremium ? 'Unlimited AI • Faster syncs' : 'Unlock unlimited features'),
+                      title: Text(
+                        isPremium ? 'Premium Active' : 'Upgrade to Premium',
+                      ),
+                      subtitle: Text(
+                        isPremium
+                            ? 'Unlimited AI • Faster syncs'
+                            : 'Unlock unlimited features',
+                      ),
                       trailing: isPremium
                           ? Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: accentSuccess.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(12),
@@ -771,7 +1027,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const PremiumSubscriptionScreen()),
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const PremiumSubscriptionScreen(),
+                          ),
                         );
                       },
                     );
@@ -822,7 +1081,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       await Clipboard.setData(const ClipboardData(text: email));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Email copied to clipboard: support@platovalabs.com'),
+                          content: Text(
+                            'Email copied to clipboard: support@platovalabs.com',
+                          ),
                           duration: Duration(seconds: 3),
                         ),
                       );
@@ -846,7 +1107,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           '© 2025 StatusXP\n\nThe ultimate cross-platform achievement tracker',
                       children: const [
                         SizedBox(height: 16),
-                        Text('Track your gaming achievements across PlayStation, Xbox, and Steam in one unified app.'),
+                        Text(
+                          'Track your gaming achievements across PlayStation, Xbox, and Steam in one unified app.',
+                        ),
                       ],
                     );
                   },
@@ -882,7 +1145,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 SwitchListTile(
                   secondary: const Icon(Icons.leaderboard),
                   title: const Text('Show on Leaderboards'),
-                  subtitle: const Text('Allow your profile to appear on public leaderboards'),
+                  subtitle: const Text(
+                    'Allow your profile to appear on public leaderboards',
+                  ),
                   value: _showOnLeaderboard,
                   onChanged: _isLoadingProfile
                       ? null
@@ -894,14 +1159,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             final userId = supabase.auth.currentUser?.id;
 
                             if (userId != null) {
-                              await supabase.from('profiles').update({'show_on_leaderboard': value}).eq('id', userId);
+                              await supabase
+                                  .from('profiles')
+                                  .update({'show_on_leaderboard': value})
+                                  .eq('id', userId);
 
                               if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(value
-                                      ? 'You will now appear on leaderboards'
-                                      : 'You are now hidden from leaderboards'),
+                                  content: Text(
+                                    value
+                                        ? 'You will now appear on leaderboards'
+                                        : 'You are now hidden from leaderboards',
+                                  ),
                                   duration: const Duration(seconds: 2),
                                 ),
                               );
@@ -926,11 +1196,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: const Icon(Icons.history, color: Colors.white70),
                   title: const Text('Updates'),
                   subtitle: const Text('View app changelog and recent updates'),
-                  trailing: const Icon(Icons.chevron_right, color: Colors.white30),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.white30,
+                  ),
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const UpdatesScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const UpdatesScreen(),
+                      ),
                     );
                   },
                 ),
@@ -941,15 +1216,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 if (kIsWeb)
                   ListTile(
                     leading: const Icon(Icons.logout, color: Colors.orange),
-                    title: const Text('Log Out', style: TextStyle(color: Colors.orange)),
+                    title: const Text(
+                      'Log Out',
+                      style: TextStyle(color: Colors.orange),
+                    ),
                     subtitle: const Text('Sign out of this browser'),
                     onTap: _signOut,
                   )
                 else
                   ListTile(
-                    leading: const Icon(Icons.lock_outline, color: Colors.orange),
-                    title: const Text('Log Out', style: TextStyle(color: Colors.orange)),
-                    subtitle: const Text('Lock the app - use biometrics to get back in'),
+                    leading: const Icon(
+                      Icons.lock_outline,
+                      color: Colors.orange,
+                    ),
+                    title: const Text(
+                      'Log Out',
+                      style: TextStyle(color: Colors.orange),
+                    ),
+                    subtitle: const Text(
+                      'Lock the app - use biometrics to get back in',
+                    ),
                     onTap: _lockApp,
                   ),
 
@@ -958,8 +1244,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 // Delete
                 ListTile(
                   leading: const Icon(Icons.delete_forever, color: Colors.red),
-                  title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
-                  subtitle: const Text('Permanently delete your account and all data', style: TextStyle(fontSize: 12)),
+                  title: const Text(
+                    'Delete Account',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  subtitle: const Text(
+                    'Permanently delete your account and all data',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   onTap: _deleteAccount,
                 ),
               ],
@@ -980,13 +1272,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             final isEnabled = enabledSnapshot.data ?? false;
 
             return ListTile(
-              leading: Icon(Icons.fingerprint, color: isEnabled ? accentSuccess : null),
+              leading: Icon(
+                Icons.fingerprint,
+                color: isEnabled ? accentSuccess : null,
+              ),
               title: const Text('Biometric Lock'),
               subtitle: FutureBuilder<String>(
                 future: _biometricService.getBiometricTypesDescription(),
                 builder: (context, typeSnapshot) {
                   final types = typeSnapshot.data ?? 'Loading...';
-                  return Text(isEnabled ? 'Enabled ($types)' : 'Require $types to unlock app');
+                  return Text(
+                    isEnabled
+                        ? 'Enabled ($types)'
+                        : 'Require $types to unlock app',
+                  );
                 },
               ),
               trailing: Switch(
@@ -994,14 +1293,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onChanged: (value) async {
                   if (value) {
                     final bioResult = await _biometricService.authenticate(
-                      reason: 'Verify your identity to enable biometric authentication',
+                      reason:
+                          'Verify your identity to enable biometric authentication',
                     );
 
                     if (!bioResult.success) {
                       if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(bioResult.errorMessage ?? 'Authentication failed'),
+                          content: Text(
+                            bioResult.errorMessage ?? 'Authentication failed',
+                          ),
                           backgroundColor: Colors.red,
                           duration: const Duration(seconds: 5),
                         ),
@@ -1014,7 +1316,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       context: context,
                       builder: (context) => AlertDialog(
                         title: const Text('How do you sign in?'),
-                        content: const Text('Choose your sign-in method to set up biometric authentication:'),
+                        content: const Text(
+                          'Choose your sign-in method to set up biometric authentication:',
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context, 'oauth'),
@@ -1048,15 +1352,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       setState(() {});
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in'),
+                          content: Text(
+                            '✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in',
+                          ),
                           backgroundColor: Colors.green,
                           duration: Duration(seconds: 3),
                         ),
                       );
                     } else {
-                      final session = Supabase.instance.client.auth.currentSession;
-                      if (session != null && session.refreshToken != null && session.expiresAt != null) {
-                        final expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+                      final session =
+                          Supabase.instance.client.auth.currentSession;
+                      if (session != null &&
+                          session.refreshToken != null &&
+                          session.expiresAt != null) {
+                        final expiresAt = DateTime.fromMillisecondsSinceEpoch(
+                          session.expiresAt! * 1000,
+                        );
                         await _biometricService.storeRefreshToken(
                           refreshToken: session.refreshToken!,
                           userId: session.user.id,
@@ -1069,7 +1380,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       setState(() {});
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in'),
+                          content: Text(
+                            '✅ Biometric sign-in enabled\nYou can now use your fingerprint/face to sign in',
+                          ),
                           backgroundColor: Colors.green,
                           duration: Duration(seconds: 3),
                         ),
@@ -1145,7 +1458,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: const Text(
                 'Connected',
-                style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             )
           else if (isComingSoon)
@@ -1158,7 +1475,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: const Text(
                 'Coming Soon',
-                style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.orange,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
         ],
@@ -1184,8 +1505,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Widget _buildAuthMethodTile({
+    required IconData icon,
+    required String title,
+    required bool isConnected,
+    required VoidCallback onLink,
+    String connectedLabel = 'Linked',
+    String notConnectedLabel = 'Tap to link',
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(isConnected ? connectedLabel : notConnectedLabel),
+      trailing: _isLinkingAuthProvider
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isConnected
+                    ? Colors.green.withOpacity(0.15)
+                    : Colors.grey.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isConnected ? Colors.green : Colors.grey,
+                ),
+              ),
+              child: Text(
+                isConnected ? 'Linked' : 'Link',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isConnected ? Colors.green : Colors.grey[300],
+                ),
+              ),
+            ),
+      onTap: _isLinkingAuthProvider || isConnected ? null : onLink,
+    );
+  }
+
   Widget _buildPreferredPlatformTile() {
-    final currentPlatform = _profile?['preferred_display_platform'] as String? ?? 'psn';
+    final currentPlatform =
+        _profile?['preferred_display_platform'] as String? ?? 'psn';
 
     String platformName(String platform) {
       switch (platform) {
@@ -1203,7 +1567,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return ListTile(
       leading: const Icon(Icons.badge_outlined),
       title: const Text('Display Name'),
-      subtitle: Text('Show ${platformName(currentPlatform)} username on dashboard'),
+      subtitle: Text(
+        'Show ${platformName(currentPlatform)} username on dashboard',
+      ),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async {
         final selected = await showDialog<String>(
@@ -1220,7 +1586,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : const Text('Not connected'),
                   value: 'psn',
                   groupValue: currentPlatform,
-                  onChanged: _profile?['psn_online_id'] != null ? (v) => Navigator.pop(context, v) : null,
+                  onChanged: _profile?['psn_online_id'] != null
+                      ? (v) => Navigator.pop(context, v)
+                      : null,
                 ),
                 RadioListTile<String>(
                   title: const Text('Xbox Live'),
@@ -1229,7 +1597,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : const Text('Not connected'),
                   value: 'xbox',
                   groupValue: currentPlatform,
-                  onChanged: _profile?['xbox_gamertag'] != null ? (v) => Navigator.pop(context, v) : null,
+                  onChanged: _profile?['xbox_gamertag'] != null
+                      ? (v) => Navigator.pop(context, v)
+                      : null,
                 ),
                 RadioListTile<String>(
                   title: const Text('Steam'),
@@ -1238,11 +1608,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : const Text('Not connected'),
                   value: 'steam',
                   groupValue: currentPlatform,
-                  onChanged: _profile?['steam_display_name'] != null ? (v) => Navigator.pop(context, v) : null,
+                  onChanged: _profile?['steam_display_name'] != null
+                      ? (v) => Navigator.pop(context, v)
+                      : null,
                 ),
               ],
             ),
-            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel'))],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ],
           ),
         );
 
@@ -1253,19 +1630,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           final userId = supabase.auth.currentUser?.id;
           if (userId == null) return;
 
-          await supabase.from('profiles').update({'preferred_display_platform': selected}).eq('id', userId);
+          await supabase
+              .from('profiles')
+              .update({'preferred_display_platform': selected})
+              .eq('id', userId);
 
           await _loadProfile();
           ref.invalidate(dashboardStatsProvider);
 
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Display platform changed to ${platformName(selected)}')),
+            SnackBar(
+              content: Text(
+                'Display platform changed to ${platformName(selected)}',
+              ),
+            ),
           );
         } catch (e) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('Failed to update: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       },
@@ -1297,7 +1684,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         break;
       case 'success':
         color = Colors.green;
-        text = lastSyncAt != null ? 'Synced ${formatLastSync(lastSyncAt)}' : 'Synced';
+        text = lastSyncAt != null
+            ? 'Synced ${formatLastSync(lastSyncAt)}'
+            : 'Synced';
         icon = Icons.check_circle;
         break;
       case 'error':
@@ -1316,7 +1705,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         Icon(icon, size: 12, color: color),
         const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500)),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 11,
+            color: color,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -1335,26 +1731,41 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Enter your credentials to enable secure biometric sign-in.'),
+              const Text(
+                'Enter your credentials to enable secure biometric sign-in.',
+              ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: emailController,
-                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) => (value == null || value.isEmpty) ? 'Please enter your email' : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Please enter your email'
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: passwordController,
-                decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
                 obscureText: true,
-                validator: (value) => (value == null || value.isEmpty) ? 'Please enter your password' : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Please enter your password'
+                    : null,
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (formKey.currentState!.validate()) {

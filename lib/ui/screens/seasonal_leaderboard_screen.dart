@@ -79,10 +79,11 @@ class _SeasonalLeaderboardScreenState
           onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(96),
+          preferredSize: const Size.fromHeight(124),
           child: Column(
             children: [
               _buildPeriodToggle(),
+              _buildActivePeriodLabel(),
               Container(
                 color: const Color(0xFF0A0E27),
                 child: TabBar(
@@ -148,6 +149,45 @@ class _SeasonalLeaderboardScreenState
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActivePeriodLabel() {
+    final nowUtc = DateTime.now().toUtc();
+    String label;
+
+    if (_selectedPeriod == LeaderboardPeriodType.monthly) {
+      final monthStartUtc = DateTime.utc(nowUtc.year, nowUtc.month, 1);
+      label = DateFormat('MMM y').format(monthStartUtc.toLocal());
+    } else {
+      final startOfTodayUtc = DateTime.utc(
+        nowUtc.year,
+        nowUtc.month,
+        nowUtc.day,
+      );
+      final daysSinceTuesday = (nowUtc.weekday - DateTime.tuesday + 7) % 7;
+      final periodStartUtc = startOfTodayUtc.subtract(
+        Duration(days: daysSinceTuesday),
+      );
+      final periodEndUtc = periodStartUtc.add(const Duration(days: 7));
+      label =
+          '${DateFormat('MMM d').format(periodStartUtc.toLocal())} - ${DateFormat('MMM d, y').format(periodEndUtc.toLocal())}';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.75),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
       ),
     );
   }

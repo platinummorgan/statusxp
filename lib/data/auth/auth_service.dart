@@ -10,40 +10,83 @@ import 'package:crypto/crypto.dart';
 import 'package:statusxp/utils/html.dart' as html;
 
 /// Service for managing Supabase authentication.
-/// 
+///
 /// Provides a clean abstraction over Supabase Auth for email/password authentication,
 /// Google Sign-In, session management, and auth state changes.
 class AuthService {
   final SupabaseClient _client;
   final GoogleSignIn _googleSignIn;
-  
+
   // Hardcoded Google OAuth Client IDs - these are not sensitive and need to be in the app
   // Web client for backend/Supabase
   // Android client for Android OAuth flow
   // iOS client for iOS OAuth flow
-  static const String _googleWebClientId = '395832690159-arutlclucst0mb9b3tctgn1m71i52q1v.apps.googleusercontent.com';
-  static const String _googleAndroidClientId = '395832690159-fe24vs3m6udhe15ufm2m3jnn0k1pdrap.apps.googleusercontent.com';
-  static const String _googleiOSClientId = '395832690159-psp0hu5uggjc7u2lmfhnmim016j2lhq2.apps.googleusercontent.com';
-  
-  AuthService(this._client) 
-      : _googleSignIn = GoogleSignIn(
-          // iOS needs explicit clientId (web/Android use null)
-          clientId: (!kIsWeb && Platform.isIOS) ? _googleiOSClientId : null,
-          // Use Web client for serverClientId - Supabase needs to verify with Web client secret
-          // Android OAuth client is auto-discovered by package name + SHA-1
-          serverClientId: _googleWebClientId,
-        );
-  
+  static const String _googleWebClientId =
+      '395832690159-arutlclucst0mb9b3tctgn1m71i52q1v.apps.googleusercontent.com';
+  static const String _googleAndroidClientId =
+      '395832690159-fe24vs3m6udhe15ufm2m3jnn0k1pdrap.apps.googleusercontent.com';
+  static const String _googleiOSClientId =
+      '395832690159-psp0hu5uggjc7u2lmfhnmim016j2lhq2.apps.googleusercontent.com';
+
+  AuthService(this._client)
+    : _googleSignIn = GoogleSignIn(
+        // iOS needs explicit clientId (web/Android use null)
+        clientId: (!kIsWeb && Platform.isIOS) ? _googleiOSClientId : null,
+        // Use Web client for serverClientId - Supabase needs to verify with Web client secret
+        // Android OAuth client is auto-discovered by package name + SHA-1
+        serverClientId: _googleWebClientId,
+      );
+
+  /// Build a web redirect URL on the current origin.
+  ///
+  /// Keeping redirects on the same origin avoids PKCE verifier mismatches.
+  String _webRedirectUrl(String path) {
+    final origin = html.window.location.origin.replaceAll(RegExp(r'/$'), '');
+    if (path.isEmpty || path == '/') return origin;
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    return '$origin$normalizedPath';
+  }
+
+  bool _isIdentityAlreadyLinkedError(String message) {
+    final m = message.toLowerCase();
+    return m.contains('already linked') ||
+        m.contains('already associated') ||
+        m.contains('already registered') ||
+        m.contains('identity') && m.contains('exists') ||
+        m.contains('linked to another user');
+  }
+
+  String _mapAppleAuthError(String message) {
+    final m = message.toLowerCase();
+
+    if (_isIdentityAlreadyLinkedError(message)) {
+      return 'This Apple ID is already linked to another account. Please sign in with that account first.';
+    }
+
+    if (m.contains('manual linking is disabled')) {
+      return 'Account linking is disabled in Supabase. Enable Manual Linking in Authentication settings.';
+    }
+
+    if (m.contains('unable to exchange external code') ||
+        m.contains('unexpected_failure') ||
+        m.contains('server_error')) {
+      return 'Apple auth provider exchange failed. Verify Supabase Apple provider config '
+          '(Services ID, Team ID, Key ID, client secret/private key, and callback URL).';
+    }
+
+    return message;
+  }
+
   /// Sign up a new user with email and password.
-  /// 
+  ///
   /// Returns an [AuthResponse] containing the user and session if successful.
   /// Throws [AuthException] if sign up fails (e.g., email already exists, weak password).
   Future<AuthResponse> signUp({
     required String email,
     required String password,
   }) async {
-    const redirectUrl = kIsWeb 
-        ? 'https://statusxp.com/'
+    final redirectUrl = kIsWeb
+        ? _webRedirectUrl('/login-callback')
         : 'com.statusxp.statusxp://login-callback';
     return await _client.auth.signUp(
       email: email,
@@ -51,9 +94,9 @@ class AuthService {
       emailRedirectTo: redirectUrl,
     );
   }
-  
+
   /// Sign in an existing user with email and password.
-  /// 
+  ///
   /// Returns an [AuthResponse] containing the user and session if successful.
   /// Throws [AuthException] if credentials are invalid.
   Future<AuthResponse> signInWithPassword({
@@ -65,45 +108,36 @@ class AuthService {
       password: password,
     );
   }
-  
+
   /// Send a password reset email to the user.
-  /// 
+  ///
   /// The user will receive an email with a link to reset their password.
   /// The link will redirect to the app using the deep link configured in Supabase.
   /// Throws [AuthException] if the email sending fails.
-  Future<void> resetPassword({
-    required String email,
-  }) async {
-    const redirectUrl = kIsWeb 
-        ? 'https://statusxp.com/reset-password'
+  Future<void> resetPassword({required String email}) async {
+    final redirectUrl = kIsWeb
+        ? _webRedirectUrl('/reset-password')
         : 'com.statusxp.statusxp://reset-password';
-    await _client.auth.resetPasswordForEmail(
-      email,
-      redirectTo: redirectUrl,
-    );
+    await _client.auth.resetPasswordForEmail(email, redirectTo: redirectUrl);
   }
-  
+
   /// Update the user's password.
-  /// 
+  ///
   /// This should be called after the user follows the password reset link.
   /// Throws [AuthException] if the password update fails.
-  Future<UserResponse> updatePassword({
-    required String newPassword,
-  }) async {
-    return await _client.auth.updateUser(
-      UserAttributes(password: newPassword),
-    );
+  Future<UserResponse> updatePassword({required String newPassword}) async {
+    return await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
-  
+
   /// Delete the current user's account and all associated data.
-  /// 
+  ///
   /// This will permanently delete:
   /// - User authentication account
   /// - Profile and all gaming data
   /// - Game achievements and trophies
   /// - Premium subscriptions and purchases
   /// - AI credits and usage history
-  /// 
+  ///
   /// This action cannot be undone.
   /// Throws [AuthException] if deletion fails.
   Future<void> deleteAccount() async {
@@ -111,31 +145,33 @@ class AuthService {
     if (user == null) {
       throw const AuthException('No user logged in');
     }
-    
+
     // Call edge function to delete all user data from database
     final response = await _client.functions.invoke('delete-account');
-    
+
     if (response.status != 200) {
-      throw AuthException(response.data?['error'] ?? 'Failed to delete account data');
+      throw AuthException(
+        response.data?['error'] ?? 'Failed to delete account data',
+      );
     }
-    
+
     // Sign out after deletion
     await _client.auth.signOut();
   }
-  
+
   /// Sign out the current user.
-  /// 
+  ///
   /// Clears the session and revokes the refresh token on the server.
   /// This ensures that any stored refresh token becomes invalid and cannot be
   /// used to restore the session via biometric authentication.
   Future<void> signOut() async {
     print('=== LOGOUT CALLED ===');
-    
+
     // Supabase's signOut() automatically invalidates the refresh token on the server
     await _client.auth.signOut(scope: SignOutScope.global);
-    
+
     print('Supabase signOut completed');
-    
+
     // On web, nuclear option: clear ALL localStorage after signOut
     if (kIsWeb) {
       await Future.delayed(const Duration(milliseconds: 300));
@@ -144,9 +180,9 @@ class AuthService {
       print('ALL storage cleared on web');
     }
   }
-  
+
   /// Sign in with Google using OAuth.
-  /// 
+  ///
   /// If user is already authenticated, this will LINK Google to their existing account.
   /// If user is not authenticated, this will create a new account or sign in.
   /// Opens Google Sign-In flow and exchanges the Google ID token for a Supabase session.
@@ -155,8 +191,7 @@ class AuthService {
     try {
       // On web, use Supabase OAuth redirect flow (native plugin doesn't work)
       if (kIsWeb) {
-        // Keep redirect on the current origin so the PKCE verifier matches localStorage.
-        final redirectUrl = html.window.location.origin;
+        final redirectUrl = _webRedirectUrl('/login-callback');
         final success = await _client.auth.signInWithOAuth(
           OAuthProvider.google,
           redirectTo: redirectUrl,
@@ -169,33 +204,34 @@ class AuthService {
         // The actual session will be established after redirect
         return AuthResponse();
       }
-      
+
       // On iOS/macOS, use dedicated OAuth flow
       if (Platform.isIOS || Platform.isMacOS) {
         return await _signInWithGoogleOAuth();
       }
-      
+
       // On Android, use GoogleSignIn plugin for native flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
+
       if (googleUser == null) {
         throw const AuthException('Google Sign-In was cancelled');
       }
-      
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final String? idToken = googleAuth.idToken;
       final String? accessToken = googleAuth.accessToken;
-      
+
       if (idToken == null || accessToken == null) {
         throw const AuthException('Failed to get Google tokens');
       }
-      
+
       final idTokenClaims = _extractClaimsFromIdToken(idToken);
       final idTokenNonce = idTokenClaims['nonce'] as String?;
-      
+
       // Check if user is already authenticated
       final currentUser = _client.auth.currentUser;
-      
+
       if (currentUser != null) {
         // User is logged in - LINK Google to existing account using ID/access tokens
         try {
@@ -208,10 +244,12 @@ class AuthService {
         } catch (e) {
           // If linking fails (e.g., Google account already linked to another user),
           // throw a more helpful error
-          throw const AuthException('This Google account is already linked to another account. Please sign in with that account first.');
+          throw const AuthException(
+            'This Google account is already linked to another account. Please sign in with that account first.',
+          );
         }
       }
-      
+
       // User not logged in - sign in with Google (may create new account)
       return await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
@@ -221,7 +259,7 @@ class AuthService {
       );
     } on AuthException catch (e) {
       // Check if this is the "linked identity" error
-      if (e.message.contains('already') || 
+      if (e.message.contains('already') ||
           e.message.contains('linked') ||
           e.message.contains('associated') ||
           e.message.contains('connected')) {
@@ -234,36 +272,69 @@ class AuthService {
       rethrow;
     }
   }
-  
+
   /// Sign in with Apple using native Sign In with Apple.
-  /// 
+  ///
   /// If user is already authenticated, this will LINK Apple to their existing account.
   /// If user is not authenticated, this will create a new account or sign in.
   /// Uses native Sign In with Apple API for better reliability.
   /// Throws [AuthException] if sign in fails or is cancelled.
   /// Only available on iOS 13+ and macOS 10.15+.
   Future<AuthResponse> signInWithApple() async {
-    // On web, use OAuth flow instead of native Sign In with Apple
-    if (kIsWeb) {
-      const redirectUrl = 'https://statusxp.com/';
-      final success = await _client.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        redirectTo: redirectUrl,
-      );
-      if (!success) {
-        throw const AuthException('Apple Sign-In failed on web');
+    // Web + Android: use OAuth redirect flow.
+    // Android SignInWithApple plugin requires webAuthenticationOptions and is
+    // less reliable than Supabase OAuth redirect for account-linking flows.
+    if (kIsWeb || Platform.isAndroid) {
+      final redirectUrl = kIsWeb
+          ? _webRedirectUrl('/login-callback')
+          : 'com.statusxp.statusxp://login-callback';
+      final currentUser = _client.auth.currentUser;
+
+      // If already signed in, explicitly LINK Apple to this account.
+      if (currentUser != null) {
+        try {
+          await _client.auth.linkIdentity(
+            OAuthProvider.apple,
+            redirectTo: redirectUrl,
+          );
+          return AuthResponse(
+            user: currentUser,
+            session: _client.auth.currentSession,
+          );
+        } on AuthException catch (e) {
+          throw AuthException(_mapAppleAuthError(e.message));
+        } catch (e) {
+          throw AuthException(_mapAppleAuthError(e.toString()));
+        }
+      }
+
+      try {
+        final success = await _client.auth.signInWithOAuth(
+          OAuthProvider.apple,
+          redirectTo: redirectUrl,
+          authScreenLaunchMode: LaunchMode.platformDefault,
+        );
+        if (!success) {
+          throw const AuthException(
+            'Apple Sign-In did not start. Please try again.',
+          );
+        }
+      } on AuthException catch (e) {
+        throw AuthException(_mapAppleAuthError(e.message));
+      } catch (e) {
+        throw AuthException(_mapAppleAuthError(e.toString()));
       }
       // OAuth redirects away, so we never actually reach here in success case
       // This is just for type safety
       return AuthResponse();
     }
-    
-    // Native flow for iOS/Android
+
+    // Native flow for iOS/macOS
     try {
       // Generate nonce for security
       final rawNonce = _generateNonce();
       final hashedNonce = _sha256ofString(rawNonce);
-      
+
       // Request Apple Sign In
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -272,15 +343,17 @@ class AuthService {
         ],
         nonce: hashedNonce,
       );
-      
+
       final idToken = credential.identityToken;
       if (idToken == null) {
-        throw const AuthException('Apple Sign-In failed - no identity token received');
+        throw const AuthException(
+          'Apple Sign-In failed - no identity token received',
+        );
       }
-      
+
       // Check if user is already authenticated
       final currentUser = _client.auth.currentUser;
-      
+
       if (currentUser != null) {
         // User is logged in - LINK Apple to existing account
         try {
@@ -289,19 +362,25 @@ class AuthService {
             idToken: idToken,
             nonce: rawNonce,
           );
+        } on AuthException catch (e) {
+          throw AuthException(_mapAppleAuthError(e.message));
         } catch (e) {
-          throw const AuthException(
-            'This Apple ID is already linked to another account. Please sign in with that account first.',
-          );
+          throw AuthException(_mapAppleAuthError(e.toString()));
         }
       }
-      
-      // User not logged in - sign in with Apple
-      return await _client.auth.signInWithIdToken(
-        provider: OAuthProvider.apple,
-        idToken: idToken,
-        nonce: rawNonce,
-      );
+
+      try {
+        // User not logged in - sign in with Apple
+        return await _client.auth.signInWithIdToken(
+          provider: OAuthProvider.apple,
+          idToken: idToken,
+          nonce: rawNonce,
+        );
+      } on AuthException catch (e) {
+        throw AuthException(_mapAppleAuthError(e.message));
+      } catch (e) {
+        throw AuthException(_mapAppleAuthError(e.toString()));
+      }
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) {
         throw const AuthException('Apple Sign-In was cancelled');
@@ -311,21 +390,25 @@ class AuthService {
       rethrow;
     }
   }
-  
+
   /// Generate a cryptographically secure random nonce for Apple Sign-In.
   String _generateNonce([int length = 32]) {
-    const charset = '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
     final random = Random.secure();
-    return List.generate(length, (_) => charset[random.nextInt(charset.length)]).join();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
   }
-  
+
   /// Generate SHA256 hash of a string.
   String _sha256ofString(String input) {
     final bytes = utf8.encode(input);
     final digest = sha256.convert(bytes);
     return digest.toString();
   }
-  
+
   /// Extracts JWT claims from an id_token, if present.
   Map<String, dynamic> _extractClaimsFromIdToken(String idToken) {
     try {
@@ -333,14 +416,16 @@ class AuthService {
       if (parts.length < 2) {
         return <String, dynamic>{};
       }
-      final payload = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+      final payload = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
       final data = jsonDecode(payload);
       return data is Map<String, dynamic> ? data : <String, dynamic>{};
     } catch (_) {
       return <String, dynamic>{};
     }
   }
-  
+
   /// Extract the nonce from an ID token.
   String? _extractNonceFromIdToken(String idToken) {
     try {
@@ -353,10 +438,10 @@ class AuthService {
 
   Future<AuthResponse> _signInWithGoogleOAuth() async {
     final currentUser = _client.auth.currentUser;
-    const redirectTo = kIsWeb 
+    const redirectTo = kIsWeb
         ? 'https://statusxp.com/'
         : 'com.statusxp.statusxp://login-callback';
-    
+
     if (currentUser != null) {
       // Link Google via Supabase OAuth flow to avoid token nonce issues on iOS.
       try {
@@ -374,21 +459,18 @@ class AuthService {
         );
       }
     }
-    
+
     final completer = Completer<AuthResponse>();
     late final StreamSubscription<AuthState> sub;
     sub = _client.auth.onAuthStateChange.listen((data) {
       if (data.event == AuthChangeEvent.signedIn && data.session != null) {
         sub.cancel();
         completer.complete(
-          AuthResponse(
-            user: data.session!.user,
-            session: data.session,
-          ),
+          AuthResponse(user: data.session!.user, session: data.session),
         );
       }
     });
-    
+
     try {
       final launched = await _client.auth.signInWithOAuth(
         OAuthProvider.google,
@@ -402,7 +484,7 @@ class AuthService {
       await sub.cancel();
       rethrow;
     }
-    
+
     return completer.future.timeout(
       const Duration(seconds: 60),
       onTimeout: () {
@@ -411,9 +493,9 @@ class AuthService {
       },
     );
   }
-  
+
   /// Check if Sign in with Apple is available on this platform.
-  /// 
+  ///
   /// Returns true on iOS 13+, macOS 10.15+, and web (uses JavaScript).
   Future<bool> get isAppleSignInAvailable async {
     try {
@@ -424,26 +506,26 @@ class AuthService {
       return false;
     }
   }
-  
+
   /// Get the currently authenticated user.
-  /// 
+  ///
   /// Returns the [User] if there is an active session, null otherwise.
   User? get currentUser => _client.auth.currentUser;
-  
+
   /// Stream of authentication state changes.
-  /// 
+  ///
   /// Emits an [AuthState] whenever the user signs in, signs out, or the token refreshes.
   /// Use this to reactively update UI based on authentication status.
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
-  
+
   /// Get the current session's refresh token
-  /// 
+  ///
   /// Returns the refresh token if there is an active session, null otherwise.
   /// This refresh token should be stored securely (encrypted by OS) for biometric re-authentication.
   String? get refreshToken => _client.auth.currentSession?.refreshToken;
-  
+
   /// Get the current session's expiry time
-  /// 
+  ///
   /// Returns when the refresh token expires, requiring full re-authentication.
   /// Typically refresh tokens last 30-90 days.
   DateTime? get refreshTokenExpiry {
@@ -451,30 +533,30 @@ class AuthService {
     if (expiresAt == null) return null;
     return DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
   }
-  
+
   /// Exchange a stored refresh token for a new access token
-  /// 
+  ///
   /// This should be called after successful biometric authentication to restore
   /// the user's session without requiring username/password.
-  /// 
+  ///
   /// Returns true if the session was successfully restored, false if the refresh
   /// token is invalid or expired.
-  /// 
+  ///
   /// Throws [AuthException] if the refresh operation fails due to network or other errors.
   Future<bool> restoreSessionFromRefreshToken(String refreshToken) async {
     try {
       // Supabase's setSession will automatically refresh if the refresh token is valid
       final response = await _client.auth.setSession(refreshToken);
-      
+
       if (response.session == null) {
         // Refresh token was invalid or expired
         return false;
       }
-      
+
       return true;
     } on AuthException catch (e) {
       // Invalid or expired refresh token
-      if (e.message.contains('refresh_token') || 
+      if (e.message.contains('refresh_token') ||
           e.message.contains('Invalid') ||
           e.message.contains('expired')) {
         return false;
@@ -486,12 +568,12 @@ class AuthService {
       rethrow;
     }
   }
-  
+
   /// Sign out and invalidate the refresh token on the server
-  /// 
+  ///
   /// This ensures that any stored refresh token becomes invalid and cannot be
   /// used to restore the session via biometric authentication.
-  /// 
+  ///
   /// This is the recommended way to sign out when using biometric authentication.
   Future<void> signOutAndInvalidateToken() async {
     // Supabase's signOut() automatically invalidates the refresh token on the server

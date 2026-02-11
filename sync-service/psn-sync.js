@@ -42,9 +42,8 @@ async function uploadExternalAvatar(externalUrl, userId, platform) {
     else if (contentType.includes('gif')) extension = 'gif';
     else if (contentType.includes('webp')) extension = 'webp';
     
-    // Create a unique filename: user-avatars/{platform}_{userId}_{timestamp}.ext
-    const timestamp = Date.now();
-    const filename = `user-avatars/${platform}_${userId}_${timestamp}.${extension}`;
+    // Use a stable filename per user/platform so avatar refreshes overwrite in-place.
+    const filename = `user-avatars/${platform}_${userId}.${extension}`;
     
     console.log(`[AVATAR STORAGE] Uploading to Supabase Storage: ${filename}`);
     
@@ -71,6 +70,83 @@ async function uploadExternalAvatar(externalUrl, userId, platform) {
   } catch (error) {
     console.error('[AVATAR STORAGE] Exception:', error);
     return null;
+  }
+}
+
+function extractPsnProfilePayload(rawProfileResponse) {
+  if (!rawProfileResponse) return null;
+  if (rawProfileResponse.profile) return rawProfileResponse.profile;
+  if (Array.isArray(rawProfileResponse.profiles) && rawProfileResponse.profiles.length > 0) {
+    return rawProfileResponse.profiles[0];
+  }
+  return rawProfileResponse;
+}
+
+function extractAvatarUrlFromProfile(profile) {
+  const normalized = [
+    ...(Array.isArray(profile?.avatarUrls) ? profile.avatarUrls.map((a) => ({ size: a?.size, url: a?.avatarUrl || a?.url })) : []),
+    ...(Array.isArray(profile?.avatars) ? profile.avatars.map((a) => ({ size: a?.size, url: a?.url || a?.avatarUrl })) : []),
+  ].filter((a) => a?.url);
+
+  return (
+    normalized.find((a) => String(a.size || '').toLowerCase() === 'm')?.url ||
+    normalized.find((a) => String(a.size || '').toLowerCase() === 'l')?.url ||
+    normalized[0]?.url ||
+    null
+  );
+}
+
+async function refreshPSNIdentityAndAvatar({
+  userId,
+  accountId,
+  authorization,
+  getProfileFromAccountId,
+}) {
+  try {
+    const rawProfile = await getProfileFromAccountId(authorization, accountId);
+    const profile = extractPsnProfilePayload(rawProfile);
+
+    if (!profile) {
+      console.warn('[PSN PROFILE] No profile payload returned during sync.');
+      return;
+    }
+
+    const externalAvatarUrl = extractAvatarUrlFromProfile(profile);
+
+    const updates = {};
+
+    if (profile.onlineId) {
+      updates.psn_online_id = profile.onlineId;
+    }
+
+    if (typeof profile.plus === 'number') {
+      updates.psn_is_plus = profile.plus === 1;
+    } else if (typeof profile.plus === 'boolean') {
+      updates.psn_is_plus = profile.plus;
+    } else if (typeof profile.isPlus === 'boolean') {
+      updates.psn_is_plus = profile.isPlus;
+    }
+
+    if (externalAvatarUrl) {
+      const proxiedAvatarUrl = await uploadExternalAvatar(externalAvatarUrl, userId, 'psn');
+      updates.psn_avatar_url = proxiedAvatarUrl || externalAvatarUrl;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      console.log('[PSN PROFILE] No profile fields to update.');
+      return;
+    }
+
+    const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+    if (error) {
+      console.error('[PSN PROFILE] Failed to update profile fields:', error.message);
+      return;
+    }
+
+    console.log('[PSN PROFILE] Refreshed profile identity/avatar during sync.');
+  } catch (err) {
+    // Non-fatal: trophy sync should continue even if profile endpoint fails (403/privacy/etc).
+    console.warn('[PSN PROFILE] Skipping identity/avatar refresh:', err?.message || err);
   }
 }
 
@@ -445,6 +521,7 @@ export async function syncPSNAchievements(
       getTitleTrophyGroups,
       getUserTrophiesEarnedForTitle,
       exchangeRefreshTokenForAuthTokens,
+      getProfileFromAccountId,
     } = psnApi;
 
     // Refresh tokens immediately (PSN tokens can expire mid-run)
@@ -464,8 +541,15 @@ export async function syncPSNAchievements(
 
     await supabase.from('psn_sync_logs').update({ status: 'syncing' }).eq('id', syncLogId);
 
-    // Note: PSN avatars are uploaded during account linking flow, not during sync
-    // The token used for trophy sync doesn't have permissions for profile endpoints (403)
+    // Refresh PSN profile identity/avatar every sync:
+    // - keeps avatars in sync when users change them
+    // - self-heals if avatar storage files were removed
+    await refreshPSNIdentityAndAvatar({
+      userId,
+      accountId,
+      authorization: { accessToken: currentAccessToken },
+      getProfileFromAccountId,
+    });
     
     // Fetch ALL titles w/ pagination
     console.log('Fetching ALL PSN titles with pagination...');
