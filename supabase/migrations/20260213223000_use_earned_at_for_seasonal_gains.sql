@@ -37,7 +37,7 @@ WITH bounds AS (
     END AS period_type,
     public.get_leaderboard_period_start(p_period_type, now()) AS period_start
 ),
-window AS (
+period_window AS (
   SELECT
     b.period_type,
     b.period_start,
@@ -87,7 +87,7 @@ earned AS (
     a.platform_id = ua.platform_id
     AND a.platform_game_id = ua.platform_game_id
     AND a.platform_achievement_id = ua.platform_achievement_id
-  CROSS JOIN window w
+  CROSS JOIN period_window w
   WHERE ua.earned_at >= w.period_start
     AND ua.earned_at < w.period_end
     AND a.include_in_score = true
@@ -158,7 +158,7 @@ WITH bounds AS (
     END AS period_type,
     public.get_leaderboard_period_start(p_period_type, now()) AS period_start
 ),
-window AS (
+period_window AS (
   SELECT
     b.period_type,
     b.period_start,
@@ -190,7 +190,7 @@ earned AS (
     a.platform_id = ua.platform_id
     AND a.platform_game_id = ua.platform_game_id
     AND a.platform_achievement_id = ua.platform_achievement_id
-  CROSS JOIN window w
+  CROSS JOIN period_window w
   WHERE ua.platform_id IN (1, 2, 5, 9)
     AND ua.earned_at >= w.period_start
     AND ua.earned_at < w.period_end
@@ -268,7 +268,7 @@ WITH bounds AS (
     END AS period_type,
     public.get_leaderboard_period_start(p_period_type, now()) AS period_start
 ),
-window AS (
+period_window AS (
   SELECT
     b.period_type,
     b.period_start,
@@ -298,7 +298,7 @@ earned AS (
     a.platform_id = ua.platform_id
     AND a.platform_game_id = ua.platform_game_id
     AND a.platform_achievement_id = ua.platform_achievement_id
-  CROSS JOIN window w
+  CROSS JOIN period_window w
   WHERE ua.platform_id IN (10, 11, 12)
     AND ua.earned_at >= w.period_start
     AND ua.earned_at < w.period_end
@@ -367,7 +367,7 @@ WITH bounds AS (
     END AS period_type,
     public.get_leaderboard_period_start(p_period_type, now()) AS period_start
 ),
-window AS (
+period_window AS (
   SELECT
     b.period_type,
     b.period_start,
@@ -391,7 +391,7 @@ earned AS (
     ua.user_id,
     COUNT(*)::bigint AS gain
   FROM public.user_achievements ua
-  CROSS JOIN window w
+  CROSS JOIN period_window w
   WHERE ua.platform_id = 4
     AND ua.earned_at >= w.period_start
     AND ua.earned_at < w.period_end
@@ -429,4 +429,3 @@ OFFSET GREATEST(offset_count, 0);
 $$;
 
 COMMIT;
-
