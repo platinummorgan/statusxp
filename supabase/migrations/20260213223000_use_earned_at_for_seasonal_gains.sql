@@ -353,6 +353,7 @@ RETURNS TABLE(
   avatar_url text,
   period_gain bigint,
   achievement_count bigint,
+  potential_achievements bigint,
   total_games bigint,
   current_rank bigint
 )
@@ -383,6 +384,7 @@ current_scores AS (
     slc.display_name,
     slc.avatar_url,
     slc.achievement_count::bigint AS achievement_count,
+    slc.potential_achievements::bigint AS potential_achievements,
     slc.total_games::bigint AS total_games
   FROM public.steam_leaderboard_cache slc
 ),
@@ -404,6 +406,7 @@ ranked AS (
     cs.avatar_url,
     COALESCE(e.gain, 0)::bigint AS period_gain,
     cs.achievement_count,
+    cs.potential_achievements,
     cs.total_games,
     ROW_NUMBER() OVER (
       ORDER BY
@@ -420,6 +423,7 @@ SELECT
   r.avatar_url,
   r.period_gain,
   r.achievement_count,
+  r.potential_achievements,
   r.total_games,
   r.current_rank
 FROM ranked r
