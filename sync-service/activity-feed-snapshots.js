@@ -61,14 +61,55 @@ export async function createPreSyncSnapshot(userId) {
       .eq('user_id', userId)
       .eq('platform_id', 4); // Steam
     
-    // Get latest game for context
-    const { data: latestGame } = await supabase
-      .from('user_games')
-      .select('game_title, platform_id')
+    // Get latest game for context.
+    //
+    // IMPORTANT:
+    // `user_games.last_played_at` is frequently NULL for non-PSN titles, and
+    // Postgres sorts NULLs FIRST on `ORDER BY ... DESC` by default. That can
+    // cause an old/never-played title to be picked as the "latest game" and
+    // then echoed into the Activity Feed story text.
+    //
+    // Prefer "most recent unlock" across platforms, falling back to
+    // user_games when we have no earned achievements at all.
+    let latestGame = null;
+
+    const { data: latestUnlock } = await supabase
+      .from('user_achievements')
+      .select('platform_id, platform_game_id, earned_at, synced_at')
       .eq('user_id', userId)
-     .order('last_played_at', { ascending: false })
+      // Postgres sorts NULLs FIRST on `ORDER BY ... DESC` by default, which can
+      // incorrectly pick a row with `earned_at = NULL` as the "latest unlock".
+      .order('earned_at', { ascending: false, nullsFirst: false })
+      // If earned_at is missing, fall back to the most recently synced row.
+      .order('synced_at', { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle();
+
+    if (latestUnlock?.platform_id && latestUnlock?.platform_game_id) {
+      const { data: latestUnlockGame } = await supabase
+        .from('games')
+        .select('name')
+        .eq('platform_id', latestUnlock.platform_id)
+        .eq('platform_game_id', latestUnlock.platform_game_id)
+        .maybeSingle();
+
+      latestGame = {
+        game_title: latestUnlockGame?.name,
+        platform_id: latestUnlock.platform_id,
+      };
+    } else {
+      // Fallback: use user_games, but ensure NULL last_played_at doesn't win.
+      // (Supabase order supports nullsFirst; set to false => NULLS LAST.)
+      const { data: fallbackLatestGame } = await supabase
+        .from('user_games')
+        .select('game_title, platform_id')
+        .eq('user_id', userId)
+        .order('last_played_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+
+      latestGame = fallbackLatestGame;
+    }
     
     // Insert snapshot
     const { data: snapshot, error } = await supabase
@@ -142,14 +183,64 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   // Platinum milestone
   if (postSnapshot.platinum_count > preSnapshot.platinum_count) {
     const platinumDelta = postSnapshot.platinum_count - preSnapshot.platinum_count;
+
+    // Identify which game(s) contributed new platinum(s) during this sync based on synced_at.
+    let platinumGameTitle = postSnapshot.latest_game_title || 'Unknown Game';
+    let platinumGameCount = 0;
+
+    const { data: platinumRows } = await supabase
+      .from('user_achievements')
+      .select('platform_id,platform_game_id,earned_at,synced_at,achievements(is_platinum)')
+      .eq('user_id', userId)
+      .in('platform_id', [1, 2, 5, 9])
+      .gte('synced_at', preSnapshot.synced_at)
+      .lte('synced_at', postSnapshot.synced_at);
+
+    const platOnly = (platinumRows || []).filter((row) => {
+      const a = row?.achievements;
+      // Supabase may return embedded rows as object or list; handle both.
+      if (Array.isArray(a)) return a.some((x) => x?.is_platinum === true);
+      return a?.is_platinum === true;
+    });
+
+    const platDistinctKeys = new Set(
+      platOnly.map((a) => `${a.platform_id}:${a.platform_game_id}`)
+    );
+    platinumGameCount = platDistinctKeys.size;
+
+    if (platinumGameCount === 1) {
+      const rep = platOnly.reduce((best, row) => {
+        const bestAt = (best?.earned_at || best?.synced_at) ? new Date(best.earned_at || best.synced_at) : null;
+        const rowAt = (row?.earned_at || row?.synced_at) ? new Date(row.earned_at || row.synced_at) : null;
+        if (!bestAt) return row;
+        if (!rowAt) return best;
+        return rowAt > bestAt ? row : best;
+      }, null);
+
+      if (rep?.platform_id && rep?.platform_game_id) {
+        const { data: repGame } = await supabase
+          .from('games')
+          .select('name')
+          .eq('platform_id', rep.platform_id)
+          .eq('platform_game_id', rep.platform_game_id)
+          .maybeSingle();
+
+        if (repGame?.name) {
+          platinumGameTitle = repGame.name;
+        }
+      }
+    } else if (platinumGameCount > 1) {
+      platinumGameTitle = 'Multiple games';
+    }
+
     changes.push({
       type: 'platinum_milestone',
       oldValue: preSnapshot.platinum_count,
       newValue: postSnapshot.platinum_count,
       change: platinumDelta,
       changeType: 'milestone',
-      // A sync that adds >1 platinum is necessarily multi-game.
-      gameTitle: platinumDelta > 1 ? 'Multiple games' : (postSnapshot.latest_game_title || 'Unknown Game'),
+      gameTitle: platinumGameTitle,
+      gameCount: platinumGameCount,
     });
   }
   
@@ -162,17 +253,43 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
     // Determine whether this sync touched one game or many for PS trophies.
     const { data: psWindowAchievements } = await supabase
       .from('user_achievements')
-      .select('platform_id,platform_game_id')
+      .select('platform_id,platform_game_id,earned_at,synced_at')
       .eq('user_id', userId)
       .in('platform_id', [1, 2, 5, 9])
-      .gte('earned_at', preSnapshot.synced_at)
-      .lte('earned_at', postSnapshot.synced_at);
+      // Use synced_at window (what we imported during this sync), not earned_at.
+      // earned_at can be in the past, so filtering by earned_at would incorrectly
+      // report "0 games" for a sync that imports older unlocks.
+      .gte('synced_at', preSnapshot.synced_at)
+      .lte('synced_at', postSnapshot.synced_at);
 
     const distinctGameKeys = new Set(
       (psWindowAchievements || []).map((a) => `${a.platform_id}:${a.platform_game_id}`)
     );
     const gameCount = distinctGameKeys.size;
     const isMultiGameSync = gameCount > 1;
+
+    // Pick a representative "latest" game from what was imported this sync,
+    // based on most-recent earned_at among the imported rows.
+    let representativeGameTitle = null;
+    if (psWindowAchievements?.length) {
+      const rep = psWindowAchievements.reduce((best, row) => {
+        const bestAt = (best?.earned_at || best?.synced_at) ? new Date(best.earned_at || best.synced_at) : null;
+        const rowAt = (row?.earned_at || row?.synced_at) ? new Date(row.earned_at || row.synced_at) : null;
+        if (!bestAt) return row;
+        if (!rowAt) return best;
+        return rowAt > bestAt ? row : best;
+      }, null);
+
+      if (rep?.platform_id && rep?.platform_game_id) {
+        const { data: repGame } = await supabase
+          .from('games')
+          .select('name')
+          .eq('platform_id', rep.platform_id)
+          .eq('platform_game_id', rep.platform_game_id)
+          .maybeSingle();
+        representativeGameTitle = repGame?.name ?? null;
+      }
+    }
 
     // Check for rare trophies (< 10% rarity) earned in this sync
     const { data: rareTrophies } = await supabase
@@ -186,8 +303,8 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
       `)
       .eq('user_id', userId)
       .in('platform_id', [1, 2, 5, 9])
-      .gte('earned_at', preSnapshot.synced_at)
-      .lte('earned_at', postSnapshot.synced_at);
+      .gte('synced_at', preSnapshot.synced_at)
+      .lte('synced_at', postSnapshot.synced_at);
     
     // Filter for trophies with rarity < 10%
     const impressiveRarities = [];
@@ -219,7 +336,9 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
       oldGold: preSnapshot.psn_gold_count,
       oldSilver: preSnapshot.psn_silver_count,
       oldBronze: preSnapshot.psn_bronze_count,
-      gameTitle: isMultiGameSync ? 'Multiple games' : (postSnapshot.latest_game_title || 'a game'),
+      gameTitle: isMultiGameSync
+        ? 'Multiple games'
+        : (representativeGameTitle || postSnapshot.latest_game_title || 'a game'),
       gameCount,
       rareTrophies: impressiveRarities.length > 0 ? impressiveRarities : null,
     });
@@ -227,25 +346,83 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   
   // Gamerscore change (Xbox)
   if (postSnapshot.gamerscore > preSnapshot.gamerscore) {
+    let xboxGameTitle = postSnapshot.latest_game_title || null;
+    const { data: xboxRows } = await supabase
+      .from('user_achievements')
+      .select('platform_id,platform_game_id,earned_at,synced_at')
+      .eq('user_id', userId)
+      .in('platform_id', [10, 11, 12])
+      .gte('synced_at', preSnapshot.synced_at)
+      .lte('synced_at', postSnapshot.synced_at);
+
+    if (xboxRows?.length) {
+      const rep = xboxRows.reduce((best, row) => {
+        const bestAt = (best?.earned_at || best?.synced_at) ? new Date(best.earned_at || best.synced_at) : null;
+        const rowAt = (row?.earned_at || row?.synced_at) ? new Date(row.earned_at || row.synced_at) : null;
+        if (!bestAt) return row;
+        if (!rowAt) return best;
+        return rowAt > bestAt ? row : best;
+      }, null);
+
+      if (rep?.platform_id && rep?.platform_game_id) {
+        const { data: repGame } = await supabase
+          .from('games')
+          .select('name')
+          .eq('platform_id', rep.platform_id)
+          .eq('platform_game_id', rep.platform_game_id)
+          .maybeSingle();
+        xboxGameTitle = repGame?.name ?? xboxGameTitle;
+      }
+    }
+
     changes.push({
       type: 'gamerscore_gain',
       oldValue: preSnapshot.gamerscore,
       newValue: postSnapshot.gamerscore,
       change: postSnapshot.gamerscore - preSnapshot.gamerscore,
       changeType: categorizeChange(postSnapshot.gamerscore - preSnapshot.gamerscore, 'gamerscore'),
-      gameTitle: postSnapshot.latest_game_title,
+      gameTitle: xboxGameTitle,
     });
   }
   
   // Steam achievements
   if (postSnapshot.steam_achievement_count > preSnapshot.steam_achievement_count) {
+    let steamGameTitle = postSnapshot.latest_game_title || null;
+    const { data: steamRows } = await supabase
+      .from('user_achievements')
+      .select('platform_id,platform_game_id,earned_at,synced_at')
+      .eq('user_id', userId)
+      .eq('platform_id', 4)
+      .gte('synced_at', preSnapshot.synced_at)
+      .lte('synced_at', postSnapshot.synced_at);
+
+    if (steamRows?.length) {
+      const rep = steamRows.reduce((best, row) => {
+        const bestAt = (best?.earned_at || best?.synced_at) ? new Date(best.earned_at || best.synced_at) : null;
+        const rowAt = (row?.earned_at || row?.synced_at) ? new Date(row.earned_at || row.synced_at) : null;
+        if (!bestAt) return row;
+        if (!rowAt) return best;
+        return rowAt > bestAt ? row : best;
+      }, null);
+
+      if (rep?.platform_id && rep?.platform_game_id) {
+        const { data: repGame } = await supabase
+          .from('games')
+          .select('name')
+          .eq('platform_id', rep.platform_id)
+          .eq('platform_game_id', rep.platform_game_id)
+          .maybeSingle();
+        steamGameTitle = repGame?.name ?? steamGameTitle;
+      }
+    }
+
     changes.push({
       type: 'steam_achievement_gain',
       oldValue: preSnapshot.steam_achievement_count,
       newValue: postSnapshot.steam_achievement_count,
       change: postSnapshot.steam_achievement_count - preSnapshot.steam_achievement_count,
       changeType: categorizeChange(postSnapshot.steam_achievement_count - preSnapshot.steam_achievement_count, 'steam_achievements'),
-      gameTitle: postSnapshot.latest_game_title,
+      gameTitle: steamGameTitle,
     });
   }
   
