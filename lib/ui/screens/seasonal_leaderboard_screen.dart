@@ -35,8 +35,11 @@ class _SeasonalLeaderboardScreenState
       });
       _refreshSeasonalData();
     });
-    // Force a fresh fetch whenever the screen is first opened.
-    _refreshSeasonalData();
+    // Trigger initial fetch after first frame so provider scope is ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _refreshSeasonalData();
+    });
   }
 
   @override
