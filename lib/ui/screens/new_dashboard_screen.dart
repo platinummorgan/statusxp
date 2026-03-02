@@ -803,6 +803,23 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                     ),
                                   ),
                                   const PopupMenuItem<String>(
+                                    value: '/engagement-hub',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.auto_awesome,
+                                          color: CyberpunkTheme.neonCyan,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 12),
+                                        Text(
+                                          'Engagement Hub',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem<String>(
                                     value: '/poster',
                                     child: Row(
                                       children: [
@@ -1596,6 +1613,20 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                     'Achievement Radar (Premium)',
                     style: TextStyle(color: Colors.white),
                   ),
+                ],
+              ),
+            ),
+            const PopupMenuItem<String>(
+              value: '/engagement-hub',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome,
+                    color: CyberpunkTheme.neonCyan,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Text('Engagement Hub', style: TextStyle(color: Colors.white)),
                 ],
               ),
             ),

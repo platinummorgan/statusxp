@@ -29,6 +29,7 @@ import 'package:statusxp/ui/screens/premium_rival_compare_screen.dart';
 import 'package:statusxp/ui/screens/premium_sync_intelligence_screen.dart';
 import 'package:statusxp/ui/screens/seasonal_leaderboard_screen.dart';
 import 'package:statusxp/ui/screens/hall_of_fame_screen.dart';
+import 'package:statusxp/ui/screens/engagement_hub_screen.dart';
 
 /// StatusXP App Router Configuration
 ///
@@ -315,6 +316,13 @@ final GoRouter appRouter = GoRouter(
           path: '/achievement-radar',
           name: 'achievement-radar',
           builder: (context, state) => const PremiumAchievementRadarScreen(),
+        ),
+
+        // Engagement Hub - social loop, challenges/streaks, and play-next recommendations
+        GoRoute(
+          path: '/engagement-hub',
+          name: 'engagement-hub',
+          builder: (context, state) => const EngagementHubScreen(),
         ),
 
         // Premium Subscription - Subscription and billing management
