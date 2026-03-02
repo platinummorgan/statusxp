@@ -534,11 +534,25 @@ class _PremiumAchievementRadarScreenState
   }
 
   Widget _gameCard(RadarGameInsight game) {
-    final lastTouched =
-        game.lastAchievementAt ?? game.lastPlayedAt ?? game.lastSyncedAt;
-    final touchedText = lastTouched == null
-        ? 'No recent activity'
-        : _dateFormat.format(lastTouched.toLocal());
+    final DateTime? lastTouched;
+    final String touchedLabel;
+
+    if (game.lastAchievementAt != null) {
+      lastTouched = game.lastAchievementAt;
+      touchedLabel = 'Last unlock';
+    } else if (game.lastPlayedAt != null) {
+      lastTouched = game.lastPlayedAt;
+      touchedLabel = 'Last played';
+    } else if (game.lastSyncedAt != null) {
+      lastTouched = game.lastSyncedAt;
+      touchedLabel = 'Last synced';
+    } else {
+      lastTouched = null;
+      touchedLabel = 'Last activity';
+    }
+
+    final touchedText =
+        lastTouched == null ? 'Unknown' : _dateFormat.format(lastTouched.toLocal());
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -604,7 +618,7 @@ class _PremiumAchievementRadarScreenState
               ),
               _miniStat('Remaining', game.remainingCount.toString()),
               _miniStat('Score', game.currentScore.toString()),
-              _miniStat('Last activity', touchedText),
+              _miniStat(touchedLabel, touchedText),
             ],
           ),
         ],

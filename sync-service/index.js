@@ -40,6 +40,41 @@ function validateRequired(fields, body) {
   }
   return missing;
 }
+
+const PSN_RELINK_ERROR_MESSAGE =
+  'PlayStation session expired. Disconnect and reconnect PlayStation in Settings, then sync again.';
+
+function normalizePsnSyncError(err) {
+  const message = String(err?.message || err || '').toLowerCase();
+  if (!message) return 'PSN sync failed';
+
+  const tokenMarkers = [
+    'invalid_grant',
+    'invalid client',
+    'invalid_client',
+    'refresh token',
+    'token expired',
+    'expired token',
+    'jwt expired',
+    'oauth token',
+    'unauthorized',
+    'forbidden',
+    '401',
+    '403',
+    'relink',
+    'reauthorize',
+  ];
+
+  if (
+    tokenMarkers.some((marker) => message.includes(marker)) ||
+    (message.includes('bad request') &&
+      (message.includes('exchange') || message.includes('auth') || message.includes('token')))
+  ) {
+    return PSN_RELINK_ERROR_MESSAGE;
+  }
+
+  return String(err?.message || err).substring(0, 500);
+}
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
@@ -353,11 +388,24 @@ app.post('/sync/psn', checkAuth, async (req, res) => {
     try {
       const mod = await import('./psn-sync.js');
       const { syncPSNAchievements } = mod;
-      await syncPSNAchievements(userId, accountId, accessToken, refreshToken, syncLogId, { batchSize, maxConcurrent });
-      console.log('PSN sync completed - forcing GC');
+      const result = await syncPSNAchievements(
+        userId,
+        accountId,
+        accessToken,
+        refreshToken,
+        syncLogId,
+        { batchSize, maxConcurrent }
+      );
+
+      if (result?.success === false) {
+        console.warn('PSN sync finished with failure status');
+      } else {
+        console.log('PSN sync completed - forcing GC');
+      }
       if (global.gc) global.gc();
     } catch (err) {
       console.error('PSN sync error (lazy import):', err);
+      const normalizedError = normalizePsnSyncError(err);
       // Report error to sync log
       try {
         const { createClient } = await import('@supabase/supabase-js');
@@ -369,13 +417,13 @@ app.post('/sync/psn', checkAuth, async (req, res) => {
           .from('psn_sync_logs')
           .update({
             status: 'failed',
-            error_message: err.message || String(err),
+            error_message: normalizedError,
             completed_at: new Date().toISOString(),
           })
           .eq('id', syncLogId);
         await supabase
           .from('profiles')
-          .update({ psn_sync_status: 'error', psn_sync_error: err.message || String(err) })
+          .update({ psn_sync_status: 'error', psn_sync_error: normalizedError })
           .eq('id', userId);
       } catch (reportErr) {
         console.error('Failed to report PSN sync error to DB:', reportErr);

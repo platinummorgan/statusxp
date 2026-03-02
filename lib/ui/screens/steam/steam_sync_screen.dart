@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/data/repositories/leaderboard_repository.dart' as lb;
 import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
@@ -243,6 +244,11 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
             // Refresh games list and stats to show updated data
             if (newStatus == 'success') {
               ref.refreshCoreData();
+              // Invalidate leaderboards so new achievements are visible immediately.
+              ref.invalidate(lb.leaderboardProvider);
+              ref.invalidate(lb.seasonalLeaderboardProvider);
+              ref.invalidate(leaderboardRanksProvider);
+              ref.invalidate(lb.latestPeriodWinnersProvider);
             }
             break;
           }

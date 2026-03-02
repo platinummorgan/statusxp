@@ -740,6 +740,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final psnSyncStatus = ref.watch(psnSyncStatusProvider);
     final xboxSyncStatus = ref.watch(xboxSyncStatusProvider);
+    final psnRequiresRelink = psnSyncStatus.maybeWhen(
+      data: (status) => status.requiresRelink,
+      orElse: () => false,
+    );
     final linkedAuthProviders = _getLinkedAuthProviders();
     final userEmail = Supabase.instance.client.auth.currentUser?.email;
     final hasEmailProvider = linkedAuthProviders.contains('email');
@@ -796,6 +800,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ? () => _disconnectPlatform('PlayStation')
                       : null,
                 ),
+
+                if ((_profile?['psn_account_id'] != null) && psnRequiresRelink)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.4),
+                        ),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'PlayStation needs relinking. Disconnect then reconnect to restore syncing.',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 const Divider(height: 1),
 

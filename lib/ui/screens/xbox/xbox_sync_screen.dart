@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:statusxp/data/repositories/leaderboard_repository.dart' as lb;
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
@@ -164,6 +165,12 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
               
               // Refresh games list and stats to show updated data
               ref.refreshCoreData();
+              // Leaderboards are cached by Riverpod; invalidate them after sync so
+              // users don't see stale totals when navigating to leaderboards.
+              ref.invalidate(lb.leaderboardProvider);
+              ref.invalidate(lb.seasonalLeaderboardProvider);
+              ref.invalidate(leaderboardRanksProvider);
+              ref.invalidate(lb.latestPeriodWinnersProvider);
               
               // Check for newly unlocked achievements
               final userId = ref.read(currentUserIdProvider);

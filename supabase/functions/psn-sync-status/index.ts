@@ -12,6 +12,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const PSN_RELINK_ERROR_MESSAGE =
+  'PlayStation session expired. Disconnect and reconnect PlayStation in Settings, then sync again.';
+
+function isPsnRelinkRequired(message: unknown): boolean {
+  if (typeof message !== 'string' || message.trim().length === 0) {
+    return false;
+  }
+
+  const lower = message.toLowerCase();
+  const tokenMarkers = [
+    'invalid_grant',
+    'invalid client',
+    'invalid_client',
+    'refresh token',
+    'token expired',
+    'expired token',
+    'jwt expired',
+    'oauth token',
+    'unauthorized',
+    'forbidden',
+    '401',
+    '403',
+    'relink',
+    'reauthorize',
+  ];
+
+  return (
+    tokenMarkers.some((marker) => lower.includes(marker)) ||
+    (lower.includes('bad request') &&
+      (lower.includes('exchange') || lower.includes('auth') || lower.includes('token')))
+  );
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -90,11 +123,20 @@ serve(async (req) => {
       ? profile.psn_sync_status
       : (profile.last_psn_sync_at ? 'success' : 'never_synced');
 
+    const rawProfileError = profile.psn_sync_error ?? null;
+    const rawLatestLogError = latestLog?.error_message ?? null;
+    const requiresRelink =
+      isPsnRelinkRequired(rawProfileError) || isPsnRelinkRequired(rawLatestLogError);
+    const effectiveError = requiresRelink
+      ? PSN_RELINK_ERROR_MESSAGE
+      : (rawProfileError || rawLatestLogError);
+
     const response = {
       isLinked: !!profile.psn_account_id,
       status: effectiveStatus,
       progress: profile.psn_sync_progress,
-      error: profile.psn_sync_error,
+      error: effectiveError,
+      requiresRelink,
       lastSyncAt: profile.last_psn_sync_at,
       lastSyncText,
       latestLog: latestLog ? {

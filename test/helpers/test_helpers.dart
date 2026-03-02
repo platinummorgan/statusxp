@@ -3,32 +3,49 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:statusxp/state/statusxp_providers.dart';
-import 'package:statusxp/data/sample_data.dart';
-import 'package:statusxp/data/data_migration_service.dart';
 import 'package:statusxp/main.dart';
+import 'package:statusxp/domain/game.dart';
+import 'package:statusxp/domain/user_stats.dart';
 
-/// Test double that short-circuits Supabase migration logic.
-///
-/// We implement the interface instead of extending the real service
-/// so no SupabaseClient is required in widget tests. This allows tests
-/// to exercise the full app widget tree (StatusXPApp → AuthGate → StatusXPMainApp)
-/// without initializing Supabase.
-class _MockDataMigrationService implements DataMigrationService {
-  @override
-  Future<bool> isMigrationComplete(String userId) async => true;
+final sampleGames = <Game>[
+  Game(
+    id: 'game-1',
+    name: 'Sample Game',
+    platform: 'PS5',
+    totalTrophies: 50,
+    earnedTrophies: 10,
+    hasPlatinum: true,
+    rarityPercent: 12.5,
+    cover: 'sample_cover.png',
+    bronzeTrophies: 8,
+    silverTrophies: 2,
+    goldTrophies: 0,
+    platinumTrophies: 0,
+    updatedAt: DateTime.now(),
+  ),
+];
 
-  @override
-  Future<void> migrateInitialData(String userId) async {
-    // No-op in tests - sample data already provided via provider overrides.
-  }
-}
+const sampleStats = UserStats(
+  username: 'Test User',
+  avatarUrl: null,
+  isPsPlus: false,
+  totalPlatinums: 0,
+  totalGamesTracked: 1,
+  totalTrophies: 10,
+  bronzeTrophies: 8,
+  silverTrophies: 2,
+  goldTrophies: 0,
+  platinumTrophies: 0,
+  hardestPlatGame: 'N/A',
+  rarestTrophyName: 'N/A',
+  rarestTrophyRarity: 0.0,
+);
 
 /// Get standard provider overrides for tests with a mock authenticated user.
 ///
 /// This sets up a test environment where:
 /// - User is authenticated (not in demo mode)
 /// - currentUserIdProvider returns a test-specific user ID
-/// - Migration service is mocked to skip data seeding
 /// - Games and stats providers return sample data
 List<Override> getTestProviderOverrides() {
   return [
@@ -56,11 +73,6 @@ List<Override> getTestProviderOverrides() {
     // This ensures tests run with authenticated user, not demo mode.
     currentUserIdProvider.overrideWith((ref) => 'test-user-id'),
 
-    // Mock migration service.
-    dataMigrationServiceProvider.overrideWith(
-      (ref) => _MockDataMigrationService(),
-    ),
-
     // Sample data providers.
     gamesProvider.overrideWith((ref) async => sampleGames),
     userStatsProvider.overrideWith((ref) async => sampleStats),
@@ -87,9 +99,6 @@ List<Override> getDemoModeProviderOverrides() {
 
     // currentUserIdProvider will automatically return the demo user ID
     // when auth service has no current user (no override needed here).
-    dataMigrationServiceProvider.overrideWith(
-      (ref) => _MockDataMigrationService(),
-    ),
     gamesProvider.overrideWith((ref) async => sampleGames),
     userStatsProvider.overrideWith((ref) async => sampleStats),
   ];

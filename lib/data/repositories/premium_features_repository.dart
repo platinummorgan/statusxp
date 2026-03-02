@@ -266,16 +266,15 @@ class PremiumFeaturesRepository {
     );
     final staleProgress =
         games.where((game) {
-          final anchor =
-              game.lastAchievementAt ?? game.lastPlayedAt ?? game.lastSyncedAt;
+          // IMPORTANT: "Stale" should be based on real player activity, not
+          // the last time we synced/imported.
+          final anchor = game.lastAchievementAt ?? game.lastPlayedAt;
           return game.earnedCount > 0 &&
               anchor != null &&
               anchor.isBefore(staleCutoff);
         }).toList()..sort((a, b) {
-          final aAnchor =
-              a.lastAchievementAt ?? a.lastPlayedAt ?? a.lastSyncedAt;
-          final bAnchor =
-              b.lastAchievementAt ?? b.lastPlayedAt ?? b.lastSyncedAt;
+          final aAnchor = a.lastAchievementAt ?? a.lastPlayedAt;
+          final bAnchor = b.lastAchievementAt ?? b.lastPlayedAt;
           if (aAnchor == null && bAnchor == null) return 0;
           if (aAnchor == null) return 1;
           if (bAnchor == null) return -1;

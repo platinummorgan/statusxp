@@ -52,7 +52,7 @@ class TrophyTimelineChart extends StatelessWidget {
             child: Container(),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
         Text(
           rangeText,
           style: const TextStyle(
@@ -84,7 +84,8 @@ class TrophyTimelineChart extends StatelessWidget {
 
 class _TimelineChartPainter extends CustomPainter {
   final TrophyTimelineData data;
-  static const double _xAxisLabelBandHeight = 18;
+  // Extra room for X-axis labels so the footer text never visually collides.
+  static const double _xAxisLabelBandHeight = 26;
 
   _TimelineChartPainter(this.data);
 

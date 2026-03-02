@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:statusxp/data/psn_service.dart';
+import 'package:statusxp/data/repositories/leaderboard_repository.dart' as lb;
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
 import 'package:statusxp/services/sync_limit_service.dart';
@@ -69,7 +71,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
 
       // Record successful sync start
       await _syncLimitService.recordSync('psn', success: true);
-      
+
       // Refresh rate limit status
       await _checkRateLimit();
 
@@ -79,7 +81,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
     } catch (e) {
       // Record failed sync
       await _syncLimitService.recordSync('psn', success: false);
-      
+
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -92,10 +94,10 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
   Future<void> _pollSyncStatus() async {
     while (_isSyncing && mounted) {
       await Future.delayed(const Duration(seconds: 2));
-      
+
       ref.invalidate(psnSyncStatusProvider);
       final statusAsync = ref.read(psnSyncStatusProvider);
-      
+
       await statusAsync.when(
         data: (status) async {
           // If status is pending, automatically continue sync
@@ -103,8 +105,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
             try {
               final psnService = ref.read(psnServiceProvider);
               await psnService.startSync(forceResync: false);
-            } catch (e) {
-            }
+            } catch (e) {}
             return;
           }
 
@@ -123,40 +124,54 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
             } else {
               debugPrint('⏩ Skipping rate limit record for auto-sync');
             }
-            
+
             // Update last sync time for auto-sync tracking
             try {
               final supabase = ref.read(supabaseClientProvider);
               final psnService = ref.read(psnServiceProvider);
               final xboxService = ref.read(xboxServiceProvider);
-              final autoSyncService = AutoSyncService(supabase, psnService, xboxService);
+              final autoSyncService = AutoSyncService(
+                supabase,
+                psnService,
+                xboxService,
+              );
               await autoSyncService.updatePSNSyncTime();
             } catch (e) {
               debugPrint('Failed to update PSN sync time: $e');
             }
-            
+
             if (mounted) {
               setState(() {
                 _isSyncing = false;
               });
-              
+
               // Force refresh sync status to get updated last_sync_at timestamp
               ref.invalidate(psnSyncStatusProvider);
-              
+
               // Refresh games list and stats to show updated data
               ref.refreshCoreData();
-              
+              // Leaderboards are cached by Riverpod; invalidate them after sync so
+              // users don't see stale platinum counts/XP/GS when they navigate.
+              ref.invalidate(lb.leaderboardProvider);
+              ref.invalidate(lb.seasonalLeaderboardProvider);
+              ref.invalidate(leaderboardRanksProvider);
+              ref.invalidate(lb.latestPeriodWinnersProvider);
+
               // Check for newly unlocked achievements
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
-              
+
               final checker = ref.read(platformAchievementCheckerProvider);
               try {
-                final newlyUnlocked = await checker.checkAndUnlockAchievements(userId);
+                final newlyUnlocked = await checker.checkAndUnlockAchievements(
+                  userId,
+                );
                 if (newlyUnlocked.isNotEmpty && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('🎉 Unlocked ${newlyUnlocked.length} achievement(s)!'),
+                      content: Text(
+                        '🎉 Unlocked ${newlyUnlocked.length} achievement(s)!',
+                      ),
                       action: SnackBarAction(
                         label: 'View',
                         onPressed: () => context.push('/achievements'),
@@ -164,8 +179,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                     ),
                   );
                 }
-              } catch (e) {
-              }
+              } catch (e) {}
             }
             return;
           }
@@ -198,11 +212,11 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
   Future<void> _stopSync() async {
     // Immediate feedback to confirm function is called
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Stop sync clicked...')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Stop sync clicked...')));
     }
-    
+
     try {
       final psnService = ref.read(psnServiceProvider);
       await psnService.stopSync();
@@ -212,22 +226,34 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
         });
 
         ref.invalidate(psnSyncStatusProvider);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sync stopped')),
-        );
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Sync stopped')));
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _errorMessage = 'Failed to stop sync: ${e.toString()}';
         });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
     }
+  }
+
+  bool _shouldShowRelinkHint(PSNSyncStatus status, String? message) {
+    if (status.requiresRelink) return true;
+    if (message == null) return false;
+
+    final lower = message.toLowerCase();
+    return lower.contains('relink') ||
+        lower.contains('invalid_client') ||
+        lower.contains('invalid client') ||
+        lower.contains('refresh token') ||
+        lower.contains('expired');
   }
 
   @override
@@ -284,12 +310,15 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
           }
 
           final isSyncing = status.isSyncing || status.isPending || _isSyncing;
-          
+          final effectiveError = _errorMessage ?? status.error;
+          final showRelinkHint = _shouldShowRelinkHint(status, effectiveError);
+
           // Build rate limit message
           String? rateLimitMessage;
           if (_rateLimitStatus != null && !_rateLimitStatus!.canSync) {
             if (_rateLimitStatus!.waitSeconds > 0) {
-              rateLimitMessage = 'PSN sync on cooldown. Next sync available in ${_rateLimitStatus!.waitTimeFormatted}';
+              rateLimitMessage =
+                  'PSN sync on cooldown. Next sync available in ${_rateLimitStatus!.waitTimeFormatted}';
             } else {
               rateLimitMessage = _rateLimitStatus!.reason;
             }
@@ -320,38 +349,67 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                     ],
                   ),
                 ),
+              if (showRelinkHint)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.15),
+                    border: Border.all(color: Colors.orange.withOpacity(0.4)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'PlayStation link expired. Go to Settings -> PlayStation -> Disconnect, then reconnect.',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.go('/settings'),
+                        child: const Text('Open Settings'),
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: PlatformSyncWidget(
-                      platformName: 'PlayStation',
-                      platformColor: const Color(0xFF003791),
-                      platformIcon: const Icon(
-                        Icons.sports_esports,
-                        size: 64,
-                        color: Colors.white,
-                      ),
-                      syncStatus: status.status,
-                      syncProgress: status.progress,
-                      lastSyncAt: status.lastSyncAt,
-                      errorMessage: _errorMessage ?? status.error,
-                      isSyncing: isSyncing,
-                      onSyncPressed: _startSync,
-                      onStopPressed: _stopSync,
-                      syncDescription: const [
-                        '📱 How to Sync PlayStation Network:',
-                        '',
-                        '1. Tap "Start Sync" button above',
-                        '2. Browser will open to PlayStation login page',
-                        '3. Sign in with your PSN account credentials',
-                        '4. After login, click "Click to continue" at the top of the page',
-                        '5. Return to StatusXP - sync will begin automatically',
-                        '',
-                        '✨ What gets synced:',
-                        '• All your PlayStation games with trophies',
-                        '• Trophy unlock dates and progress',
-                        '• Global trophy rarity percentages',
-                        '• Processes 5 games at a time (you can stop/resume anytime)',
-                      ],
-
+                  platformName: 'PlayStation',
+                  platformColor: const Color(0xFF003791),
+                  platformIcon: const Icon(
+                    Icons.sports_esports,
+                    size: 64,
+                    color: Colors.white,
+                  ),
+                  syncStatus: status.status,
+                  syncProgress: status.progress,
+                  lastSyncAt: status.lastSyncAt,
+                  errorMessage: effectiveError,
+                  isSyncing: isSyncing,
+                  onSyncPressed: _startSync,
+                  onStopPressed: _stopSync,
+                  syncDescription: const [
+                    '📱 How to Sync PlayStation Network:',
+                    '',
+                    '1. Tap "Start Sync" button above',
+                    '2. Browser will open to PlayStation login page',
+                    '3. Sign in with your PSN account credentials',
+                    '4. After login, click "Click to continue" at the top of the page',
+                    '5. Return to StatusXP - sync will begin automatically',
+                    '',
+                    '✨ What gets synced:',
+                    '• All your PlayStation games with trophies',
+                    '• Trophy unlock dates and progress',
+                    '• Global trophy rarity percentages',
+                    '• Processes 5 games at a time (you can stop/resume anytime)',
+                  ],
                 ),
               ),
             ],

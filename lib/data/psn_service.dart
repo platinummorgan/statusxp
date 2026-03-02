@@ -21,9 +21,7 @@ class PSNService {
   Future<PSNLinkResult> linkAccount(String npssoToken) async {
     final response = await _client.functions.invoke(
       'psn-link-account',
-      body: {
-        'npssoToken': npssoToken,
-      },
+      body: {'npssoToken': npssoToken},
     );
 
     if (response.status != 200) {
@@ -32,7 +30,7 @@ class PSNService {
     }
 
     final data = response.data as Map<String, dynamic>;
-    
+
     // Check if confirmation is required
     if (data['requiresConfirmation'] == true) {
       return PSNLinkResult(
@@ -45,7 +43,7 @@ class PSNService {
         credentials: data['credentials'],
       );
     }
-    
+
     return PSNLinkResult(
       success: data['success'] as bool,
       accountId: data['accountId'] as String,
@@ -53,15 +51,15 @@ class PSNService {
       totalTrophies: data['totalTrophies'] as int,
     );
   }
-  
+
   /// Confirm and execute account merge
-  Future<void> confirmMerge(String existingUserId, Map<String, dynamic> credentials) async {
+  Future<void> confirmMerge(
+    String existingUserId,
+    Map<String, dynamic> credentials,
+  ) async {
     final response = await _client.functions.invoke(
       'psn-confirm-merge',
-      body: {
-        'existingUserId': existingUserId,
-        'credentials': credentials,
-      },
+      body: {'existingUserId': existingUserId, 'credentials': credentials},
     );
 
     if (response.status != 200) {
@@ -89,8 +87,10 @@ class PSNService {
     if (response.status == 429) {
       final data = response.data as Map<String, dynamic>;
       final nextSyncStr = data['nextSyncAvailableAt'] as String?;
-      final nextSyncAt = nextSyncStr != null ? DateTime.parse(nextSyncStr) : null;
-      
+      final nextSyncAt = nextSyncStr != null
+          ? DateTime.parse(nextSyncStr)
+          : null;
+
       throw PSNRateLimitException(
         data['message'] as String? ?? 'Sync cooldown active',
         nextSyncAvailableAt: nextSyncAt,
@@ -118,7 +118,7 @@ class PSNService {
   /// Stop current sync (keeps progress)
   Future<void> stopSync() async {
     final userId = _client.auth.currentUser?.id;
-    
+
     if (userId == null) {
       throw Exception('Not authenticated');
     }
@@ -147,12 +147,13 @@ class PSNService {
         error: 'Not authenticated. Please sign in.',
         lastSyncAt: null,
         latestLog: null,
+        requiresRelink: false,
       );
     }
-    
+
     // Don't refresh session here - it's handled by AuthRefreshService
     // Polling this every 2-10 seconds causes refresh spam
-    
+
     // Retry logic for DNS/network failures when app resumes from background
     int retries = 0;
     const maxRetries = 3;
@@ -164,22 +165,24 @@ class PSNService {
 
         if (response.status != 200) {
           final error = response.data['error'] ?? 'Failed to get sync status';
-          throw Exception('Status ${ response.status}: $error');
+          throw Exception('Status ${response.status}: $error');
         }
 
         final data = response.data as Map<String, dynamic>;
         return PSNSyncStatus.fromJson(data);
       } catch (e) {
         lastError = e is Exception ? e : Exception(e.toString());
-        
+
         // Only retry on DNS/network errors
-        if (e.toString().contains('SocketException') || 
+        if (e.toString().contains('SocketException') ||
             e.toString().contains('Failed host lookup') ||
             e.toString().contains('No address associated')) {
           retries++;
           if (retries < maxRetries) {
             // Exponential backoff: 500ms, 1s, 2s
-            await Future.delayed(Duration(milliseconds: 500 * (1 << (retries - 1))));
+            await Future.delayed(
+              Duration(milliseconds: 500 * (1 << (retries - 1))),
+            );
             continue;
           }
         }
@@ -188,7 +191,8 @@ class PSNService {
       }
     }
 
-    throw lastError ?? Exception('Failed to get sync status after $maxRetries retries');
+    throw lastError ??
+        Exception('Failed to get sync status after $maxRetries retries');
   }
 
   /// Stream sync status updates (polls every 2 seconds during sync)
@@ -211,7 +215,8 @@ class PSNService {
       } catch (_) {
         // If actively syncing, retry silently without showing errors to the UI
         final previous = lastStatus;
-        if (previous != null && (previous.status == 'syncing' || previous.status == 'pending')) {
+        if (previous != null &&
+            (previous.status == 'syncing' || previous.status == 'pending')) {
           // Just retry without yielding—user doesn't need to see transient network blips
           await Future.delayed(const Duration(seconds: 5));
           continue;
@@ -228,6 +233,7 @@ class PSNService {
                 lastSyncText: previous.lastSyncText,
                 latestLog: previous.latestLog,
                 isAutoSync: previous.isAutoSync,
+                requiresRelink: previous.requiresRelink,
               )
             : PSNSyncStatus(
                 isLinked: false,
@@ -238,6 +244,7 @@ class PSNService {
                 lastSyncText: null,
                 latestLog: null,
                 isAutoSync: false,
+                requiresRelink: false,
               );
 
         yield fallback;
@@ -297,6 +304,8 @@ class PSNSyncStatus {
   final String? lastSyncText;
   final PSNSyncLog? latestLog;
   final bool isAutoSync; // Is this an auto-sync (not rate limited)
+  // True when auth token expired and account must be relinked.
+  final bool requiresRelink;
 
   PSNSyncStatus({
     required this.isLinked,
@@ -307,6 +316,7 @@ class PSNSyncStatus {
     this.lastSyncText,
     this.latestLog,
     this.isAutoSync = false,
+    this.requiresRelink = false,
   });
 
   factory PSNSyncStatus.fromJson(Map<String, dynamic> json) {
@@ -323,6 +333,7 @@ class PSNSyncStatus {
           ? PSNSyncLog.fromJson(json['latestLog'] as Map<String, dynamic>)
           : null,
       isAutoSync: json['isAutoSync'] as bool? ?? false,
+      requiresRelink: json['requiresRelink'] as bool? ?? false,
     );
   }
 

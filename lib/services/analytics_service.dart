@@ -1,4 +1,5 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/widgets.dart';
 
 /// Analytics service for tracking user behavior and app usage
 /// Automatically tracks screen views and custom events
@@ -6,16 +7,37 @@ class AnalyticsService {
   static final AnalyticsService _instance = AnalyticsService._internal();
   factory AnalyticsService() => _instance;
   AnalyticsService._internal() {
-    _analytics = FirebaseAnalytics.instance;
-    observer = FirebaseAnalyticsObserver(analytics: _analytics);
+    // Firebase might not be initialized yet (router is created at import time),
+    // or it might fail in some contexts (e.g. widget tests). Analytics must
+    // never crash the app. We always provide a stable observer instance and
+    // attach the real Firebase observer once initialization succeeds.
+    observer = _delegatingObserver;
+    _ensureFirebaseAnalyticsReady();
   }
 
-  late final FirebaseAnalytics _analytics;
-  late final FirebaseAnalyticsObserver observer;
+  final _DelegatingNavigatorObserver _delegatingObserver =
+      _DelegatingNavigatorObserver();
+
+  FirebaseAnalytics? _analytics;
+  late final NavigatorObserver observer;
 
   /// Initialize Firebase Analytics
   Future<void> initialize() async {
-    // Analytics and observer already initialized in constructor
+    _ensureFirebaseAnalyticsReady();
+  }
+
+  void _ensureFirebaseAnalyticsReady() {
+    if (_analytics != null && _delegatingObserver.hasDelegate) return;
+
+    try {
+      final analytics = FirebaseAnalytics.instance;
+      _analytics = analytics;
+      _delegatingObserver.setDelegate(
+        FirebaseAnalyticsObserver(analytics: analytics),
+      );
+    } catch (_) {
+      // Leave analytics disabled for now. Caller can retry later.
+    }
   }
 
   /// Log a screen view
@@ -23,7 +45,11 @@ class AnalyticsService {
     required String screenName,
     String? screenClass,
   }) async {
-    await _analytics.logScreenView(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logScreenView(
       screenName: screenName,
       screenClass: screenClass ?? screenName,
     );
@@ -34,7 +60,11 @@ class AnalyticsService {
     required String platform, // 'psn', 'xbox', 'steam'
     bool isAutoSync = false,
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: 'sync_data',
       parameters: {
         'platform': platform,
@@ -48,7 +78,11 @@ class AnalyticsService {
     required String gameName,
     required String platform,
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: 'view_game',
       parameters: {
         'game_name': gameName,
@@ -62,7 +96,11 @@ class AnalyticsService {
     required String achievementName,
     required String gameName,
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: 'unlock_guide',
       parameters: {
         'achievement_name': achievementName,
@@ -73,14 +111,21 @@ class AnalyticsService {
 
   /// Log when user shares their status poster
   Future<void> logSharePoster() async {
-    await _analytics.logEvent(name: 'share_poster');
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+    await analytics.logEvent(name: 'share_poster');
   }
 
   /// Log when user edits their Flex Room
   Future<void> logEditFlexRoom({
     required String section, // 'featured', 'superlatives'
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: 'edit_flex_room',
       parameters: {'section': section},
     );
@@ -90,7 +135,11 @@ class AnalyticsService {
   Future<void> logViewLeaderboard({
     required String leaderboardType, // 'statusxp', 'psn', 'xbox', 'steam'
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: 'view_leaderboard',
       parameters: {'type': leaderboardType},
     );
@@ -101,7 +150,11 @@ class AnalyticsService {
     required String query,
     String? platform,
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: 'search_games',
       parameters: {
         'query': query,
@@ -114,7 +167,11 @@ class AnalyticsService {
   Future<void> logLinkAccount({
     required String platform,
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: 'link_account',
       parameters: {'platform': platform},
     );
@@ -124,7 +181,11 @@ class AnalyticsService {
   Future<void> logViewUserProfile({
     required String userId,
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: 'view_user_profile',
       parameters: {'viewed_user_id': userId},
     );
@@ -135,7 +196,11 @@ class AnalyticsService {
     required String eventName,
     Map<String, dynamic>? parameters,
   }) async {
-    await _analytics.logEvent(
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
       name: eventName,
       parameters: parameters?.cast<String, Object>(),
     );
@@ -147,22 +212,60 @@ class AnalyticsService {
     bool? isPremium,
     int? platformCount,
   }) async {
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
     if (userId != null) {
-      await _analytics.setUserId(id: userId);
+      await analytics.setUserId(id: userId);
     }
     
     if (isPremium != null) {
-      await _analytics.setUserProperty(
+      await analytics.setUserProperty(
         name: 'is_premium',
         value: isPremium.toString(),
       );
     }
     
     if (platformCount != null) {
-      await _analytics.setUserProperty(
+      await analytics.setUserProperty(
         name: 'linked_platforms',
         value: platformCount.toString(),
       );
     }
+  }
+}
+
+class _DelegatingNavigatorObserver extends NavigatorObserver {
+  NavigatorObserver? _delegate;
+
+  bool get hasDelegate => _delegate != null;
+
+  void setDelegate(NavigatorObserver delegate) {
+    _delegate = delegate;
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    _delegate?.didPush(route, previousRoute);
+    super.didPush(route, previousRoute);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    _delegate?.didPop(route, previousRoute);
+    super.didPop(route, previousRoute);
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    _delegate?.didRemove(route, previousRoute);
+    super.didRemove(route, previousRoute);
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    _delegate?.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
   }
 }
