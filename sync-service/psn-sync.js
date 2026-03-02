@@ -103,6 +103,62 @@ function normalizePsnSyncError(error) {
   return raw ? raw.substring(0, 500) : 'PSN sync failed';
 }
 
+function compactErrorText(error, maxLength = 320) {
+  const text = extractErrorText(error).replace(/\s+/g, ' ').trim();
+  if (!text) return 'Unknown error';
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
+function classifyRetryableWriteError(error) {
+  const text = extractErrorText(error).toLowerCase();
+  const statusTextMatch = text.match(/\b(502|503|504|520|522|524)\b/);
+  const statusFromText = statusTextMatch ? Number(statusTextMatch[1]) : null;
+  const statusFromError = Number(error?.status || error?.statusCode || NaN);
+  const status = Number.isFinite(statusFromError) ? statusFromError : statusFromText;
+
+  const isTimeoutLike =
+    text.includes('statement timeout') ||
+    text.includes('canceling statement') ||
+    text.includes('deadlock') ||
+    text.includes('could not serialize') ||
+    text.includes('lock timeout');
+
+  const isGatewayLike =
+    [502, 503, 504, 520, 522, 524].includes(status) ||
+    text.includes('bad gateway') ||
+    text.includes('gateway timeout') ||
+    (text.includes('cloudflare') && (text.includes('502') || text.includes('503') || text.includes('504'))) ||
+    (text.includes('<html') && (text.includes('502') || text.includes('503') || text.includes('504')));
+
+  const isNetworkLike =
+    text.includes('fetch failed') ||
+    text.includes('network') ||
+    text.includes('socket hang up') ||
+    text.includes('ecconnreset') ||
+    text.includes('econnreset') ||
+    text.includes('etimedout') ||
+    text.includes('connection terminated unexpectedly') ||
+    text.includes('connection reset');
+
+  if (isTimeoutLike) {
+    return { retryable: true, splitPreferred: true, reason: 'timeout/lock contention' };
+  }
+  if (isGatewayLike) {
+    return { retryable: true, splitPreferred: false, reason: 'upstream gateway' };
+  }
+  if (isNetworkLike) {
+    return { retryable: true, splitPreferred: false, reason: 'network/transient transport' };
+  }
+
+  return { retryable: false, splitPreferred: false, reason: 'non-retryable' };
+}
+
+function computeRetryBackoffMs(attempt, { baseMs = 300, capMs = 8000 } = {}) {
+  const exp = Math.min(capMs, baseMs * (2 ** Math.max(0, attempt - 1)));
+  const jitter = Math.floor(Math.random() * 250);
+  return exp + jitter;
+}
+
 // Helper to download external avatar and upload to Supabase Storage
 async function uploadExternalAvatar(externalUrl, userId, platform) {
   try {
@@ -486,15 +542,46 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
     });
   }
 
-  const { error } = await supabase
-    .from('achievements')
-    .upsert(rows, { onConflict: 'platform_id,platform_game_id,platform_achievement_id' });
+  const MAX_ACHIEVEMENTS_UPSERT_RETRIES = 6;
 
-  if (error) throw new Error(`Failed to upsert achievements batch: ${error.message}`);
+  async function upsertAchievementRowsWithRetry(batchRows, attempt = 1) {
+    const { error } = await supabase
+      .from('achievements')
+      .upsert(batchRows, { onConflict: 'platform_id,platform_game_id,platform_achievement_id' });
+
+    if (!error) return;
+
+    const transient = classifyRetryableWriteError(error);
+    if (transient.retryable && transient.splitPreferred && batchRows.length > 1) {
+      const splitPoint = Math.ceil(batchRows.length / 2);
+      const first = batchRows.slice(0, splitPoint);
+      const second = batchRows.slice(splitPoint);
+      console.warn(
+        `⚠️ achievements upsert ${transient.reason} on ${batchRows.length} rows; splitting into ${first.length}+${second.length}`
+      );
+      await upsertAchievementRowsWithRetry(first, 1);
+      await upsertAchievementRowsWithRetry(second, 1);
+      return;
+    }
+
+    if (transient.retryable && attempt < MAX_ACHIEVEMENTS_UPSERT_RETRIES) {
+      const backoffMs = computeRetryBackoffMs(attempt);
+      console.warn(
+        `⚠️ achievements upsert retry ${attempt}/${MAX_ACHIEVEMENTS_UPSERT_RETRIES} after ${transient.reason} (${batchRows.length} rows), waiting ${backoffMs}ms`
+      );
+      await sleep(backoffMs);
+      await upsertAchievementRowsWithRetry(batchRows, attempt + 1);
+      return;
+    }
+
+    throw new Error(`Failed to upsert achievements batch: ${compactErrorText(error)}`);
+  }
+
+  await upsertAchievementRowsWithRetry(rows);
 }
 
 async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTrophies }) {
-  const MAX_TIMEOUT_RETRIES = 6;
+  const MAX_UPSERT_RETRIES = 8;
 
   async function upsertChunkWithRetry(chunk, attempt = 1) {
     const { error } = await supabase
@@ -503,38 +590,32 @@ async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTro
 
     if (!error) return;
 
-    const message = String(error.message || '').toLowerCase();
-    const isTimeoutLike =
-      message.includes('statement timeout') ||
-      message.includes('canceling statement') ||
-      message.includes('deadlock') ||
-      message.includes('could not serialize') ||
-      message.includes('lock timeout');
+    const transient = classifyRetryableWriteError(error);
 
     // If the DB times out, progressively split chunk sizes down to single-row upserts.
-    if (isTimeoutLike && chunk.length > 1) {
+    if (transient.retryable && transient.splitPreferred && chunk.length > 1) {
       const splitPoint = Math.ceil(chunk.length / 2);
       const first = chunk.slice(0, splitPoint);
       const second = chunk.slice(splitPoint);
       console.warn(
-        `⚠️ user_achievements upsert timeout on ${chunk.length} rows; splitting into ${first.length}+${second.length}`
+        `⚠️ user_achievements upsert ${transient.reason} on ${chunk.length} rows; splitting into ${first.length}+${second.length}`
       );
       await upsertChunkWithRetry(first, 1);
       await upsertChunkWithRetry(second, 1);
       return;
     }
 
-    if (isTimeoutLike && attempt < MAX_TIMEOUT_RETRIES) {
-      const backoffMs = Math.min(5000, 300 * (2 ** (attempt - 1)));
+    if (transient.retryable && attempt < MAX_UPSERT_RETRIES) {
+      const backoffMs = computeRetryBackoffMs(attempt);
       console.warn(
-        `⚠️ user_achievements upsert retry ${attempt}/${MAX_TIMEOUT_RETRIES} after timeout (${chunk.length} rows), waiting ${backoffMs}ms`
+        `⚠️ user_achievements upsert retry ${attempt}/${MAX_UPSERT_RETRIES} after ${transient.reason} (${chunk.length} rows), waiting ${backoffMs}ms`
       );
       await sleep(backoffMs);
       await upsertChunkWithRetry(chunk, attempt + 1);
       return;
     }
 
-    throw new Error(`Failed to upsert user_achievements batch: ${error.message}`);
+    throw new Error(`Failed to upsert user_achievements batch: ${compactErrorText(error)}`);
   }
 
   const earnedRows = [];
