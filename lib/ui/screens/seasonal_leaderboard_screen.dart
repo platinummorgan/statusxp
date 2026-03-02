@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/repositories/leaderboard_repository.dart';
 import 'package:statusxp/domain/hall_of_fame_entry.dart';
 import 'package:statusxp/domain/seasonal_leaderboard_entry.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/seasonal_user_breakdown_screen.dart';
 
@@ -22,6 +24,11 @@ class _SeasonalLeaderboardScreenState
   late TabController _tabController;
   SeasonalBoardType _selectedBoard = SeasonalBoardType.statusXP;
   LeaderboardPeriodType _selectedPeriod = LeaderboardPeriodType.weekly;
+  int _refreshGeneration = 0;
+  static const _postSyncRetryDelays = [
+    Duration(milliseconds: 1200),
+    Duration(milliseconds: 2600),
+  ];
 
   @override
   void initState() {
@@ -38,7 +45,7 @@ class _SeasonalLeaderboardScreenState
     // Trigger initial fetch after first frame so provider scope is ready.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _refreshSeasonalData();
+      _refreshSeasonalData(includeGuardedRetry: true);
     });
   }
 
@@ -52,17 +59,66 @@ class _SeasonalLeaderboardScreenState
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _refreshSeasonalData();
+      _refreshSeasonalData(includeGuardedRetry: true);
     }
   }
 
-  void _refreshSeasonalData() {
+  Future<void> _refreshSeasonalData({bool includeGuardedRetry = false}) async {
+    final generation = ++_refreshGeneration;
     final query = SeasonalLeaderboardQuery(
       boardType: _selectedBoard,
       periodType: _selectedPeriod,
     );
     ref.invalidate(seasonalLeaderboardProvider(query));
     ref.invalidate(latestPeriodWinnersProvider(_selectedPeriod));
+
+    if (!includeGuardedRetry) return;
+
+    final shouldRetry = await _shouldRunGuardedRetry();
+    if (!mounted || generation != _refreshGeneration || !shouldRetry) return;
+
+    for (final delay in _postSyncRetryDelays) {
+      await Future<void>.delayed(delay);
+      if (!mounted || generation != _refreshGeneration) return;
+      ref.invalidate(seasonalLeaderboardProvider(query));
+      ref.invalidate(latestPeriodWinnersProvider(_selectedPeriod));
+    }
+  }
+
+  Future<bool> _shouldRunGuardedRetry() async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return false;
+
+    try {
+      final row = await Supabase.instance.client
+          .from('profiles')
+          .select('last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (row == null) return false;
+
+      DateTime? parseTimestamp(dynamic value) {
+        if (value == null) return null;
+        try {
+          return DateTime.parse(value.toString()).toUtc();
+        } catch (_) {
+          return null;
+        }
+      }
+
+      bool isRecent(DateTime? timestamp) {
+        if (timestamp == null) return false;
+        final age = DateTime.now().toUtc().difference(timestamp);
+        return age >= Duration.zero && age <= const Duration(minutes: 10);
+      }
+
+      return isRecent(parseTimestamp(row['last_psn_sync_at'])) ||
+          isRecent(parseTimestamp(row['last_xbox_sync_at'])) ||
+          isRecent(parseTimestamp(row['last_steam_sync_at']));
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
@@ -319,8 +375,7 @@ class _SeasonalLeaderboardScreenState
 
         return RefreshIndicator(
           onRefresh: () async {
-            _refreshSeasonalData();
-            await Future.delayed(const Duration(milliseconds: 300));
+            await _refreshSeasonalData();
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),

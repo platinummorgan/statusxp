@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/repositories/leaderboard_repository.dart';
 import 'package:statusxp/domain/leaderboard_entry.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
@@ -25,29 +26,101 @@ class LeaderboardScreen extends ConsumerStatefulWidget {
 }
 
 class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   LeaderboardType _selectedType = LeaderboardType.statusXP;
+  int _refreshGeneration = 0;
+  static const _postSyncRetryDelays = [
+    Duration(milliseconds: 1200),
+    Duration(milliseconds: 2600),
+  ];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() {
           _selectedType = LeaderboardType.values[_tabController.index];
         });
-        // Refresh on tab change for fresh data
-        ref.invalidate(leaderboardProvider(_selectedType));
+        _refreshCurrentLeaderboard();
       }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _refreshCurrentLeaderboard(includeGuardedRetry: true);
     });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshCurrentLeaderboard(includeGuardedRetry: true);
+    }
+  }
+
+  Future<void> _refreshCurrentLeaderboard({
+    bool includeGuardedRetry = false,
+  }) async {
+    final generation = ++_refreshGeneration;
+    ref.invalidate(leaderboardProvider(_selectedType));
+
+    if (!includeGuardedRetry) return;
+
+    final shouldRetry = await _shouldRunGuardedRetry();
+    if (!mounted || generation != _refreshGeneration || !shouldRetry) return;
+
+    for (final delay in _postSyncRetryDelays) {
+      await Future<void>.delayed(delay);
+      if (!mounted || generation != _refreshGeneration) return;
+      ref.invalidate(leaderboardProvider(_selectedType));
+    }
+  }
+
+  Future<bool> _shouldRunGuardedRetry() async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return false;
+
+    try {
+      final row = await Supabase.instance.client
+          .from('profiles')
+          .select('last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at')
+          .eq('id', userId)
+          .maybeSingle();
+
+      if (row == null) return false;
+
+      DateTime? parseTimestamp(dynamic value) {
+        if (value == null) return null;
+        try {
+          return DateTime.parse(value.toString()).toUtc();
+        } catch (_) {
+          return null;
+        }
+      }
+
+      bool isRecent(DateTime? timestamp) {
+        if (timestamp == null) return false;
+        final age = DateTime.now().toUtc().difference(timestamp);
+        return age >= Duration.zero && age <= const Duration(minutes: 10);
+      }
+
+      return isRecent(parseTimestamp(row['last_psn_sync_at'])) ||
+          isRecent(parseTimestamp(row['last_xbox_sync_at'])) ||
+          isRecent(parseTimestamp(row['last_steam_sync_at']));
+    } catch (_) {
+      return false;
+    }
   }
 
   @override
@@ -160,8 +233,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
 
         return RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(leaderboardProvider(_selectedType));
-            await Future.delayed(const Duration(milliseconds: 500));
+            await _refreshCurrentLeaderboard();
           },
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
