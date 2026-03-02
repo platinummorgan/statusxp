@@ -46,6 +46,19 @@ class _GameAchievementsScreenState
   }; // Base Game expanded by default
   int _refreshKey = 0; // Key to force FutureBuilder refresh
 
+  bool _readBoolFlag(dynamic value) {
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      return normalized == 'true' ||
+          normalized == '1' ||
+          normalized == 'yes' ||
+          normalized == 'hidden';
+    }
+    return false;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -154,8 +167,12 @@ class _GameAchievementsScreenState
         gamerscore = metadata['xbox_gamerscore'] as int?;
         isSecret = metadata['xbox_is_secret'] as bool? ?? false;
 
-        // Steam fields
-        isHidden = metadata['steam_hidden'] as bool? ?? false;
+        // Hidden fields (Steam + PSN)
+        final steamHidden = _readBoolFlag(metadata['steam_hidden']);
+        final psnHidden =
+            _readBoolFlag(metadata['psn_hidden']) ||
+            _readBoolFlag(metadata['hidden']);
+        isHidden = steamHidden || psnHidden;
 
         // Calculate rarity band from rarity_global
         final rarityGlobal = (ach['rarity_global'] as num?)?.toDouble();
@@ -190,7 +207,11 @@ class _GameAchievementsScreenState
           'psn_trophy_type': trophyType,
           'xbox_gamerscore': gamerscore,
           'xbox_is_secret': isSecret,
-          'steam_hidden': isHidden,
+          'steam_hidden': _readBoolFlag(metadata['steam_hidden']),
+          'psn_hidden':
+              _readBoolFlag(metadata['psn_hidden']) ||
+              _readBoolFlag(metadata['hidden']),
+          'is_hidden': isHidden,
           'source_sort_order': metadata['sort_order'],
           'source_display_order': metadata['display_order'],
           'steam_display_order': metadata['steam_display_order'],
@@ -666,7 +687,7 @@ class _GameAchievementsScreenState
     final statusXP = achievement['base_status_xp'] as num?;
     final gamerscore = achievement['xbox_gamerscore'] as int?;
     final isSecret = achievement['xbox_is_secret'] as bool? ?? false;
-    final isHidden = achievement['steam_hidden'] as bool? ?? false;
+    final isHidden = achievement['is_hidden'] as bool? ?? false;
     final shouldMaskDetails =
         (isSecret || isHidden) && !isEarned && !_showHiddenAchievements;
     final safeAchievementName = shouldMaskDetails

@@ -159,6 +159,31 @@ function computeRetryBackoffMs(attempt, { baseMs = 300, capMs = 8000 } = {}) {
   return exp + jitter;
 }
 
+function toBooleanLike(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value === 1;
+  if (typeof value === 'string') {
+    const v = value.trim().toLowerCase();
+    return v === 'true' || v === '1' || v === 'hidden' || v === 'yes';
+  }
+  return false;
+}
+
+function resolvePsnHiddenFlag(trophyMeta, userTrophy) {
+  const candidates = [
+    trophyMeta?.trophyHidden,
+    trophyMeta?.hidden,
+    trophyMeta?.isHidden,
+    trophyMeta?.trophy_visibility,
+    trophyMeta?.visibility,
+    userTrophy?.trophyHidden,
+    userTrophy?.hidden,
+    userTrophy?.isHidden,
+    userTrophy?.trophy_visibility,
+  ];
+  return candidates.some((candidate) => toBooleanLike(candidate));
+}
+
 // Helper to download external avatar and upload to Supabase Storage
 async function uploadExternalAvatar(externalUrl, userId, platform) {
   try {
@@ -511,6 +536,7 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
     }
 
     const statusFields = computeStatusXpFields({ rarityPercent, isPlatinum });
+    const isPsnHidden = resolvePsnHiddenFlag(trophyMeta, userTrophy);
 
     const trophyGroupId = trophyMeta.trophyGroupId ?? 'default';
     const isDlc = trophyGroupId !== 'default';
@@ -533,6 +559,8 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
         psn_trophy_type: trophyMeta.trophyType,
         sort_order: trophyMeta.trophyId,
         platform_version: platformVersion,
+        psn_hidden: isPsnHidden,
+        hidden: isPsnHidden,
         trophy_group_id: trophyGroupId,
         is_dlc: isDlc,
         dlc_name: dlcName,
