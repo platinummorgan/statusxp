@@ -30,15 +30,20 @@ class GameAchievementsScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<GameAchievementsScreen> createState() => _GameAchievementsScreenState();
+  ConsumerState<GameAchievementsScreen> createState() =>
+      _GameAchievementsScreenState();
 }
 
-class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen> {
+class _GameAchievementsScreenState
+    extends ConsumerState<GameAchievementsScreen> {
   List<Map<String, dynamic>> _achievements = [];
   bool _isLoading = true;
   String? _error;
   bool _showHiddenAchievements = false;
-  final Map<String, bool> _expandedGroups = {'Base Game': true}; // Base Game expanded by default
+  bool _showRemainingOnly = false;
+  final Map<String, bool> _expandedGroups = {
+    'Base Game': true,
+  }; // Base Game expanded by default
   int _refreshKey = 0; // Key to force FutureBuilder refresh
 
   @override
@@ -63,14 +68,16 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
 
       final supabase = Supabase.instance.client;
       final userId = supabase.auth.currentUser!.id;
-      
+
       // Validate V2 composite keys
       if (widget.platformId == null || widget.platformGameId == null) {
-        throw Exception('Missing platform_id or platform_game_id for V2 schema');
+        throw Exception(
+          'Missing platform_id or platform_game_id for V2 schema',
+        );
       }
-      
+
       // Loading achievements
-      
+
       // Get achievements for this game (V2 schema - uses composite keys)
       final achievementsResponse = await supabase
           .from('achievements')
@@ -89,7 +96,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           ''')
           .eq('platform_id', widget.platformId!)
           .eq('platform_game_id', widget.platformGameId!);
-      
+
       // Achievements loaded
 
       // Get user's earned achievements for this game using V2 schema
@@ -112,40 +119,44 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       // User progress loaded
 
       // Merge the data
-      final achievements = (achievementsResponse).map((ach) {
+      final achievements = achievementsResponse.asMap().entries.map((entry) {
+        final sourceIndex = entry.key;
+        final ach = entry.value;
         final achievementId = ach['platform_achievement_id'] as String;
         final earnedAt = earnedMap[achievementId];
         final metadata = ach['metadata'] as Map<String, dynamic>? ?? {};
-        
+
         // Debug: Log first achievement metadata
-        if (kDebugMode && achievementsResponse.indexOf(ach) == 0) {
+        if (kDebugMode && sourceIndex == 0) {
           print('🔍 First achievement metadata structure:');
           print('   Achievement: ${ach['name']}');
           print('   metadata type: ${metadata.runtimeType}');
           print('   metadata keys: ${metadata.keys.toList()}');
-          print('   is_dlc value: ${metadata['is_dlc']} (type: ${metadata['is_dlc'].runtimeType})');
+          print(
+            '   is_dlc value: ${metadata['is_dlc']} (type: ${metadata['is_dlc'].runtimeType})',
+          );
           print('   dlc_name value: ${metadata['dlc_name']}');
           print('   Full metadata: $metadata');
         }
-        
+
         // Extract platform-specific fields from metadata
         String? trophyType;
         int? gamerscore;
         bool isSecret = false;
         bool isHidden = false;
         bool isPlatinum = false;
-        
+
         // PSN fields
         trophyType = metadata['psn_trophy_type'] as String?;
         isPlatinum = trophyType?.toLowerCase() == 'platinum';
-        
+
         // Xbox fields
         gamerscore = metadata['xbox_gamerscore'] as int?;
         isSecret = metadata['xbox_is_secret'] as bool? ?? false;
-        
+
         // Steam fields
         isHidden = metadata['steam_hidden'] as bool? ?? false;
-        
+
         // Calculate rarity band from rarity_global
         final rarityGlobal = (ach['rarity_global'] as num?)?.toDouble();
         String? rarityBand;
@@ -162,13 +173,16 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
             rarityBand = 'COMMON';
           }
         }
-        
+
         return {
           'id': ach['platform_achievement_id'],
-          'platform_achievement_id': ach['platform_achievement_id'], // Keep for V2 composite keys
+          'platform_achievement_id':
+              ach['platform_achievement_id'], // Keep for V2 composite keys
           'name': ach['name'],
           'description': ach['description'],
-          'icon_url': kIsWeb && widget.platformId != 4 ? (ach['proxied_icon_url'] ?? ach['icon_url']) : ach['icon_url'], // Xbox (4) has no CORS issues
+          'icon_url': kIsWeb && widget.platformId != 4
+              ? (ach['proxied_icon_url'] ?? ach['icon_url'])
+              : ach['icon_url'], // Xbox (4) has no CORS issues
           'proxied_icon_url': ach['proxied_icon_url'],
           'rarity_global': rarityGlobal,
           'rarity_band': rarityBand,
@@ -177,6 +191,10 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           'xbox_gamerscore': gamerscore,
           'xbox_is_secret': isSecret,
           'steam_hidden': isHidden,
+          'source_sort_order': metadata['sort_order'],
+          'source_display_order': metadata['display_order'],
+          'steam_display_order': metadata['steam_display_order'],
+          '_original_index': sourceIndex,
           'is_platinum': isPlatinum,
           'include_in_score': ach['include_in_score'],
           'is_dlc': metadata['is_dlc'] as bool? ?? false,
@@ -186,10 +204,12 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           'is_earned': earnedAt != null,
         };
       }).toList();
-      
+
       // Debug: Log DLC grouping info
       final dlcCount = achievements.where((a) => a['is_dlc'] == true).length;
-      final withDlcName = achievements.where((a) => a['dlc_name'] != null).length;
+      final withDlcName = achievements
+          .where((a) => a['dlc_name'] != null)
+          .length;
       final uniqueDlcNames = achievements
           .map((a) => a['dlc_name'])
           .where((name) => name != null)
@@ -198,26 +218,30 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
           .map((a) => a['trophy_group_id'])
           .where((id) => id != null && id != 'default')
           .toSet();
-      
+
       if (kDebugMode) {
         print('🎮 Achievements loaded for ${widget.gameName}:');
         print('   Total: ${achievements.length}');
         print('   Marked as DLC: $dlcCount');
         print('   With DLC names: $withDlcName');
         print('   Unique DLC groups: ${uniqueDlcNames.length}');
-        print('   Unique trophy group IDs: ${uniqueTrophyGroups.length} - ${uniqueTrophyGroups.toList()}');
+        print(
+          '   Unique trophy group IDs: ${uniqueTrophyGroups.length} - ${uniqueTrophyGroups.toList()}',
+        );
         if (uniqueDlcNames.isNotEmpty) {
           print('   DLC names: ${uniqueDlcNames.toList()}');
         }
-        
+
         // Debug: Log first few achievements' DLC status
         print('   First 5 achievements:');
         for (var i = 0; i < achievements.length && i < 5; i++) {
           final ach = achievements[i];
-          print('     ${i + 1}. ${ach['name']}: trophy_group=${ach['trophy_group_id']}, dlc_name=${ach['dlc_name']}');
+          print(
+            '     ${i + 1}. ${ach['name']}: trophy_group=${ach['trophy_group_id']}, dlc_name=${ach['dlc_name']}',
+          );
         }
       }
-      
+
       setState(() {
         _achievements = achievements;
         _isLoading = false;
@@ -244,7 +268,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
 
   Color _getTrophyColor(String? trophyType) {
     if (trophyType == null) return Colors.white70;
-    
+
     switch (trophyType.toLowerCase()) {
       case 'bronze':
         return const Color(0xFFCD7F32);
@@ -261,7 +285,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
 
   IconData _getTrophyIcon(String? trophyType) {
     if (trophyType == null) return Icons.emoji_events_outlined;
-    
+
     switch (trophyType.toLowerCase()) {
       case 'platinum':
         return Icons.emoji_events;
@@ -281,22 +305,89 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
     return rarityBand.replaceAll('_', ' ').toUpperCase();
   }
 
+  int? _parseOrderInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
+  }
+
+  int _resolvedNativeOrder(
+    Map<String, dynamic> achievement, {
+    required bool isPsn,
+    required bool isXbox,
+    required bool isSteam,
+  }) {
+    if (isPsn) {
+      return _parseOrderInt(achievement['source_sort_order']) ??
+          _parseOrderInt(achievement['platform_achievement_id']) ??
+          2147483647;
+    }
+
+    if (isXbox) {
+      return _parseOrderInt(achievement['source_display_order']) ??
+          _parseOrderInt(achievement['platform_achievement_id']) ??
+          2147483647;
+    }
+
+    if (isSteam) {
+      return _parseOrderInt(achievement['steam_display_order']) ??
+          _parseOrderInt(achievement['source_sort_order']) ??
+          2147483647;
+    }
+
+    return _parseOrderInt(achievement['source_sort_order']) ?? 2147483647;
+  }
+
+  int _comparePlatformDefaultRows(
+    Map<String, dynamic> a,
+    Map<String, dynamic> b,
+  ) {
+    final platformLower = widget.platform.toLowerCase();
+    final isPsn =
+        platformLower == 'psn' ||
+        platformLower.contains('playstation') ||
+        platformLower.contains('ps');
+    final isXbox = platformLower.contains('xbox');
+    final isSteam = platformLower.contains('steam');
+
+    final aOrder = _resolvedNativeOrder(
+      a,
+      isPsn: isPsn,
+      isXbox: isXbox,
+      isSteam: isSteam,
+    );
+    final bOrder = _resolvedNativeOrder(
+      b,
+      isPsn: isPsn,
+      isXbox: isXbox,
+      isSteam: isSteam,
+    );
+    final nativeCompare = aOrder.compareTo(bOrder);
+    if (nativeCompare != 0) {
+      return nativeCompare;
+    }
+
+    final aOriginal = _parseOrderInt(a['_original_index']) ?? 2147483647;
+    final bOriginal = _parseOrderInt(b['_original_index']) ?? 2147483647;
+    final originalCompare = aOriginal.compareTo(bOriginal);
+    if (originalCompare != 0) {
+      return originalCompare;
+    }
+
+    final aName = (a['name'] as String? ?? '').toLowerCase();
+    final bName = (b['name'] as String? ?? '').toLowerCase();
+    return aName.compareTo(bName);
+  }
+
   @override
   Widget build(BuildContext context) {
     final platformColor = _getPlatformColor();
 
-    // Filter achievements based on hidden toggle
+    // Filter achievements by progress status (All vs Remaining)
     final displayedAchievements = _achievements.where((achievement) {
-      final isSecret = achievement['xbox_is_secret'] as bool? ?? false;
-      final isHidden = achievement['steam_hidden'] as bool? ?? false;
       final isEarned = achievement['is_earned'] as bool? ?? false;
-      
-      // Always show earned achievements
-      if (isEarned) return true;
-      
-      // Show hidden/secret only if toggle is on
-      if ((isSecret || isHidden) && !_showHiddenAchievements) return false;
-      
+      if (_showRemainingOnly && isEarned) return false;
       return true;
     }).toList();
 
@@ -328,7 +419,9 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               _showHiddenAchievements ? Icons.visibility : Icons.visibility_off,
               color: _showHiddenAchievements ? platformColor : Colors.white54,
             ),
-            tooltip: _showHiddenAchievements ? 'Hide secret achievements' : 'Show secret achievements',
+            tooltip: _showHiddenAchievements
+                ? 'Hide hidden trophy details'
+                : 'Reveal hidden trophy details',
             onPressed: () {
               setState(() {
                 _showHiddenAchievements = !_showHiddenAchievements;
@@ -342,58 +435,106 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text('Error: $_error', style: const TextStyle(color: Colors.white)),
-                      ],
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red,
                     ),
-                  )
-                : displayedAchievements.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: $_error',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
+                children: [
+                  _buildAchievementFilterBar(platformColor),
+                  Expanded(
+                    child: displayedAchievements.isEmpty
+                        ? Center(
+                            child: Text(
                               _achievements.isEmpty
                                   ? 'No achievements found'
-                                  : 'All achievements are hidden',
+                                  : (_showRemainingOnly
+                                        ? 'No remaining achievements'
+                                        : 'No achievements found'),
                               style: const TextStyle(color: Colors.white70),
                             ),
-                            if (_achievements.isNotEmpty && !_showHiddenAchievements)
-                              TextButton.icon(
-                                icon: const Icon(Icons.visibility),
-                                label: const Text('Show Hidden Achievements'),
-                                onPressed: () {
-                                  setState(() {
-                                    _showHiddenAchievements = true;
-                                  });
-                                },
-                              ),
-                          ],
-                        ),
-                      )
-                    : _buildGroupedAchievements(displayedAchievements, platformColor),
+                          )
+                        : _buildGroupedAchievements(
+                            displayedAchievements,
+                            platformColor,
+                          ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 
-  Widget _buildGroupedAchievements(List<Map<String, dynamic>> achievements, Color platformColor) {
+  Widget _buildAchievementFilterBar(Color platformColor) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Row(
+        children: [
+          ChoiceChip(
+            label: const Text('All'),
+            selected: !_showRemainingOnly,
+            onSelected: (_) {
+              setState(() {
+                _showRemainingOnly = false;
+              });
+            },
+            selectedColor: platformColor.withOpacity(0.25),
+            labelStyle: TextStyle(
+              color: !_showRemainingOnly ? platformColor : Colors.white70,
+              fontWeight: FontWeight.w700,
+            ),
+            backgroundColor: const Color(0xFF0A0E27).withOpacity(0.7),
+          ),
+          const SizedBox(width: 8),
+          ChoiceChip(
+            label: const Text('Remaining'),
+            selected: _showRemainingOnly,
+            onSelected: (_) {
+              setState(() {
+                _showRemainingOnly = true;
+              });
+            },
+            selectedColor: platformColor.withOpacity(0.25),
+            labelStyle: TextStyle(
+              color: _showRemainingOnly ? platformColor : Colors.white70,
+              fontWeight: FontWeight.w700,
+            ),
+            backgroundColor: const Color(0xFF0A0E27).withOpacity(0.7),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGroupedAchievements(
+    List<Map<String, dynamic>> achievements,
+    Color platformColor,
+  ) {
     // Group achievements by DLC
     final Map<String, List<Map<String, dynamic>>> grouped = {};
-    
+
     for (final ach in achievements) {
       final trophyGroupId = ach['trophy_group_id'] as String? ?? 'default';
       final dlcName = ach['dlc_name'] as String?;
-      
+
       // Use trophy_group_id to determine grouping, fallback to "DLC X" if dlc_name is missing
-      final groupKey = trophyGroupId != 'default' 
+      final groupKey = trophyGroupId != 'default'
           ? (dlcName ?? 'DLC $trophyGroupId')
           : 'Base Game';
-      
+
       grouped.putIfAbsent(groupKey, () => []);
       grouped[groupKey]!.add(ach);
     }
@@ -407,11 +548,12 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
     }
 
     // Sort groups: Base Game first, then DLC groups by name
-    final sortedKeys = grouped.keys.toList()..sort((a, b) {
-      if (a == 'Base Game') return -1;
-      if (b == 'Base Game') return 1;
-      return a.compareTo(b);
-    });
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) {
+        if (a == 'Base Game') return -1;
+        if (b == 'Base Game') return 1;
+        return a.compareTo(b);
+      });
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -419,7 +561,9 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       itemBuilder: (context, groupIndex) {
         final groupName = sortedKeys[groupIndex];
         final groupAchievements = grouped[groupName]!;
-        final earnedCount = groupAchievements.where((a) => a['is_earned'] == true).length;
+        final earnedCount = groupAchievements
+            .where((a) => a['is_earned'] == true)
+            .length;
         final totalCount = groupAchievements.length;
 
         final isExpanded = _expandedGroups[groupName] ?? false;
@@ -434,7 +578,9 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               side: BorderSide(color: platformColor.withOpacity(0.3), width: 1),
             ),
             child: Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 initiallyExpanded: isExpanded,
                 onExpansionChanged: (expanded) {
@@ -442,8 +588,15 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                     _expandedGroups[groupName] = expanded;
                   });
                 },
-                tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
+                tilePadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                childrenPadding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  bottom: 12,
+                ),
                 leading: Icon(
                   groupName == 'Base Game' ? Icons.stars : Icons.extension,
                   color: platformColor,
@@ -475,14 +628,23 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                     ),
                   ],
                 ),
-                children: groupAchievements.map((achievement) {
-                  final isEarned = achievement['is_earned'] as bool? ?? false;
-                  final earnedAt = achievement['earned_at'] as String?;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildAchievementCard(achievement, isEarned, earnedAt, platformColor),
-                  );
-                }).toList(),
+                children:
+                    ([
+                      ...groupAchievements,
+                    ]..sort(_comparePlatformDefaultRows)).map((achievement) {
+                      final isEarned =
+                          achievement['is_earned'] as bool? ?? false;
+                      final earnedAt = achievement['earned_at'] as String?;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildAchievementCard(
+                          achievement,
+                          isEarned,
+                          earnedAt,
+                          platformColor,
+                        ),
+                      );
+                    }).toList(),
               ),
             ),
           ),
@@ -505,6 +667,14 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
     final gamerscore = achievement['xbox_gamerscore'] as int?;
     final isSecret = achievement['xbox_is_secret'] as bool? ?? false;
     final isHidden = achievement['steam_hidden'] as bool? ?? false;
+    final shouldMaskDetails =
+        (isSecret || isHidden) && !isEarned && !_showHiddenAchievements;
+    final safeAchievementName = shouldMaskDetails
+        ? 'Hidden Achievement'
+        : (achievement['name'] ?? 'Achievement');
+    final safeAchievementDescription = shouldMaskDetails
+        ? 'Description hidden. Use the eye icon to reveal.'
+        : (achievement['description'] ?? '');
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -528,15 +698,21 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 // Icon
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: achievement['proxied_icon_url'] != null || achievement['icon_url'] != null
+                  child:
+                      achievement['proxied_icon_url'] != null ||
+                          achievement['icon_url'] != null
                       ? Image.network(
-                          kIsWeb ? (achievement['proxied_icon_url'] ?? achievement['icon_url']) : achievement['icon_url'],
+                          kIsWeb
+                              ? (achievement['proxied_icon_url'] ??
+                                    achievement['icon_url'])
+                              : achievement['icon_url'],
                           width: 64,
                           height: 64,
                           fit: BoxFit.cover,
                           color: isEarned ? null : Colors.black54,
                           colorBlendMode: isEarned ? null : BlendMode.darken,
-                          errorBuilder: (_, __, ___) => _buildPlaceholderIcon(trophyType, trophyColor),
+                          errorBuilder: (_, __, ___) =>
+                              _buildPlaceholderIcon(trophyType, trophyColor),
                         )
                       : _buildPlaceholderIcon(trophyType, trophyColor),
                 ),
@@ -552,9 +728,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                         children: [
                           Expanded(
                             child: Text(
-                              (isSecret || isHidden) && !isEarned
-                                  ? 'Hidden Achievement'
-                                  : achievement['name'] ?? 'Unknown',
+                              safeAchievementName,
                               style: TextStyle(
                                 color: isEarned ? Colors.white : Colors.white54,
                                 fontSize: 16,
@@ -575,16 +749,15 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                       ),
                       const SizedBox(height: 4),
                       // Description
-                      if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements)
-                        Text(
-                          achievement['description'] ?? '',
-                          style: TextStyle(
-                            color: isEarned ? Colors.white70 : Colors.white38,
-                            fontSize: 13,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        safeAchievementDescription,
+                        style: TextStyle(
+                          color: isEarned ? Colors.white70 : Colors.white38,
+                          fontSize: 13,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),
@@ -632,134 +805,169 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
               ],
             ),
             // Action buttons row
-            if ((!isSecret && !isHidden) || isEarned || _showHiddenAchievements) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton.icon(
-                    onPressed: () {
-                      // Only navigate if we have all required V2 composite keys
-                      if (widget.platformId == null || 
-                          widget.platformGameId == null || 
-                          achievement['platform_achievement_id'] == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Comments not available for this achievement')),
-                        );
-                        return;
-                      }
-                      
-                      context.push(
-                        '/achievement-comments/${achievement['id']}'
-                        '?name=${Uri.encodeComponent(achievement['name'] ?? 'Achievement')}'
-                        '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}'
-                        '&platformId=${widget.platformId}'
-                        '&platformGameId=${Uri.encodeComponent(widget.platformGameId!)}'
-                        '&platformAchievementId=${Uri.encodeComponent(achievement['platform_achievement_id'])}',
-                      );
-                    },
-                    icon: const Icon(Icons.chat_bubble_outline, size: 14),
-                    label: const Text('Tips/Comments', style: TextStyle(fontSize: 10)),
-                    style: TextButton.styleFrom(
-                      foregroundColor: CyberpunkTheme.neonCyan,
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                      minimumSize: const Size(0, 32),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  FutureBuilder<AICreditStatus>(
-                    key: ValueKey('credit_badge_${achievement['id']}_$_refreshKey'),
-                    future: AICreditService().checkCredits(),
-                    builder: (context, snapshot) {
-                      final creditBadge = snapshot.hasData ? snapshot.data!.badgeText : '...';
-                      
-                      return TextButton.icon(
-                        onPressed: () => _showAIGuideDialog(context, achievement),
-                        icon: const Icon(Icons.lightbulb_outline, size: 14),
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text('AI Help', style: TextStyle(fontSize: 10)),
-                            const SizedBox(width: 3),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: CyberpunkTheme.neonPurple.withOpacity(0.3),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: CyberpunkTheme.neonPurple,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                creditBadge,
-                                style: const TextStyle(
-                                  color: CyberpunkTheme.neonPurple,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        style: TextButton.styleFrom(
-                          foregroundColor: CyberpunkTheme.neonPurple,
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                          minimumSize: const Size(0, 32),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-              if (!isEarned) ...[
-                const SizedBox(height: 4),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      final result = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => CreateTrophyRequestDialog(
-                          gameId: widget.platformGameId ?? '',
-                          gameTitle: widget.gameName,
-                          achievementId: achievement['id'].toString(),
-                          achievementName: achievement['name'],
-                          platform: widget.platform.toLowerCase().startsWith('ps')
-                              ? 'psn'
-                              : widget.platform.toLowerCase().startsWith('xbox')
-                                  ? 'xbox'
-                                  : 'steam',
-                        ),
-                      );
-                      
-                      if (result == true && mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('View your request in Co-op Partners'),
-                            action: SnackBarAction(
-                              label: 'View',
-                              onPressed: () {
-                                context.push('/coop-partners');
-                              },
-                            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    // Only navigate if we have all required V2 composite keys
+                    if (widget.platformId == null ||
+                        widget.platformGameId == null ||
+                        achievement['platform_achievement_id'] == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Comments not available for this achievement',
                           ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.handshake, size: 16),
-                    label: const Text('Find Partner', style: TextStyle(fontSize: 12)),
-                    style: TextButton.styleFrom(
-                      foregroundColor: CyberpunkTheme.neonCyan,
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      );
+                      return;
+                    }
+
+                    context.push(
+                      '/achievement-comments/${achievement['id']}'
+                      '?name=${Uri.encodeComponent(safeAchievementName)}'
+                      '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}'
+                      '&platformId=${widget.platformId}'
+                      '&platformGameId=${Uri.encodeComponent(widget.platformGameId!)}'
+                      '&platformAchievementId=${Uri.encodeComponent(achievement['platform_achievement_id'])}',
+                    );
+                  },
+                  icon: const Icon(Icons.chat_bubble_outline, size: 14),
+                  label: const Text(
+                    'Tips/Comments',
+                    style: TextStyle(fontSize: 10),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: CyberpunkTheme.neonCyan,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
                     ),
+                    minimumSize: const Size(0, 32),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
+                const SizedBox(width: 4),
+                FutureBuilder<AICreditStatus>(
+                  key: ValueKey(
+                    'credit_badge_${achievement['id']}_$_refreshKey',
+                  ),
+                  future: AICreditService().checkCredits(),
+                  builder: (context, snapshot) {
+                    final creditBadge = snapshot.hasData
+                        ? snapshot.data!.badgeText
+                        : '...';
+
+                    return TextButton.icon(
+                      onPressed: () => _showAIGuideDialog(
+                        context,
+                        shouldMaskDetails
+                            ? {
+                                ...achievement,
+                                'name': safeAchievementName,
+                                'description': safeAchievementDescription,
+                              }
+                            : achievement,
+                      ),
+                      icon: const Icon(Icons.lightbulb_outline, size: 14),
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('AI Help', style: TextStyle(fontSize: 10)),
+                          const SizedBox(width: 3),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 3,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: CyberpunkTheme.neonPurple,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              creditBadge,
+                              style: const TextStyle(
+                                color: CyberpunkTheme.neonPurple,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: CyberpunkTheme.neonPurple,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    );
+                  },
+                ),
               ],
+            ),
+            if (!isEarned) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final result = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => CreateTrophyRequestDialog(
+                        gameId: widget.platformGameId ?? '',
+                        gameTitle: widget.gameName,
+                        achievementId: achievement['id'].toString(),
+                        achievementName: safeAchievementName,
+                        platform: widget.platform.toLowerCase().startsWith('ps')
+                            ? 'psn'
+                            : widget.platform.toLowerCase().startsWith('xbox')
+                            ? 'xbox'
+                            : 'steam',
+                      ),
+                    );
+
+                    if (result == true && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'View your request in Co-op Partners',
+                          ),
+                          action: SnackBarAction(
+                            label: 'View',
+                            onPressed: () {
+                              context.push('/coop-partners');
+                            },
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.handshake, size: 16),
+                  label: const Text(
+                    'Find Partner',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: CyberpunkTheme.neonCyan,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
             ],
           ],
         ),
@@ -804,7 +1012,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
 
   Color _getRarityColor(String? rarityBand) {
     if (rarityBand == null) return Colors.grey;
-    
+
     switch (rarityBand.toLowerCase()) {
       case 'ultra_rare':
         return CyberpunkTheme.neonPurple;
@@ -836,20 +1044,24 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
     }
   }
 
-  Future<void> _showAIGuideDialog(BuildContext context, Map<String, dynamic> achievement) async {
-    final achievementName = achievement['name'] as String? ?? 'Unknown Achievement';
+  Future<void> _showAIGuideDialog(
+    BuildContext context,
+    Map<String, dynamic> achievement,
+  ) async {
+    final achievementName =
+        achievement['name'] as String? ?? 'Unknown Achievement';
     final achievementDescription = achievement['description'] as String? ?? '';
-    
+
     // Check AI credits first
     final creditService = AICreditService();
     final creditStatus = await creditService.checkCredits();
-    
+
     if (!creditStatus.canUse) {
       // Show purchase dialog
       _showAIPurchaseDialog(context, creditStatus);
       return;
     }
-    
+
     await showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -903,7 +1115,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 ],
               ),
               const Divider(color: Colors.white24, height: 24),
-              
+
               // Achievement name
               Text(
                 achievementName,
@@ -917,14 +1129,11 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
                 const SizedBox(height: 8),
                 Text(
                   achievementDescription,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
               const SizedBox(height: 16),
-              
+
               // AI Guide content
               Expanded(
                 child: _AIGuideContent(
@@ -941,7 +1150,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         ),
       ),
     );
-    
+
     // Refresh AI credit badge after dialog closes
     _refreshAICreditBadge();
   }
@@ -975,255 +1184,269 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-              // Header
-              Row(
-                children: [
-                  const Icon(
-                    Icons.lightbulb,
-                    color: CyberpunkTheme.neonPurple,
-                    size: 32,
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'OUT OF AI CREDITS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.5,
-                          ),
-                        ),
-                        Text(
-                          'Free AI used up for today',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    color: Colors.white70,
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              const Divider(color: Colors.white24, height: 32),
-              
-              // Free option
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: const Row(
+                // Header
+                Row(
                   children: [
-                    Icon(Icons.schedule, color: CyberpunkTheme.neonCyan, size: 32),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Wait until tomorrow',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Get 3 more free AI uses tomorrow',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
+                    const Icon(
+                      Icons.lightbulb,
+                      color: CyberpunkTheme.neonPurple,
+                      size: 32,
                     ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              const Text(
-                'OR BUY AI PACK',
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Pack options
-              ...packs.map((pack) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: InkWell(
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _purchaseAIPack(context, pack);
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white10,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: pack.badge != null 
-                            ? CyberpunkTheme.neonPurple 
-                            : Colors.white24,
-                        width: pack.badge != null ? 2 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.shopping_bag,
-                          color: pack.badge != null 
-                              ? CyberpunkTheme.neonPurple 
-                              : CyberpunkTheme.neonCyan,
-                          size: 32,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Wrap(
-                                spacing: 8,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  Text(
-                                    pack.title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  if (pack.badge != null)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: CyberpunkTheme.neonPurple,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        pack.badge!,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              Text(
-                                '${pack.credits} AI uses · ${pack.perUsePrice}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          pack.displayPrice,
-                          style: const TextStyle(
-                            color: CyberpunkTheme.neonCyan,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              )),
-              
-              const SizedBox(height: 16),
-              
-              // Premium option teaser
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      CyberpunkTheme.neonPurple.withOpacity(0.2),
-                      CyberpunkTheme.neonCyan.withOpacity(0.2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: CyberpunkTheme.neonPurple.withOpacity(0.5),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.star, color: CyberpunkTheme.neonPurple, size: 32),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Premium',
+                            'OUT OF AI CREDITS',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
                             ),
                           ),
                           Text(
-                            'Unlimited syncs, AI guides & ad-free · \$4.99/mo',
+                            'Free AI used up for today',
                             style: TextStyle(
                               color: Colors.white70,
-                              fontSize: 13,
+                              fontSize: 12,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PremiumSubscriptionScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'LEARN MORE',
-                        style: TextStyle(
-                          color: CyberpunkTheme.neonPurple,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      color: Colors.white70,
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
                 ),
-              ),
-            ],
+                const Divider(color: Colors.white24, height: 32),
+
+                // Free option
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white10,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.schedule,
+                        color: CyberpunkTheme.neonCyan,
+                        size: 32,
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Wait until tomorrow',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Get 3 more free AI uses tomorrow',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+                const Text(
+                  'OR BUY AI PACK',
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Pack options
+                ...packs.map(
+                  (pack) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _purchaseAIPack(context, pack);
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: pack.badge != null
+                                ? CyberpunkTheme.neonPurple
+                                : Colors.white24,
+                            width: pack.badge != null ? 2 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.shopping_bag,
+                              color: pack.badge != null
+                                  ? CyberpunkTheme.neonPurple
+                                  : CyberpunkTheme.neonCyan,
+                              size: 32,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    spacing: 8,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    children: [
+                                      Text(
+                                        pack.title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      if (pack.badge != null)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: CyberpunkTheme.neonPurple,
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            pack.badge!,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '${pack.credits} AI uses · ${pack.perUsePrice}',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              pack.displayPrice,
+                              style: const TextStyle(
+                                color: CyberpunkTheme.neonCyan,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Premium option teaser
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        CyberpunkTheme.neonPurple.withOpacity(0.2),
+                        CyberpunkTheme.neonCyan.withOpacity(0.2),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.star,
+                        color: CyberpunkTheme.neonPurple,
+                        size: 32,
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Premium',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Unlimited syncs, AI guides & ad-free · \$4.99/mo',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const PremiumSubscriptionScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'LEARN MORE',
+                          style: TextStyle(
+                            color: CyberpunkTheme.neonPurple,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -1233,7 +1456,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
 
   void _purchaseAIPack(BuildContext context, AIPack pack) async {
     final subscriptionService = SubscriptionService();
-    
+
     // Check if user is premium (shouldn't see this, but double-check)
     final isPremium = await subscriptionService.isPremiumActive();
     if (isPremium) {
@@ -1244,7 +1467,7 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
             title: const Text('Already Premium'),
             content: const Text(
               'You already have unlimited AI guides with your Premium subscription!\n\n'
-              'No need to purchase AI packs. Enjoy unlimited access! 🎉'
+              'No need to purchase AI packs. Enjoy unlimited access! 🎉',
             ),
             actions: [
               TextButton(
@@ -1257,22 +1480,22 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       }
       return;
     }
-    
+
     // Handle web purchases with Stripe
     if (kIsWeb) {
       await _purchaseAIPackWeb(context, pack);
       return;
     }
-    
+
     // Handle mobile IAP purchases
     final productId = _getProductIdForPack(pack.type);
     final product = subscriptionService.aiPackProducts.firstWhere(
       (p) => p.id == productId,
       orElse: () => throw Exception('Product not found'),
     );
-    
+
     if (!context.mounted) return;
-    
+
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1294,15 +1517,15 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
         ],
       ),
     );
-    
+
     if (confirmed != true || !context.mounted) return;
-    
+
     // Attempt purchase
     try {
       final success = await subscriptionService.purchaseAIPack(product);
-      
+
       if (!context.mounted) return;
-      
+
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1321,29 +1544,29 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
   }
-  
+
   Future<void> _purchaseAIPackWeb(BuildContext context, AIPack pack) async {
     try {
       final supabase = Supabase.instance.client;
-      
+
       // Refresh session
       final sessionResponse = await supabase.auth.refreshSession();
       if (sessionResponse.session == null) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please sign in again'), backgroundColor: Colors.red),
+            const SnackBar(
+              content: Text('Please sign in again'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
         return;
       }
-      
+
       // Call Stripe checkout for AI pack
       final response = await supabase.functions.invoke(
         'stripe-ai-pack-checkout',
@@ -1360,20 +1583,26 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       if (response.data != null && response.data['url'] != null) {
         final checkoutUrl = response.data['url'] as String;
         final uri = Uri.parse(checkoutUrl);
-        
+
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Could not open payment page'), backgroundColor: Colors.red),
+              const SnackBar(
+                content: Text('Could not open payment page'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         }
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to create checkout session'), backgroundColor: Colors.red),
+            const SnackBar(
+              content: Text('Failed to create checkout session'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -1381,12 +1610,15 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       print('AI pack checkout error: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to start checkout: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Failed to start checkout: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
-  
+
   String _getProductIdForPack(String packType) {
     switch (packType) {
       case 'small':
@@ -1403,7 +1635,8 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
   /// Detects if an achievement is likely multiplayer/co-op based on keywords
   bool _isMultiplayerAchievement(Map<String, dynamic> achievement) {
     final name = (achievement['name'] as String? ?? '').toLowerCase();
-    final description = (achievement['description'] as String? ?? '').toLowerCase();
+    final description = (achievement['description'] as String? ?? '')
+        .toLowerCase();
     final combined = '$name $description';
 
     // Always log in web builds
@@ -1436,25 +1669,27 @@ class _GameAchievementsScreenState extends ConsumerState<GameAchievementsScreen>
       'versus',
       'matchmaking',
       'lobby',
-      'player',           // catch "a player", "another player"
-      'players',          // catch "other players"
-      'opponent',         // catch "opponent", "opponents"
+      'player', // catch "a player", "another player"
+      'players', // catch "other players"
+      'opponent', // catch "opponent", "opponents"
       'adversary',
       'adversaries',
       'competitive',
       'deathmatch',
-      'domination',       // game mode
-      'capture',          // capture the flag, etc
+      'domination', // game mode
+      'capture', // capture the flag, etc
       'ranked',
       'unranked',
       'leaderboard',
     ];
 
-    final isMultiplayer = multiplayerKeywords.any((keyword) => combined.contains(keyword));
-    
+    final isMultiplayer = multiplayerKeywords.any(
+      (keyword) => combined.contains(keyword),
+    );
+
     // Always log
     print('[MULTIPLAYER CHECK] Is multiplayer: $isMultiplayer');
-    
+
     return isMultiplayer;
   }
 }
@@ -1515,7 +1750,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       setState(() {
         _guideText = cached;
       });
-      
+
       // Search for YouTube video even for cached guides (if not already included)
       if (!_guideText.contains('youtube.com')) {
         print('🎥 Cached guide has no YouTube link - searching...');
@@ -1527,7 +1762,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       } else {
         print('✅ Cached guide already has YouTube link');
       }
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -1535,7 +1770,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
     }
 
     print('🤖 No cached guide - generating new one with AI...');
-    
+
     // No cached guide found - generate new one with ChatGPT
     setState(() {
       _isLoading = true;
@@ -1556,11 +1791,13 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         });
       }
 
-      print('✅ AI guide generation complete - now searching for YouTube video...');
-      
+      print(
+        '✅ AI guide generation complete - now searching for YouTube video...',
+      );
+
       // Search for YouTube video and append to guide
       await _appendYouTubeLink();
-      
+
       print('✅ YouTube search complete - now saving to database...');
 
       // Save to database
@@ -1580,7 +1817,9 @@ class _AIGuideContentState extends State<_AIGuideContent> {
 
   Future<void> _appendYouTubeLink() async {
     try {
-      print('🎥 Starting YouTube search for: "${widget.gameTitle}" - "${widget.achievementName}"');
+      print(
+        '🎥 Starting YouTube search for: "${widget.gameTitle}" - "${widget.achievementName}"',
+      );
       final youtubeService = YouTubeSearchService();
       final videoUrl = await youtubeService.searchAchievementGuide(
         gameTitle: widget.gameTitle,
@@ -1619,14 +1858,14 @@ class _AIGuideContentState extends State<_AIGuideContent> {
     try {
       print('🔍 Checking cache for achievement ID: ${widget.achievementId}');
       final supabase = Supabase.instance.client;
-      
+
       // Parse achievementId as int (database id column is integer)
       final achievementId = int.tryParse(widget.achievementId!);
       if (achievementId == null) {
         print('❌ Invalid achievement ID format: ${widget.achievementId}');
         return null;
       }
-      
+
       print('🔎 Querying achievements table for ID: $achievementId');
       final response = await supabase
           .from('achievements')
@@ -1637,12 +1876,16 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       print('📊 Database response: $response');
       final cachedGuide = response['ai_guide'] as String?;
       final generatedAt = response['ai_guide_generated_at'] as String?;
-      
+
       if (cachedGuide != null && cachedGuide.isNotEmpty) {
-        print('✅ Found cached guide (${cachedGuide.length} chars) generated at: $generatedAt');
+        print(
+          '✅ Found cached guide (${cachedGuide.length} chars) generated at: $generatedAt',
+        );
         return cachedGuide;
       } else {
-        print('⚠️ No cached guide found - ai_guide: $cachedGuide, generated_at: $generatedAt');
+        print(
+          '⚠️ No cached guide found - ai_guide: $cachedGuide, generated_at: $generatedAt',
+        );
         return null;
       }
     } catch (e) {
@@ -1658,16 +1901,18 @@ class _AIGuideContentState extends State<_AIGuideContent> {
     }
 
     try {
-      print('💾 Saving guide to database for achievement ID: ${widget.achievementId}');
+      print(
+        '💾 Saving guide to database for achievement ID: ${widget.achievementId}',
+      );
       final supabase = Supabase.instance.client;
-      
+
       // Parse achievementId as int (database id column is integer)
       final achievementId = int.tryParse(widget.achievementId!);
       if (achievementId == null) {
         print('❌ Invalid achievement ID format: ${widget.achievementId}');
         return;
       }
-      
+
       // First verify the record exists
       print('🔍 Verifying achievement exists in database...');
       final existsCheck = await supabase
@@ -1675,15 +1920,19 @@ class _AIGuideContentState extends State<_AIGuideContent> {
           .select('id, name')
           .eq('id', achievementId)
           .maybeSingle();
-      
+
       if (existsCheck == null) {
         print('❌ Achievement ID $achievementId does not exist in database');
         return;
       }
-      print('✅ Achievement exists: ${existsCheck['name']} (ID: ${existsCheck['id']})');
-      
-      print('💾 Attempting to update achievement ID: $achievementId with guide (${guide.length} chars)');
-      
+      print(
+        '✅ Achievement exists: ${existsCheck['name']} (ID: ${existsCheck['id']})',
+      );
+
+      print(
+        '💾 Attempting to update achievement ID: $achievementId with guide (${guide.length} chars)',
+      );
+
       // Try simple update first without select
       await supabase
           .from('achievements')
@@ -1692,21 +1941,23 @@ class _AIGuideContentState extends State<_AIGuideContent> {
             'ai_guide_generated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', achievementId);
-      
+
       print('📝 Update query executed, verifying if it worked...');
-      
+
       // Verify the update worked by querying the record again
       final verification = await supabase
           .from('achievements')
           .select('id, ai_guide, ai_guide_generated_at')
           .eq('id', achievementId)
           .single();
-      
+
       final savedGuide = verification['ai_guide'] as String?;
       final savedAt = verification['ai_guide_generated_at'] as String?;
-      
+
       if (savedGuide != null && savedGuide.isNotEmpty) {
-        print('✅ Update successful! Guide saved (${savedGuide.length} chars) at $savedAt');
+        print(
+          '✅ Update successful! Guide saved (${savedGuide.length} chars) at $savedAt',
+        );
       } else {
         print('❌ Update failed - guide is still null/empty');
         print('🔍 Full verification result: $verification');
@@ -1725,7 +1976,11 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: CyberpunkTheme.neonPink, size: 48),
+            const Icon(
+              Icons.error_outline,
+              color: CyberpunkTheme.neonPink,
+              size: 48,
+            ),
             const SizedBox(height: 16),
             const Text(
               'Error generating guide',
@@ -1766,7 +2021,9 @@ class _AIGuideContentState extends State<_AIGuideContent> {
               child: Column(
                 children: [
                   CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonPurple),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      CyberpunkTheme.neonPurple,
+                    ),
                   ),
                   SizedBox(height: 16),
                   Text(
@@ -1788,7 +2045,9 @@ class _AIGuideContentState extends State<_AIGuideContent> {
                     height: 12,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonPurple),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        CyberpunkTheme.neonPurple,
+                      ),
                     ),
                   ),
                   SizedBox(width: 8),
@@ -1807,16 +2066,12 @@ class _AIGuideContentState extends State<_AIGuideContent> {
   Widget _buildGuideText() {
     final urlPattern = RegExp(r'https?://[^\s]+');
     final matches = urlPattern.allMatches(_guideText);
-    
+
     if (matches.isEmpty) {
       // No URLs, just show plain text
       return Text(
         _guideText,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          height: 1.5,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
       );
     }
 
@@ -1827,45 +2082,48 @@ class _AIGuideContentState extends State<_AIGuideContent> {
     for (final match in matches) {
       // Add text before the URL
       if (match.start > lastIndex) {
-        spans.add(TextSpan(
-          text: _guideText.substring(lastIndex, match.start),
-          style: const TextStyle(color: Colors.white),
-        ));
+        spans.add(
+          TextSpan(
+            text: _guideText.substring(lastIndex, match.start),
+            style: const TextStyle(color: Colors.white),
+          ),
+        );
       }
 
       // Add clickable URL
       final url = match.group(0)!;
-      spans.add(WidgetSpan(
-        child: GestureDetector(
-          onTap: () => _launchURL(url),
-          child: Text(
-            url,
-            style: const TextStyle(
-              color: CyberpunkTheme.neonCyan,
-              decoration: TextDecoration.underline,
-              fontSize: 14,
+      spans.add(
+        WidgetSpan(
+          child: GestureDetector(
+            onTap: () => _launchURL(url),
+            child: Text(
+              url,
+              style: const TextStyle(
+                color: CyberpunkTheme.neonCyan,
+                decoration: TextDecoration.underline,
+                fontSize: 14,
+              ),
             ),
           ),
         ),
-      ));
+      );
 
       lastIndex = match.end;
     }
 
     // Add remaining text after last URL
     if (lastIndex < _guideText.length) {
-      spans.add(TextSpan(
-        text: _guideText.substring(lastIndex),
-        style: const TextStyle(color: Colors.white),
-      ));
+      spans.add(
+        TextSpan(
+          text: _guideText.substring(lastIndex),
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
     }
 
     return RichText(
       text: TextSpan(
-        style: const TextStyle(
-          fontSize: 14,
-          height: 1.5,
-        ),
+        style: const TextStyle(fontSize: 14, height: 1.5),
         children: spans,
       ),
     );
@@ -1902,7 +2160,10 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('CANCEL', style: TextStyle(color: Colors.white70)),
+            child: const Text(
+              'CANCEL',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -1919,8 +2180,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-      }
+      } else {}
     }
   }
 }

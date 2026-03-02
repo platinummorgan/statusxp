@@ -1185,7 +1185,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const successfulAchievementIds = new Set();
             const UPSERT_CHUNK_SIZE = parseInt(process.env.XBOX_UPSERT_CHUNK_SIZE || '200', 10);
             
-            for (const achievement of achievementsForTitle) {
+            for (let achievementIndex = 0; achievementIndex < achievementsForTitle.length; achievementIndex++) {
+              const achievement = achievementsForTitle[achievementIndex];
               // Track the most recent achievement earned date
               const earnedAt = achievement.progression?.timeUnlocked || achievement.timeUnlocked || achievement.unlockTime || null;
               if (achievement.progressState === 'Achieved' && earnedAt) {
@@ -1251,6 +1252,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 metadata: {
                   gamerscore: sanitizedGamerscore,
                   is_secret: achievement.isSecret || false,
+                  display_order: achievementIndex,
                   platform_version: platformVersion,
                   is_dlc: isDLC,
                   dlc_name: null,

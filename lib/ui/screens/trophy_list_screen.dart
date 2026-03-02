@@ -27,7 +27,10 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
     final supabase = Supabase.instance.client;
     final userId = supabase.auth.currentUser!.id;
     final repo = SupabaseTrophyRepository(supabase);
-    _trophiesFuture = repo.getTrophiesForGame(userId, int.parse(widget.game.id));
+    _trophiesFuture = repo.getTrophiesForGame(
+      userId,
+      int.parse(widget.game.id),
+    );
   }
 
   Color _getTierColor(String tier) {
@@ -84,7 +87,9 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    CyberpunkTheme.neonCyan,
+                  ),
                 ),
               );
             }
@@ -97,11 +102,19 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.error_outline, color: CyberpunkTheme.neonPink, size: 48),
+                        Icon(
+                          Icons.error_outline,
+                          color: CyberpunkTheme.neonPink,
+                          size: 48,
+                        ),
                         SizedBox(height: 16),
                         Text(
                           'ERROR LOADING TROPHIES',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                          ),
                         ),
                       ],
                     ),
@@ -110,7 +123,7 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
               );
             }
 
-          final trophies = snapshot.data ?? [];
+            final trophies = snapshot.data ?? [];
 
             if (trophies.isEmpty) {
               return const SafeArea(
@@ -132,230 +145,243 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
               );
             }
 
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 100, 16, 100),
-            itemCount: trophies.length,
-            itemBuilder: (context, index) {
-              final trophy = trophies[index];
-              final tierColor = _getTierColor(trophy.tier);
+            return ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 100, 16, 100),
+              itemCount: trophies.length,
+              itemBuilder: (context, index) {
+                final trophy = trophies[index];
+                final tierColor = _getTierColor(trophy.tier);
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: GlassPanel(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      children: [
-                      // Trophy icon with neon border
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: trophy.earned
-                                ? tierColor
-                                : Colors.white24,
-                            width: trophy.earned ? 2 : 1,
-                          ),
-                          boxShadow: trophy.earned ? [
-                            BoxShadow(
-                              color: tierColor.withOpacity(0.5),
-                              blurRadius: 8,
-                              spreadRadius: 0,
-                            ),
-                          ] : null,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: trophy.iconUrl != null
-                              ? Image.network(
-                                  trophy.iconUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Icon(
-                                    _getTierIcon(trophy.tier),
-                                    color: trophy.earned
-                                        ? tierColor
-                                        : Colors.white24,
-                                    size: 28,
-                                  ),
-                                  color: trophy.earned
-                                      ? null
-                                      : Colors.grey.withValues(alpha: 0.3),
-                                  colorBlendMode:
-                                      trophy.earned ? null : BlendMode.saturation,
-                                )
-                              : Icon(
-                                  _getTierIcon(trophy.tier),
-                                  color: trophy.earned
-                                      ? tierColor
-                                      : Colors.white24,
-                                  size: 28,
-                                ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 16),
-
-                      // Trophy info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Trophy name
-                            Text(
-                              trophy.hidden && !trophy.earned
-                                  ? 'HIDDEN TROPHY'
-                                  : trophy.name.toUpperCase(),
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: trophy.earned ? Colors.white : Colors.white60,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.5,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: GlassPanel(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          // Trophy icon with neon border
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: trophy.earned
+                                    ? tierColor
+                                    : Colors.white24,
+                                width: trophy.earned ? 2 : 1,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              boxShadow: trophy.earned
+                                  ? [
+                                      BoxShadow(
+                                        color: tierColor.withOpacity(0.5),
+                                        blurRadius: 8,
+                                        spreadRadius: 0,
+                                      ),
+                                    ]
+                                  : null,
                             ),
-
-                            if (trophy.description != null &&
-                                (!trophy.hidden || trophy.earned)) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                trophy.description!,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: trophy.earned
-                                      ? Colors.white70
-                                      : Colors.white38,
-                                  fontSize: 12,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-
-                            const SizedBox(height: 8),
-
-                            // Trophy tier and rarity
-                            Row(
-                              children: [
-                                // Tier badge with neon glow
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: trophy.earned
-                                        ? tierColor.withOpacity(0.2)
-                                        : Colors.white10,
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: trophy.iconUrl != null
+                                  ? Image.network(
+                                      trophy.iconUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Icon(
+                                        _getTierIcon(trophy.tier),
+                                        color: trophy.earned
+                                            ? tierColor
+                                            : Colors.white24,
+                                        size: 28,
+                                      ),
+                                      color: trophy.earned
+                                          ? null
+                                          : Colors.grey.withValues(alpha: 0.3),
+                                      colorBlendMode: trophy.earned
+                                          ? null
+                                          : BlendMode.saturation,
+                                    )
+                                  : Icon(
+                                      _getTierIcon(trophy.tier),
                                       color: trophy.earned
                                           ? tierColor
                                           : Colors.white24,
-                                      width: trophy.earned ? 1.5 : 1,
+                                      size: 28,
                                     ),
-                                    boxShadow: trophy.earned ? [
-                                      BoxShadow(
-                                        color: tierColor.withOpacity(0.3),
-                                        blurRadius: 4,
-                                      ),
-                                    ] : null,
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          // Trophy info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Trophy name
+                                Text(
+                                  trophy.hidden && !trophy.earned
+                                      ? 'HIDDEN TROPHY'
+                                      : trophy.name.toUpperCase(),
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    color: trophy.earned
+                                        ? Colors.white
+                                        : Colors.white60,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _getTierIcon(trophy.tier),
-                                        size: 12,
-                                        color: trophy.earned
-                                            ? tierColor
-                                            : Colors.white38,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+
+                                if (trophy.description != null &&
+                                    (!trophy.hidden || trophy.earned)) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    trophy.description!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: trophy.earned
+                                          ? Colors.white70
+                                          : Colors.white38,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+
+                                const SizedBox(height: 8),
+
+                                // Trophy tier and rarity
+                                Row(
+                                  children: [
+                                    // Tier badge with neon glow
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        trophy.tier.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 10,
+                                      decoration: BoxDecoration(
+                                        color: trophy.earned
+                                            ? tierColor.withOpacity(0.2)
+                                            : Colors.white10,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
                                           color: trophy.earned
                                               ? tierColor
-                                              : Colors.white38,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: 1,
+                                              : Colors.white24,
+                                          width: trophy.earned ? 1.5 : 1,
+                                        ),
+                                        boxShadow: trophy.earned
+                                            ? [
+                                                BoxShadow(
+                                                  color: tierColor.withOpacity(
+                                                    0.3,
+                                                  ),
+                                                  blurRadius: 4,
+                                                ),
+                                              ]
+                                            : null,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            _getTierIcon(trophy.tier),
+                                            size: 12,
+                                            color: trophy.earned
+                                                ? tierColor
+                                                : Colors.white38,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            trophy.tier.toUpperCase(),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: trophy.earned
+                                                  ? tierColor
+                                                  : Colors.white38,
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: 1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    // Rarity pill with cyan accent
+                                    if (trophy.rarityGlobal != null) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: CyberpunkTheme.neonCyan
+                                              .withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          border: Border.all(
+                                            color: CyberpunkTheme.neonCyan,
+                                            width: 1,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: CyberpunkTheme.neonCyan
+                                                  .withOpacity(0.3),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          '${(trophy.rarityGlobal ?? 0).toStringAsFixed(1)}%',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: CyberpunkTheme.neonCyan,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1,
+                                          ),
                                         ),
                                       ),
                                     ],
-                                  ),
+                                  ],
                                 ),
-
-                                // Rarity pill with cyan accent
-                                if (trophy.rarityGlobal != null) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: CyberpunkTheme.neonCyan.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: CyberpunkTheme.neonCyan,
-                                        width: 1,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: CyberpunkTheme.neonCyan.withOpacity(0.3),
-                                          blurRadius: 4,
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      '${(trophy.rarityGlobal ?? 0).toStringAsFixed(1)}%',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        color: CyberpunkTheme.neonCyan,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 1,
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
 
-                      // Earned checkmark with glow
-                      if (trophy.earned)
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: tierColor.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: tierColor.withOpacity(0.5),
-                                blurRadius: 8,
+                          // Earned checkmark with glow
+                          if (trophy.earned)
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: tierColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: tierColor.withOpacity(0.5),
+                                    blurRadius: 8,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.check_circle,
-                            color: tierColor,
-                            size: 24,
-                          ),
-                        ),
-                    ],
+                              child: Icon(
+                                Icons.check_circle,
+                                color: tierColor,
+                                size: 24,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             );
           },
-        );
-      },
-    ),
-  ),
-);
-}
+        ),
+      ),
+    );
+  }
 }

@@ -475,6 +475,7 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
       is_platinum: statusFields.is_platinum,
       metadata: {
         psn_trophy_type: trophyMeta.trophyType,
+        sort_order: trophyMeta.trophyId,
         platform_version: platformVersion,
         trophy_group_id: trophyGroupId,
         is_dlc: isDlc,

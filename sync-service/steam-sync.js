@@ -872,6 +872,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 metadata: {
                   platform_version: 'Steam',
                   steam_hidden: achievement.hidden === 1,
+                  steam_display_order: j,
                   is_dlc: isDLC,
                   dlc_name: dlcName,
                 },
