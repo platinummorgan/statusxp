@@ -1007,6 +1007,24 @@ export async function syncPSNAchievements(
       
       // Only check for missing/invalid proxied URLs if we would otherwise skip (avoid timeout from processing too many games)
       if (!needsProcessing && existingUserGame) {
+        const { data: existingAchievementMetadataRows } = await supabase
+          .from('achievements')
+          .select('platform_achievement_id, metadata')
+          .eq('platform_id', platformId)
+          .eq('platform_game_id', game.platform_game_id);
+
+        let missingHiddenMetadataCount = 0;
+        if (existingAchievementMetadataRows) {
+          for (const achievementRow of existingAchievementMetadataRows) {
+            const metadata = achievementRow?.metadata ?? {};
+            const hasPsnHidden = metadata.psn_hidden !== undefined && metadata.psn_hidden !== null;
+            const hasLegacyHidden = metadata.hidden !== undefined && metadata.hidden !== null;
+            if (!hasPsnHidden && !hasLegacyHidden) {
+              missingHiddenMetadataCount++;
+            }
+          }
+        }
+
         const { count: missingProxyCount } = await supabase
           .from('achievements')
           .select('platform_achievement_id', { count: 'exact', head: true })
@@ -1037,9 +1055,11 @@ export async function syncPSNAchievements(
           }
         }
         
-        const totalIssues = (missingProxyCount || 0) + invalidCount;
+        const totalIssues = (missingProxyCount || 0) + invalidCount + missingHiddenMetadataCount;
         if (totalIssues > 0) {
-          console.log(`🔄 INVALID PROXIED URLS: ${title.trophyTitleName} has ${missingProxyCount || 0} missing + ${invalidCount} invalid proxied icons - reprocessing`);
+          console.log(
+            `🔄 REPROCESS: ${title.trophyTitleName} has ${missingProxyCount || 0} missing + ${invalidCount} invalid proxied icons + ${missingHiddenMetadataCount} missing hidden metadata rows - reprocessing`
+          );
           // Continue to process this game
         } else {
           console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
