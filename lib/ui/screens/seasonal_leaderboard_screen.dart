@@ -6,7 +6,7 @@ import 'package:statusxp/data/repositories/leaderboard_repository.dart';
 import 'package:statusxp/domain/hall_of_fame_entry.dart';
 import 'package:statusxp/domain/seasonal_leaderboard_entry.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
-import 'package:statusxp/ui/screens/flex_room_screen.dart';
+import 'package:statusxp/ui/screens/seasonal_user_breakdown_screen.dart';
 
 class SeasonalLeaderboardScreen extends ConsumerStatefulWidget {
   const SeasonalLeaderboardScreen({super.key});
@@ -18,7 +18,7 @@ class SeasonalLeaderboardScreen extends ConsumerStatefulWidget {
 
 class _SeasonalLeaderboardScreenState
     extends ConsumerState<SeasonalLeaderboardScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   SeasonalBoardType _selectedBoard = SeasonalBoardType.statusXP;
   LeaderboardPeriodType _selectedPeriod = LeaderboardPeriodType.weekly;
@@ -26,19 +26,40 @@ class _SeasonalLeaderboardScreenState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) return;
       setState(() {
         _selectedBoard = SeasonalBoardType.values[_tabController.index];
       });
+      _refreshSeasonalData();
     });
+    // Force a fresh fetch whenever the screen is first opened.
+    _refreshSeasonalData();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshSeasonalData();
+    }
+  }
+
+  void _refreshSeasonalData() {
+    final query = SeasonalLeaderboardQuery(
+      boardType: _selectedBoard,
+      periodType: _selectedPeriod,
+    );
+    ref.invalidate(seasonalLeaderboardProvider(query));
+    ref.invalidate(latestPeriodWinnersProvider(_selectedPeriod));
   }
 
   @override
@@ -145,6 +166,7 @@ class _SeasonalLeaderboardScreenState
                 setState(() {
                   _selectedPeriod = selection.first;
                 });
+                _refreshSeasonalData();
               },
             ),
           ),
@@ -294,15 +316,7 @@ class _SeasonalLeaderboardScreenState
 
         return RefreshIndicator(
           onRefresh: () async {
-            ref.invalidate(
-              seasonalLeaderboardProvider(
-                SeasonalLeaderboardQuery(
-                  boardType: _selectedBoard,
-                  periodType: _selectedPeriod,
-                ),
-              ),
-            );
-            ref.invalidate(latestPeriodWinnersProvider(_selectedPeriod));
+            _refreshSeasonalData();
             await Future.delayed(const Duration(milliseconds: 300));
           },
           child: ListView.builder(
@@ -331,7 +345,13 @@ class _SeasonalLeaderboardScreenState
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => FlexRoomScreen(viewerId: entry.userId),
+            builder: (_) => SeasonalUserBreakdownScreen(
+              targetUserId: entry.userId,
+              targetDisplayName: entry.displayName,
+              targetAvatarUrl: entry.avatarUrl,
+              boardType: _selectedBoard,
+              periodType: _selectedPeriod,
+            ),
           ),
         );
       },

@@ -7,13 +7,7 @@ import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 
 /// Sort options for games list
-enum GameSort {
-  lastTrophy,
-  nameAsc,
-  nameDesc,
-  rarityAsc,
-  rarityDesc,
-}
+enum GameSort { lastTrophy, nameAsc, nameDesc, rarityAsc, rarityDesc }
 
 /// Platform filter state provider (empty set = All)
 final platformFilterProvider = StateProvider<Set<String>>((ref) => {});
@@ -26,18 +20,32 @@ final searchQueryProvider = StateProvider<String>((ref) => '');
 
 /// Unified Games List Screen - Shows all games across all platforms
 class UnifiedGamesListScreen extends ConsumerWidget {
-  const UnifiedGamesListScreen({super.key});
+  final String? targetUserId;
+  final String? targetDisplayName;
+
+  const UnifiedGamesListScreen({
+    super.key,
+    this.targetUserId,
+    this.targetDisplayName,
+  });
+
+  bool get _isPublicMode => targetUserId != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final gamesAsync = ref.watch(unifiedGamesProvider);
+    final gamesAsync = _isPublicMode
+        ? ref.watch(publicUnifiedGamesProvider(targetUserId!))
+        : ref.watch(unifiedGamesProvider);
     final platformFilter = ref.watch(platformFilterProvider);
     final sortOption = ref.watch(gameSortProvider);
     final searchQuery = ref.watch(searchQueryProvider);
+    final screenTitle = _isPublicMode
+        ? '${targetDisplayName ?? 'Player'}\'s Games'
+        : 'My Games';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Games'),
+        title: Text(screenTitle),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -51,7 +59,8 @@ class UnifiedGamesListScreen extends ConsumerWidget {
             gamesAsync.when(
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
-              data: (games) => _buildHeader(context, ref, games, platformFilter),
+              data: (games) =>
+                  _buildHeader(context, ref, games, platformFilter),
             ),
             _buildSearchBar(context, ref, sortOption),
             Expanded(
@@ -61,15 +70,29 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 16),
                       Text('Error loading games: $error'),
                     ],
                   ),
                 ),
                 data: (games) {
-                  final filteredGames = _filterAndSortGames(games, platformFilter, sortOption, searchQuery);
-                  return _buildGamesList(context, ref, filteredGames);
+                  final filteredGames = _filterAndSortGames(
+                    games,
+                    platformFilter,
+                    sortOption,
+                    searchQuery,
+                  );
+                  return _buildGamesList(
+                    context,
+                    ref,
+                    filteredGames,
+                    isReadOnly: _isPublicMode,
+                  );
                 },
               ),
             ),
@@ -79,7 +102,12 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, List<UnifiedGame> games, Set<String> selectedFilters) {
+  Widget _buildHeader(
+    BuildContext context,
+    WidgetRef ref,
+    List<UnifiedGame> games,
+    Set<String> selectedFilters,
+  ) {
     // Calculate game counts per platform
     int psCount = 0;
     int xboxCount = 0;
@@ -88,11 +116,13 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     for (final game in games) {
       for (final platform in game.platforms) {
         final platformCode = platform.platform.toLowerCase();
-        
+
         // Check platform type - be more flexible with matching
         if (platformCode.contains('ps') || platformCode == 'playstation') {
           psCount++;
-        } else if (platformCode.contains('xbox') || platformCode == 'xbox one' || platformCode == 'xboxone') {
+        } else if (platformCode.contains('xbox') ||
+            platformCode == 'xbox one' ||
+            platformCode == 'xboxone') {
           xboxCount++;
         } else if (platformCode == 'steam' || platformCode.contains('steam')) {
           steamCount++;
@@ -105,17 +135,49 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildStatCard(ref, 'PS', psCount, const Color(0xFF0070CC), Icons.videogame_asset, 'playstation', selectedFilters),
-          _buildStatCard(ref, 'XBOX', xboxCount, const Color(0xFF107C10), Icons.sports_esports, 'xbox', selectedFilters),
-          _buildStatCard(ref, 'Steam', steamCount, const Color(0xFF66C0F4), Icons.store, 'steam', selectedFilters),
+          _buildStatCard(
+            ref,
+            'PS',
+            psCount,
+            const Color(0xFF0070CC),
+            Icons.videogame_asset,
+            'playstation',
+            selectedFilters,
+          ),
+          _buildStatCard(
+            ref,
+            'XBOX',
+            xboxCount,
+            const Color(0xFF107C10),
+            Icons.sports_esports,
+            'xbox',
+            selectedFilters,
+          ),
+          _buildStatCard(
+            ref,
+            'Steam',
+            steamCount,
+            const Color(0xFF66C0F4),
+            Icons.store,
+            'steam',
+            selectedFilters,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(WidgetRef ref, String label, int count, Color color, IconData icon, String filterValue, Set<String> selectedFilters) {
+  Widget _buildStatCard(
+    WidgetRef ref,
+    String label,
+    int count,
+    Color color,
+    IconData icon,
+    String filterValue,
+    Set<String> selectedFilters,
+  ) {
     final isSelected = selectedFilters.contains(filterValue);
-    
+
     return Expanded(
       child: InkWell(
         onTap: () {
@@ -174,7 +236,11 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context, WidgetRef ref, GameSort currentSort) {
+  Widget _buildSearchBar(
+    BuildContext context,
+    WidgetRef ref,
+    GameSort currentSort,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -194,7 +260,9 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.3)),
+                  borderSide: BorderSide(
+                    color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -202,7 +270,10 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: CyberpunkTheme.neonCyan, width: 2),
+                  borderSide: const BorderSide(
+                    color: CyberpunkTheme.neonCyan,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
@@ -214,7 +285,11 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCompactSortButton(BuildContext context, WidgetRef ref, GameSort currentSort) {
+  Widget _buildCompactSortButton(
+    BuildContext context,
+    WidgetRef ref,
+    GameSort currentSort,
+  ) {
     return PopupMenuButton<GameSort>(
       onSelected: (GameSort newValue) {
         ref.read(gameSortProvider.notifier).state = newValue;
@@ -222,7 +297,10 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       color: const Color(0xFF0A0E27),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: CyberpunkTheme.neonOrange.withOpacity(0.5), width: 1),
+        side: BorderSide(
+          color: CyberpunkTheme.neonOrange.withOpacity(0.5),
+          width: 1,
+        ),
       ),
       itemBuilder: (BuildContext context) => <PopupMenuEntry<GameSort>>[
         const PopupMenuItem<GameSort>(
@@ -239,11 +317,17 @@ class UnifiedGamesListScreen extends ConsumerWidget {
         ),
         const PopupMenuItem<GameSort>(
           value: GameSort.rarityAsc,
-          child: Text('Rarity (Common First)', style: TextStyle(color: Colors.white)),
+          child: Text(
+            'Rarity (Common First)',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
         const PopupMenuItem<GameSort>(
           value: GameSort.rarityDesc,
-          child: Text('Rarity (Rare First)', style: TextStyle(color: Colors.white)),
+          child: Text(
+            'Rarity (Rare First)',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       ],
       child: Container(
@@ -251,7 +335,10 @@ class UnifiedGamesListScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.4),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: CyberpunkTheme.neonOrange.withOpacity(0.5), width: 1.5),
+          border: Border.all(
+            color: CyberpunkTheme.neonOrange.withOpacity(0.5),
+            width: 1.5,
+          ),
         ),
         child: const Icon(
           Icons.sort,
@@ -280,7 +367,9 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     // Apply search filter
     if (searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
-      filtered = filtered.where((game) => game.title.toLowerCase().contains(query)).toList();
+      filtered = filtered
+          .where((game) => game.title.toLowerCase().contains(query))
+          .toList();
     }
 
     // Apply sorting
@@ -327,21 +416,32 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     return filtered;
   }
 
-  Widget _buildGamesList(BuildContext context, WidgetRef ref, List<UnifiedGame> games) {
+  Widget _buildGamesList(
+    BuildContext context,
+    WidgetRef ref,
+    List<UnifiedGame> games, {
+    required bool isReadOnly,
+  }) {
     if (games.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No games found',
-          style: TextStyle(color: Colors.white70),
+          isReadOnly
+              ? 'No public games available for this player'
+              : 'No games found',
+          style: const TextStyle(color: Colors.white70),
         ),
       );
     }
 
     return RefreshIndicator(
       onRefresh: () async {
-        // Invalidate the provider to trigger a fresh fetch
+        if (isReadOnly) {
+          final publicProvider = publicUnifiedGamesProvider(targetUserId!);
+          ref.invalidate(publicProvider);
+          await ref.read(publicProvider.future);
+          return;
+        }
         ref.invalidate(unifiedGamesProvider);
-        // Wait for the provider to finish loading
         await ref.read(unifiedGamesProvider.future);
       },
       color: CyberpunkTheme.neonCyan,
@@ -350,13 +450,17 @@ class UnifiedGamesListScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         itemCount: games.length,
         itemBuilder: (context, index) {
-          return _buildGameCard(context, games[index]);
+          return _buildGameCard(context, games[index], isReadOnly: isReadOnly);
         },
       ),
     );
   }
 
-  Widget _buildGameCard(BuildContext context, UnifiedGame game) {
+  Widget _buildGameCard(
+    BuildContext context,
+    UnifiedGame game, {
+    required bool isReadOnly,
+  }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       color: const Color(0xFF0A0E27).withOpacity(0.8),
@@ -368,9 +472,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
         ),
       ),
       child: InkWell(
-        onTap: () {
-          _handleGameTap(context, game);
-        },
+        onTap: isReadOnly ? null : () => _handleGameTap(context, game),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -395,7 +497,8 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                           width: 60,
                           height: 60,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildPlaceholderCover(),
+                          errorBuilder: (_, __, ___) =>
+                              _buildPlaceholderCover(),
                         )
                       : _buildPlaceholderCover(),
                 ),
@@ -480,10 +583,10 @@ class UnifiedGamesListScreen extends ConsumerWidget {
   Widget _buildPlatformPill(PlatformGameData platform) {
     Color color;
     String label;
-    
+
     final platformLower = platform.platform.toLowerCase();
     final platformOriginal = platform.platform;
-    
+
     if (platformLower.contains('ps') || platformLower == 'playstation') {
       color = const Color(0xFF00A8E1);
       // Try to extract variant (PS4, PS5, etc.)
@@ -519,34 +622,43 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     }
 
     final completion = platform.completion.toStringAsFixed(0);
-    
+
     // Build platform-specific display text
     String displayText;
     if (platformLower.contains('xbox')) {
       // Xbox: Show achievements and gamerscore
       // Format: "XBOX 10/30 30% Achievement Points 300/1000"
-      final gamerscore = platform.totalScore > 0 
-        ? '${platform.currentScore}/${platform.totalScore}'
-        : '${platform.currentScore}';
-      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion% Achievement Points $gamerscore';
+      final gamerscore = platform.totalScore > 0
+          ? '${platform.currentScore}/${platform.totalScore}'
+          : '${platform.currentScore}';
+      displayText =
+          '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion% Achievement Points $gamerscore';
     } else if (platformLower.contains('ps') || platformLower == 'playstation') {
       // PlayStation: Show trophy breakdown
       // Format: "PS5 10/30 30% 🥈 Platinum 1 | Gold 2 | Silver 3 | Bronze 4"
       final List<String> trophyParts = [];
-      if (platform.platinumCount > 0) trophyParts.add('Platinum ${platform.platinumCount}');
+      if (platform.platinumCount > 0)
+        trophyParts.add('Platinum ${platform.platinumCount}');
       if (platform.goldCount > 0) trophyParts.add('Gold ${platform.goldCount}');
-      if (platform.silverCount > 0) trophyParts.add('Silver ${platform.silverCount}');
-      if (platform.bronzeCount > 0) trophyParts.add('Bronze ${platform.bronzeCount}');
-      
-      final trophyBreakdown = trophyParts.isNotEmpty ? ' 🥈 ${trophyParts.join(' | ')}' : '';
-      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%$trophyBreakdown';
+      if (platform.silverCount > 0)
+        trophyParts.add('Silver ${platform.silverCount}');
+      if (platform.bronzeCount > 0)
+        trophyParts.add('Bronze ${platform.bronzeCount}');
+
+      final trophyBreakdown = trophyParts.isNotEmpty
+          ? ' 🥈 ${trophyParts.join(' | ')}'
+          : '';
+      displayText =
+          '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%$trophyBreakdown';
     } else if (platformLower.contains('steam')) {
       // Steam: Show achievement count
       // Format: "Steam 10/30"
-      displayText = '$label ${platform.achievementsEarned}/${platform.achievementsTotal}';
+      displayText =
+          '$label ${platform.achievementsEarned}/${platform.achievementsTotal}';
     } else {
       // Default: Standard display
-      displayText = '$label: ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%';
+      displayText =
+          '$label: ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%';
     }
 
     return Container(
@@ -604,10 +716,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   game.title,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -619,7 +728,8 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                   String platformLabel;
 
                   final platformCode = platform.platform.toLowerCase();
-                  if (platformCode.contains('ps') || platformCode == 'playstation') {
+                  if (platformCode.contains('ps') ||
+                      platformCode == 'playstation') {
                     platformColor = const Color(0xFF0070CC);
                     platformIcon = Icons.sports_esports;
                     platformLabel = 'PlayStation';
@@ -679,7 +789,11 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                                 ],
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios, color: platformColor, size: 20),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: platformColor,
+                              size: 20,
+                            ),
                           ],
                         ),
                       ),
@@ -705,7 +819,11 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     );
   }
 
-  void _navigateToAchievements(BuildContext context, UnifiedGame game, PlatformGameData platform) {
+  void _navigateToAchievements(
+    BuildContext context,
+    UnifiedGame game,
+    PlatformGameData platform,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => GameAchievementsScreen(
@@ -719,4 +837,3 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     );
   }
 }
-

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/hall_of_fame_entry.dart';
 import 'package:statusxp/domain/leaderboard_entry.dart';
 import 'package:statusxp/domain/seasonal_leaderboard_entry.dart';
+import 'package:statusxp/domain/seasonal_user_breakdown.dart';
 import 'package:statusxp/ui/screens/leaderboard_screen.dart';
 
 /// Leaderboard Repository - Fetches global rankings
@@ -12,14 +13,15 @@ class LeaderboardRepository {
   LeaderboardRepository(this._client);
 
   /// Fetch StatusXP leaderboard (all platforms combined) with rank movement
-  Future<List<LeaderboardEntry>> getStatusXPLeaderboard({int limit = 100}) async {
+  Future<List<LeaderboardEntry>> getStatusXPLeaderboard({
+    int limit = 100,
+  }) async {
     try {
       // Use new RPC function that includes rank movement tracking
-      final response = await _client
-          .rpc('get_leaderboard_with_movement', params: {
-            'limit_count': limit,
-            'offset_count': 0,
-          });
+      final response = await _client.rpc(
+        'get_leaderboard_with_movement',
+        params: {'limit_count': limit, 'offset_count': 0},
+      );
 
       if ((response as List).isEmpty) {
         return [];
@@ -27,29 +29,33 @@ class LeaderboardRepository {
 
       // Convert response to LeaderboardEntry objects
       final entries = <LeaderboardEntry>[];
-      
+
       for (final row in response) {
         final userId = row['user_id'] as String;
         final displayName = row['display_name'] as String? ?? 'Unknown';
         final avatarUrl = row['avatar_url'] as String?;
-        final statusxp = ((row['total_statusxp'] as num?)?.toDouble() ?? 0.0).toInt();
-        final potentialStatusXP = ((row['potential_statusxp'] as num?)?.toDouble() ?? 0.0).toInt();
+        final statusxp = ((row['total_statusxp'] as num?)?.toDouble() ?? 0.0)
+            .toInt();
+        final potentialStatusXP =
+            ((row['potential_statusxp'] as num?)?.toDouble() ?? 0.0).toInt();
         final gameCount = (row['total_game_entries'] as int?) ?? 0;
         final previousRank = row['previous_rank'] as int?;
         final rankChange = (row['rank_change'] as int?) ?? 0;
         final isNew = (row['is_new'] as bool?) ?? false;
 
-        entries.add(LeaderboardEntry.fromJson({
-          'user_id': userId,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-          'score': statusxp,
-          'potential_score': potentialStatusXP,
-          'games_count': gameCount,
-          'previous_rank': previousRank,
-          'rank_change': rankChange,
-          'is_new': isNew,
-        }));
+        entries.add(
+          LeaderboardEntry.fromJson({
+            'user_id': userId,
+            'display_name': displayName,
+            'avatar_url': avatarUrl,
+            'score': statusxp,
+            'potential_score': potentialStatusXP,
+            'games_count': gameCount,
+            'previous_rank': previousRank,
+            'rank_change': rankChange,
+            'is_new': isNew,
+          }),
+        );
       }
 
       return entries;
@@ -59,14 +65,15 @@ class LeaderboardRepository {
   }
 
   /// Fetch Platinum trophy leaderboard (PSN only) with rank movement
-  Future<List<LeaderboardEntry>> getPlatinumLeaderboard({int limit = 100}) async {
+  Future<List<LeaderboardEntry>> getPlatinumLeaderboard({
+    int limit = 100,
+  }) async {
     try {
       // Use new RPC function that includes rank movement tracking
-      final response = await _client
-          .rpc('get_psn_leaderboard_with_movement', params: {
-            'limit_count': limit,
-            'offset_count': 0,
-          });
+      final response = await _client.rpc(
+        'get_psn_leaderboard_with_movement',
+        params: {'limit_count': limit, 'offset_count': 0},
+      );
 
       if ((response as List).isEmpty) {
         return [];
@@ -74,7 +81,7 @@ class LeaderboardRepository {
 
       // Convert response to LeaderboardEntry objects
       final entries = <LeaderboardEntry>[];
-      
+
       for (final row in response) {
         final userId = row['user_id'] as String;
         final displayName = row['display_name'] as String? ?? 'Unknown';
@@ -93,25 +100,27 @@ class LeaderboardRepository {
         final rankChange = (row['rank_change'] as int?) ?? 0;
         final isNew = (row['is_new'] as bool?) ?? false;
 
-        entries.add(LeaderboardEntry.fromJson({
-          'user_id': userId,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-          'score': platinumCount,
-          'platinum_count': platinumCount,
-          'gold_count': goldCount,
-          'silver_count': silverCount,
-          'bronze_count': bronzeCount,
-          'total_trophies': totalTrophies,
-          'possible_platinum': possiblePlatinum,
-          'possible_gold': possibleGold,
-          'possible_silver': possibleSilver,
-          'possible_bronze': possibleBronze,
-          'games_count': gameCount,
-          'previous_rank': previousRank,
-          'rank_change': rankChange,
-          'is_new': isNew,
-        }));
+        entries.add(
+          LeaderboardEntry.fromJson({
+            'user_id': userId,
+            'display_name': displayName,
+            'avatar_url': avatarUrl,
+            'score': platinumCount,
+            'platinum_count': platinumCount,
+            'gold_count': goldCount,
+            'silver_count': silverCount,
+            'bronze_count': bronzeCount,
+            'total_trophies': totalTrophies,
+            'possible_platinum': possiblePlatinum,
+            'possible_gold': possibleGold,
+            'possible_silver': possibleSilver,
+            'possible_bronze': possibleBronze,
+            'games_count': gameCount,
+            'previous_rank': previousRank,
+            'rank_change': rankChange,
+            'is_new': isNew,
+          }),
+        );
       }
 
       return entries;
@@ -121,88 +130,50 @@ class LeaderboardRepository {
     }
   }
 
-  Future<List<LeaderboardEntry>> _getPlatinumLeaderboardFallback({int limit = 100}) async {
-    // First get platinum counts
+  Future<List<LeaderboardEntry>> _getPlatinumLeaderboardFallback({
+    int limit = 100,
+  }) async {
     final response = await _client
-        .from('user_achievements')
-        .select('''
-          user_id,
-          profiles!inner(psn_online_id, psn_avatar_url, show_on_leaderboard),
-          achievements!inner(game_title_id, platform, psn_trophy_type)
-        ''')
-        .eq('achievements.platform', 'psn')
-        .eq('achievements.psn_trophy_type', 'platinum')
-        .eq('profiles.show_on_leaderboard', true);
+        .from('psn_leaderboard_cache')
+        .select(
+          'user_id,display_name,avatar_url,platinum_count,gold_count,silver_count,bronze_count,total_trophies,total_games',
+        )
+        .order('platinum_count', ascending: false)
+        .order('gold_count', ascending: false)
+        .order('silver_count', ascending: false)
+        .order('bronze_count', ascending: false)
+        .limit(limit);
 
     if ((response as List).isEmpty) {
       return [];
     }
 
-    // Group by user_id and count platinums
-    final Map<String, Map<String, dynamic>> userMap = {};
-
-    for (final row in response) {
-      final userId = row['user_id'] as String;
-      final profile = row['profiles'] as Map<String, dynamic>?;
-      final achievement = row['achievements'] as Map<String, dynamic>?;
-
-      if (achievement?['psn_trophy_type'] == 'platinum') {
-        if (userMap.containsKey(userId)) {
-          userMap[userId]!['score'] = (userMap[userId]!['score'] as int) + 1;
-        } else {
-          // Use PSN-specific name and avatar
-          final displayName = profile?['psn_online_id'] as String? ?? 'Unknown';
-          final avatarUrl = profile?['psn_avatar_url'] as String?;
-
-          userMap[userId] = {
-            'user_id': userId,
-            'display_name': displayName,
-            'avatar_url': avatarUrl,
-            'score': 1,
-          };
-        }
-      }
-    }
-
-    // Get total games count for each user
-    for (final userId in userMap.keys) {
-      final gamesResponse = await _client
-          .from('user_games')
-          .select('game_title_id')
-          .eq('user_id', userId);
-      
-      final uniqueGames = (gamesResponse as List)
-          .map((row) => row['game_title_id'] as int)
-          .toSet();
-      
-      userMap[userId]!['games'] = uniqueGames.length;
-    }
-
-    // Convert to entries
-    final entries = userMap.entries.map((entry) {
-      final data = entry.value;
+    final entries = (response as List).map((row) {
       return LeaderboardEntry.fromJson({
-        'user_id': entry.key,
-        'display_name': data['display_name'],
-        'avatar_url': data['avatar_url'],
-        'score': data['score'],
-        'games_count': data['games'],
+        'user_id': row['user_id'],
+        'display_name': row['display_name'],
+        'avatar_url': row['avatar_url'],
+        'score': (row['platinum_count'] as num?)?.toInt() ?? 0,
+        'platinum_count': (row['platinum_count'] as num?)?.toInt() ?? 0,
+        'gold_count': (row['gold_count'] as num?)?.toInt() ?? 0,
+        'silver_count': (row['silver_count'] as num?)?.toInt() ?? 0,
+        'bronze_count': (row['bronze_count'] as num?)?.toInt() ?? 0,
+        'total_trophies': (row['total_trophies'] as num?)?.toInt() ?? 0,
+        'games_count': (row['total_games'] as num?)?.toInt() ?? 0,
       });
-    }).toList()
-      ..sort((a, b) => b.score.compareTo(a.score));
+    }).toList();
 
-    return entries.take(limit).toList();
+    return entries;
   }
 
   /// Fetch Xbox achievement leaderboard with rank movement
   Future<List<LeaderboardEntry>> getXboxLeaderboard({int limit = 100}) async {
     try {
       // Use new RPC function that includes rank movement tracking
-      final response = await _client
-          .rpc('get_xbox_leaderboard_with_movement', params: {
-            'limit_count': limit,
-            'offset_count': 0,
-          });
+      final response = await _client.rpc(
+        'get_xbox_leaderboard_with_movement',
+        params: {'limit_count': limit, 'offset_count': 0},
+      );
 
       if ((response as List).isEmpty) {
         print('⚠️ Xbox leaderboard cache is empty');
@@ -210,33 +181,34 @@ class LeaderboardRepository {
       }
 
       print('✅ Xbox leaderboard: ${response.length} entries loaded');
-      
+
       // Convert response to LeaderboardEntry objects
       final entries = <LeaderboardEntry>[];
-      
+
       for (final row in response) {
         final userId = row['user_id'] as String;
         final displayName = row['display_name'] as String? ?? 'Unknown';
         final avatarUrl = row['avatar_url'] as String?;
         final gamerscore = (row['gamerscore'] as int?) ?? 0;
         final potentialGamerscore = (row['potential_gamerscore'] as int?) ?? 0;
-        final achievementCount = (row['achievement_count'] as int?) ?? 0;
         final gameCount = (row['total_games'] as int?) ?? 0;
         final previousRank = row['previous_rank'] as int?;
         final rankChange = (row['rank_change'] as int?) ?? 0;
         final isNew = (row['is_new'] as bool?) ?? false;
 
-        entries.add(LeaderboardEntry.fromJson({
-          'user_id': userId,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-          'score': gamerscore,
-          'potential_score': potentialGamerscore,
-          'games_count': gameCount,
-          'previous_rank': previousRank,
-          'rank_change': rankChange,
-          'is_new': isNew,
-        }));
+        entries.add(
+          LeaderboardEntry.fromJson({
+            'user_id': userId,
+            'display_name': displayName,
+            'avatar_url': avatarUrl,
+            'score': gamerscore,
+            'potential_score': potentialGamerscore,
+            'games_count': gameCount,
+            'previous_rank': previousRank,
+            'rank_change': rankChange,
+            'is_new': isNew,
+          }),
+        );
       }
 
       return entries;
@@ -247,63 +219,34 @@ class LeaderboardRepository {
     }
   }
 
-  Future<List<LeaderboardEntry>> _getXboxLeaderboardFallback({int limit = 100}) async {
+  Future<List<LeaderboardEntry>> _getXboxLeaderboardFallback({
+    int limit = 100,
+  }) async {
     try {
       final response = await _client
-          .from('user_achievements')
-          .select('''
-            user_id,
-            profiles!inner(xbox_gamertag, xbox_avatar_url, show_on_leaderboard),
-            achievements!inner(game_title_id, platform)
-          ''')
-          .eq('achievements.platform', 'xbox')
-          .eq('profiles.show_on_leaderboard', true);
+          .from('xbox_leaderboard_cache')
+          .select(
+            'user_id,display_name,avatar_url,gamerscore,achievement_count,total_games',
+          )
+          .order('gamerscore', ascending: false)
+          .order('achievement_count', ascending: false)
+          .limit(limit);
 
       if ((response as List).isEmpty) {
         return [];
       }
 
-      // Group by user_id and count achievements
-      final Map<String, Map<String, dynamic>> userMap = {};
-
-      for (final row in response) {
-        final userId = row['user_id'] as String;
-        final profile = row['profiles'] as Map<String, dynamic>?;
-        final achievement = row['achievements'] as Map<String, dynamic>?;
-
-        if (userMap.containsKey(userId)) {
-          userMap[userId]!['score'] = (userMap[userId]!['score'] as int) + 1;
-          // Track unique games
-          final games = userMap[userId]!['games'] as Set<int>;
-          games.add(achievement?['game_title_id'] as int);
-        } else {
-          // Use Xbox-specific gamertag
-          final displayName = profile?['xbox_gamertag'] as String? ?? 'Unknown';
-
-          userMap[userId] = {
-            'user_id': userId,
-            'display_name': displayName,
-            'avatar_url': profile?['xbox_avatar_url'] as String?,
-            'score': 1,
-            'games': {achievement?['game_title_id'] as int},
-          };
-        }
-      }
-
-      // Convert to entries
-      final entries = userMap.entries.map((entry) {
-        final data = entry.value;
+      final entries = (response as List).map((row) {
         return LeaderboardEntry.fromJson({
-          'user_id': entry.key,
-          'display_name': data['display_name'],
-          'avatar_url': data['avatar_url'],
-          'score': data['score'],
-          'games_count': (data['games'] as Set).length,
+          'user_id': row['user_id'],
+          'display_name': row['display_name'],
+          'avatar_url': row['avatar_url'],
+          'score': (row['gamerscore'] as num?)?.toInt() ?? 0,
+          'games_count': (row['total_games'] as num?)?.toInt() ?? 0,
         });
-      }).toList()
-        ..sort((a, b) => b.score.compareTo(a.score));
+      }).toList();
 
-      return entries.take(limit).toList();
+      return entries;
     } catch (e) {
       rethrow;
     }
@@ -313,11 +256,10 @@ class LeaderboardRepository {
   Future<List<LeaderboardEntry>> getSteamLeaderboard({int limit = 100}) async {
     try {
       // Use new RPC function that includes rank movement tracking
-      final response = await _client
-          .rpc('get_steam_leaderboard_with_movement', params: {
-            'limit_count': limit,
-            'offset_count': 0,
-          });
+      final response = await _client.rpc(
+        'get_steam_leaderboard_with_movement',
+        params: {'limit_count': limit, 'offset_count': 0},
+      );
 
       if ((response as List).isEmpty) {
         return [];
@@ -325,29 +267,32 @@ class LeaderboardRepository {
 
       // Convert response to LeaderboardEntry objects
       final entries = <LeaderboardEntry>[];
-      
+
       for (final row in response) {
         final userId = row['user_id'] as String;
         final displayName = row['display_name'] as String? ?? 'Unknown';
         final avatarUrl = row['avatar_url'] as String?;
         final achievementCount = (row['achievement_count'] as int?) ?? 0;
-        final potentialAchievements = (row['potential_achievements'] as int?) ?? 0;
+        final potentialAchievements =
+            (row['potential_achievements'] as int?) ?? 0;
         final gameCount = (row['total_games'] as int?) ?? 0;
         final previousRank = row['previous_rank'] as int?;
         final rankChange = (row['rank_change'] as int?) ?? 0;
         final isNew = (row['is_new'] as bool?) ?? false;
 
-        entries.add(LeaderboardEntry.fromJson({
-          'user_id': userId,
-          'display_name': displayName,
-          'avatar_url': avatarUrl,
-          'score': achievementCount,
-          'potential_score': potentialAchievements,
-          'games_count': gameCount,
-          'previous_rank': previousRank,
-          'rank_change': rankChange,
-          'is_new': isNew,
-        }));
+        entries.add(
+          LeaderboardEntry.fromJson({
+            'user_id': userId,
+            'display_name': displayName,
+            'avatar_url': avatarUrl,
+            'score': achievementCount,
+            'potential_score': potentialAchievements,
+            'games_count': gameCount,
+            'previous_rank': previousRank,
+            'rank_change': rankChange,
+            'is_new': isNew,
+          }),
+        );
       }
 
       return entries;
@@ -357,63 +302,34 @@ class LeaderboardRepository {
     }
   }
 
-  Future<List<LeaderboardEntry>> _getSteamLeaderboardFallback({int limit = 100}) async {
+  Future<List<LeaderboardEntry>> _getSteamLeaderboardFallback({
+    int limit = 100,
+  }) async {
     try {
       final response = await _client
-          .from('user_achievements')
-          .select('''
-            user_id,
-            profiles!inner(steam_display_name, steam_avatar_url, show_on_leaderboard),
-            achievements!inner(game_title_id, platform)
-          ''')
-          .eq('achievements.platform', 'steam')
-          .eq('profiles.show_on_leaderboard', true);
+          .from('steam_leaderboard_cache')
+          .select(
+            'user_id,display_name,avatar_url,achievement_count,total_games',
+          )
+          .order('achievement_count', ascending: false)
+          .order('total_games', ascending: false)
+          .limit(limit);
 
       if ((response as List).isEmpty) {
         return [];
       }
 
-      // Group by user_id and count achievements
-      final Map<String, Map<String, dynamic>> userMap = {};
-
-      for (final row in response) {
-        final userId = row['user_id'] as String;
-        final profile = row['profiles'] as Map<String, dynamic>?;
-        final achievement = row['achievements'] as Map<String, dynamic>?;
-
-        if (userMap.containsKey(userId)) {
-          userMap[userId]!['score'] = (userMap[userId]!['score'] as int) + 1;
-          // Track unique games
-          final games = userMap[userId]!['games'] as Set<int>;
-          games.add(achievement?['game_title_id'] as int);
-        } else {
-          // Use Steam-specific display name
-          final displayName = profile?['steam_display_name'] as String? ?? 'Unknown';
-
-          userMap[userId] = {
-            'user_id': userId,
-            'display_name': displayName,
-            'avatar_url': profile?['steam_avatar_url'] as String?,
-            'score': 1,
-            'games': {achievement?['game_title_id'] as int},
-          };
-        }
-      }
-
-      // Convert to entries
-      final entries = userMap.entries.map((entry) {
-        final data = entry.value;
+      final entries = (response as List).map((row) {
         return LeaderboardEntry.fromJson({
-          'user_id': entry.key,
-          'display_name': data['display_name'],
-          'avatar_url': data['avatar_url'],
-          'score': data['score'],
-          'games_count': (data['games'] as Set).length,
+          'user_id': row['user_id'],
+          'display_name': row['display_name'],
+          'avatar_url': row['avatar_url'],
+          'score': (row['achievement_count'] as num?)?.toInt() ?? 0,
+          'games_count': (row['total_games'] as num?)?.toInt() ?? 0,
         });
-      }).toList()
-        ..sort((a, b) => b.score.compareTo(a.score));
+      }).toList();
 
-      return entries.take(limit).toList();
+      return entries;
     } catch (e) {
       rethrow;
     }
@@ -424,11 +340,14 @@ class LeaderboardRepository {
     int limit = 100,
     int offset = 0,
   }) async {
-    final response = await _client.rpc('get_statusxp_period_leaderboard', params: {
-      'p_period_type': _periodTypeToSql(periodType),
-      'limit_count': limit,
-      'offset_count': offset,
-    });
+    final response = await _client.rpc(
+      'get_statusxp_period_leaderboard',
+      params: {
+        'p_period_type': _periodTypeToSql(periodType),
+        'limit_count': limit,
+        'offset_count': offset,
+      },
+    );
 
     return (response as List).map((row) {
       return SeasonalLeaderboardEntry(
@@ -448,11 +367,14 @@ class LeaderboardRepository {
     int limit = 100,
     int offset = 0,
   }) async {
-    final response = await _client.rpc('get_psn_period_leaderboard', params: {
-      'p_period_type': _periodTypeToSql(periodType),
-      'limit_count': limit,
-      'offset_count': offset,
-    });
+    final response = await _client.rpc(
+      'get_psn_period_leaderboard',
+      params: {
+        'p_period_type': _periodTypeToSql(periodType),
+        'limit_count': limit,
+        'offset_count': offset,
+      },
+    );
 
     return (response as List).map((row) {
       final platinumCount = (row['platinum_count'] as num?)?.toInt() ?? 0;
@@ -462,7 +384,8 @@ class LeaderboardRepository {
         avatarUrl: row['avatar_url'] as String?,
         periodGain: (row['period_gain'] as num?)?.toInt() ?? 0,
         currentScore: platinumCount,
-        baselineScore: platinumCount - ((row['period_gain'] as num?)?.toInt() ?? 0),
+        baselineScore:
+            platinumCount - ((row['period_gain'] as num?)?.toInt() ?? 0),
         gamesCount: (row['total_games'] as num?)?.toInt() ?? 0,
         platinumCount: platinumCount,
         goldCount: (row['gold_count'] as num?)?.toInt() ?? 0,
@@ -478,11 +401,14 @@ class LeaderboardRepository {
     int limit = 100,
     int offset = 0,
   }) async {
-    final response = await _client.rpc('get_xbox_period_leaderboard', params: {
-      'p_period_type': _periodTypeToSql(periodType),
-      'limit_count': limit,
-      'offset_count': offset,
-    });
+    final response = await _client.rpc(
+      'get_xbox_period_leaderboard',
+      params: {
+        'p_period_type': _periodTypeToSql(periodType),
+        'limit_count': limit,
+        'offset_count': offset,
+      },
+    );
 
     return (response as List).map((row) {
       final gamerscore = (row['gamerscore'] as num?)?.toInt() ?? 0;
@@ -505,11 +431,14 @@ class LeaderboardRepository {
     int limit = 100,
     int offset = 0,
   }) async {
-    final response = await _client.rpc('get_steam_period_leaderboard', params: {
-      'p_period_type': _periodTypeToSql(periodType),
-      'limit_count': limit,
-      'offset_count': offset,
-    });
+    final response = await _client.rpc(
+      'get_steam_period_leaderboard',
+      params: {
+        'p_period_type': _periodTypeToSql(periodType),
+        'limit_count': limit,
+        'offset_count': offset,
+      },
+    );
 
     return (response as List).map((row) {
       final achievements = (row['achievement_count'] as num?)?.toInt() ?? 0;
@@ -527,16 +456,70 @@ class LeaderboardRepository {
     }).toList();
   }
 
+  Future<SeasonalUserBreakdownData> getSeasonalUserBreakdown({
+    required String targetUserId,
+    required SeasonalBoardType boardType,
+    required LeaderboardPeriodType periodType,
+    int limit = 200,
+    int offset = 0,
+  }) async {
+    final periodTypeSql = _periodTypeToSql(periodType);
+    final boardTypeSql = _boardTypeToSql(boardType);
+
+    final startRaw = await _client.rpc(
+      'get_leaderboard_period_start',
+      params: {'p_period_type': periodTypeSql},
+    );
+
+    final periodStart = DateTime.parse(startRaw.toString()).toUtc();
+    final periodEnd = periodType == LeaderboardPeriodType.monthly
+        ? DateTime.utc(periodStart.year, periodStart.month + 1, 1)
+        : periodStart.add(const Duration(days: 7));
+
+    final response = await _client.rpc(
+      'get_user_seasonal_game_breakdown',
+      params: {
+        'p_target_user_id': targetUserId,
+        'p_board_type': boardTypeSql,
+        'p_period_type': periodTypeSql,
+        'limit_count': limit,
+        'offset_count': offset,
+      },
+    );
+
+    final contributions = (response as List).map((row) {
+      return SeasonalGameContribution(
+        platformId: (row['platform_id'] as num?)?.toInt() ?? 0,
+        platformGameId: row['platform_game_id'] as String? ?? '',
+        gameName: row['game_name'] as String? ?? 'Unknown Game',
+        coverUrl: row['cover_url'] as String?,
+        periodGain: (row['period_gain'] as num?)?.toInt() ?? 0,
+        earnedCount: (row['earned_count'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+
+    return SeasonalUserBreakdownData(
+      periodStart: periodStart,
+      periodEnd: periodEnd,
+      contributions: contributions,
+    );
+  }
+
   Future<List<HallOfFameEntry>> getHallOfFame({
     required LeaderboardPeriodType periodType,
     SeasonalBoardType? boardType,
-    int limit = 200,
+    int limit = 120,
   }) async {
-    final response = await _client.rpc('get_leaderboard_hall_of_fame', params: {
-      'p_period_type': _periodTypeToSql(periodType),
-      'p_leaderboard_type': boardType != null ? _boardTypeToSql(boardType) : null,
-      'limit_count': limit,
-    });
+    final response = await _client.rpc(
+      'get_leaderboard_hall_of_fame',
+      params: {
+        'p_period_type': _periodTypeToSql(periodType),
+        'p_leaderboard_type': boardType != null
+            ? _boardTypeToSql(boardType)
+            : null,
+        'limit_count': limit,
+      },
+    );
 
     return (response as List).map(_mapHallOfFameRow).toList();
   }
@@ -544,10 +527,21 @@ class LeaderboardRepository {
   Future<List<HallOfFameEntry>> getLatestPeriodWinners({
     required LeaderboardPeriodType periodType,
   }) async {
-    final response = await _client.rpc('get_latest_period_winners', params: {
-      'p_period_type': _periodTypeToSql(periodType),
-    });
-    return (response as List).map(_mapHallOfFameRow).toList();
+    final response = await _client.rpc(
+      'get_leaderboard_hall_of_fame',
+      params: {
+        'p_period_type': _periodTypeToSql(periodType),
+        'p_leaderboard_type': null,
+        'limit_count': 40,
+      },
+    );
+    final entries = (response as List).map(_mapHallOfFameRow).toList();
+    if (entries.isEmpty) return const [];
+
+    final latestPeriodStart = entries.first.periodStart;
+    return entries
+        .where((entry) => entry.periodStart == latestPeriodStart)
+        .toList();
   }
 
   HallOfFameEntry _mapHallOfFameRow(dynamic row) {
@@ -615,66 +609,89 @@ final supabaseClientProvider = Provider<SupabaseClient>((ref) {
 });
 
 /// Provider for specific leaderboard type
-final leaderboardProvider = FutureProvider.family<List<LeaderboardEntry>, LeaderboardType>(
-  (ref, type) async {
-    final repository = ref.watch(leaderboardRepositoryProvider);
+final leaderboardProvider =
+    FutureProvider.family<List<LeaderboardEntry>, LeaderboardType>((
+      ref,
+      type,
+    ) async {
+      final repository = ref.watch(leaderboardRepositoryProvider);
 
-    switch (type) {
-      case LeaderboardType.statusXP:
-        return repository.getStatusXPLeaderboard();
-      case LeaderboardType.platinums:
-        return repository.getPlatinumLeaderboard();
-      case LeaderboardType.xboxAchievements:
-        return repository.getXboxLeaderboard();
-      case LeaderboardType.steamAchievements:
-        return repository.getSteamLeaderboard();
-    }
-  },
-);
+      switch (type) {
+        case LeaderboardType.statusXP:
+          return repository.getStatusXPLeaderboard();
+        case LeaderboardType.platinums:
+          return repository.getPlatinumLeaderboard();
+        case LeaderboardType.xboxAchievements:
+          return repository.getXboxLeaderboard();
+        case LeaderboardType.steamAchievements:
+          return repository.getSteamLeaderboard();
+      }
+    });
 
-final seasonalLeaderboardProvider = FutureProvider.family<List<SeasonalLeaderboardEntry>, SeasonalLeaderboardQuery>(
-  (ref, query) async {
-    final repository = ref.watch(leaderboardRepositoryProvider);
+final seasonalLeaderboardProvider =
+    FutureProvider.family<
+      List<SeasonalLeaderboardEntry>,
+      SeasonalLeaderboardQuery
+    >((ref, query) async {
+      final repository = ref.watch(leaderboardRepositoryProvider);
 
-    switch (query.boardType) {
-      case SeasonalBoardType.statusXP:
-        return repository.getStatusXPSeasonalLeaderboard(
-          periodType: query.periodType,
-          limit: query.limit,
-          offset: query.offset,
-        );
-      case SeasonalBoardType.platinums:
-        return repository.getPSNSeasonalLeaderboard(
-          periodType: query.periodType,
-          limit: query.limit,
-          offset: query.offset,
-        );
-      case SeasonalBoardType.xbox:
-        return repository.getXboxSeasonalLeaderboard(
-          periodType: query.periodType,
-          limit: query.limit,
-          offset: query.offset,
-        );
-      case SeasonalBoardType.steam:
-        return repository.getSteamSeasonalLeaderboard(
-          periodType: query.periodType,
-          limit: query.limit,
-          offset: query.offset,
-        );
-    }
-  },
-);
+      switch (query.boardType) {
+        case SeasonalBoardType.statusXP:
+          return repository.getStatusXPSeasonalLeaderboard(
+            periodType: query.periodType,
+            limit: query.limit,
+            offset: query.offset,
+          );
+        case SeasonalBoardType.platinums:
+          return repository.getPSNSeasonalLeaderboard(
+            periodType: query.periodType,
+            limit: query.limit,
+            offset: query.offset,
+          );
+        case SeasonalBoardType.xbox:
+          return repository.getXboxSeasonalLeaderboard(
+            periodType: query.periodType,
+            limit: query.limit,
+            offset: query.offset,
+          );
+        case SeasonalBoardType.steam:
+          return repository.getSteamSeasonalLeaderboard(
+            periodType: query.periodType,
+            limit: query.limit,
+            offset: query.offset,
+          );
+      }
+    });
 
-final hallOfFameProvider = FutureProvider.family<List<HallOfFameEntry>, LeaderboardPeriodType>(
-  (ref, periodType) async {
-    final repository = ref.watch(leaderboardRepositoryProvider);
-    return repository.getHallOfFame(periodType: periodType, limit: 400);
-  },
-);
+final seasonalUserBreakdownProvider =
+    FutureProvider.family<
+      SeasonalUserBreakdownData,
+      SeasonalUserBreakdownQuery
+    >((ref, query) async {
+      final repository = ref.watch(leaderboardRepositoryProvider);
+      return repository.getSeasonalUserBreakdown(
+        targetUserId: query.targetUserId,
+        boardType: query.boardType,
+        periodType: query.periodType,
+        limit: query.limit,
+        offset: query.offset,
+      );
+    });
 
-final latestPeriodWinnersProvider = FutureProvider.family<List<HallOfFameEntry>, LeaderboardPeriodType>(
-  (ref, periodType) async {
-    final repository = ref.watch(leaderboardRepositoryProvider);
-    return repository.getLatestPeriodWinners(periodType: periodType);
-  },
-);
+final hallOfFameProvider =
+    FutureProvider.family<List<HallOfFameEntry>, LeaderboardPeriodType>((
+      ref,
+      periodType,
+    ) async {
+      final repository = ref.watch(leaderboardRepositoryProvider);
+      return repository.getHallOfFame(periodType: periodType, limit: 120);
+    });
+
+final latestPeriodWinnersProvider =
+    FutureProvider.family<List<HallOfFameEntry>, LeaderboardPeriodType>((
+      ref,
+      periodType,
+    ) async {
+      final repository = ref.watch(leaderboardRepositoryProvider);
+      return repository.getLatestPeriodWinners(periodType: periodType);
+    });

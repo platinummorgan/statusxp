@@ -6,6 +6,7 @@ import 'package:statusxp/domain/flex_room_data.dart';
 import 'package:statusxp/data/repositories/flex_room_repository.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
+import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
 import 'package:statusxp/ui/widgets/achievement_picker_modal.dart';
 
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
@@ -287,7 +288,10 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
 
             const SizedBox(height: 16),
 
-            if (isOwner) _buildOwnerEditAction(userId),
+            if (isOwner)
+              _buildOwnerEditAction(userId)
+            else
+              _buildViewerGameHistoryAction(userId),
 
             const SizedBox(height: 16),
 
@@ -376,6 +380,37 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewerGameHistoryAction(String userId) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => UnifiedGamesListScreen(
+                  targetUserId: userId,
+                  targetDisplayName: _username,
+                ),
+              ),
+            );
+          },
+          icon: const Icon(Icons.view_list_rounded),
+          label: const Text('View Full Game History'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: CyberpunkTheme.neonCyan,
+            side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.55)),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
         ),
       ),
     );

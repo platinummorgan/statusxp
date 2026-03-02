@@ -45,12 +45,14 @@ final trophyHelpServiceProvider = Provider<TrophyHelpService>((ref) {
 });
 
 /// Provider for the AchievementCommentService instance.
-final achievementCommentServiceProvider = Provider<AchievementCommentService>((ref) {
+final achievementCommentServiceProvider = Provider<AchievementCommentService>((
+  ref,
+) {
   return AchievementCommentService(ref.read(supabaseClientProvider));
 });
 
 /// StateProvider for requesting a local biometric lock.
-/// 
+///
 /// Used to trigger a lock screen without signing out.
 final biometricLockRequestedProvider = StateProvider<bool>((ref) {
   return false;
@@ -62,7 +64,7 @@ final biometricUnlockGrantedProvider = StateProvider<bool>((ref) {
 });
 
 /// StreamProvider for authentication state changes.
-/// 
+///
 /// Emits whenever the user signs in, signs out, or the token refreshes.
 /// Network errors during token refresh are silently handled to prevent error dialogs.
 final authStateProvider = StreamProvider<AuthState>((ref) {
@@ -84,7 +86,7 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
 });
 
 /// Provider for the current user ID.
-/// 
+///
 /// Returns the authenticated user's ID, or null if not authenticated.
 final currentUserIdProvider = Provider<String?>((ref) {
   final authService = ref.watch(authServiceProvider);
@@ -110,7 +112,7 @@ final twitchServiceProvider = Provider<TwitchService>((ref) {
 });
 
 /// StreamProvider for PSN sync status.
-/// 
+///
 /// Watches sync status and updates UI automatically during syncs.
 final psnSyncStatusProvider = StreamProvider<PSNSyncStatus>((ref) {
   final psnService = ref.watch(psnServiceProvider);
@@ -118,7 +120,7 @@ final psnSyncStatusProvider = StreamProvider<PSNSyncStatus>((ref) {
 });
 
 /// StreamProvider for Xbox sync status.
-/// 
+///
 /// Watches sync status and updates UI automatically during syncs.
 final xboxSyncStatusProvider = StreamProvider<XboxSyncStatus>((ref) {
   final xboxService = ref.watch(xboxServiceProvider);
@@ -132,7 +134,9 @@ final gameRepositoryProvider = Provider<SupabaseGameRepository>((ref) {
 });
 
 /// Provider for the SupabaseUserStatsRepository instance.
-final userStatsRepositoryProvider = Provider<SupabaseUserStatsRepository>((ref) {
+final userStatsRepositoryProvider = Provider<SupabaseUserStatsRepository>((
+  ref,
+) {
   final client = ref.watch(supabaseClientProvider);
   return SupabaseUserStatsRepository(client);
 });
@@ -150,13 +154,17 @@ final trophyRoomRepositoryProvider = Provider<TrophyRoomRepository>((ref) {
 });
 
 /// Provider for the Platform Achievement Checker instance.
-final platformAchievementCheckerProvider = Provider<PlatformAchievementChecker>((ref) {
-  final client = ref.watch(supabaseClientProvider);
-  return PlatformAchievementChecker(client);
-});
+final platformAchievementCheckerProvider = Provider<PlatformAchievementChecker>(
+  (ref) {
+    final client = ref.watch(supabaseClientProvider);
+    return PlatformAchievementChecker(client);
+  },
+);
 
 /// Provider for the SupabaseDashboardRepository instance.
-final dashboardRepositoryProvider = Provider<SupabaseDashboardRepository>((ref) {
+final dashboardRepositoryProvider = Provider<SupabaseDashboardRepository>((
+  ref,
+) {
   final client = ref.watch(supabaseClientProvider);
   return SupabaseDashboardRepository(client);
 });
@@ -168,66 +176,76 @@ final unifiedGamesRepositoryProvider = Provider<UnifiedGamesRepository>((ref) {
 });
 
 /// FutureProvider for loading games for the current user.
-/// 
+///
 /// This provider loads games asynchronously from Supabase.
 /// Returns empty list if no user is authenticated.
 final gamesProvider = FutureProvider<List<Game>>((ref) async {
   final repository = ref.watch(gameRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
-  
+
   if (userId == null) {
     return [];
   }
-  
+
   return repository.getGamesForUser(userId);
 });
 
 /// FutureProvider for loading unified cross-platform games.
-/// 
+///
 /// Groups games by title across all platforms (PSN/Xbox/Steam).
 final unifiedGamesProvider = FutureProvider<List<UnifiedGame>>((ref) async {
   final repository = ref.watch(unifiedGamesRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
-  
+
   if (userId == null) {
     return [];
   }
-  
+
   return repository.getUnifiedGames(userId);
 });
 
+/// FutureProvider for loading unified games for a public target user.
+///
+/// Uses public visibility constraints in the underlying RPC and returns
+/// an empty list when inaccessible.
+final publicUnifiedGamesProvider =
+    FutureProvider.family<List<UnifiedGame>, String>((ref, targetUserId) async {
+      final repository = ref.watch(unifiedGamesRepositoryProvider);
+      return repository.getPublicUnifiedGames(targetUserId);
+    });
+
 /// FutureProvider for loading user statistics for the current user.
-/// 
+///
 /// This provider loads user stats asynchronously from Supabase.
 /// Throws if no user is authenticated (should not happen in normal flow).
 final userStatsProvider = FutureProvider<UserStats>((ref) async {
   final repository = ref.watch(userStatsRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
-  
+
   if (userId == null) {
     throw Exception('Cannot load stats: No authenticated user');
   }
-  
+
   return repository.getUserStats(userId);
 });
 
 /// FutureProvider for loading dashboard statistics for the current user.
-/// 
+///
 /// This provider loads cross-platform dashboard stats including StatusXP score.
 /// Returns empty stats if no user is authenticated.
 final dashboardStatsProvider = FutureProvider<DashboardStats?>((ref) async {
   final repository = ref.watch(dashboardRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
-  
+
   if (userId == null) {
     return null;
   }
-  
+
   try {
     return await repository.getDashboardStats(userId);
   } catch (e) {
     // Silently return null on network errors to prevent error dialogs
-    if (e.toString().contains('SocketException') || 
+    if (e.toString().contains('SocketException') ||
         e.toString().contains('Failed host lookup') ||
         e.toString().contains('AuthRetryableFetchException')) {
       return null;
@@ -237,39 +255,41 @@ final dashboardStatsProvider = FutureProvider<DashboardStats?>((ref) async {
 });
 
 /// FutureProvider for loading Trophy Room data for the current user.
-/// 
+///
 /// Fetches platinum trophies, ultra-rare trophies, and recent unlocks.
 final trophyRoomDataProvider = FutureProvider<TrophyRoomData>((ref) async {
   final repository = ref.watch(trophyRoomRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
-  
+
   if (userId == null) {
     throw Exception('Cannot load trophy room: No authenticated user');
   }
-  
+
   // Fetch all data in parallel for performance
   final results = await Future.wait([
     repository.getPlatinumTrophies(userId),
     repository.getUltraRareTrophies(userId, limit: 5),
     repository.getRecentTrophies(userId, limit: 10),
   ]);
-  
+
   return TrophyRoomData(
     platinums: results[0].map((m) => PlatinumTrophy.fromMap(m)).toList(),
-    ultraRareTrophies: results[1].map((m) => UltraRareTrophy.fromMap(m)).toList(),
+    ultraRareTrophies: results[1]
+        .map((m) => UltraRareTrophy.fromMap(m))
+        .toList(),
     recentTrophies: results[2].map((m) => RecentTrophy.fromMap(m)).toList(),
   );
 });
 
 /// Provider for the UserStatsCalculator.
-/// 
+///
 /// This calculator recomputes user stats from a list of games.
 final userStatsCalculatorProvider = Provider<UserStatsCalculator>((ref) {
   return const UserStatsCalculator();
 });
 
 /// Provider for the SupabaseGameEditService.
-/// 
+///
 /// This service handles game updates with automatic stats recalculation.
 /// Requires authenticated user.
 final gameEditServiceProvider = Provider<SupabaseGameEditService?>((ref) {
@@ -277,11 +297,11 @@ final gameEditServiceProvider = Provider<SupabaseGameEditService?>((ref) {
   final statsRepo = ref.watch(userStatsRepositoryProvider);
   final calculator = ref.watch(userStatsCalculatorProvider);
   final userId = ref.watch(currentUserIdProvider);
-  
+
   if (userId == null) {
     return null;
   }
-  
+
   return SupabaseGameEditService(
     gameRepository: gameRepo,
     userStatsRepository: statsRepo,
@@ -295,52 +315,64 @@ final gameEditServiceProvider = Provider<SupabaseGameEditService?>((ref) {
 final leaderboardRanksProvider = FutureProvider<Map<String, int?>>((ref) async {
   final client = ref.watch(supabaseClientProvider);
   final userId = client.auth.currentUser?.id;
-  
+
   if (userId == null) {
-    return {
-      'global': null,
-      'psn': null,
-      'xbox': null,
-      'steam': null,
-    };
+    return {'global': null, 'psn': null, 'xbox': null, 'steam': null};
   }
-  
+
   // Fetch all ranks in parallel for optimal performance
   final results = await Future.wait([
     // Global rank - use leaderboard_cache table (same as leaderboard screen)
-    client.from('leaderboard_cache').select('user_id,total_statusxp').gt('total_statusxp', 0).order('total_statusxp', ascending: false),
+    client
+        .from('leaderboard_cache')
+        .select('user_id,total_statusxp')
+        .gt('total_statusxp', 0)
+        .order('total_statusxp', ascending: false),
     // PSN leaderboard - fetch all to calculate rank client-side
-    client.from('psn_leaderboard_cache').select('user_id,platinum_count,gold_count,silver_count,bronze_count').order('platinum_count', ascending: false).order('gold_count', ascending: false).order('silver_count', ascending: false).order('bronze_count', ascending: false),
-    // Xbox leaderboard - fetch all to calculate rank client-side  
-    client.from('xbox_leaderboard_cache').select('user_id,gamerscore,achievement_count').order('gamerscore', ascending: false).order('achievement_count', ascending: false),
+    client
+        .from('psn_leaderboard_cache')
+        .select('user_id,platinum_count,gold_count,silver_count,bronze_count')
+        .order('platinum_count', ascending: false)
+        .order('gold_count', ascending: false)
+        .order('silver_count', ascending: false)
+        .order('bronze_count', ascending: false),
+    // Xbox leaderboard - fetch all to calculate rank client-side
+    client
+        .from('xbox_leaderboard_cache')
+        .select('user_id,gamerscore,achievement_count')
+        .order('gamerscore', ascending: false)
+        .order('achievement_count', ascending: false),
     // Steam leaderboard - fetch all to calculate rank client-side
-    client.from('steam_leaderboard_cache').select('user_id,achievement_count').order('achievement_count', ascending: false),
+    client
+        .from('steam_leaderboard_cache')
+        .select('user_id,achievement_count')
+        .order('achievement_count', ascending: false),
   ]);
-  
+
   // Calculate Global rank
   int? globalRank;
   final globalList = results[0] as List;
   final globalIndex = globalList.indexWhere((row) => row['user_id'] == userId);
   globalRank = globalIndex >= 0 ? globalIndex + 1 : null;
-  
+
   // Calculate PSN rank
   int? psnRank;
   final psnList = results[1] as List;
   final psnIndex = psnList.indexWhere((row) => row['user_id'] == userId);
   psnRank = psnIndex >= 0 ? psnIndex + 1 : null;
-  
+
   // Calculate Xbox rank
   int? xboxRank;
   final xboxList = results[2] as List;
   final xboxIndex = xboxList.indexWhere((row) => row['user_id'] == userId);
   xboxRank = xboxIndex >= 0 ? xboxIndex + 1 : null;
-  
+
   // Calculate Steam rank
   int? steamRank;
   final steamList = results[3] as List;
   final steamIndex = steamList.indexWhere((row) => row['user_id'] == userId);
   steamRank = steamIndex >= 0 ? steamIndex + 1 : null;
-  
+
   return {
     'global': globalRank,
     'psn': psnRank,
