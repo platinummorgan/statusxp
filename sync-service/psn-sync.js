@@ -17,8 +17,91 @@ const supabase = createClient(
 
 const ENV_BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '20', 10);
 const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '3', 10);
+const ENV_USER_ACHIEVEMENTS_BATCH_SIZE = parseInt(process.env.USER_ACHIEVEMENTS_BATCH_SIZE || '100', 10);
+const PSN_RELINK_ERROR_MESSAGE =
+  'PlayStation session expired. Disconnect and reconnect PlayStation in Settings, then sync again.';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function extractErrorText(error) {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+
+  const parts = [];
+
+  if (error.message) parts.push(String(error.message));
+  if (error.code) parts.push(String(error.code));
+  if (error.status) parts.push(String(error.status));
+  if (error.statusCode) parts.push(String(error.statusCode));
+
+  const responseData = error.response?.data;
+  if (responseData) {
+    if (typeof responseData === 'string') parts.push(responseData);
+    else {
+      try {
+        parts.push(JSON.stringify(responseData));
+      } catch (_) {
+        // Ignore serialization issues and continue with what we have.
+      }
+    }
+  }
+
+  if (error.cause) {
+    const causeText = extractErrorText(error.cause);
+    if (causeText) parts.push(causeText);
+  }
+
+  if (parts.length === 0) {
+    try {
+      parts.push(JSON.stringify(error));
+    } catch (_) {
+      parts.push(String(error));
+    }
+  }
+
+  return parts.join(' | ');
+}
+
+function isPsnAuthExpiredError(error) {
+  const text = extractErrorText(error).toLowerCase();
+  if (!text) return false;
+
+  const tokenMarkers = [
+    'invalid_grant',
+    'invalid client',
+    'invalid_client',
+    'refresh token',
+    'token expired',
+    'expired token',
+    'jwt expired',
+    'oauth token',
+    'authorization token',
+    'unauthorized',
+    'forbidden',
+    '401',
+    '403',
+    'relink',
+    'reauthorize',
+  ];
+
+  if (tokenMarkers.some((marker) => text.includes(marker))) {
+    return true;
+  }
+
+  return (
+    text.includes('bad request') &&
+    (text.includes('exchange') || text.includes('auth') || text.includes('token'))
+  );
+}
+
+function normalizePsnSyncError(error) {
+  if (isPsnAuthExpiredError(error)) {
+    return PSN_RELINK_ERROR_MESSAGE;
+  }
+
+  const raw = extractErrorText(error).trim();
+  return raw ? raw.substring(0, 500) : 'PSN sync failed';
+}
 
 // Helper to download external avatar and upload to Supabase Storage
 async function uploadExternalAvatar(externalUrl, userId, platform) {
@@ -197,6 +280,23 @@ function validatePlatformMapping(trophyTitlePlatform, platformId, gameName, npCo
   }
   
   return true;
+}
+
+function getNumericProgressPercent(title) {
+  const raw = title?.progress;
+  if (raw == null) return 0;
+  const parsed = typeof raw === 'number' ? raw : parseFloat(String(raw));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getEarnedTrophySummaryCount(title) {
+  const earned = title?.earnedTrophies || {};
+  return (
+    Number(earned.bronze || 0) +
+    Number(earned.silver || 0) +
+    Number(earned.gold || 0) +
+    Number(earned.platinum || 0)
+  );
 }
 
 async function updateSyncStatus(userId, updates, retries = 3) {
@@ -393,6 +493,49 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
 }
 
 async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTrophies }) {
+  const MAX_TIMEOUT_RETRIES = 6;
+
+  async function upsertChunkWithRetry(chunk, attempt = 1) {
+    const { error } = await supabase
+      .from('user_achievements')
+      .upsert(chunk, { onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id' });
+
+    if (!error) return;
+
+    const message = String(error.message || '').toLowerCase();
+    const isTimeoutLike =
+      message.includes('statement timeout') ||
+      message.includes('canceling statement') ||
+      message.includes('deadlock') ||
+      message.includes('could not serialize') ||
+      message.includes('lock timeout');
+
+    // If the DB times out, progressively split chunk sizes down to single-row upserts.
+    if (isTimeoutLike && chunk.length > 1) {
+      const splitPoint = Math.ceil(chunk.length / 2);
+      const first = chunk.slice(0, splitPoint);
+      const second = chunk.slice(splitPoint);
+      console.warn(
+        `⚠️ user_achievements upsert timeout on ${chunk.length} rows; splitting into ${first.length}+${second.length}`
+      );
+      await upsertChunkWithRetry(first, 1);
+      await upsertChunkWithRetry(second, 1);
+      return;
+    }
+
+    if (isTimeoutLike && attempt < MAX_TIMEOUT_RETRIES) {
+      const backoffMs = Math.min(5000, 300 * (2 ** (attempt - 1)));
+      console.warn(
+        `⚠️ user_achievements upsert retry ${attempt}/${MAX_TIMEOUT_RETRIES} after timeout (${chunk.length} rows), waiting ${backoffMs}ms`
+      );
+      await sleep(backoffMs);
+      await upsertChunkWithRetry(chunk, attempt + 1);
+      return;
+    }
+
+    throw new Error(`Failed to upsert user_achievements batch: ${error.message}`);
+  }
+
   const earnedRows = [];
   let mostRecent = null;
 
@@ -422,14 +565,13 @@ async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTro
   }
 
   if (earnedRows.length) {
-    const BATCH_SIZE = 500;
+    const configuredBatchSize = Number.isFinite(ENV_USER_ACHIEVEMENTS_BATCH_SIZE)
+      ? ENV_USER_ACHIEVEMENTS_BATCH_SIZE
+      : 100;
+    const BATCH_SIZE = Math.max(1, configuredBatchSize);
     for (let i = 0; i < earnedRows.length; i += BATCH_SIZE) {
       const chunk = earnedRows.slice(i, i + BATCH_SIZE);
-      const { error } = await supabase
-        .from('user_achievements')
-        .upsert(chunk, { onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id' });
-
-      if (error) throw new Error(`Failed to upsert user_achievements batch: ${error.message}`);
+      await upsertChunkWithRetry(chunk);
     }
   }
 
@@ -487,6 +629,10 @@ export async function syncPSNAchievements(
   options = {}
 ) {
   console.log(`Starting PSN sync for user ${userId}`);
+  let preSnapshot = null;
+  let processedGames = 0;
+  let totalEarnedTrophiesUpserted = 0;
+  let activityFeedGenerated = false;
 
   try {
     try {
@@ -508,7 +654,7 @@ export async function syncPSNAchievements(
 
     // Create pre-sync snapshot for activity feed
     console.log('📸 Creating pre-sync snapshot for activity feed...');
-    const preSnapshot = await createPreSyncSnapshot(userId);
+    preSnapshot = await createPreSyncSnapshot(userId);
     if (!preSnapshot) {
       console.warn('⚠️ Failed to create pre-sync snapshot, activity feed disabled for this sync');
     }
@@ -586,9 +732,36 @@ export async function syncPSNAchievements(
       return;
     }
 
-    // Keep your behavior: only titles with progress > 0
-    // If you want *all* titles, change this to: const gamesToProcess = allTitles;
-    let gamesToProcess = allTitles.filter((t) => Number(t.progress || 0) > 0);
+    // Primary eligibility: progress > 0 OR any earned trophies in summary.
+    // Using both fields guards against PSN responses where progress can be missing/0.
+    const titlesWithProgress = allTitles.filter((t) => getNumericProgressPercent(t) > 0).length;
+    const titlesWithEarnedSummary = allTitles.filter((t) => getEarnedTrophySummaryCount(t) > 0).length;
+    let gamesToProcess = allTitles.filter(
+      (t) => getNumericProgressPercent(t) > 0 || getEarnedTrophySummaryCount(t) > 0
+    );
+
+    console.log(
+      `[PSN FILTER] allTitles=${allTitles.length}, progress>0=${titlesWithProgress}, earnedSummary>0=${titlesWithEarnedSummary}, eligible=${gamesToProcess.length}`
+    );
+
+    // If this user already has tracked PSN games but the API reported 0 eligible titles,
+    // fall back to processing all titles to self-heal stale/changed PSN field behavior.
+    if (!gamesToProcess.length && allTitles.length > 0) {
+      const { count: existingTrackedCount } = await supabase
+        .from('user_progress')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .in('platform_id', [1, 2, 5, 9]);
+
+      if ((existingTrackedCount || 0) > 0) {
+        console.warn(
+          `[PSN FILTER] 0 eligible titles but found ${existingTrackedCount} existing PSN user_progress rows. Falling back to all titles for this run.`
+        );
+        gamesToProcess = [...allTitles];
+      }
+    }
+
+    const preDedupCount = gamesToProcess.length;
 
     // DEDUP FIX: Remove duplicate cross-gen games (same npCommunicationId on multiple platforms)
     // PSN API returns cross-gen games multiple times - keep only the newest platform version
@@ -616,16 +789,20 @@ export async function syncPSNAchievements(
     }
     gamesToProcess = dedupedGames;
 
-    console.log(`Found ${gamesToProcess.length} games after deduplication (removed ${allTitles.filter((t) => Number(t.progress || 0) > 0).length - gamesToProcess.length} duplicates)`);
+    console.log(
+      `Found ${gamesToProcess.length} games after deduplication (removed ${preDedupCount - gamesToProcess.length} duplicates)`
+    );
     logMemory('After filtering gamesToProcess');
+
+    await supabase
+      .from('psn_sync_logs')
+      .update({ games_total: gamesToProcess.length })
+      .eq('id', syncLogId);
 
     const BATCH_SIZE = parseInt(options.batchSize, 10) || ENV_BATCH_SIZE;
     const MAX_CONCURRENT = parseInt(options.maxConcurrent, 10) || ENV_MAX_CONCURRENT;
     const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
     console.log(`Using BATCH_SIZE=${BATCH_SIZE}, MAX_CONCURRENT=${MAX_CONCURRENT}`);
-
-    let processedGames = 0;
-    let totalEarnedTrophiesUpserted = 0;
 
     const { data: existingUserGames } = await supabase
       .from('user_progress')
@@ -938,6 +1115,7 @@ export async function syncPSNAchievements(
       console.log('📊 Detecting changes and generating activity feed stories...');
       try {
         await detectChangesAndGenerateStories(userId, preSnapshot);
+        activityFeedGenerated = true;
         console.log('✅ Activity feed stories generated');
       } catch (feedError) {
         console.error('⚠️ Activity feed generation failed (non-fatal):', feedError);
@@ -955,13 +1133,27 @@ export async function syncPSNAchievements(
       .eq('id', syncLogId);
 
     console.log(`✅ PSN sync completed: games=${processedGames}, earned trophies upserted=${totalEarnedTrophiesUpserted}`);
+    return { success: true };
   } catch (error) {
     console.error('🚨 PSN sync failed:', error);
+    const normalizedError = normalizePsnSyncError(error);
+
+    // If this sync partially wrote trophy data before failing, still try to emit stories.
+    if (preSnapshot && !activityFeedGenerated) {
+      console.log('📊 Sync failed after start; attempting activity feed generation from partial progress...');
+      try {
+        await detectChangesAndGenerateStories(userId, preSnapshot);
+        activityFeedGenerated = true;
+        console.log('✅ Activity feed stories generated after partial failure');
+      } catch (feedError) {
+        console.error('⚠️ Activity feed generation after failure also failed:', feedError);
+      }
+    }
 
     await updateSyncStatus(userId, {
       psn_sync_status: 'error',
       psn_sync_progress: 0,
-      psn_sync_error: String(error.message || error).substring(0, 500),
+      psn_sync_error: normalizedError,
     });
 
     await supabase
@@ -969,8 +1161,12 @@ export async function syncPSNAchievements(
       .update({
         status: 'failed',
         completed_at: new Date().toISOString(),
-        error_message: String(error.message || error).substring(0, 500),
+        games_processed: processedGames,
+        trophies_synced: totalEarnedTrophiesUpserted,
+        error_message: normalizedError,
       })
       .eq('id', syncLogId);
+
+    return { success: false, error: normalizedError };
   }
 }

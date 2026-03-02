@@ -15,6 +15,8 @@ const STEAM_LOOKUP_CHUNK_SIZE = Math.max(25, parseInt(process.env.STEAM_LOOKUP_C
 const STEAM_ENABLE_CONSISTENCY_CHECKS = process.env.STEAM_ENABLE_CONSISTENCY_CHECKS !== 'false';
 const STEAM_ALWAYS_FETCH_APPDETAILS = process.env.STEAM_ALWAYS_FETCH_APPDETAILS === 'true';
 const STEAM_DEBUG_SYNC = process.env.STEAM_DEBUG_SYNC === 'true';
+const STEAM_RELINK_ERROR_MESSAGE =
+  'Steam API key is invalid or expired. Disconnect and reconnect Steam in Settings, then sync again.';
 
 // Helper to download external avatar and upload to Supabase Storage
 async function uploadExternalAvatar(externalUrl, userId, platform) {
@@ -79,6 +81,90 @@ function logMemory(label) {
   }
 }
 
+function extractErrorText(error) {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+
+  const parts = [];
+  if (error.message) parts.push(String(error.message));
+  if (error.code) parts.push(String(error.code));
+  if (error.status) parts.push(String(error.status));
+  if (error.statusCode) parts.push(String(error.statusCode));
+
+  if (error.cause) {
+    const causeText = extractErrorText(error.cause);
+    if (causeText) parts.push(causeText);
+  }
+
+  if (parts.length === 0) {
+    try {
+      parts.push(JSON.stringify(error));
+    } catch (_) {
+      parts.push(String(error));
+    }
+  }
+
+  return parts.join(' | ');
+}
+
+async function ensureSteamJsonResponse(response, operationLabel) {
+  const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
+  if (!contentType.includes('application/json')) {
+    let bodySnippet = '';
+    try {
+      bodySnippet = (await response.text()).replace(/\s+/g, ' ').trim().slice(0, 180);
+    } catch (_) {
+      bodySnippet = '';
+    }
+
+    const snippetSuffix = bodySnippet ? `, body="${bodySnippet}"` : '';
+    throw new Error(
+      `Steam API returned non-JSON response for ${operationLabel} (status ${response.status}, content-type ${contentType || 'unknown'}${snippetSuffix})`
+    );
+  }
+
+  let data = null;
+  try {
+    data = await response.json();
+  } catch (_) {
+    throw new Error(`Steam API returned invalid JSON for ${operationLabel} (status ${response.status})`);
+  }
+
+  if (!response.ok) {
+    const detail = extractErrorText(data).slice(0, 220);
+    throw new Error(
+      `Steam API request failed for ${operationLabel} (status ${response.status})${detail ? `: ${detail}` : ''}`
+    );
+  }
+
+  return data;
+}
+
+function normalizeSteamSyncError(error) {
+  const raw = extractErrorText(error).trim();
+  const text = raw.toLowerCase();
+
+  if (
+    text.includes('status 401') ||
+    text.includes('unauthorized') ||
+    text.includes('invalid key') ||
+    text.includes('invalid api key')
+  ) {
+    return STEAM_RELINK_ERROR_MESSAGE;
+  }
+
+  if (text.includes('status 429') || text.includes('rate limit')) {
+    return 'Steam API is rate-limiting requests right now. Please retry in a few minutes.';
+  }
+
+  if (text.includes('status 503') || text.includes('status 502') || text.includes('status 504')) {
+    return 'Steam API is temporarily unavailable. Please retry in a few minutes.';
+  }
+
+  return raw ? raw.substring(0, 500) : 'Steam sync failed';
+}
+
 export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, options = {}) {
   console.log(`Starting Steam sync for user ${userId}`);
   const syncStartedAtMs = Date.now();
@@ -93,12 +179,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       const playerResponse = await fetch(playerUrl);
       
       console.log('[STEAM NAME FETCH] Response status:', playerResponse.status);
-      const contentType = playerResponse.headers.get('content-type');
-      if (!playerResponse.ok || !contentType?.includes('application/json')) {
-        console.log(`[STEAM NAME FETCH] ❌ Invalid response (status ${playerResponse.status}, type ${contentType})`);
-        throw new Error(`Steam API returned non-JSON response`);
-      }
-      const playerData = await playerResponse.json();
+      const playerData = await ensureSteamJsonResponse(playerResponse, 'player summaries');
       console.log('[STEAM NAME FETCH] Response data:', JSON.stringify(playerData));
       const player = playerData.response?.players?.[0];
       if (player) {
@@ -148,6 +229,10 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       }
     } catch (e) {
       console.error('[STEAM NAME FETCH] ❌ EXCEPTION:', e.message, e.stack);
+      const normalizedNameFetchError = normalizeSteamSyncError(e);
+      if (normalizedNameFetchError === STEAM_RELINK_ERROR_MESSAGE) {
+        throw new Error(STEAM_RELINK_ERROR_MESSAGE);
+      }
     }
 
     // Set initial status
@@ -172,11 +257,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     const gamesResponse = await fetch(
       `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1`
     );
-    const gamesContentType = gamesResponse.headers.get('content-type');
-    if (!gamesResponse.ok || !gamesContentType?.includes('application/json')) {
-      throw new Error(`Steam API returned non-JSON response for owned games (status ${gamesResponse.status})`);
-    }
-    const gamesData = await gamesResponse.json();
+    const gamesData = await ensureSteamJsonResponse(gamesResponse, 'owned games');
     const ownedGames = gamesData.response?.games || [];
 
     console.log(`Found ${ownedGames.length} owned games`);
@@ -996,12 +1077,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
   } catch (error) {
     console.error('Steam sync failed:', error);
+    const normalizedError = normalizeSteamSyncError(error);
     
     await supabase
       .from('profiles')
       .update({
         steam_sync_status: 'error',
-        steam_sync_error: error.message,
+        steam_sync_error: normalizedError,
       })
       .eq('id', userId);
 
@@ -1010,7 +1092,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       .update({
         status: 'failed',
         completed_at: new Date().toISOString(),
-        error_message: error.message,
+        error_message: normalizedError,
       })
       .eq('id', syncLogId);
   }
