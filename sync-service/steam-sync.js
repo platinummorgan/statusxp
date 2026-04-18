@@ -255,7 +255,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
     // Fetch owned games
     const gamesResponse = await fetch(
-      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1`
+      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1&skip_unvetted_apps=false`
     );
     const gamesData = await ensureSteamJsonResponse(gamesResponse, 'owned games');
     const ownedGames = gamesData.response?.games || [];
@@ -756,7 +756,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             }
 
             // Upsert user_progress with V2 fields
-            await supabase
+            const { error: userProgressUpsertError } = await supabase
               .from('user_progress')
               .upsert({
                 user_id: userId,
@@ -765,7 +765,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 total_achievements: achievements.length,
                 achievements_earned: unlockedCount,
                 completion_percentage: progress,
-                last_trophy_earned_at: lastTrophyEarnedAt ? lastTrophyEarnedAt.toISOString() : null,
+                last_achievement_earned_at: lastTrophyEarnedAt ? lastTrophyEarnedAt.toISOString() : null,
                 metadata: {
                   platform_version: 'Steam',
                   is_dlc: isDLC,
@@ -781,6 +781,9 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               }, {
                 onConflict: 'user_id,platform_id,platform_game_id',
               });
+            if (userProgressUpsertError) {
+              throw new Error(`Failed to upsert user_progress for ${game.name}: ${userProgressUpsertError.message}`);
+            }
 
             // Fetch existing achievements to check for valid proxied URLs
             const achievementNames = achievements.map(a => a.name);
