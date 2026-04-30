@@ -3,55 +3,65 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/user_stats.dart';
 
 /// Supabase-based implementation of user statistics persistence.
-/// 
+///
 /// Fetches and updates user stats from the Supabase `user_stats` table.
 class SupabaseUserStatsRepository {
   final SupabaseClient _client;
-  
+
   SupabaseUserStatsRepository(this._client);
 
   /// Load user statistics for a specific user.
-  /// 
-  /// Calculates stats from user_games table using PSN's earnedTrophies summary data.
+  ///
+  /// Calculates stats from V2 `user_progress` metadata for PSN platforms.
   Future<UserStats> getUserStats(String userId) async {
     try {
-      // Get all games to calculate stats
+      const psnPlatformIds = [1, 2, 5, 9];
+
+      // Read live per-game progress rows (same source sync updates).
       final gamesResponse = await _client
-          .from('user_games')
-          .select('has_platinum, bronze_trophies, silver_trophies, gold_trophies, platinum_trophies')
+          .from('user_progress')
+          .select('platform_id, metadata')
           .eq('user_id', userId);
-      
+
       final games = gamesResponse as List;
-      final totalGames = games.length;
-      final totalPlatinums = games.where((g) => g['has_platinum'] == true).length;
-      
-      // Sum trophy counts from each game's PSN summary data
+      final psnGames = games.where((row) {
+        final platformId = _toInt((row as Map)['platform_id']);
+        return platformId != null && psnPlatformIds.contains(platformId);
+      }).toList();
+      final totalGames = psnGames.length;
+
+      // Sum trophy counts from PSN metadata.
       int bronzeCount = 0;
       int silverCount = 0;
       int goldCount = 0;
       int platinumCount = 0;
-      
-      for (final game in games) {
-        bronzeCount += (game['bronze_trophies'] as int? ?? 0);
-        silverCount += (game['silver_trophies'] as int? ?? 0);
-        goldCount += (game['gold_trophies'] as int? ?? 0);
-        platinumCount += (game['platinum_trophies'] as int? ?? 0);
+
+      for (final game in psnGames) {
+        final metadata = (game as Map)['metadata'];
+        if (metadata is! Map) continue;
+        bronzeCount += _toInt(metadata['bronze_trophies']) ?? 0;
+        silverCount += _toInt(metadata['silver_trophies']) ?? 0;
+        goldCount += _toInt(metadata['gold_trophies']) ?? 0;
+        platinumCount += _toInt(metadata['platinum_trophies']) ?? 0;
       }
-      
-      final totalTrophies = bronzeCount + silverCount + goldCount + platinumCount;
+
+      final totalPlatinums = platinumCount;
+      final totalTrophies =
+          bronzeCount + silverCount + goldCount + platinumCount;
       // Get username from profiles
       final profileResponse = await _client
           .from('profiles')
           .select('username, psn_online_id, psn_avatar_url, psn_is_plus')
           .eq('id', userId)
           .maybeSingle();
-      
-      final username = profileResponse?['psn_online_id'] as String? ?? 
-                      profileResponse?['username'] as String? ?? 
-                      'Player';
+
+      final username =
+          profileResponse?['psn_online_id'] as String? ??
+          profileResponse?['username'] as String? ??
+          'Player';
       final avatarUrl = profileResponse?['psn_avatar_url'] as String?;
       final isPsPlus = profileResponse?['psn_is_plus'] as bool? ?? false;
-      
+
       return UserStats(
         username: username,
         avatarUrl: avatarUrl,
@@ -72,8 +82,16 @@ class SupabaseUserStatsRepository {
     }
   }
 
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   /// Update user statistics.
-  /// 
+  ///
   /// Upserts (insert or update) the user_stats record.
   Future<void> updateUserStats(String userId, UserStats stats) async {
     try {
