@@ -925,6 +925,139 @@ export async function syncPSNAchievements(
       userGamesMap.set(`${ug.platform_id}_${ug.platform_game_id}`, ug);
     }
 
+    async function cleanupDuplicatePlatformRows({ userId, platformId, platformGameId, gameName }) {
+      try {
+        let removedAchievements = null;
+        const { data: bulkRemovedAchievements, error: deleteAchievementsError } = await supabase
+          .from('user_achievements')
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform_game_id', platformGameId)
+          .in('platform_id', [1, 2, 5, 9])
+          .neq('platform_id', platformId)
+          .select('platform_id');
+
+        if (deleteAchievementsError) {
+          const transient = classifyRetryableWriteError(deleteAchievementsError);
+          if (!(transient.retryable && transient.splitPreferred)) {
+            console.warn(
+              `⚠️  Failed to cleanup duplicate user_achievements platform rows for ${gameName}: ${deleteAchievementsError.message}`
+            );
+            return;
+          }
+
+          console.warn(
+            `⚠️  Cleanup timeout for ${gameName}; falling back to row-by-row user_achievements deletes`
+          );
+
+          const { data: staleRows, error: staleRowsError } = await supabase
+            .from('user_achievements')
+            .select('platform_id, platform_achievement_id')
+            .eq('user_id', userId)
+            .eq('platform_game_id', platformGameId)
+            .in('platform_id', [1, 2, 5, 9])
+            .neq('platform_id', platformId);
+
+          if (staleRowsError) {
+            console.warn(
+              `⚠️  Failed to load stale user_achievements rows for ${gameName}: ${staleRowsError.message}`
+            );
+            return;
+          }
+
+          removedAchievements = [];
+          for (const row of staleRows || []) {
+            const { data: rowDeleted, error: rowDeleteError } = await supabase
+              .from('user_achievements')
+              .delete()
+              .eq('user_id', userId)
+              .eq('platform_game_id', platformGameId)
+              .eq('platform_id', row.platform_id)
+              .eq('platform_achievement_id', row.platform_achievement_id)
+              .select('platform_id');
+
+            if (rowDeleteError) {
+              console.warn(
+                `⚠️  Row delete failed during cleanup for ${gameName} (${row.platform_id}/${row.platform_achievement_id}): ${rowDeleteError.message}`
+              );
+              continue;
+            }
+
+            if (rowDeleted?.length) {
+              removedAchievements.push(...rowDeleted);
+            }
+          }
+        } else {
+          removedAchievements = bulkRemovedAchievements;
+        }
+
+        const removedCount = removedAchievements?.length || 0;
+        if (removedCount > 0) {
+          const removedPlatforms = [...new Set(removedAchievements.map((row) => row.platform_id))].sort((a, b) => a - b);
+          console.log(
+            `🧹 CLEANUP: Removed ${removedCount} stale user_achievements rows for ${gameName} ` +
+              `(platform_game_id=${platformGameId}, kept platform_id=${platformId}, removed platform_id(s)=${removedPlatforms.join(',')})`
+          );
+        }
+
+        const { error: deleteProgressError } = await supabase
+          .from('user_progress')
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform_game_id', platformGameId)
+          .in('platform_id', [1, 2, 5, 9])
+          .neq('platform_id', platformId);
+
+        if (deleteProgressError) {
+          const transient = classifyRetryableWriteError(deleteProgressError);
+          if (!(transient.retryable && transient.splitPreferred)) {
+            console.warn(
+              `⚠️  Failed to cleanup duplicate user_progress platform rows for ${gameName}: ${deleteProgressError.message}`
+            );
+            return;
+          }
+
+          console.warn(
+            `⚠️  Cleanup timeout for ${gameName}; falling back to row-by-row user_progress deletes`
+          );
+
+          const { data: staleProgressRows, error: staleProgressError } = await supabase
+            .from('user_progress')
+            .select('platform_id')
+            .eq('user_id', userId)
+            .eq('platform_game_id', platformGameId)
+            .in('platform_id', [1, 2, 5, 9])
+            .neq('platform_id', platformId);
+
+          if (staleProgressError) {
+            console.warn(
+              `⚠️  Failed to load stale user_progress rows for ${gameName}: ${staleProgressError.message}`
+            );
+            return;
+          }
+
+          for (const row of staleProgressRows || []) {
+            const { error: rowDeleteError } = await supabase
+              .from('user_progress')
+              .delete()
+              .eq('user_id', userId)
+              .eq('platform_game_id', platformGameId)
+              .eq('platform_id', row.platform_id);
+
+            if (rowDeleteError) {
+              console.warn(
+                `⚠️  Row delete failed during user_progress cleanup for ${gameName} (platform ${row.platform_id}): ${rowDeleteError.message}`
+              );
+            }
+          }
+        }
+      } catch (cleanupError) {
+        console.warn(
+          `⚠️  Duplicate platform cleanup threw for ${gameName} (${platformGameId}): ${cleanupError.message}`
+        );
+      }
+    }
+
     const processTitle = async (title) => {
       // Token refresh every 100 games
       if (processedGames > 0 && processedGames % 100 === 0) {
@@ -1062,6 +1195,13 @@ export async function syncPSNAchievements(
           );
           // Continue to process this game
         } else {
+          // Guard rail: even skipped titles can carry stale cross-platform duplicates from older sync behavior.
+          await cleanupDuplicatePlatformRows({
+            userId,
+            platformId,
+            platformGameId: game.platform_game_id,
+            gameName: title.trophyTitleName,
+          });
           console.log(`⏭️  Skip ${title.trophyTitleName} - no changes`);
           processedGames++;
           const pct = Math.floor((processedGames / gamesToProcess.length) * 100);
@@ -1142,26 +1282,12 @@ export async function syncPSNAchievements(
         trophyGroupMap,
       });
 
-      // CLEANUP: Delete older platform_id versions of this game (same platform_game_id)
-      // This handles existing duplicates that were synced before deduplication was added
-      const { error: deleteError } = await supabase
-        .from('user_achievements')
-        .delete()
-        .eq('user_id', userId)
-        .eq('platform_game_id', game.platform_game_id)
-        .neq('platform_id', platformId);  // Delete all platform_ids EXCEPT the current one
-      
-      if (deleteError) {
-        console.warn(`⚠️  Failed to cleanup duplicate platform_ids for ${title.trophyTitleName}: ${deleteError.message}`);
-      } else {
-        // Also cleanup user_progress
-        await supabase
-          .from('user_progress')
-          .delete()
-          .eq('user_id', userId)
-          .eq('platform_game_id', game.platform_game_id)
-          .neq('platform_id', platformId);
-      }
+      await cleanupDuplicatePlatformRows({
+        userId,
+        platformId,
+        platformGameId: game.platform_game_id,
+        gameName: title.trophyTitleName,
+      });
 
       // Batch upsert user_achievements for earned only (DB write is ONE call)
       const { earnedCount, mostRecentEarnedAt } = await upsertUserAchievementsBatch({

@@ -17,6 +17,11 @@ const XBOX_TITLE_HISTORY_MAX_PAGES = Math.max(1, parseInt(process.env.XBOX_TITLE
 const OPENXBL_FETCH_TIMEOUT_MS = Math.max(1000, parseInt(process.env.OPENXBL_FETCH_TIMEOUT_MS || '15000', 10));
 const OPENXBL_MAX_RETRIES = Math.max(1, parseInt(process.env.OPENXBL_MAX_RETRIES || '3', 10));
 const OPENXBL_RETRY_BASE_MS = Math.max(100, parseInt(process.env.OPENXBL_RETRY_BASE_MS || '750', 10));
+const XBOX_UPSERT_CHUNK_SIZE = Math.max(1, parseInt(process.env.XBOX_UPSERT_CHUNK_SIZE || '200', 10));
+const XBOX_ACHIEVEMENTS_UPSERT_MAX_RETRIES = Math.max(1, parseInt(process.env.XBOX_ACHIEVEMENTS_UPSERT_MAX_RETRIES || '6', 10));
+const XBOX_USER_ACHIEVEMENTS_UPSERT_MAX_RETRIES = Math.max(1, parseInt(process.env.XBOX_USER_ACHIEVEMENTS_UPSERT_MAX_RETRIES || '8', 10));
+const XBOX_UPSERT_RETRY_BASE_MS = Math.max(100, parseInt(process.env.XBOX_UPSERT_RETRY_BASE_MS || '300', 10));
+const XBOX_UPSERT_RETRY_CAP_MS = Math.max(XBOX_UPSERT_RETRY_BASE_MS, parseInt(process.env.XBOX_UPSERT_RETRY_CAP_MS || '8000', 10));
 
 // Helper to download external avatar and upload to Supabase Storage
 async function uploadExternalAvatar(externalUrl, userId, platform) {
@@ -113,6 +118,104 @@ function logMemory(label) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function extractErrorText(error) {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+
+  const parts = [];
+
+  if (error.message) parts.push(String(error.message));
+  if (error.code) parts.push(String(error.code));
+  if (error.status) parts.push(String(error.status));
+  if (error.statusCode) parts.push(String(error.statusCode));
+
+  const responseData = error.response?.data;
+  if (responseData) {
+    if (typeof responseData === 'string') parts.push(responseData);
+    else {
+      try {
+        parts.push(JSON.stringify(responseData));
+      } catch (_) {
+        // Ignore serialization issues and continue with available context.
+      }
+    }
+  }
+
+  if (error.details) parts.push(String(error.details));
+  if (error.hint) parts.push(String(error.hint));
+
+  if (error.cause) {
+    const causeText = extractErrorText(error.cause);
+    if (causeText) parts.push(causeText);
+  }
+
+  if (parts.length === 0) {
+    try {
+      parts.push(JSON.stringify(error));
+    } catch (_) {
+      parts.push(String(error));
+    }
+  }
+
+  return parts.join(' | ');
+}
+
+function compactErrorText(error, maxLength = 320) {
+  const text = extractErrorText(error).replace(/\s+/g, ' ').trim();
+  if (!text) return 'Unknown error';
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
+function classifyRetryableWriteError(error) {
+  const text = extractErrorText(error).toLowerCase();
+  const statusTextMatch = text.match(/\b(502|503|504|520|522|524)\b/);
+  const statusFromText = statusTextMatch ? Number(statusTextMatch[1]) : null;
+  const statusFromError = Number(error?.status || error?.statusCode || NaN);
+  const status = Number.isFinite(statusFromError) ? statusFromError : statusFromText;
+
+  const isTimeoutLike =
+    text.includes('statement timeout') ||
+    text.includes('canceling statement') ||
+    text.includes('deadlock') ||
+    text.includes('could not serialize') ||
+    text.includes('lock timeout');
+
+  const isGatewayLike =
+    [502, 503, 504, 520, 522, 524].includes(status) ||
+    text.includes('bad gateway') ||
+    text.includes('gateway timeout') ||
+    (text.includes('cloudflare') && (text.includes('502') || text.includes('503') || text.includes('504'))) ||
+    (text.includes('<html') && (text.includes('502') || text.includes('503') || text.includes('504')));
+
+  const isNetworkLike =
+    text.includes('fetch failed') ||
+    text.includes('network') ||
+    text.includes('socket hang up') ||
+    text.includes('ecconnreset') ||
+    text.includes('econnreset') ||
+    text.includes('etimedout') ||
+    text.includes('connection terminated unexpectedly') ||
+    text.includes('connection reset');
+
+  if (isTimeoutLike) {
+    return { retryable: true, splitPreferred: true, reason: 'timeout/lock contention' };
+  }
+  if (isGatewayLike) {
+    return { retryable: true, splitPreferred: false, reason: 'upstream gateway' };
+  }
+  if (isNetworkLike) {
+    return { retryable: true, splitPreferred: false, reason: 'network/transient transport' };
+  }
+
+  return { retryable: false, splitPreferred: false, reason: 'non-retryable' };
+}
+
+function computeRetryBackoffMs(attempt, { baseMs = XBOX_UPSERT_RETRY_BASE_MS, capMs = XBOX_UPSERT_RETRY_CAP_MS } = {}) {
+  const exp = Math.min(capMs, baseMs * (2 ** Math.max(0, attempt - 1)));
+  const jitter = Math.floor(Math.random() * 250);
+  return exp + jitter;
 }
 
 function parseXboxNumericSetting(value) {
@@ -716,6 +819,139 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     }
     console.log(`Loaded ${userGamesMap.size} existing user_progress records into memory`);
 
+    async function cleanupDuplicatePlatformRows({ userId, platformId, platformGameId, gameName }) {
+      try {
+        let removedAchievements = null;
+        const { data: bulkRemovedAchievements, error: deleteAchievementsError } = await supabase
+          .from('user_achievements')
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform_game_id', platformGameId)
+          .in('platform_id', [10, 11, 12])
+          .neq('platform_id', platformId)
+          .select('platform_id');
+
+        if (deleteAchievementsError) {
+          const transient = classifyRetryableWriteError(deleteAchievementsError);
+          if (!(transient.retryable && transient.splitPreferred)) {
+            console.warn(
+              `⚠️  Failed to cleanup duplicate user_achievements platform rows for ${gameName}: ${deleteAchievementsError.message}`
+            );
+            return;
+          }
+
+          console.warn(
+            `⚠️  Cleanup timeout for ${gameName}; falling back to row-by-row user_achievements deletes`
+          );
+
+          const { data: staleRows, error: staleRowsError } = await supabase
+            .from('user_achievements')
+            .select('platform_id, platform_achievement_id')
+            .eq('user_id', userId)
+            .eq('platform_game_id', platformGameId)
+            .in('platform_id', [10, 11, 12])
+            .neq('platform_id', platformId);
+
+          if (staleRowsError) {
+            console.warn(
+              `⚠️  Failed to load stale user_achievements rows for ${gameName}: ${staleRowsError.message}`
+            );
+            return;
+          }
+
+          removedAchievements = [];
+          for (const row of staleRows || []) {
+            const { data: rowDeleted, error: rowDeleteError } = await supabase
+              .from('user_achievements')
+              .delete()
+              .eq('user_id', userId)
+              .eq('platform_game_id', platformGameId)
+              .eq('platform_id', row.platform_id)
+              .eq('platform_achievement_id', row.platform_achievement_id)
+              .select('platform_id');
+
+            if (rowDeleteError) {
+              console.warn(
+                `⚠️  Row delete failed during cleanup for ${gameName} (${row.platform_id}/${row.platform_achievement_id}): ${rowDeleteError.message}`
+              );
+              continue;
+            }
+
+            if (rowDeleted?.length) {
+              removedAchievements.push(...rowDeleted);
+            }
+          }
+        } else {
+          removedAchievements = bulkRemovedAchievements;
+        }
+
+        const removedCount = removedAchievements?.length || 0;
+        if (removedCount > 0) {
+          const removedPlatforms = [...new Set(removedAchievements.map((row) => row.platform_id))].sort((a, b) => a - b);
+          console.log(
+            `🧹 CLEANUP: Removed ${removedCount} stale user_achievements rows for ${gameName} ` +
+              `(platform_game_id=${platformGameId}, kept platform_id=${platformId}, removed platform_id(s)=${removedPlatforms.join(',')})`
+          );
+        }
+
+        const { error: deleteProgressError } = await supabase
+          .from('user_progress')
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform_game_id', platformGameId)
+          .in('platform_id', [10, 11, 12])
+          .neq('platform_id', platformId);
+
+        if (deleteProgressError) {
+          const transient = classifyRetryableWriteError(deleteProgressError);
+          if (!(transient.retryable && transient.splitPreferred)) {
+            console.warn(
+              `⚠️  Failed to cleanup duplicate user_progress platform rows for ${gameName}: ${deleteProgressError.message}`
+            );
+            return;
+          }
+
+          console.warn(
+            `⚠️  Cleanup timeout for ${gameName}; falling back to row-by-row user_progress deletes`
+          );
+
+          const { data: staleProgressRows, error: staleProgressError } = await supabase
+            .from('user_progress')
+            .select('platform_id')
+            .eq('user_id', userId)
+            .eq('platform_game_id', platformGameId)
+            .in('platform_id', [10, 11, 12])
+            .neq('platform_id', platformId);
+
+          if (staleProgressError) {
+            console.warn(
+              `⚠️  Failed to load stale user_progress rows for ${gameName}: ${staleProgressError.message}`
+            );
+            return;
+          }
+
+          for (const row of staleProgressRows || []) {
+            const { error: rowDeleteError } = await supabase
+              .from('user_progress')
+              .delete()
+              .eq('user_id', userId)
+              .eq('platform_game_id', platformGameId)
+              .eq('platform_id', row.platform_id);
+
+            if (rowDeleteError) {
+              console.warn(
+                `⚠️  Row delete failed during user_progress cleanup for ${gameName} (platform ${row.platform_id}): ${rowDeleteError.message}`
+              );
+            }
+          }
+        }
+      } catch (cleanupError) {
+        console.warn(
+          `⚠️  Duplicate platform cleanup threw for ${gameName} (${platformGameId}): ${cleanupError.message}`
+        );
+      }
+    }
+
     let processedGames = 0;
     let totalAchievements = 0;
     
@@ -964,6 +1200,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements || !hasAchievementDefs || suspiciousZeroAchievements;
             
             if (!needsProcessing) {
+              await cleanupDuplicatePlatformRows({
+                userId,
+                platformId,
+                platformGameId: gameTitle.platform_game_id,
+                gameName: title.name,
+              });
               console.log(`⏭️  Skip ${title.name} - no changes`);
               processedGames++;
               const progressPercent = Math.floor((processedGames / gamesWithProgress.length) * 100);
@@ -1176,6 +1418,13 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 onConflict: 'user_id,platform_id,platform_game_id',
               });
 
+            await cleanupDuplicatePlatformRows({
+              userId,
+              platformId,
+              platformGameId: gameTitle.platform_game_id,
+              gameName: title.name,
+            });
+
             // Xbox icons have no CORS issues - no proxying needed, skip validation
 
             // Process achievements for this title
@@ -1183,7 +1432,108 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             const achievementsToUpsert = [];
             const unlockedUserAchievementCandidates = [];
             const successfulAchievementIds = new Set();
-            const UPSERT_CHUNK_SIZE = parseInt(process.env.XBOX_UPSERT_CHUNK_SIZE || '200', 10);
+
+            async function upsertAchievementRowsWithRetry(rows, attempt = 1) {
+              const { error } = await supabase
+                .from('achievements')
+                .upsert(rows, {
+                  onConflict: 'platform_id,platform_game_id,platform_achievement_id'
+                });
+
+              if (!error) {
+                for (const row of rows) {
+                  successfulAchievementIds.add(row.platform_achievement_id);
+                }
+                return;
+              }
+
+              const transient = classifyRetryableWriteError(error);
+              if (transient.retryable && transient.splitPreferred && rows.length > 1) {
+                const splitPoint = Math.ceil(rows.length / 2);
+                const first = rows.slice(0, splitPoint);
+                const second = rows.slice(splitPoint);
+                console.warn(
+                  `⚠️ Xbox achievements upsert ${transient.reason} on ${rows.length} rows; splitting into ${first.length}+${second.length}`
+                );
+                await upsertAchievementRowsWithRetry(first, 1);
+                await upsertAchievementRowsWithRetry(second, 1);
+                return;
+              }
+
+              if (transient.retryable && attempt < XBOX_ACHIEVEMENTS_UPSERT_MAX_RETRIES) {
+                const backoffMs = computeRetryBackoffMs(attempt);
+                console.warn(
+                  `⚠️ Xbox achievements upsert retry ${attempt}/${XBOX_ACHIEVEMENTS_UPSERT_MAX_RETRIES} after ${transient.reason} (${rows.length} rows), waiting ${backoffMs}ms`
+                );
+                await sleep(backoffMs);
+                await upsertAchievementRowsWithRetry(rows, attempt + 1);
+                return;
+              }
+
+              if (rows.length > 1) {
+                console.warn(
+                  `⚠️ Xbox achievements upsert failed for ${rows.length} rows (${compactErrorText(error)}); falling back to row-by-row`
+                );
+                for (const row of rows) {
+                  await upsertAchievementRowsWithRetry([row], 1);
+                }
+                return;
+              }
+
+              console.error(
+                `❌ Failed to upsert achievement ${rows[0]?.platform_achievement_id}: ${compactErrorText(error)}`
+              );
+            }
+
+            async function upsertUserAchievementRowsWithRetry(rows, attempt = 1) {
+              const { error } = await supabase
+                .from('user_achievements')
+                .upsert(rows, {
+                  onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id',
+                });
+
+              if (!error) {
+                totalAchievements += rows.length;
+                return;
+              }
+
+              const transient = classifyRetryableWriteError(error);
+              if (transient.retryable && transient.splitPreferred && rows.length > 1) {
+                const splitPoint = Math.ceil(rows.length / 2);
+                const first = rows.slice(0, splitPoint);
+                const second = rows.slice(splitPoint);
+                console.warn(
+                  `⚠️ Xbox user_achievements upsert ${transient.reason} on ${rows.length} rows; splitting into ${first.length}+${second.length}`
+                );
+                await upsertUserAchievementRowsWithRetry(first, 1);
+                await upsertUserAchievementRowsWithRetry(second, 1);
+                return;
+              }
+
+              if (transient.retryable && attempt < XBOX_USER_ACHIEVEMENTS_UPSERT_MAX_RETRIES) {
+                const backoffMs = computeRetryBackoffMs(attempt);
+                console.warn(
+                  `⚠️ Xbox user_achievements upsert retry ${attempt}/${XBOX_USER_ACHIEVEMENTS_UPSERT_MAX_RETRIES} after ${transient.reason} (${rows.length} rows), waiting ${backoffMs}ms`
+                );
+                await sleep(backoffMs);
+                await upsertUserAchievementRowsWithRetry(rows, attempt + 1);
+                return;
+              }
+
+              if (rows.length > 1) {
+                console.warn(
+                  `⚠️ Xbox user_achievements upsert failed for ${rows.length} rows (${compactErrorText(error)}); falling back to row-by-row`
+                );
+                for (const row of rows) {
+                  await upsertUserAchievementRowsWithRetry([row], 1);
+                }
+                return;
+              }
+
+              throw new Error(
+                `Failed to upsert user_achievement ${rows[0]?.platform_achievement_id}: ${compactErrorText(error)}`
+              );
+            }
             
             for (let achievementIndex = 0; achievementIndex < achievementsForTitle.length; achievementIndex++) {
               const achievement = achievementsForTitle[achievementIndex];
@@ -1279,34 +1629,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
 
             // Batch upsert achievements first to satisfy FK for user_achievements.
-            for (let i = 0; i < achievementsToUpsert.length; i += UPSERT_CHUNK_SIZE) {
-              const chunk = achievementsToUpsert.slice(i, i + UPSERT_CHUNK_SIZE);
-              const chunkIds = chunk.map((row) => row.platform_achievement_id);
-
-              const { error: chunkError } = await supabase
-                .from('achievements')
-                .upsert(chunk, {
-                  onConflict: 'platform_id,platform_game_id,platform_achievement_id'
-                });
-
-              if (!chunkError) {
-                for (const id of chunkIds) successfulAchievementIds.add(id);
-                continue;
-              }
-
-              console.warn(`⚠️ Xbox achievements batch upsert failed, retrying row-by-row: ${chunkError.message}`);
-              for (const row of chunk) {
-                const { error: rowError } = await supabase
-                  .from('achievements')
-                  .upsert(row, {
-                    onConflict: 'platform_id,platform_game_id,platform_achievement_id'
-                  });
-                if (rowError) {
-                  console.error(`❌ Failed to upsert achievement ${row.platform_achievement_id}:`, rowError.message);
-                  continue;
-                }
-                successfulAchievementIds.add(row.platform_achievement_id);
-              }
+            for (let i = 0; i < achievementsToUpsert.length; i += XBOX_UPSERT_CHUNK_SIZE) {
+              const chunk = achievementsToUpsert.slice(i, i + XBOX_UPSERT_CHUNK_SIZE);
+              await upsertAchievementRowsWithRetry(chunk);
             }
 
             // Only write unlocked rows whose achievement definition exists.
@@ -1314,31 +1639,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               successfulAchievementIds.has(row.platform_achievement_id)
             );
 
-            for (let i = 0; i < userAchievementsToUpsert.length; i += UPSERT_CHUNK_SIZE) {
-              const chunk = userAchievementsToUpsert.slice(i, i + UPSERT_CHUNK_SIZE);
-              const { error: chunkError } = await supabase
-                .from('user_achievements')
-                .upsert(chunk, {
-                  onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id',
-                });
-
-              if (!chunkError) {
-                totalAchievements += chunk.length;
-                continue;
-              }
-
-              console.warn(`⚠️ Xbox user_achievements batch upsert failed, retrying row-by-row: ${chunkError.message}`);
-              for (const row of chunk) {
-                const { error: rowError } = await supabase
-                  .from('user_achievements')
-                  .upsert(row, {
-                    onConflict: 'user_id,platform_id,platform_game_id,platform_achievement_id',
-                  });
-                if (rowError) {
-                  throw new Error(`Failed to upsert user_achievement ${row.platform_achievement_id}: ${rowError.message}`);
-                }
-                totalAchievements++;
-              }
+            for (let i = 0; i < userAchievementsToUpsert.length; i += XBOX_UPSERT_CHUNK_SIZE) {
+              const chunk = userAchievementsToUpsert.slice(i, i + XBOX_UPSERT_CHUNK_SIZE);
+              await upsertUserAchievementRowsWithRetry(chunk);
             }
 
             // Update user_progress with the most recent achievement earned date

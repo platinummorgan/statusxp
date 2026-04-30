@@ -23,6 +23,8 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
   final SyncLimitService _syncLimitService = SyncLimitService();
   SyncLimitStatus? _rateLimitStatus;
   Timer? _countdownTimer;
+  DateTime? _nextLiveDataRefreshAt;
+  static const Duration _liveDataRefreshInterval = Duration(seconds: 8);
 
   @override
   void initState() {
@@ -71,7 +73,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
 
       // Record successful sync start
       await _syncLimitService.recordSync('xbox', success: true);
-      
+
       // Refresh rate limit status
       await _checkRateLimit();
 
@@ -82,7 +84,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     } on XboxRateLimitException catch (e) {
       // Record failed sync
       await _syncLimitService.recordSync('xbox', success: false);
-      
+
       if (mounted) {
         setState(() {
           _errorMessage = e.message;
@@ -92,7 +94,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     } catch (e) {
       // Record failed sync
       await _syncLimitService.recordSync('xbox', success: false);
-      
+
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -104,20 +106,25 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
 
   Future<void> _pollSyncStatus() async {
     XboxSyncStatus? lastStatus;
-    
+
     while (_isSyncing && mounted) {
       await Future.delayed(const Duration(seconds: 3));
-      
+
       // Read status without invalidating (stream will update automatically)
       final statusAsync = ref.read(xboxSyncStatusProvider);
-      
+
       await statusAsync.when(
         data: (status) async {
+          if (status.status == 'syncing' || status.status == 'pending') {
+            _refreshDataDuringSync();
+          }
+
           // Only log if status actually changed
-          if (lastStatus?.status != status.status || lastStatus?.progress != status.progress) {
+          if (lastStatus?.status != status.status ||
+              lastStatus?.progress != status.progress) {
             lastStatus = status;
           }
-          
+
           // If status is pending, automatically continue sync
           if (status.status == 'pending') {
             print('Status is PENDING - calling startSync()');
@@ -146,7 +153,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
             } else {
               debugPrint('⏩ Skipping rate limit record for auto-sync');
             }
-            
+
             // Update last sync time for auto-sync
             final autoSyncService = AutoSyncService(
               ref.read(supabaseClientProvider),
@@ -154,15 +161,15 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
               ref.read(xboxServiceProvider),
             );
             await autoSyncService.updateXboxSyncTime();
-            
+
             if (mounted) {
               setState(() {
                 _isSyncing = false;
               });
-              
+
               // Force refresh sync status to get updated last_sync_at timestamp
               ref.invalidate(xboxSyncStatusProvider);
-              
+
               // Refresh games list and stats to show updated data
               ref.refreshCoreData();
               // Leaderboards are cached by Riverpod; invalidate them after sync so
@@ -171,18 +178,23 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
               ref.invalidate(lb.seasonalLeaderboardProvider);
               ref.invalidate(leaderboardRanksProvider);
               ref.invalidate(lb.latestPeriodWinnersProvider);
-              
+              _schedulePostSyncReconciles();
+
               // Check for newly unlocked achievements
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
-              
+
               final checker = ref.read(platformAchievementCheckerProvider);
               try {
-                final newlyUnlocked = await checker.checkAndUnlockAchievements(userId);
+                final newlyUnlocked = await checker.checkAndUnlockAchievements(
+                  userId,
+                );
                 if (newlyUnlocked.isNotEmpty && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('🎉 Unlocked ${newlyUnlocked.length} achievement(s)!'),
+                      content: Text(
+                        '🎉 Unlocked ${newlyUnlocked.length} achievement(s)!',
+                      ),
                       action: SnackBarAction(
                         label: 'View',
                         onPressed: () => context.push('/achievements'),
@@ -190,8 +202,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                     ),
                   );
                 }
-              } catch (e) {
-              }
+              } catch (e) {}
             }
             return;
           }
@@ -206,8 +217,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
             return;
           }
         },
-        loading: () async {
-        },
+        loading: () async {},
         error: (error, stack) async {
           if (mounted) {
             setState(() {
@@ -243,6 +253,40 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
         });
       }
     }
+  }
+
+  void _refreshDataDuringSync() {
+    final now = DateTime.now();
+    if (_nextLiveDataRefreshAt != null &&
+        now.isBefore(_nextLiveDataRefreshAt!)) {
+      return;
+    }
+    _nextLiveDataRefreshAt = now.add(_liveDataRefreshInterval);
+
+    // Throttled live refresh so visible totals move during long-running syncs.
+    ref.invalidate(dashboardStatsProvider);
+    ref.invalidate(userStatsProvider);
+    ref.invalidate(leaderboardRanksProvider);
+    ref.invalidate(lb.leaderboardProvider);
+  }
+
+  void _schedulePostSyncReconciles() {
+    // Some writes settle a few seconds after sync success; reconcile twice.
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      ref.refreshCoreData();
+      ref.invalidate(lb.leaderboardProvider);
+      ref.invalidate(leaderboardRanksProvider);
+    });
+
+    Future.delayed(const Duration(seconds: 12), () {
+      if (!mounted) return;
+      ref.refreshCoreData();
+      ref.invalidate(lb.leaderboardProvider);
+      ref.invalidate(lb.seasonalLeaderboardProvider);
+      ref.invalidate(leaderboardRanksProvider);
+      ref.invalidate(lb.latestPeriodWinnersProvider);
+    });
   }
 
   bool _shouldShowRelinkHint(String? message) {
@@ -295,13 +339,17 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
           ),
         ),
         data: (status) {
-          final isSyncing = status.status == 'syncing' || status.status == 'pending' || _isSyncing;
-          
+          final isSyncing =
+              status.status == 'syncing' ||
+              status.status == 'pending' ||
+              _isSyncing;
+
           // Build rate limit message
           String? rateLimitMessage;
           if (_rateLimitStatus != null && !_rateLimitStatus!.canSync) {
             if (_rateLimitStatus!.waitSeconds > 0) {
-              rateLimitMessage = 'Xbox sync on cooldown. Next sync available in ${_rateLimitStatus!.waitTimeFormatted}';
+              rateLimitMessage =
+                  'Xbox sync on cooldown. Next sync available in ${_rateLimitStatus!.waitTimeFormatted}';
             } else {
               rateLimitMessage = _rateLimitStatus!.reason;
             }
@@ -347,7 +395,10 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange,
+                      ),
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(
@@ -364,37 +415,36 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                 ),
               Expanded(
                 child: PlatformSyncWidget(
-                      platformName: 'Xbox',
-                      platformColor: const Color(0xFF107C10),
-                      platformIcon: const Icon(
-                        Icons.gamepad,
-                        size: 64,
-                        color: Colors.white,
-                      ),
-                      syncStatus: status.status,
-                      syncProgress: status.progress,
-                      lastSyncAt: status.lastSyncAt,
-                      errorMessage: effectiveError,
-                      isSyncing: isSyncing,
-                      onSyncPressed: _startSync,
-                      onStopPressed: _stopSync,
-                      syncDescription: const [
-                        '🎮 How to Sync Xbox Live:',
-                        '',
-                        '1. Tap "Start Sync" button above',
-                        '2. Browser will open to Microsoft login page',
-                        '3. Sign in with your Microsoft/Xbox account',
-                        '4. Authorize StatusXP to access your Xbox achievements',
-                        '5. After authorization, click "Click to continue" at the top',
-                        '6. Return to StatusXP - sync will begin automatically',
-                        '',
-                        '✨ What gets synced:',
-                        '• All your Xbox games with achievements',
-                        '• Achievement unlock dates and progress',
-                        '• Global achievement rarity percentages',
-                        '• Processes 5 games at a time (you can stop/resume anytime)',
-                      ],
-
+                  platformName: 'Xbox',
+                  platformColor: const Color(0xFF107C10),
+                  platformIcon: const Icon(
+                    Icons.gamepad,
+                    size: 64,
+                    color: Colors.white,
+                  ),
+                  syncStatus: status.status,
+                  syncProgress: status.progress,
+                  lastSyncAt: status.lastSyncAt,
+                  errorMessage: effectiveError,
+                  isSyncing: isSyncing,
+                  onSyncPressed: _startSync,
+                  onStopPressed: _stopSync,
+                  syncDescription: const [
+                    '🎮 How to Sync Xbox Live:',
+                    '',
+                    '1. Tap "Start Sync" button above',
+                    '2. Browser will open to Microsoft login page',
+                    '3. Sign in with your Microsoft/Xbox account',
+                    '4. Authorize StatusXP to access your Xbox achievements',
+                    '5. After authorization, click "Click to continue" at the top',
+                    '6. Return to StatusXP - sync will begin automatically',
+                    '',
+                    '✨ What gets synced:',
+                    '• All your Xbox games with achievements',
+                    '• Achievement unlock dates and progress',
+                    '• Global achievement rarity percentages',
+                    '• Processes 5 games at a time (you can stop/resume anytime)',
+                  ],
                 ),
               ),
             ],

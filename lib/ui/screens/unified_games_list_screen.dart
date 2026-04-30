@@ -637,13 +637,16 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       // PlayStation: Show trophy breakdown
       // Format: "PS5 10/30 30% 🥈 Platinum 1 | Gold 2 | Silver 3 | Bronze 4"
       final List<String> trophyParts = [];
-      if (platform.platinumCount > 0)
+      if (platform.platinumCount > 0) {
         trophyParts.add('Platinum ${platform.platinumCount}');
+      }
       if (platform.goldCount > 0) trophyParts.add('Gold ${platform.goldCount}');
-      if (platform.silverCount > 0)
+      if (platform.silverCount > 0) {
         trophyParts.add('Silver ${platform.silverCount}');
-      if (platform.bronzeCount > 0)
+      }
+      if (platform.bronzeCount > 0) {
         trophyParts.add('Bronze ${platform.bronzeCount}');
+      }
 
       final trophyBreakdown = trophyParts.isNotEmpty
           ? ' 🥈 ${trophyParts.join(' | ')}'
