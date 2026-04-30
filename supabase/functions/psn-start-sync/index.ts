@@ -1,12 +1,56 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { exchangeRefreshTokenForAuthTokens } from '../_shared/psn-api.ts';
 
 const RAILWAY_URL = 'https://statusxp-production.up.railway.app';
+const PSN_RELINK_ERROR_MESSAGE =
+  'PlayStation session expired. Disconnect and reconnect PlayStation in Settings, then sync again.';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+function extractErrorText(error: unknown): string {
+  if (!error) return '';
+  if (typeof error === 'string') return error;
+  if (error instanceof Error) return error.message || String(error);
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function isPsnRelinkRequired(message: unknown): boolean {
+  if (typeof message !== 'string' || message.trim().length === 0) {
+    return false;
+  }
+
+  const lower = message.toLowerCase();
+  const tokenMarkers = [
+    'invalid_grant',
+    'invalid client',
+    'invalid_client',
+    'refresh token',
+    'token expired',
+    'expired token',
+    'jwt expired',
+    'oauth token',
+    'unauthorized',
+    'forbidden',
+    '401',
+    '403',
+    'relink',
+    'reauthorize',
+  ];
+
+  return (
+    tokenMarkers.some((marker) => lower.includes(marker)) ||
+    (lower.includes('bad request') &&
+      (lower.includes('exchange') || lower.includes('auth') || lower.includes('token')))
+  );
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -37,11 +81,29 @@ serve(async (req) => {
       .eq('id', user.id)
       .single();
 
-    if (!profile?.psn_access_token) {
+    if (!profile?.psn_account_id) {
       return new Response(JSON.stringify({ error: 'PSN account not linked' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    if (!profile.psn_refresh_token) {
+      await supabase
+        .from('profiles')
+        .update({
+          psn_sync_status: 'error',
+          psn_sync_error: PSN_RELINK_ERROR_MESSAGE,
+        })
+        .eq('id', user.id);
+
+      return new Response(
+        JSON.stringify({ error: PSN_RELINK_ERROR_MESSAGE, requiresRelink: true }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     if (profile.psn_sync_status === 'syncing') {
@@ -50,6 +112,47 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    // Preflight token refresh so we fail fast with a clear relink message
+    // instead of reporting "sync started" when PSN credentials are expired.
+    let refreshedAccessToken = profile.psn_access_token;
+    let refreshedRefreshToken = profile.psn_refresh_token;
+    try {
+      const refreshed = await exchangeRefreshTokenForAuthTokens(profile.psn_refresh_token);
+      refreshedAccessToken = refreshed.accessToken;
+      refreshedRefreshToken = refreshed.refreshToken || profile.psn_refresh_token;
+    } catch (tokenError) {
+      const tokenErrorText = extractErrorText(tokenError);
+      const needsRelink = isPsnRelinkRequired(tokenErrorText);
+      const normalizedError = needsRelink
+        ? PSN_RELINK_ERROR_MESSAGE
+        : `Failed to refresh PlayStation session: ${tokenErrorText || 'Unknown error'}`;
+
+      await supabase
+        .from('profiles')
+        .update({
+          psn_sync_status: 'error',
+          psn_sync_error: normalizedError,
+        })
+        .eq('id', user.id);
+
+      return new Response(
+        JSON.stringify({ error: normalizedError, requiresRelink: needsRelink }),
+        {
+          status: needsRelink ? 400 : 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Persist fresh tokens before dispatching the long-running sync worker.
+    await supabase
+      .from('profiles')
+      .update({
+        psn_access_token: refreshedAccessToken,
+        psn_refresh_token: refreshedRefreshToken,
+      })
+      .eq('id', user.id);
 
     // Mark all old pending syncs as failed
     await supabase
@@ -92,8 +195,8 @@ serve(async (req) => {
     const railwayPayload = {
       userId: user.id,
       accountId: profile.psn_account_id,
-      accessToken: profile.psn_access_token,
-      refreshToken: profile.psn_refresh_token,
+      accessToken: refreshedAccessToken,
+      refreshToken: refreshedRefreshToken,
       syncLogId: syncLog.id,
       batchSize: 5,
       maxConcurrent: 1,
@@ -121,12 +224,44 @@ serve(async (req) => {
       });
     } catch (fetchError) {
       console.error('Network error when calling Railway /sync/psn:', fetchError);
+      const normalizedError = 'Failed to start sync on Railway (network error)';
+      await supabase
+        .from('profiles')
+        .update({
+          psn_sync_status: 'error',
+          psn_sync_error: normalizedError,
+        })
+        .eq('id', user.id);
+      await supabase
+        .from('psn_sync_logs')
+        .update({
+          status: 'failed',
+          completed_at: new Date().toISOString(),
+          error_message: normalizedError,
+        })
+        .eq('id', syncLog.id);
       throw new Error('Failed to start sync on Railway (network error)');
     }
     const railwayText = await railwayResponse.text().catch(() => null);
     console.log('Railway PSN start response:', railwayResponse.status, railwayText?.slice?.(0, 200));
     if (!railwayResponse.ok) {
       console.error('Failed to start PSN sync on Railway:', railwayResponse.status, railwayText);
+      const normalizedError = 'Failed to start sync on Railway';
+      await supabase
+        .from('profiles')
+        .update({
+          psn_sync_status: 'error',
+          psn_sync_error: normalizedError,
+        })
+        .eq('id', user.id);
+      await supabase
+        .from('psn_sync_logs')
+        .update({
+          status: 'failed',
+          completed_at: new Date().toISOString(),
+          error_message: normalizedError,
+        })
+        .eq('id', syncLog.id);
       throw new Error('Failed to start sync on Railway');
     }
 

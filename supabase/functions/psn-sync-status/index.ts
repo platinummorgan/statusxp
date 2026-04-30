@@ -45,6 +45,24 @@ function isPsnRelinkRequired(message: unknown): boolean {
   );
 }
 
+function mapLogStatusToProfileStatus(status: unknown): string | null {
+  if (typeof status !== 'string') return null;
+  switch (status) {
+    case 'pending':
+      return 'pending';
+    case 'syncing':
+      return 'syncing';
+    case 'failed':
+      return 'error';
+    case 'cancelled':
+      return 'stopped';
+    case 'completed':
+      return 'success';
+    default:
+      return null;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -119,10 +137,6 @@ serve(async (req) => {
       }
     }
 
-    const effectiveStatus = (profile.psn_sync_status && profile.psn_sync_status !== 'never_synced')
-      ? profile.psn_sync_status
-      : (profile.last_psn_sync_at ? 'success' : 'never_synced');
-
     const rawProfileError = profile.psn_sync_error ?? null;
     const rawLatestLogError = latestLog?.error_message ?? null;
     const requiresRelink =
@@ -130,6 +144,33 @@ serve(async (req) => {
     const effectiveError = requiresRelink
       ? PSN_RELINK_ERROR_MESSAGE
       : (rawProfileError || rawLatestLogError);
+
+    const profileStatus = profile.psn_sync_status as string | null;
+    const fallbackStatus =
+      profileStatus && profileStatus !== 'never_synced'
+        ? profileStatus
+        : (profile.last_psn_sync_at ? 'success' : 'never_synced');
+
+    const latestLogStatus = mapLogStatusToProfileStatus(latestLog?.status);
+    const latestLogAttemptAt = latestLog?.completed_at
+      ? new Date(latestLog.completed_at).getTime()
+      : (latestLog?.started_at ? new Date(latestLog.started_at).getTime() : null);
+    const lastSuccessfulSyncAt = profile.last_psn_sync_at
+      ? new Date(profile.last_psn_sync_at).getTime()
+      : null;
+
+    const logRepresentsNewAttempt =
+      latestLogAttemptAt !== null &&
+      (lastSuccessfulSyncAt === null || latestLogAttemptAt >= lastSuccessfulSyncAt);
+
+    let effectiveStatus = fallbackStatus;
+    if (latestLogStatus && logRepresentsNewAttempt) {
+      // If the latest attempt is newer than the last known successful sync, trust it.
+      effectiveStatus = latestLogStatus;
+    }
+    if (requiresRelink) {
+      effectiveStatus = 'error';
+    }
 
     const response = {
       isLinked: !!profile.psn_account_id,

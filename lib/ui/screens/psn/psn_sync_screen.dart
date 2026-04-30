@@ -20,9 +20,14 @@ class PSNSyncScreen extends ConsumerStatefulWidget {
 class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
   bool _isSyncing = false;
   String? _errorMessage;
+  bool _relinkDialogShown = false;
   final SyncLimitService _syncLimitService = SyncLimitService();
   SyncLimitStatus? _rateLimitStatus;
   Timer? _countdownTimer;
+  DateTime? _nextLiveDataRefreshAt;
+  static const Duration _liveDataRefreshInterval = Duration(seconds: 8);
+  static const String _relinkPromptMessage =
+      'PlayStation link expired. Disconnect and reconnect from Settings to restore syncing.';
 
   @override
   void initState() {
@@ -100,6 +105,21 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
 
       await statusAsync.when(
         data: (status) async {
+          if (status.status == 'syncing' || status.status == 'pending') {
+            _refreshDataDuringSync();
+          }
+
+          if (status.requiresRelink) {
+            if (mounted) {
+              setState(() {
+                _isSyncing = false;
+                _errorMessage = status.error ?? _relinkPromptMessage;
+              });
+            }
+            _showRelinkDialogIfNeeded();
+            return;
+          }
+
           // If status is pending, automatically continue sync
           if (status.isPending) {
             try {
@@ -156,6 +176,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
               ref.invalidate(lb.seasonalLeaderboardProvider);
               ref.invalidate(leaderboardRanksProvider);
               ref.invalidate(lb.latestPeriodWinnersProvider);
+              _schedulePostSyncReconciles();
 
               // Check for newly unlocked achievements
               final userId = ref.read(currentUserIdProvider);
@@ -244,6 +265,40 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
     }
   }
 
+  void _refreshDataDuringSync() {
+    final now = DateTime.now();
+    if (_nextLiveDataRefreshAt != null &&
+        now.isBefore(_nextLiveDataRefreshAt!)) {
+      return;
+    }
+    _nextLiveDataRefreshAt = now.add(_liveDataRefreshInterval);
+
+    // Throttled live refresh so visible totals move during long-running syncs.
+    ref.invalidate(dashboardStatsProvider);
+    ref.invalidate(userStatsProvider);
+    ref.invalidate(leaderboardRanksProvider);
+    ref.invalidate(lb.leaderboardProvider);
+  }
+
+  void _schedulePostSyncReconciles() {
+    // Some writes settle a few seconds after sync success; reconcile twice.
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      ref.refreshCoreData();
+      ref.invalidate(lb.leaderboardProvider);
+      ref.invalidate(leaderboardRanksProvider);
+    });
+
+    Future.delayed(const Duration(seconds: 12), () {
+      if (!mounted) return;
+      ref.refreshCoreData();
+      ref.invalidate(lb.leaderboardProvider);
+      ref.invalidate(lb.seasonalLeaderboardProvider);
+      ref.invalidate(leaderboardRanksProvider);
+      ref.invalidate(lb.latestPeriodWinnersProvider);
+    });
+  }
+
   bool _shouldShowRelinkHint(PSNSyncStatus status, String? message) {
     if (status.requiresRelink) return true;
     if (message == null) return false;
@@ -254,6 +309,37 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
         lower.contains('invalid client') ||
         lower.contains('refresh token') ||
         lower.contains('expired');
+  }
+
+  void _showRelinkDialogIfNeeded() {
+    if (!mounted || _relinkDialogShown) return;
+    _relinkDialogShown = true;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('PlayStation Relink Required'),
+        content: const Text(
+          'This sync could not run because your PlayStation session expired. Disconnect and reconnect PlayStation in Settings, then sync again.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              if (mounted) {
+                context.go('/settings');
+              }
+            },
+            child: const Text('Open Settings'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Later'),
+          ),
+        ],
+      ),
+    ).whenComplete(() {
+      _relinkDialogShown = false;
+    });
   }
 
   @override
@@ -310,7 +396,10 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
           }
 
           final isSyncing = status.isSyncing || status.isPending || _isSyncing;
-          final effectiveError = _errorMessage ?? status.error;
+          final effectiveError =
+              _errorMessage ?? status.error ?? (status.requiresRelink ? _relinkPromptMessage : null);
+          final effectiveStatus =
+              status.requiresRelink && status.status == 'success' ? 'error' : status.status;
           final showRelinkHint = _shouldShowRelinkHint(status, effectiveError);
 
           // Build rate limit message
@@ -388,7 +477,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                     size: 64,
                     color: Colors.white,
                   ),
-                  syncStatus: status.status,
+                  syncStatus: effectiveStatus,
                   syncProgress: status.progress,
                   lastSyncAt: status.lastSyncAt,
                   errorMessage: effectiveError,

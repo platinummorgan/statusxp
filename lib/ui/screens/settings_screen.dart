@@ -776,7 +776,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : 'Not connected',
                   isConnected: _profile?['psn_account_id'] != null,
                   syncStatus: psnSyncStatus.maybeWhen(
-                    data: (status) => status.isLinked ? status.status : null,
+                    data: (status) => status.isLinked
+                        ? (status.requiresRelink ? 'error' : status.status)
+                        : null,
                     orElse: () => null,
                   ),
                   lastSyncAt: _profile?['last_psn_sync_at'] != null
