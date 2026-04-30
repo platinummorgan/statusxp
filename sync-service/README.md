@@ -9,6 +9,8 @@ Background sync service for Xbox, Steam, and PSN achievement data.
    - Click "New Project" → "Deploy from GitHub repo"
    - Select this repo
    - Set root directory to `sync-service`
+   - Set Config-as-Code file path to `/sync-service/railway.json`
+   - Clear any custom build command (do not use `bash build.sh` for this service)
    - Add environment variables:
      - `SUPABASE_URL`
      - `SUPABASE_SERVICE_ROLE_KEY`
