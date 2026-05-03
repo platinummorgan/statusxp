@@ -67,12 +67,12 @@ class UserTrophy {
 }
 
 /// Supabase-based implementation for trophy data.
-/// 
+///
 /// Fetches trophies from the `trophies` table and manages user trophy unlocks
 /// in the `user_trophies` table.
 class SupabaseTrophiesRepository {
   final SupabaseClient _client;
-  
+
   SupabaseTrophiesRepository(this._client);
 
   /// Get all trophies for a specific game title.
@@ -108,7 +108,10 @@ class SupabaseTrophiesRepository {
   }
 
   /// Get user trophies for a specific game.
-  Future<List<UserTrophy>> getUserTrophiesForGame(String userId, int gameTitleId) async {
+  Future<List<UserTrophy>> getUserTrophiesForGame(
+    String userId,
+    int gameTitleId,
+  ) async {
     try {
       final trophiesForGame = await _client
           .from('trophies')
@@ -153,9 +156,10 @@ class SupabaseTrophiesRepository {
   /// Update the earned timestamp for an existing user trophy.
   Future<void> updateUserTrophy(int userTrophyId, DateTime earnedAt) async {
     try {
-      await _client.from('user_trophies').update({
-        'earned_at': earnedAt.toIso8601String(),
-      }).eq('id', userTrophyId);
+      await _client
+          .from('user_trophies')
+          .update({'earned_at': earnedAt.toIso8601String()})
+          .eq('id', userTrophyId);
     } catch (e) {
       rethrow;
     }
@@ -164,10 +168,7 @@ class SupabaseTrophiesRepository {
   /// Delete a user trophy unlock (un-earn a trophy).
   Future<void> deleteUserTrophy(int userTrophyId) async {
     try {
-      await _client
-          .from('user_trophies')
-          .delete()
-          .eq('id', userTrophyId);
+      await _client.from('user_trophies').delete().eq('id', userTrophyId);
     } catch (e) {
       rethrow;
     }

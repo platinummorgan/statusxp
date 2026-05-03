@@ -64,3 +64,4 @@ key.properties
 # Node.js
 node_modules/
 package-lock.json
+!sync-service/package-lock.json

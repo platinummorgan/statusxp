@@ -67,10 +67,7 @@ class TrophyTypeChart extends StatelessWidget {
           children: [
             Icon(Icons.emoji_events, size: 48, color: Colors.white24),
             SizedBox(height: 8),
-            Text(
-              'No PSN trophy data',
-              style: TextStyle(color: Colors.white38),
-            ),
+            Text('No PSN trophy data', style: TextStyle(color: Colors.white38)),
           ],
         ),
       ),
@@ -87,9 +84,9 @@ class TrophyTypeChart extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.5)),
+              border: Border.all(color: color.withValues(alpha: 0.5)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -105,10 +102,7 @@ class TrophyTypeChart extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '${percent.toStringAsFixed(0)}%',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[400],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[400]),
                 ),
               ],
             ),

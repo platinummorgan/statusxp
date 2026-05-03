@@ -6,6 +6,8 @@ import 'package:statusxp/domain/seasonal_leaderboard_entry.dart';
 import 'package:statusxp/domain/seasonal_user_breakdown.dart';
 import 'package:statusxp/ui/screens/leaderboard_screen.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Leaderboard Repository - Fetches global rankings
 class LeaderboardRepository {
   final SupabaseClient _client;
@@ -176,11 +178,11 @@ class LeaderboardRepository {
       );
 
       if ((response as List).isEmpty) {
-        print('⚠️ Xbox leaderboard cache is empty');
+        statusxpLog('⚠️ Xbox leaderboard cache is empty');
         return [];
       }
 
-      print('✅ Xbox leaderboard: ${response.length} entries loaded');
+      statusxpLog('✅ Xbox leaderboard: ${response.length} entries loaded');
 
       // Convert response to LeaderboardEntry objects
       final entries = <LeaderboardEntry>[];
@@ -213,7 +215,7 @@ class LeaderboardRepository {
 
       return entries;
     } catch (e) {
-      print('❌ Xbox leaderboard error: $e');
+      statusxpLog('❌ Xbox leaderboard error: $e');
       // Fallback to old method if RPC doesn't exist yet
       return _getXboxLeaderboardFallback(limit: limit);
     }

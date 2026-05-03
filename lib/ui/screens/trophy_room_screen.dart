@@ -21,7 +21,7 @@ import 'package:statusxp/ui/widgets/psn_avatar.dart';
 // ============================================================================
 
 /// Trophy Room Screen - Showcase of achievements and flex moments
-/// 
+///
 /// Displays featured platinums, ultra-rare trophies, and recent unlocks
 /// in a cyberpunk-themed showcase gallery
 class TrophyRoomScreen extends ConsumerWidget {
@@ -59,7 +59,9 @@ class TrophyRoomScreen extends ConsumerWidget {
           child: trophyRoomAsync.when(
             loading: () => const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonPurple),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  CyberpunkTheme.neonPurple,
+                ),
               ),
             ),
             error: (error, stack) => Center(
@@ -70,7 +72,11 @@ class TrophyRoomScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline, color: CyberpunkTheme.neonPink, size: 48),
+                      const Icon(
+                        Icons.error_outline,
+                        color: CyberpunkTheme.neonPink,
+                        size: 48,
+                      ),
                       const SizedBox(height: 16),
                       const Text(
                         'ERROR LOADING TROPHY ROOM',
@@ -102,7 +108,11 @@ class TrophyRoomScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTrophyRoom(BuildContext context, TrophyRoomData data, UserStats stats) {
+  Widget _buildTrophyRoom(
+    BuildContext context,
+    TrophyRoomData data,
+    UserStats stats,
+  ) {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Padding(
@@ -112,29 +122,29 @@ class TrophyRoomScreen extends ConsumerWidget {
           children: [
             // Header - Identity Strip
             _buildIdentityStrip(stats),
-            
+
             const SizedBox(height: 36),
-            
+
             // Crown Wall - Featured Flex Cards
             _buildCrownWall(data),
-            
+
             const SizedBox(height: 36),
-            
+
             // Platinum Gallery - Carousel
             _buildPlatinumGallery(context, data),
-            
+
             const SizedBox(height: 36),
-            
+
             // Ultra Rare Flexes
             _buildUltraRareFlexes(data),
-            
+
             const SizedBox(height: 24),
-            
+
             // Recent Trophies
             _buildRecentTrophies(data),
-            
+
             const SizedBox(height: 36),
-            
+
             // Flex Poster Entry Point
             _buildFlexPosterButton(context),
           ],
@@ -181,12 +191,12 @@ class TrophyRoomScreen extends ConsumerWidget {
                   gradient: LinearGradient(
                     colors: [
                       CyberpunkTheme.neonPurple,
-                      CyberpunkTheme.neonPurple.withOpacity(0),
+                      CyberpunkTheme.neonPurple.withValues(alpha: 0),
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: CyberpunkTheme.neonPurple.withOpacity(0.7),
+                      color: CyberpunkTheme.neonPurple.withValues(alpha: 0.7),
                       blurRadius: 8,
                     ),
                   ],
@@ -210,14 +220,14 @@ class TrophyRoomScreen extends ConsumerWidget {
         Text(
           'CROWN WALL',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.55),
+            color: Colors.white.withValues(alpha: 0.55),
             letterSpacing: 2.5,
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 18),
-        
+
         // Use 2x2 grid on small screens, row on larger screens
         LayoutBuilder(
           builder: (context, constraints) {
@@ -226,15 +236,33 @@ class TrophyRoomScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _buildCrownCard('RAREST\nPLATINUM', rarestPlat, CyberpunkTheme.neonOrange)),
+                      Expanded(
+                        child: _buildCrownCard(
+                          'RAREST\nPLATINUM',
+                          rarestPlat,
+                          CyberpunkTheme.neonOrange,
+                        ),
+                      ),
                       const SizedBox(width: 12),
-                      Expanded(child: _buildCrownCard('NEWEST\nPLATINUM', newestPlat, CyberpunkTheme.neonCyan)),
+                      Expanded(
+                        child: _buildCrownCard(
+                          'NEWEST\nPLATINUM',
+                          newestPlat,
+                          CyberpunkTheme.neonCyan,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _buildCrownCard('HARDEST\nPLATINUM', hardestPlat, CyberpunkTheme.neonPink)),
+                      Expanded(
+                        child: _buildCrownCard(
+                          'HARDEST\nPLATINUM',
+                          hardestPlat,
+                          CyberpunkTheme.neonPink,
+                        ),
+                      ),
                       const SizedBox(width: 12),
                       Expanded(child: Container()), // Placeholder for symmetry
                     ],
@@ -244,11 +272,29 @@ class TrophyRoomScreen extends ConsumerWidget {
             } else {
               return Row(
                 children: [
-                  Expanded(child: _buildCrownCard('RAREST\nPLATINUM', rarestPlat, CyberpunkTheme.neonOrange)),
+                  Expanded(
+                    child: _buildCrownCard(
+                      'RAREST\nPLATINUM',
+                      rarestPlat,
+                      CyberpunkTheme.neonOrange,
+                    ),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildCrownCard('NEWEST\nPLATINUM', newestPlat, CyberpunkTheme.neonCyan)),
+                  Expanded(
+                    child: _buildCrownCard(
+                      'NEWEST\nPLATINUM',
+                      newestPlat,
+                      CyberpunkTheme.neonCyan,
+                    ),
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildCrownCard('HARDEST\nPLATINUM', hardestPlat, CyberpunkTheme.neonPink)),
+                  Expanded(
+                    child: _buildCrownCard(
+                      'HARDEST\nPLATINUM',
+                      hardestPlat,
+                      CyberpunkTheme.neonPink,
+                    ),
+                  ),
                 ],
               );
             }
@@ -258,10 +304,14 @@ class TrophyRoomScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCrownCard(String label, PlatinumTrophy? platinum, Color accentColor) {
+  Widget _buildCrownCard(
+    String label,
+    PlatinumTrophy? platinum,
+    Color accentColor,
+  ) {
     if (platinum == null) {
       return GlassPanel(
-        borderColor: accentColor.withOpacity(0.3),
+        borderColor: accentColor.withValues(alpha: 0.3),
         child: Container(
           height: 180,
           padding: const EdgeInsets.all(16),
@@ -270,7 +320,7 @@ class TrophyRoomScreen extends ConsumerWidget {
             children: [
               Icon(
                 Icons.lock_outline,
-                color: accentColor.withOpacity(0.4),
+                color: accentColor.withValues(alpha: 0.4),
                 size: 40,
               ),
               const SizedBox(height: 12),
@@ -278,7 +328,7 @@ class TrophyRoomScreen extends ConsumerWidget {
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1,
                   fontSize: 12,
@@ -289,7 +339,7 @@ class TrophyRoomScreen extends ConsumerWidget {
                 'NO DATA YET',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -319,13 +369,13 @@ class TrophyRoomScreen extends ConsumerWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
                 ),
               ),
-              
+
               // Game name
               Text(
                 platinum.gameName.toUpperCase(),
@@ -336,21 +386,27 @@ class TrophyRoomScreen extends ConsumerWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.8,
-                  shadows: CyberpunkTheme.neonGlow(color: accentColor, blurRadius: 4),
+                  shadows: CyberpunkTheme.neonGlow(
+                    color: accentColor,
+                    blurRadius: 4,
+                  ),
                 ),
               ),
-              
+
               // Rarity or Date
               if (label.contains('RAREST') || label.contains('HARDEST')) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: accentColor.withOpacity(0.2),
+                    color: accentColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: accentColor, width: 1.5),
                     boxShadow: [
                       BoxShadow(
-                        color: accentColor.withOpacity(0.4),
+                        color: accentColor.withValues(alpha: 0.4),
                         blurRadius: 8,
                       ),
                     ],
@@ -394,14 +450,14 @@ class TrophyRoomScreen extends ConsumerWidget {
         Text(
           'PLATINUM GALLERY',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.55),
+            color: Colors.white.withValues(alpha: 0.55),
             letterSpacing: 2.5,
             fontSize: 11,
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 18),
-        
+
         SizedBox(
           height: 140,
           child: ListView.builder(
@@ -412,7 +468,7 @@ class TrophyRoomScreen extends ConsumerWidget {
                 // "See All" chip
                 return _buildSeeAllPlatinumsChip(context);
               }
-              
+
               final platinum = data.platinums[index];
               return _buildPlatinumChip(context, platinum);
             },
@@ -442,12 +498,15 @@ class TrophyRoomScreen extends ConsumerWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: CyberpunkTheme.platinumNeon.withOpacity(0.2),
+                  color: CyberpunkTheme.platinumNeon.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: CyberpunkTheme.platinumNeon, width: 2),
+                  border: Border.all(
+                    color: CyberpunkTheme.platinumNeon,
+                    width: 2,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: CyberpunkTheme.platinumNeon.withOpacity(0.5),
+                      color: CyberpunkTheme.platinumNeon.withValues(alpha: 0.5),
                       blurRadius: 12,
                     ),
                   ],
@@ -458,9 +517,9 @@ class TrophyRoomScreen extends ConsumerWidget {
                   size: 28,
                 ),
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Game name
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -477,14 +536,14 @@ class TrophyRoomScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 4),
-              
+
               // "PLATINUM" label
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: CyberpunkTheme.platinumNeon.withOpacity(0.15),
+                  color: CyberpunkTheme.platinumNeon.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Text(
@@ -519,11 +578,7 @@ class TrophyRoomScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.grid_view,
-                color: CyberpunkTheme.neonCyan,
-                size: 36,
-              ),
+              Icon(Icons.grid_view, color: CyberpunkTheme.neonCyan, size: 36),
               SizedBox(height: 12),
               Text(
                 'SEE ALL\nPLATINUMS',
@@ -549,7 +604,7 @@ class TrophyRoomScreen extends ConsumerWidget {
         Text(
           'ULTRA RARE FLEXES',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.55),
+            color: Colors.white.withValues(alpha: 0.55),
             letterSpacing: 2.5,
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -559,16 +614,16 @@ class TrophyRoomScreen extends ConsumerWidget {
         Text(
           'Trophies you\'ve earned with rarity under 2%',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withValues(alpha: 0.4),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 18),
-        
+
         if (data.ultraRareTrophies.isEmpty)
           GlassPanel(
-            borderColor: CyberpunkTheme.neonPink.withOpacity(0.3),
+            borderColor: CyberpunkTheme.neonPink.withValues(alpha: 0.3),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
@@ -576,14 +631,14 @@ class TrophyRoomScreen extends ConsumerWidget {
                   children: [
                     Icon(
                       Icons.stars,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       size: 40,
                     ),
                     const SizedBox(height: 12),
                     Text(
                       'NO ULTRA-RARE TROPHIES YET',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1,
                       ),
@@ -593,7 +648,7 @@ class TrophyRoomScreen extends ConsumerWidget {
                       'Earn trophies with < 2% rarity to unlock this section',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         fontSize: 11,
                       ),
                     ),
@@ -611,12 +666,13 @@ class TrophyRoomScreen extends ConsumerWidget {
                   final trophy = entry.value;
                   return Column(
                     children: [
-                      if (index > 0) const Divider(color: Colors.white12, height: 1),
+                      if (index > 0)
+                        const Divider(color: Colors.white12, height: 1),
                       _buildUltraRareTrophyItem(trophy),
                     ],
                   );
                 }),
-                
+
                 // TODO: View All button (stub)
                 if (data.ultraRareTrophies.length >= 5)
                   Padding(
@@ -653,7 +709,7 @@ class TrophyRoomScreen extends ConsumerWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _getTierColor(trophy.tier).withOpacity(0.2),
+              color: _getTierColor(trophy.tier).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: _getTierColor(trophy.tier), width: 1.5),
             ),
@@ -663,9 +719,9 @@ class TrophyRoomScreen extends ConsumerWidget {
               size: 24,
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // Trophy info
           Expanded(
             child: Column(
@@ -688,24 +744,24 @@ class TrophyRoomScreen extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 11,
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // Rarity badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: CyberpunkTheme.neonPink.withOpacity(0.15),
+              color: CyberpunkTheme.neonPink.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: CyberpunkTheme.neonPink, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: CyberpunkTheme.neonPink.withOpacity(0.3),
+                  color: CyberpunkTheme.neonPink.withValues(alpha: 0.3),
                   blurRadius: 6,
                 ),
               ],
@@ -732,7 +788,7 @@ class TrophyRoomScreen extends ConsumerWidget {
         Text(
           'RECENT TROPHIES',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.55),
+            color: Colors.white.withValues(alpha: 0.55),
             letterSpacing: 2.5,
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -742,16 +798,16 @@ class TrophyRoomScreen extends ConsumerWidget {
         Text(
           'Your latest achievements across all games',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withValues(alpha: 0.4),
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 18),
-        
+
         if (data.recentTrophies.isEmpty)
           GlassPanel(
-            borderColor: CyberpunkTheme.neonCyan.withOpacity(0.3),
+            borderColor: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
@@ -759,14 +815,14 @@ class TrophyRoomScreen extends ConsumerWidget {
                   children: [
                     Icon(
                       Icons.emoji_events,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       size: 40,
                     ),
                     const SizedBox(height: 12),
                     Text(
                       'NO RECENT TROPHIES',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1,
                       ),
@@ -784,7 +840,8 @@ class TrophyRoomScreen extends ConsumerWidget {
                 final trophy = entry.value;
                 return Column(
                   children: [
-                    if (index > 0) const Divider(color: Colors.white12, height: 1),
+                    if (index > 0)
+                      const Divider(color: Colors.white12, height: 1),
                     _buildRecentTrophyItem(trophy),
                   ],
                 );
@@ -805,7 +862,7 @@ class TrophyRoomScreen extends ConsumerWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: _getTierColor(trophy.tier).withOpacity(0.2),
+              color: _getTierColor(trophy.tier).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: _getTierColor(trophy.tier), width: 1),
             ),
@@ -815,9 +872,9 @@ class TrophyRoomScreen extends ConsumerWidget {
               size: 20,
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // Trophy info
           Expanded(
             child: Column(
@@ -839,19 +896,19 @@ class TrophyRoomScreen extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 11,
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // Earned date
           Text(
             _getRelativeTime(trophy.earnedAt),
             style: TextStyle(
-              color: CyberpunkTheme.neonCyan.withOpacity(0.7),
+              color: CyberpunkTheme.neonCyan.withValues(alpha: 0.7),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 
 /// Glassmorphic panel component with neon border accent
-/// 
+///
 /// A reusable container with frosted glass effect, thin neon borders,
 /// and optional glow for the cyberpunk HUD aesthetic.
 class GlassPanel extends StatelessWidget {
@@ -12,7 +12,7 @@ class GlassPanel extends StatelessWidget {
   final double borderRadius;
   final bool showGlow;
   final EdgeInsetsGeometry? padding;
-  
+
   const GlassPanel({
     super.key,
     required this.child,
@@ -22,7 +22,7 @@ class GlassPanel extends StatelessWidget {
     this.showGlow = false,
     this.padding,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -39,14 +39,14 @@ class GlassPanel extends StatelessWidget {
 }
 
 /// Horizontal stat display for glass panels
-/// 
+///
 /// Shows a label and value in a compact horizontal layout
 class GlassStat extends StatelessWidget {
   final String label;
   final String value;
   final Color accentColor;
   final bool showAccentDot;
-  
+
   const GlassStat({
     super.key,
     required this.label,
@@ -54,11 +54,11 @@ class GlassStat extends StatelessWidget {
     this.accentColor = CyberpunkTheme.neonCyan,
     this.showAccentDot = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -74,11 +74,11 @@ class GlassStat extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: accentColor.withOpacity(0.8),
+                      color: accentColor.withValues(alpha: 0.8),
                       blurRadius: 6,
                     ),
                     BoxShadow(
-                      color: accentColor.withOpacity(0.4),
+                      color: accentColor.withValues(alpha: 0.4),
                       blurRadius: 12,
                     ),
                   ],
@@ -89,7 +89,7 @@ class GlassStat extends StatelessWidget {
             Text(
               label.toUpperCase(),
               style: theme.textTheme.labelSmall?.copyWith(
-                color: Colors.white.withOpacity(0.55),
+                color: Colors.white.withValues(alpha: 0.55),
                 letterSpacing: 1.5,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
@@ -97,7 +97,7 @@ class GlassStat extends StatelessWidget {
             ),
           ],
         ),
-        
+
         // Value with enhanced neon glow
         Text(
           value,
@@ -108,10 +108,7 @@ class GlassStat extends StatelessWidget {
             height: 1,
             shadows: [
               ...CyberpunkTheme.neonGlow(color: accentColor, blurRadius: 10),
-              Shadow(
-                color: accentColor.withOpacity(0.3),
-                blurRadius: 20,
-              ),
+              Shadow(color: accentColor.withValues(alpha: 0.3), blurRadius: 20),
             ],
           ),
         ),

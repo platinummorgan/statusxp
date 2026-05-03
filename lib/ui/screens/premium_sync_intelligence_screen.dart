@@ -15,16 +15,15 @@ final syncIntelligenceRepositoryProvider = Provider<SyncIntelligenceRepository>(
   },
 );
 
-final syncIntelligenceDataProvider = FutureProvider.autoDispose<SyncIntelligenceData>((
-  ref,
-) async {
-  final userId = ref.watch(currentUserIdProvider);
-  if (userId == null) {
-    throw Exception('Not authenticated');
-  }
-  final repository = ref.watch(syncIntelligenceRepositoryProvider);
-  return repository.getSyncIntelligence(userId);
-});
+final syncIntelligenceDataProvider =
+    FutureProvider.autoDispose<SyncIntelligenceData>((ref) async {
+      final userId = ref.watch(currentUserIdProvider);
+      if (userId == null) {
+        throw Exception('Not authenticated');
+      }
+      final repository = ref.watch(syncIntelligenceRepositoryProvider);
+      return repository.getSyncIntelligence(userId);
+    });
 
 class PremiumSyncIntelligenceScreen extends ConsumerStatefulWidget {
   const PremiumSyncIntelligenceScreen({super.key});
@@ -201,7 +200,8 @@ class _PremiumSyncIntelligenceScreenState
                           ),
                           actions: [
                             TextButton(
-                              onPressed: () => Navigator.of(dialogContext).pop(),
+                              onPressed: () =>
+                                  Navigator.of(dialogContext).pop(),
                               child: const Text('Got it'),
                             ),
                           ],
@@ -248,11 +248,11 @@ class _PremiumSyncIntelligenceScreenState
         borderRadius: BorderRadius.circular(14),
         gradient: LinearGradient(
           colors: [
-            accentPrimary.withOpacity(0.22),
-            accentSecondary.withOpacity(0.16),
+            accentPrimary.withValues(alpha: 0.22),
+            accentSecondary.withValues(alpha: 0.16),
           ],
         ),
-        border: Border.all(color: accentPrimary.withOpacity(0.4)),
+        border: Border.all(color: accentPrimary.withValues(alpha: 0.4)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,7 +310,7 @@ class _PremiumSyncIntelligenceScreenState
       decoration: BoxDecoration(
         color: surfaceLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Wrap(
         spacing: 14,
@@ -361,7 +361,7 @@ class _PremiumSyncIntelligenceScreenState
       decoration: BoxDecoration(
         color: surfaceLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accent.withOpacity(0.45)),
+        border: Border.all(color: accent.withValues(alpha: 0.45)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,7 +380,7 @@ class _PremiumSyncIntelligenceScreenState
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: accent.withOpacity(0.15),
+                  color: accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
@@ -455,7 +455,7 @@ class _PremiumSyncIntelligenceScreenState
       decoration: BoxDecoration(
         color: surfaceLight,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -515,7 +515,7 @@ class _PremiumSyncIntelligenceScreenState
       decoration: BoxDecoration(
         color: surfaceLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Text(text, style: const TextStyle(color: textSecondary)),
     );
@@ -543,7 +543,7 @@ class _PremiumSyncIntelligenceScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(

@@ -48,7 +48,7 @@ class _CreateTrophyRequestDialogState
 
     try {
       final service = TrophyHelpService(ref.read(supabaseClientProvider));
-      
+
       await service.createRequest(
         gameId: widget.gameId,
         gameTitle: widget.gameTitle,
@@ -94,14 +94,12 @@ class _CreateTrophyRequestDialogState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Dialog(
       backgroundColor: const Color(0xFF0f1729),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: CyberpunkTheme.neonCyan.withOpacity(0.3),
-        ),
+        side: BorderSide(color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3)),
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -133,7 +131,7 @@ class _CreateTrophyRequestDialogState
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close),
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                     ),
                   ],
                 ),
@@ -147,7 +145,7 @@ class _CreateTrophyRequestDialogState
                     color: CyberpunkTheme.glassLight,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                      color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
@@ -156,7 +154,7 @@ class _CreateTrophyRequestDialogState
                       Text(
                         'Game',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -173,7 +171,7 @@ class _CreateTrophyRequestDialogState
                       Text(
                         'Achievement',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -189,7 +187,7 @@ class _CreateTrophyRequestDialogState
                       Text(
                         'Platform',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -224,20 +222,20 @@ class _CreateTrophyRequestDialogState
                   decoration: InputDecoration(
                     hintText: 'e.g., Need help with raid boss, have mic',
                     hintStyle: TextStyle(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                     filled: true,
                     fillColor: CyberpunkTheme.glassLight,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -266,20 +264,20 @@ class _CreateTrophyRequestDialogState
                   decoration: InputDecoration(
                     hintText: 'e.g., Weekends 8-11pm EST',
                     hintStyle: TextStyle(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                     filled: true,
                     fillColor: CyberpunkTheme.glassLight,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -308,20 +306,20 @@ class _CreateTrophyRequestDialogState
                   decoration: InputDecoration(
                     hintText: 'Your in-game username',
                     hintStyle: TextStyle(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                     filled: true,
                     fillColor: CyberpunkTheme.glassLight,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                       ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(
-                        color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -339,10 +337,10 @@ class _CreateTrophyRequestDialogState
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.1),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                      color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -357,7 +355,7 @@ class _CreateTrophyRequestDialogState
                         child: Text(
                           'Your request will be visible to other players who can offer help.',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 12,
                           ),
                         ),
@@ -379,7 +377,7 @@ class _CreateTrophyRequestDialogState
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: BorderSide(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),

@@ -174,7 +174,7 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                               boxShadow: trophy.earned
                                   ? [
                                       BoxShadow(
-                                        color: tierColor.withOpacity(0.5),
+                                        color: tierColor.withValues(alpha: 0.5),
                                         blurRadius: 8,
                                         spreadRadius: 0,
                                       ),
@@ -263,7 +263,7 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: trophy.earned
-                                            ? tierColor.withOpacity(0.2)
+                                            ? tierColor.withValues(alpha: 0.2)
                                             : Colors.white10,
                                         borderRadius: BorderRadius.circular(6),
                                         border: Border.all(
@@ -275,8 +275,8 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                                         boxShadow: trophy.earned
                                             ? [
                                                 BoxShadow(
-                                                  color: tierColor.withOpacity(
-                                                    0.3,
+                                                  color: tierColor.withValues(
+                                                    alpha: 0.3,
                                                   ),
                                                   blurRadius: 4,
                                                 ),
@@ -319,7 +319,7 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: CyberpunkTheme.neonCyan
-                                              .withOpacity(0.15),
+                                              .withValues(alpha: 0.15),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
@@ -330,7 +330,7 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                                           boxShadow: [
                                             BoxShadow(
                                               color: CyberpunkTheme.neonCyan
-                                                  .withOpacity(0.3),
+                                                  .withValues(alpha: 0.3),
                                               blurRadius: 4,
                                             ),
                                           ],
@@ -357,11 +357,11 @@ class _TrophyListScreenState extends ConsumerState<TrophyListScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: tierColor.withOpacity(0.2),
+                                color: tierColor.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: tierColor.withOpacity(0.5),
+                                    color: tierColor.withValues(alpha: 0.5),
                                     blurRadius: 8,
                                   ),
                                 ],

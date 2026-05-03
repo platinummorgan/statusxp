@@ -12,6 +12,8 @@ import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
 import 'package:statusxp/ui/widgets/create_trophy_request_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Game Achievements Screen - Shows achievements/trophies for a specific game on a platform
 class GameAchievementsScreen extends ConsumerStatefulWidget {
   final int? platformId;
@@ -141,15 +143,15 @@ class _GameAchievementsScreenState
 
         // Debug: Log first achievement metadata
         if (kDebugMode && sourceIndex == 0) {
-          print('🔍 First achievement metadata structure:');
-          print('   Achievement: ${ach['name']}');
-          print('   metadata type: ${metadata.runtimeType}');
-          print('   metadata keys: ${metadata.keys.toList()}');
-          print(
+          statusxpLog('🔍 First achievement metadata structure:');
+          statusxpLog('   Achievement: ${ach['name']}');
+          statusxpLog('   metadata type: ${metadata.runtimeType}');
+          statusxpLog('   metadata keys: ${metadata.keys.toList()}');
+          statusxpLog(
             '   is_dlc value: ${metadata['is_dlc']} (type: ${metadata['is_dlc'].runtimeType})',
           );
-          print('   dlc_name value: ${metadata['dlc_name']}');
-          print('   Full metadata: $metadata');
+          statusxpLog('   dlc_name value: ${metadata['dlc_name']}');
+          statusxpLog('   Full metadata: $metadata');
         }
 
         // Extract platform-specific fields from metadata
@@ -241,23 +243,23 @@ class _GameAchievementsScreenState
           .toSet();
 
       if (kDebugMode) {
-        print('🎮 Achievements loaded for ${widget.gameName}:');
-        print('   Total: ${achievements.length}');
-        print('   Marked as DLC: $dlcCount');
-        print('   With DLC names: $withDlcName');
-        print('   Unique DLC groups: ${uniqueDlcNames.length}');
-        print(
+        statusxpLog('🎮 Achievements loaded for ${widget.gameName}:');
+        statusxpLog('   Total: ${achievements.length}');
+        statusxpLog('   Marked as DLC: $dlcCount');
+        statusxpLog('   With DLC names: $withDlcName');
+        statusxpLog('   Unique DLC groups: ${uniqueDlcNames.length}');
+        statusxpLog(
           '   Unique trophy group IDs: ${uniqueTrophyGroups.length} - ${uniqueTrophyGroups.toList()}',
         );
         if (uniqueDlcNames.isNotEmpty) {
-          print('   DLC names: ${uniqueDlcNames.toList()}');
+          statusxpLog('   DLC names: ${uniqueDlcNames.toList()}');
         }
 
         // Debug: Log first few achievements' DLC status
-        print('   First 5 achievements:');
+        statusxpLog('   First 5 achievements:');
         for (var i = 0; i < achievements.length && i < 5; i++) {
           final ach = achievements[i];
-          print(
+          statusxpLog(
             '     ${i + 1}. ${ach['name']}: trophy_group=${ach['trophy_group_id']}, dlc_name=${ach['dlc_name']}',
           );
         }
@@ -512,12 +514,12 @@ class _GameAchievementsScreenState
                 _showRemainingOnly = false;
               });
             },
-            selectedColor: platformColor.withOpacity(0.25),
+            selectedColor: platformColor.withValues(alpha: 0.25),
             labelStyle: TextStyle(
               color: !_showRemainingOnly ? platformColor : Colors.white70,
               fontWeight: FontWeight.w700,
             ),
-            backgroundColor: const Color(0xFF0A0E27).withOpacity(0.7),
+            backgroundColor: const Color(0xFF0A0E27).withValues(alpha: 0.7),
           ),
           const SizedBox(width: 8),
           ChoiceChip(
@@ -528,12 +530,12 @@ class _GameAchievementsScreenState
                 _showRemainingOnly = true;
               });
             },
-            selectedColor: platformColor.withOpacity(0.25),
+            selectedColor: platformColor.withValues(alpha: 0.25),
             labelStyle: TextStyle(
               color: _showRemainingOnly ? platformColor : Colors.white70,
               fontWeight: FontWeight.w700,
             ),
-            backgroundColor: const Color(0xFF0A0E27).withOpacity(0.7),
+            backgroundColor: const Color(0xFF0A0E27).withValues(alpha: 0.7),
           ),
         ],
       ),
@@ -562,9 +564,9 @@ class _GameAchievementsScreenState
 
     // Debug: Log grouping results
     if (kDebugMode) {
-      print('📦 Achievement grouping:');
+      statusxpLog('📦 Achievement grouping:');
       grouped.forEach((groupName, achs) {
-        print('   $groupName: ${achs.length} achievements');
+        statusxpLog('   $groupName: ${achs.length} achievements');
       });
     }
 
@@ -593,10 +595,13 @@ class _GameAchievementsScreenState
           padding: EdgeInsets.only(top: groupIndex > 0 ? 8 : 0),
           child: Card(
             margin: const EdgeInsets.only(bottom: 8),
-            color: const Color(0xFF0A0E27).withOpacity(0.6),
+            color: const Color(0xFF0A0E27).withValues(alpha: 0.6),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: platformColor.withOpacity(0.3), width: 1),
+              side: BorderSide(
+                color: platformColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Theme(
               data: Theme.of(
@@ -637,7 +642,7 @@ class _GameAchievementsScreenState
                     Text(
                       '$earnedCount / $totalCount',
                       style: TextStyle(
-                        color: platformColor.withOpacity(0.8),
+                        color: platformColor.withValues(alpha: 0.8),
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -699,7 +704,7 @@ class _GameAchievementsScreenState
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: const Color(0xFF0A0E27).withOpacity(isEarned ? 0.9 : 0.5),
+      color: const Color(0xFF0A0E27).withValues(alpha: isEarned ? 0.9 : 0.5),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -904,7 +909,9 @@ class _GameAchievementsScreenState
                               vertical: 1,
                             ),
                             decoration: BoxDecoration(
-                              color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                              color: CyberpunkTheme.neonPurple.withValues(
+                                alpha: 0.3,
+                              ),
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: CyberpunkTheme.neonPurple,
@@ -1009,7 +1016,7 @@ class _GameAchievementsScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color, width: 1),
       ),
@@ -1076,6 +1083,7 @@ class _GameAchievementsScreenState
     // Check AI credits first
     final creditService = AICreditService();
     final creditStatus = await creditService.checkCredits();
+    if (!context.mounted) return;
 
     if (!creditStatus.canUse) {
       // Show purchase dialog
@@ -1091,15 +1099,15 @@ class _GameAchievementsScreenState
           constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFF0A0E27).withOpacity(0.95),
+            color: const Color(0xFF0A0E27).withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+              color: CyberpunkTheme.neonPurple.withValues(alpha: 0.5),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                color: CyberpunkTheme.neonPurple.withValues(alpha: 0.3),
                 blurRadius: 20,
               ),
             ],
@@ -1162,7 +1170,10 @@ class _GameAchievementsScreenState
                   achievementName: achievementName,
                   achievementDescription: achievementDescription,
                   platform: widget.platform,
-                  achievementId: achievement['id']?.toString(),
+                  platformId: widget.platformId,
+                  platformGameId: widget.platformGameId,
+                  platformAchievementId: achievement['platform_achievement_id']
+                      ?.toString(),
                   onCreditConsumed: _refreshAICreditBadge,
                 ),
               ),
@@ -1188,15 +1199,15 @@ class _GameAchievementsScreenState
           constraints: const BoxConstraints(maxWidth: 450, maxHeight: 700),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: const Color(0xFF0A0E27).withOpacity(0.95),
+            color: const Color(0xFF0A0E27).withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+              color: CyberpunkTheme.neonPurple.withValues(alpha: 0.5),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                color: CyberpunkTheme.neonPurple.withValues(alpha: 0.3),
                 blurRadius: 20,
               ),
             ],
@@ -1405,13 +1416,13 @@ class _GameAchievementsScreenState
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        CyberpunkTheme.neonPurple.withOpacity(0.2),
-                        CyberpunkTheme.neonCyan.withOpacity(0.2),
+                        CyberpunkTheme.neonPurple.withValues(alpha: 0.2),
+                        CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                      color: CyberpunkTheme.neonPurple.withValues(alpha: 0.5),
                     ),
                   ),
                   child: Row(
@@ -1480,25 +1491,24 @@ class _GameAchievementsScreenState
 
     // Check if user is premium (shouldn't see this, but double-check)
     final isPremium = await subscriptionService.isPremiumActive();
+    if (!context.mounted) return;
     if (isPremium) {
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Already Premium'),
-            content: const Text(
-              'You already have unlimited AI guides with your Premium subscription!\n\n'
-              'No need to purchase AI packs. Enjoy unlimited access! 🎉',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Already Premium'),
+          content: const Text(
+            'You already have unlimited AI guides with your Premium subscription!\n\n'
+            'No need to purchase AI packs. Enjoy unlimited access! 🎉',
           ),
-        );
-      }
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
       return;
     }
 
@@ -1628,7 +1638,7 @@ class _GameAchievementsScreenState
         }
       }
     } catch (e) {
-      print('AI pack checkout error: $e');
+      statusxpLog('AI pack checkout error: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1652,67 +1662,6 @@ class _GameAchievementsScreenState
         throw Exception('Unknown pack type: $packType');
     }
   }
-
-  /// Detects if an achievement is likely multiplayer/co-op based on keywords
-  bool _isMultiplayerAchievement(Map<String, dynamic> achievement) {
-    final name = (achievement['name'] as String? ?? '').toLowerCase();
-    final description = (achievement['description'] as String? ?? '')
-        .toLowerCase();
-    final combined = '$name $description';
-
-    // Always log in web builds
-    print('[MULTIPLAYER CHECK] Name: $name');
-    print('[MULTIPLAYER CHECK] Description: $description');
-
-    // List of multiplayer/co-op keywords
-    const multiplayerKeywords = [
-      'multiplayer',
-      'multi-player',
-      'co-op',
-      'coop',
-      'cooperative',
-      'online',
-      'with a friend',
-      'with friend',
-      'with friends',
-      'with other',
-      '2 player',
-      'two player',
-      '3 player',
-      'three player',
-      '4 player',
-      'four player',
-      'squad',
-      'team',
-      'party',
-      'raid',
-      'pvp',
-      'versus',
-      'matchmaking',
-      'lobby',
-      'player', // catch "a player", "another player"
-      'players', // catch "other players"
-      'opponent', // catch "opponent", "opponents"
-      'adversary',
-      'adversaries',
-      'competitive',
-      'deathmatch',
-      'domination', // game mode
-      'capture', // capture the flag, etc
-      'ranked',
-      'unranked',
-      'leaderboard',
-    ];
-
-    final isMultiplayer = multiplayerKeywords.any(
-      (keyword) => combined.contains(keyword),
-    );
-
-    // Always log
-    print('[MULTIPLAYER CHECK] Is multiplayer: $isMultiplayer');
-
-    return isMultiplayer;
-  }
 }
 
 /// Widget that displays AI-generated achievement guide with streaming support
@@ -1721,7 +1670,9 @@ class _AIGuideContent extends StatefulWidget {
   final String achievementName;
   final String achievementDescription;
   final String platform;
-  final String? achievementId;
+  final int? platformId;
+  final String? platformGameId;
+  final String? platformAchievementId;
   final VoidCallback? onCreditConsumed;
 
   const _AIGuideContent({
@@ -1729,7 +1680,9 @@ class _AIGuideContent extends StatefulWidget {
     required this.achievementName,
     required this.achievementDescription,
     required this.platform,
-    this.achievementId,
+    this.platformId,
+    this.platformGameId,
+    this.platformAchievementId,
     this.onCreditConsumed,
   });
 
@@ -1742,6 +1695,11 @@ class _AIGuideContentState extends State<_AIGuideContent> {
   String _guideText = '';
   bool _isLoading = false;
   String? _error;
+
+  bool _hasYouTubeLink(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('youtube.com') || lower.contains('youtu.be');
+  }
 
   @override
   void initState() {
@@ -1767,21 +1725,21 @@ class _AIGuideContentState extends State<_AIGuideContent> {
     // Check if we already have a cached guide in the database
     final cached = await _checkCachedGuide();
     if (cached != null) {
-      print('✅ Loaded guide from cache (${cached.length} chars)');
+      statusxpLog('✅ Loaded guide from cache (${cached.length} chars)');
       setState(() {
         _guideText = cached;
       });
 
       // Search for YouTube video even for cached guides (if not already included)
-      if (!_guideText.contains('youtube.com')) {
-        print('🎥 Cached guide has no YouTube link - searching...');
+      if (!_hasYouTubeLink(_guideText)) {
+        statusxpLog('🎥 Cached guide has no YouTube link - searching...');
         await _appendYouTubeLink();
         // Update database with YouTube link if found
-        if (_guideText.contains('youtube.com')) {
+        if (_hasYouTubeLink(_guideText)) {
           await _saveGuideToDatabase(_guideText);
         }
       } else {
-        print('✅ Cached guide already has YouTube link');
+        statusxpLog('✅ Cached guide already has YouTube link');
       }
 
       setState(() {
@@ -1790,7 +1748,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       return;
     }
 
-    print('🤖 No cached guide - generating new one with AI...');
+    statusxpLog('🤖 No cached guide - generating new one with AI...');
 
     // No cached guide found - generate new one with ChatGPT
     setState(() {
@@ -1812,14 +1770,14 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         });
       }
 
-      print(
+      statusxpLog(
         '✅ AI guide generation complete - now searching for YouTube video...',
       );
 
       // Search for YouTube video and append to guide
       await _appendYouTubeLink();
 
-      print('✅ YouTube search complete - now saving to database...');
+      statusxpLog('✅ YouTube search complete - now saving to database...');
 
       // Save to database
       await _saveGuideToDatabase(_guideText);
@@ -1828,7 +1786,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Error in guide generation flow: $e');
+      statusxpLog('❌ Error in guide generation flow: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -1838,7 +1796,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
 
   Future<void> _appendYouTubeLink() async {
     try {
-      print(
+      statusxpLog(
         '🎥 Starting YouTube search for: "${widget.gameTitle}" - "${widget.achievementName}"',
       );
       final youtubeService = YouTubeSearchService();
@@ -1848,7 +1806,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       );
 
       if (videoUrl != null) {
-        print('✅ YouTube video found: $videoUrl');
+        statusxpLog('✅ YouTube video found: $videoUrl');
         // Replace "No specific video guide found" with actual link
         setState(() {
           if (_guideText.contains('No specific video guide found')) {
@@ -1862,97 +1820,103 @@ class _AIGuideContentState extends State<_AIGuideContent> {
           }
         });
       } else {
-        print('⚠️ No YouTube video found');
+        statusxpLog('⚠️ No YouTube video found');
       }
     } catch (e) {
-      print('❌ YouTube search error: $e');
+      statusxpLog('❌ YouTube search error: $e');
       // Continue without YouTube link if it fails
     }
   }
 
   Future<String?> _checkCachedGuide() async {
-    if (widget.achievementId == null) {
-      print('❌ Achievement ID is null - cannot check cache');
+    if (widget.platformId == null ||
+        widget.platformGameId == null ||
+        widget.platformAchievementId == null) {
+      statusxpLog('❌ Missing composite key - cannot check cached guide');
       return null;
     }
 
     try {
-      print('🔍 Checking cache for achievement ID: ${widget.achievementId}');
+      statusxpLog(
+        '🔍 Checking cache for achievement key: '
+        'platform=${widget.platformId}, '
+        'game=${widget.platformGameId}, '
+        'achievement=${widget.platformAchievementId}',
+      );
       final supabase = Supabase.instance.client;
-
-      // Parse achievementId as int (database id column is integer)
-      final achievementId = int.tryParse(widget.achievementId!);
-      if (achievementId == null) {
-        print('❌ Invalid achievement ID format: ${widget.achievementId}');
-        return null;
-      }
-
-      print('🔎 Querying achievements table for ID: $achievementId');
       final response = await supabase
           .from('achievements')
           .select('ai_guide, ai_guide_generated_at')
-          .eq('id', achievementId)
-          .single();
+          .eq('platform_id', widget.platformId!)
+          .eq('platform_game_id', widget.platformGameId!)
+          .eq('platform_achievement_id', widget.platformAchievementId!)
+          .maybeSingle();
 
-      print('📊 Database response: $response');
+      if (response == null) {
+        statusxpLog('⚠️ No achievement row found for composite key');
+        return null;
+      }
+
+      statusxpLog('📊 Database response: $response');
       final cachedGuide = response['ai_guide'] as String?;
       final generatedAt = response['ai_guide_generated_at'] as String?;
 
       if (cachedGuide != null && cachedGuide.isNotEmpty) {
-        print(
+        statusxpLog(
           '✅ Found cached guide (${cachedGuide.length} chars) generated at: $generatedAt',
         );
         return cachedGuide;
       } else {
-        print(
+        statusxpLog(
           '⚠️ No cached guide found - ai_guide: $cachedGuide, generated_at: $generatedAt',
         );
         return null;
       }
     } catch (e) {
-      print('❌ Error checking cached guide: $e');
+      statusxpLog('❌ Error checking cached guide: $e');
       return null;
     }
   }
 
   Future<void> _saveGuideToDatabase(String guide) async {
-    if (widget.achievementId == null) {
-      print('❌ Cannot save guide - achievement ID is null');
+    if (widget.platformId == null ||
+        widget.platformGameId == null ||
+        widget.platformAchievementId == null) {
+      statusxpLog('❌ Cannot save guide - missing composite key');
       return;
     }
 
     try {
-      print(
-        '💾 Saving guide to database for achievement ID: ${widget.achievementId}',
+      statusxpLog(
+        '💾 Saving guide for achievement key: '
+        'platform=${widget.platformId}, '
+        'game=${widget.platformGameId}, '
+        'achievement=${widget.platformAchievementId}',
       );
       final supabase = Supabase.instance.client;
 
-      // Parse achievementId as int (database id column is integer)
-      final achievementId = int.tryParse(widget.achievementId!);
-      if (achievementId == null) {
-        print('❌ Invalid achievement ID format: ${widget.achievementId}');
-        return;
-      }
-
       // First verify the record exists
-      print('🔍 Verifying achievement exists in database...');
+      statusxpLog(
+        '🔍 Verifying achievement exists in database (composite key)',
+      );
       final existsCheck = await supabase
           .from('achievements')
-          .select('id, name')
-          .eq('id', achievementId)
+          .select('platform_achievement_id, name')
+          .eq('platform_id', widget.platformId!)
+          .eq('platform_game_id', widget.platformGameId!)
+          .eq('platform_achievement_id', widget.platformAchievementId!)
           .maybeSingle();
 
       if (existsCheck == null) {
-        print('❌ Achievement ID $achievementId does not exist in database');
+        statusxpLog('❌ Achievement does not exist for composite key');
         return;
       }
-      print(
-        '✅ Achievement exists: ${existsCheck['name']} (ID: ${existsCheck['id']})',
+      statusxpLog(
+        '✅ Achievement exists: ${existsCheck['name']} '
+        '(platform_achievement_id: ${existsCheck['platform_achievement_id']})',
       );
 
-      print(
-        '💾 Attempting to update achievement ID: $achievementId with guide (${guide.length} chars)',
-      );
+      statusxpLog('💾 Attempting to update guide (${guide.length} chars)');
 
       // Try simple update first without select
       await supabase
@@ -1961,32 +1925,36 @@ class _AIGuideContentState extends State<_AIGuideContent> {
             'ai_guide': guide,
             'ai_guide_generated_at': DateTime.now().toIso8601String(),
           })
-          .eq('id', achievementId);
+          .eq('platform_id', widget.platformId!)
+          .eq('platform_game_id', widget.platformGameId!)
+          .eq('platform_achievement_id', widget.platformAchievementId!);
 
-      print('📝 Update query executed, verifying if it worked...');
+      statusxpLog('📝 Update query executed, verifying if it worked...');
 
       // Verify the update worked by querying the record again
       final verification = await supabase
           .from('achievements')
-          .select('id, ai_guide, ai_guide_generated_at')
-          .eq('id', achievementId)
+          .select('platform_achievement_id, ai_guide, ai_guide_generated_at')
+          .eq('platform_id', widget.platformId!)
+          .eq('platform_game_id', widget.platformGameId!)
+          .eq('platform_achievement_id', widget.platformAchievementId!)
           .single();
 
       final savedGuide = verification['ai_guide'] as String?;
       final savedAt = verification['ai_guide_generated_at'] as String?;
 
       if (savedGuide != null && savedGuide.isNotEmpty) {
-        print(
+        statusxpLog(
           '✅ Update successful! Guide saved (${savedGuide.length} chars) at $savedAt',
         );
       } else {
-        print('❌ Update failed - guide is still null/empty');
-        print('🔍 Full verification result: $verification');
+        statusxpLog('❌ Update failed - guide is still null/empty');
+        statusxpLog('🔍 Full verification result: $verification');
       }
     } catch (e) {
-      print('❌ Error saving guide: $e');
+      statusxpLog('❌ Error saving guide: $e');
       // Also print the stack trace to see more details
-      print('Stack trace: ${StackTrace.current}');
+      statusxpLog('Stack trace: ${StackTrace.current}');
     }
   }
 

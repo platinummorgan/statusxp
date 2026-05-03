@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:statusxp/theme/colors.dart';
 
 /// A compact chip displaying a trophy tier count in the breakdown row.
-/// 
+///
 /// Used in the dashboard to show bronze, silver, gold, platinum, and total trophy counts
 /// in a horizontal HUD-style strip.
 class TrophyBreakdownChip extends StatelessWidget {
   /// The label for this trophy tier (e.g., 'BRONZE', 'SILVER', etc.)
   final String label;
-  
+
   /// The count of trophies for this tier
   final int count;
-  
+
   /// The accent color for this trophy tier
   final Color accentColor;
-  
+
   /// Whether to show a subtle glow effect
   final bool showGlow;
-  
+
   /// Total trophies for calculating proportion (optional, for mini-bar)
   final int? totalTrophies;
 
@@ -36,7 +36,7 @@ class TrophyBreakdownChip extends StatelessWidget {
     final proportion = totalTrophies != null && (totalTrophies ?? 0) > 0
         ? count / (totalTrophies ?? 1)
         : 0.0;
-    
+
     return Container(
       height: 100,
       padding: const EdgeInsets.all(16),
@@ -71,7 +71,7 @@ class TrophyBreakdownChip extends StatelessWidget {
               fontSize: 9,
             ),
           ),
-          
+
           // Count (big and bold)
           Text(
             count.toString(),
@@ -82,7 +82,7 @@ class TrophyBreakdownChip extends StatelessWidget {
               height: 1,
             ),
           ),
-          
+
           // Mini progress bar (proportional to total)
           if (totalTrophies != null && (totalTrophies ?? 0) > 0)
             Container(

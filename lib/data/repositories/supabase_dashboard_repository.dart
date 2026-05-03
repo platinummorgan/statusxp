@@ -1,6 +1,8 @@
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Repository for fetching dashboard statistics from Supabase (V2 Schema)
 class SupabaseDashboardRepository {
   final SupabaseClient _client;
@@ -21,19 +23,19 @@ class SupabaseDashboardRepository {
     final profile = sharedResults[1] as Map<String, dynamic>;
 
     final platformResults = await Future.wait([
-      _getPlatformStats(
+      _safeGetPlatformStats(
         userId,
         1,
         statusXpRows: statusXpRows,
         psnPlatforms: [1, 2, 5, 9],
       ), // PSN (PS5=1, PS4=2, PS3=5, PSVITA=9)
-      _getPlatformStats(
+      _safeGetPlatformStats(
         userId,
         2,
         statusXpRows: statusXpRows,
         xboxPlatforms: [10, 11, 12],
       ), // Xbox (360=10, One=11, Series X=12)
-      _getPlatformStats(userId, 4, statusXpRows: statusXpRows), // Steam
+      _safeGetPlatformStats(userId, 4, statusXpRows: statusXpRows), // Steam
     ]);
 
     // Prefer live StatusXP computation; fall back to cache only if RPC returned nothing.
@@ -56,6 +58,35 @@ class SupabaseDashboardRepository {
       xboxStats: xboxStats,
       steamStats: steamStats,
     );
+  }
+
+  Future<PlatformStats> _safeGetPlatformStats(
+    String userId,
+    int platformId, {
+    required List<Map<String, dynamic>> statusXpRows,
+    List<int>? xboxPlatforms,
+    List<int>? psnPlatforms,
+  }) async {
+    try {
+      return await _getPlatformStats(
+        userId,
+        platformId,
+        statusXpRows: statusXpRows,
+        xboxPlatforms: xboxPlatforms,
+        psnPlatforms: psnPlatforms,
+      );
+    } catch (e) {
+      statusxpLog(
+        '[DASHBOARD] Platform stats failed for platform=$platformId user=$userId: $e',
+      );
+      return const PlatformStats(
+        platinums: 0,
+        achievementsUnlocked: 0,
+        gamerscore: 0,
+        gamesCount: 0,
+        statusXP: 0,
+      );
+    }
   }
 
   Future<List<Map<String, dynamic>>> _getStatusXpRows(String userId) async {
@@ -107,31 +138,9 @@ class SupabaseDashboardRepository {
     List<int>? xboxPlatforms,
     List<int>? psnPlatforms,
   }) async {
-    // Determine which platform IDs to query
     final platformIds = psnPlatforms ?? xboxPlatforms ?? [platformId];
 
-    // Get achievement count for platform using V2 schema
-    final achievementsResponse = await _client
-        .from('user_achievements')
-        .select('platform_achievement_id')
-        .eq('user_id', userId)
-        .inFilter('platform_id', platformIds)
-        .count(CountOption.exact);
-
-    final achievementsCount = achievementsResponse.count;
-    final progressResponse = await _client
-        .from('user_progress')
-        .select('current_score, metadata')
-        .eq('user_id', userId)
-        .inFilter('platform_id', platformIds);
-
-    final progressRows = progressResponse as List;
-    final gamesCount = progressRows.length;
     double platformStatusXP = 0.0;
-    int platinums = 0;
-    int gamerscore = 0;
-
-    // Calculate platform StatusXP from shared live rows.
     for (final row in statusXpRows) {
       final rowPlatformId = _toInt(row['platform_id']);
       if (rowPlatformId != null && platformIds.contains(rowPlatformId)) {
@@ -139,21 +148,114 @@ class SupabaseDashboardRepository {
       }
     }
 
-    // Get platform-specific stats
+    int gamesCount = 0;
+    int achievementsCount = 0;
+    int platinums = 0;
+    int gamerscore = 0;
+
+    // Cache-first path for stability and performance.
+    try {
+      if (psnPlatforms != null) {
+        final psnCache = await _client
+            .from('psn_leaderboard_cache')
+            .select(
+              'platinum_count,gold_count,silver_count,bronze_count,total_trophies,total_games',
+            )
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (psnCache != null) {
+          platinums = _toInt(psnCache['platinum_count']) ?? 0;
+          achievementsCount =
+              _toInt(psnCache['total_trophies']) ??
+              ((_toInt(psnCache['platinum_count']) ?? 0) +
+                  (_toInt(psnCache['gold_count']) ?? 0) +
+                  (_toInt(psnCache['silver_count']) ?? 0) +
+                  (_toInt(psnCache['bronze_count']) ?? 0));
+          gamesCount = _toInt(psnCache['total_games']) ?? 0;
+          return PlatformStats(
+            platinums: platinums,
+            achievementsUnlocked: achievementsCount,
+            gamerscore: 0,
+            gamesCount: gamesCount,
+            statusXP: platformStatusXP,
+          );
+        }
+      } else if (xboxPlatforms != null) {
+        final xboxCache = await _client
+            .from('xbox_leaderboard_cache')
+            .select('achievement_count,gamerscore,total_games')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (xboxCache != null) {
+          gamerscore = _toInt(xboxCache['gamerscore']) ?? 0;
+          achievementsCount = _toInt(xboxCache['achievement_count']) ?? 0;
+          gamesCount = _toInt(xboxCache['total_games']) ?? 0;
+          return PlatformStats(
+            platinums: 0,
+            achievementsUnlocked: achievementsCount,
+            gamerscore: gamerscore,
+            gamesCount: gamesCount,
+            statusXP: platformStatusXP,
+          );
+        }
+      } else {
+        final steamCache = await _client
+            .from('steam_leaderboard_cache')
+            .select('achievement_count,total_games')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (steamCache != null) {
+          achievementsCount = _toInt(steamCache['achievement_count']) ?? 0;
+          gamesCount = _toInt(steamCache['total_games']) ?? 0;
+          return PlatformStats(
+            platinums: 0,
+            achievementsUnlocked: achievementsCount,
+            gamerscore: 0,
+            gamesCount: gamesCount,
+            statusXP: platformStatusXP,
+          );
+        }
+      }
+    } catch (e) {
+      statusxpLog('[DASHBOARD] Cache read failed (platform=$platformId): $e');
+    }
+
+    // Lightweight live fallback without expensive exact counts.
+    final progressResponse = await _client
+        .from('user_progress')
+        .select('current_score, metadata')
+        .eq('user_id', userId)
+        .inFilter('platform_id', platformIds);
+
+    final progressRows = progressResponse as List;
+    gamesCount = progressRows.length;
+
     if (psnPlatforms != null) {
-      // PSN: Sum per-game platinum trophies from live user_progress metadata.
       for (final row in progressRows) {
-        final metadata = row is Map ? row['metadata'] : null;
-        if (metadata is Map) {
-          platinums += _toInt(metadata['platinum_trophies']) ?? 0;
+        if (row is! Map) continue;
+        final metadata = row['metadata'] as Map<String, dynamic>?;
+        final earned = metadata?['earnedTrophies'] as Map<String, dynamic>?;
+        achievementsCount +=
+            (_toInt(earned?['bronze']) ?? 0) +
+            (_toInt(earned?['silver']) ?? 0) +
+            (_toInt(earned?['gold']) ?? 0) +
+            (_toInt(earned?['platinum']) ?? 0);
+        if ((_toInt(earned?['platinum']) ?? 0) > 0) {
+          platinums += 1;
         }
       }
     } else if (xboxPlatforms != null) {
-      // Xbox: Sum live current_score from user_progress.
       for (final row in progressRows) {
-        if (row is Map) {
-          gamerscore += _toInt(row['current_score']) ?? 0;
-        }
+        if (row is! Map) continue;
+        gamerscore += _toInt(row['current_score']) ?? 0;
+      }
+    } else {
+      for (final row in progressRows) {
+        if (row is! Map) continue;
+        achievementsCount += _toInt(row['current_score']) ?? 0;
       }
     }
 

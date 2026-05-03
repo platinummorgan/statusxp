@@ -170,7 +170,7 @@ class _SeasonalLeaderboardScreenState
                   controller: _tabController,
                   indicatorColor: CyberpunkTheme.neonCyan,
                   labelColor: CyberpunkTheme.neonCyan,
-                  unselectedLabelColor: Colors.white.withOpacity(0.6),
+                  unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
                   tabs: const [
                     Tab(text: 'StatusXP'),
                     Tab(text: 'Platinums'),
@@ -205,8 +205,8 @@ class _SeasonalLeaderboardScreenState
               style: ButtonStyle(
                 backgroundColor: WidgetStateProperty.resolveWith(
                   (states) => states.contains(WidgetState.selected)
-                      ? CyberpunkTheme.neonCyan.withOpacity(0.2)
-                      : Colors.black.withOpacity(0.25),
+                      ? CyberpunkTheme.neonCyan.withValues(alpha: 0.2)
+                      : Colors.black.withValues(alpha: 0.25),
                 ),
                 foregroundColor: WidgetStateProperty.all(Colors.white),
               ),
@@ -263,7 +263,7 @@ class _SeasonalLeaderboardScreenState
         child: Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.75),
+            color: Colors.white.withValues(alpha: 0.75),
             fontSize: 12,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
@@ -293,14 +293,14 @@ class _SeasonalLeaderboardScreenState
           margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFF0A0E27).withOpacity(0.85),
+            color: const Color(0xFF0A0E27).withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: CyberpunkTheme.neonGreen.withOpacity(0.7),
+              color: CyberpunkTheme.neonGreen.withValues(alpha: 0.7),
             ),
             boxShadow: [
               BoxShadow(
-                color: CyberpunkTheme.neonGreen.withOpacity(0.25),
+                color: CyberpunkTheme.neonGreen.withValues(alpha: 0.25),
                 blurRadius: 12,
                 spreadRadius: 1,
               ),
@@ -337,7 +337,7 @@ class _SeasonalLeaderboardScreenState
                     Text(
                       periodLabel,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.65),
+                        color: Colors.white.withValues(alpha: 0.65),
                         fontSize: 12,
                       ),
                     ),
@@ -417,9 +417,11 @@ class _SeasonalLeaderboardScreenState
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0E27).withOpacity(0.82),
+          color: const Color(0xFF0A0E27).withValues(alpha: 0.82),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: CyberpunkTheme.neonCyan.withOpacity(0.35)),
+          border: Border.all(
+            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.35),
+          ),
         ),
         child: Row(
           children: [
@@ -439,7 +441,7 @@ class _SeasonalLeaderboardScreenState
               backgroundImage: entry.avatarUrl != null
                   ? NetworkImage(entry.avatarUrl!)
                   : null,
-              backgroundColor: CyberpunkTheme.neonCyan.withOpacity(0.2),
+              backgroundColor: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
               child: entry.avatarUrl == null
                   ? const Icon(Icons.person, color: CyberpunkTheme.neonCyan)
                   : null,
@@ -462,7 +464,7 @@ class _SeasonalLeaderboardScreenState
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.65),
+                      color: Colors.white.withValues(alpha: 0.65),
                       fontSize: 12,
                     ),
                   ),

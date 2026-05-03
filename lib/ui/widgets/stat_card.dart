@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:statusxp/theme/colors.dart';
 
 /// StatCard - Reusable stats display widget
-/// 
+///
 /// A modern card widget for displaying game statistics with optional neon glow.
 /// Features rounded corners and a clean, gaming-inspired aesthetic.
 class StatCard extends StatelessWidget {
@@ -76,10 +76,7 @@ class StatCard extends StatelessWidget {
           // Optional subtitle
           if (subtitle != null) ...[
             const SizedBox(height: 4),
-            Text(
-              subtitle!,
-              style: theme.textTheme.bodySmall,
-            ),
+            Text(subtitle!, style: theme.textTheme.bodySmall),
           ],
         ],
       ),

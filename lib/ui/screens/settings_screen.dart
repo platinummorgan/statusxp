@@ -18,6 +18,7 @@ import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
 import 'package:statusxp/ui/screens/updates_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
 import 'package:statusxp/ui/screens/twitch/twitch_connect_screen.dart';
+import 'package:statusxp/utils/sync_issue_classifier.dart';
 
 /// Settings Screen - Platform connections and app configuration
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -76,7 +77,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             'psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, '
             'steam_id, steam_api_key, steam_display_name, preferred_display_platform, '
             'last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at, show_on_leaderboard, '
-            'xbox_sync_status, xbox_sync_error, twitch_user_id',
+            'psn_sync_status, psn_sync_error, '
+            'xbox_sync_status, xbox_sync_error, '
+            'steam_sync_status, steam_sync_error, '
+            'twitch_user_id',
           )
           .eq('id', userId)
           .single();
@@ -321,7 +325,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 fontSize: 14,
                 color: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 24),
@@ -476,6 +480,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
 
     if (confirmed != true) return;
+    if (!mounted) return;
 
     final finalConfirm = await showDialog<bool>(
       context: context,
@@ -523,6 +528,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 },
               );
 
+              if (!context.mounted) return;
               Navigator.pop(context, input == 'DELETE');
             },
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -740,10 +746,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final psnSyncStatus = ref.watch(psnSyncStatusProvider);
     final xboxSyncStatus = ref.watch(xboxSyncStatusProvider);
-    final psnRequiresRelink = psnSyncStatus.maybeWhen(
-      data: (status) => status.requiresRelink,
-      orElse: () => false,
+    final psnLiveStatus = psnSyncStatus.maybeWhen(
+      data: (status) => status,
+      orElse: () => null,
     );
+    final xboxLiveStatus = xboxSyncStatus.maybeWhen(
+      data: (status) => status,
+      orElse: () => null,
+    );
+
+    final psnIssue = SyncIssueClassifier.analyze(
+      platformName: 'PlayStation',
+      syncStatus:
+          psnLiveStatus?.status ?? (_profile?['psn_sync_status'] as String?),
+      errorMessage:
+          psnLiveStatus?.error ?? _profile?['psn_sync_error']?.toString(),
+      requiresRelinkSignal: psnLiveStatus?.requiresRelink ?? false,
+    );
+    final xboxIssue = SyncIssueClassifier.analyze(
+      platformName: 'Xbox',
+      syncStatus:
+          xboxLiveStatus?.status ?? (_profile?['xbox_sync_status'] as String?),
+      errorMessage:
+          xboxLiveStatus?.error ?? _profile?['xbox_sync_error']?.toString(),
+    );
+    final steamIssue = SyncIssueClassifier.analyze(
+      platformName: 'Steam',
+      syncStatus: _profile?['steam_sync_status'] as String?,
+      errorMessage: _profile?['steam_sync_error']?.toString(),
+    );
+
+    final psnNeedsRelink = psnIssue.requiresRelink;
+    final xboxNeedsRelink = xboxIssue.requiresRelink;
+    final steamNeedsRelink = steamIssue.requiresRelink;
     final linkedAuthProviders = _getLinkedAuthProviders();
     final userEmail = Supabase.instance.client.auth.currentUser?.email;
     final hasEmailProvider = linkedAuthProviders.contains('email');
@@ -776,9 +811,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : 'Not connected',
                   isConnected: _profile?['psn_account_id'] != null,
                   syncStatus: psnSyncStatus.maybeWhen(
-                    data: (status) => status.isLinked
-                        ? (status.requiresRelink ? 'error' : status.status)
-                        : null,
+                    data: (status) =>
+                        status.isLinked ? psnIssue.effectiveStatus : null,
                     orElse: () => null,
                   ),
                   lastSyncAt: _profile?['last_psn_sync_at'] != null
@@ -803,34 +837,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : null,
                 ),
 
-                if ((_profile?['psn_account_id'] != null) && psnRequiresRelink)
+                if ((_profile?['psn_account_id'] != null) && psnNeedsRelink)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.15),
+                        color: Colors.orange.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.orange.withOpacity(0.4),
+                          color: Colors.orange.withValues(alpha: 0.4),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.warning_amber_rounded,
                             color: Colors.orange,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'PlayStation needs relinking. Disconnect then reconnect to restore syncing.',
-                              style: TextStyle(
+                              psnIssue.warningMessage ??
+                                  'PlayStation needs relinking. Disconnect then reconnect to restore syncing.',
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
                               ),
                             ),
+                          ),
+                          TextButton(
+                            onPressed: () => context.push('/psn-sync'),
+                            child: const Text('Open Sync'),
                           ),
                         ],
                       ),
@@ -849,7 +888,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : 'Not connected',
                   isConnected: _profile?['xbox_xuid'] != null,
                   syncStatus: xboxSyncStatus.maybeWhen(
-                    data: (status) => status.isLinked ? status.status : null,
+                    data: (status) =>
+                        status.isLinked ? xboxIssue.effectiveStatus : null,
                     orElse: () => null,
                   ),
                   lastSyncAt: _profile?['last_xbox_sync_at'] != null
@@ -857,7 +897,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : null,
                   onTap: () async {
                     if (_profile?['xbox_xuid'] != null) {
-                      context.push('/xbox-sync');
+                      await context.push('/xbox-sync');
+                      if (mounted) {
+                        await _loadProfile();
+                      }
                     } else {
                       final result = await Navigator.push<bool>(
                         context,
@@ -873,39 +916,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       : null,
                 ),
 
-                if ((_profile?['xbox_sync_status'] == 'error') &&
-                    (_profile?['xbox_sync_error'] != null) &&
-                    _profile!['xbox_sync_error']
-                        .toString()
-                        .toLowerCase()
-                        .contains('relink'))
+                if ((_profile?['xbox_xuid'] != null) && xboxNeedsRelink)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.15),
+                        color: Colors.orange.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.orange.withOpacity(0.4),
+                          color: Colors.orange.withValues(alpha: 0.4),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.warning_amber_rounded,
                             color: Colors.orange,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Xbox needs relinking. Disconnect then reconnect to restore syncing.',
-                              style: TextStyle(
+                              xboxIssue.warningMessage ??
+                                  'Xbox needs relinking. Disconnect then reconnect to restore syncing.',
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
                               ),
                             ),
+                          ),
+                          TextButton(
+                            onPressed: () => context.push('/xbox-sync'),
+                            child: const Text('Open Sync'),
                           ),
                         ],
                       ),
@@ -923,7 +966,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ? 'Connected as ${_profile?['steam_display_name'] ?? 'Unknown'}'
                       : 'Not connected',
                   isConnected: _profile?['steam_id'] != null,
-                  syncStatus: _profile?['steam_id'] != null ? 'success' : null,
+                  syncStatus: _profile?['steam_id'] != null
+                      ? steamIssue.effectiveStatus
+                      : null,
                   lastSyncAt: _profile?['last_steam_sync_at'] != null
                       ? DateTime.parse(_profile!['last_steam_sync_at'])
                       : null,
@@ -950,6 +995,49 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ? () => _disconnectPlatform('Steam')
                       : null,
                 ),
+                if ((_profile?['steam_id'] != null) && steamNeedsRelink)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              steamIssue.warningMessage ??
+                                  'Steam needs relinking. Disconnect then reconnect to restore syncing.',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SteamSyncScreen(),
+                              ),
+                            ),
+                            child: const Text('Open Sync'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 // Twitch (Web only)
                 if (kIsWeb) ...[
@@ -1050,7 +1138,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: accentSuccess.withOpacity(0.2),
+                                color: accentSuccess.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: accentSuccess),
                               ),
@@ -1117,8 +1205,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     try {
                       await launchUrl(emailUri);
                     } catch (_) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       await Clipboard.setData(const ClipboardData(text: email));
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
@@ -1204,7 +1293,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   .update({'show_on_leaderboard': value})
                                   .eq('id', userId);
 
-                              if (!mounted) return;
+                              if (!context.mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
@@ -1217,7 +1306,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               );
                             }
                           } catch (e) {
-                            if (!mounted) return;
+                            if (!context.mounted) return;
                             setState(() => _showOnLeaderboard = !value);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -1338,7 +1427,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     );
 
                     if (!bioResult.success) {
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
@@ -1351,7 +1440,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       return;
                     }
 
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     final signInMethod = await showDialog<String>(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -1382,13 +1471,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       final credentials = await _showCredentialDialog();
                       if (credentials == null) return;
 
-                      await _biometricService.storeCredentials(
+                      await _biometricService.storeLegacyCredentials(
                         credentials['email']!,
                         credentials['password']!,
                       );
                       await _biometricService.setBiometricEnabled(true);
 
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       setState(() {});
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -1416,7 +1505,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       }
                       await _biometricService.setBiometricEnabled(true);
 
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       setState(() {});
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -1429,10 +1518,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       );
                     }
                   } else {
-                    await _biometricService.clearStoredCredentials();
+                    await _biometricService.clearLegacyStoredCredentials();
                     await _biometricService.setBiometricEnabled(false);
 
-                    if (!mounted) return;
+                    if (!context.mounted) return;
                     setState(() {});
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Biometric disabled')),
@@ -1479,7 +1568,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, color: iconColor),
@@ -1492,7 +1581,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.2),
+                color: Colors.green.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.green),
               ),
@@ -1509,7 +1598,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.2),
+                color: Colors.orange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.orange),
               ),
@@ -1567,8 +1656,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: isConnected
-                    ? Colors.green.withOpacity(0.15)
-                    : Colors.grey.withOpacity(0.12),
+                    ? Colors.green.withValues(alpha: 0.15)
+                    : Colors.grey.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isConnected ? Colors.green : Colors.grey,
@@ -1619,35 +1708,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // ignore: deprecated_member_use
                 RadioListTile<String>(
                   title: const Text('PlayStation Network'),
                   subtitle: _profile?['psn_online_id'] != null
                       ? Text(_profile!['psn_online_id'])
                       : const Text('Not connected'),
                   value: 'psn',
+                  // ignore: deprecated_member_use
                   groupValue: currentPlatform,
+                  // ignore: deprecated_member_use
                   onChanged: _profile?['psn_online_id'] != null
                       ? (v) => Navigator.pop(context, v)
                       : null,
                 ),
+                // ignore: deprecated_member_use
                 RadioListTile<String>(
                   title: const Text('Xbox Live'),
                   subtitle: _profile?['xbox_gamertag'] != null
                       ? Text(_profile!['xbox_gamertag'])
                       : const Text('Not connected'),
                   value: 'xbox',
+                  // ignore: deprecated_member_use
                   groupValue: currentPlatform,
+                  // ignore: deprecated_member_use
                   onChanged: _profile?['xbox_gamertag'] != null
                       ? (v) => Navigator.pop(context, v)
                       : null,
                 ),
+                // ignore: deprecated_member_use
                 RadioListTile<String>(
                   title: const Text('Steam'),
                   subtitle: _profile?['steam_display_name'] != null
                       ? Text(_profile!['steam_display_name'])
                       : const Text('Not connected'),
                   value: 'steam',
+                  // ignore: deprecated_member_use
                   groupValue: currentPlatform,
+                  // ignore: deprecated_member_use
                   onChanged: _profile?['steam_display_name'] != null
                       ? (v) => Navigator.pop(context, v)
                       : null,

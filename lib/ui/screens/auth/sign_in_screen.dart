@@ -8,6 +8,8 @@ import 'package:statusxp/data/auth/auth_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Modern sign in screen with multiple sign-in options:
 /// - Continue with Biometric (if available)
 /// - Continue with Google
@@ -84,7 +86,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       if (!isEnabled) return;
 
       final hasStoredCredentials = await _biometricService
-          .hasStoredCredentials();
+          .hasLegacyStoredCredentials();
       final hasStoredToken = await _biometricService.hasStoredRefreshToken();
       final hasActiveSession =
           Supabase.instance.client.auth.currentSession != null;
@@ -155,7 +157,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       }
 
       // Biometric successful - check if we have stored credentials
-      final credentials = await _biometricService.getStoredCredentials();
+      final credentials = await _biometricService.getLegacyStoredCredentials();
 
       if (credentials != null) {
         final email = credentials['email'];
@@ -172,7 +174,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
           // Success! Auth gate will handle navigation
         } else {
           // Invalid credentials stored - clear and show error
-          await _biometricService.clearStoredCredentials();
+          await _biometricService.clearLegacyStoredCredentials();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -219,11 +221,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
               // Auth gate will handle navigation
               return;
             } else {
-              print('🔐 Token invalid - session could not be restored');
+              statusxpLog('🔐 Token invalid - session could not be restored');
             }
           } catch (e) {
             // Token invalid or expired - clear it and show detailed error
-            print('Token refresh failed: $e');
+            statusxpLog('Token refresh failed: $e');
             await _biometricService.clearRefreshToken();
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -579,7 +581,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                   end: Alignment.bottomRight,
                   colors: [
                     backgroundDark,
-                    surfaceDark.withOpacity(0.95),
+                    surfaceDark.withValues(alpha: 0.95),
                     backgroundDark,
                   ],
                 ),
@@ -594,7 +596,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
               height: 220,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: accentPrimary.withOpacity(0.16),
+                color: accentPrimary.withValues(alpha: 0.16),
               ),
             ),
           ),
@@ -606,7 +608,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
               height: 230,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: accentSecondary.withOpacity(0.12),
+                color: accentSecondary.withValues(alpha: 0.12),
               ),
             ),
           ),
@@ -622,24 +624,26 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                   constraints: BoxConstraints(maxWidth: cardMaxWidth),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: surfaceDark.withOpacity(
-                        useFramedCard ? 0.92 : 0.76,
+                      color: surfaceDark.withValues(
+                        alpha: useFramedCard ? 0.92 : 0.76,
                       ),
                       borderRadius: BorderRadius.circular(
                         useFramedCard ? 18 : 14,
                       ),
                       border: useFramedCard
-                          ? Border.all(color: accentPrimary.withOpacity(0.24))
+                          ? Border.all(
+                              color: accentPrimary.withValues(alpha: 0.24),
+                            )
                           : null,
                       boxShadow: useFramedCard
                           ? [
                               BoxShadow(
-                                color: accentSecondary.withOpacity(0.08),
+                                color: accentSecondary.withValues(alpha: 0.08),
                                 blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.26),
+                                color: Colors.black.withValues(alpha: 0.26),
                                 blurRadius: 18,
                                 offset: const Offset(0, 8),
                               ),
@@ -658,10 +662,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: accentPrimary.withOpacity(0.12),
+                              color: accentPrimary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(999),
                               border: Border.all(
-                                color: accentPrimary.withOpacity(0.35),
+                                color: accentPrimary.withValues(alpha: 0.35),
                               ),
                             ),
                             child: const Text(
@@ -686,7 +690,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color: accentPrimary.withOpacity(0.25),
+                                  color: accentPrimary.withValues(alpha: 0.25),
                                   blurRadius: 26,
                                   offset: const Offset(0, 10),
                                 ),
@@ -765,7 +769,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                           children: [
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withOpacity(0.14),
+                                color: Colors.white.withValues(alpha: 0.14),
                                 thickness: 1,
                               ),
                             ),
@@ -776,7 +780,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                               child: Text(
                                 'CHOOSE SIGN IN METHOD',
                                 style: TextStyle(
-                                  color: textMuted.withOpacity(0.85),
+                                  color: textMuted.withValues(alpha: 0.85),
                                   fontSize: isCompact ? 10 : 11,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.9,
@@ -785,7 +789,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                             ),
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withOpacity(0.14),
+                                color: Colors.white.withValues(alpha: 0.14),
                                 thickness: 1,
                               ),
                             ),
@@ -805,7 +809,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                                 gradient: const LinearGradient(
                                   colors: [accentPrimary, accentSecondary],
                                 ),
-                                borderColor: accentPrimary.withOpacity(0.8),
+                                borderColor: accentPrimary.withValues(
+                                  alpha: 0.8,
+                                ),
                                 onTap: _isLoading ? null : _signInWithBiometric,
                               ),
                             ),
@@ -822,7 +828,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                               imagePath: 'assets/images/google_logo.png',
                               label: 'Google',
                               backgroundColor: Colors.white,
-                              borderColor: Colors.white.withOpacity(0.85),
+                              borderColor: Colors.white.withValues(alpha: 0.85),
                               textColor: Colors.black87,
                               onTap: _isLoading ? null : _signInWithGoogle,
                             ),
@@ -839,7 +845,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                               icon: Icons.apple,
                               label: 'Apple',
                               backgroundColor: Colors.black,
-                              borderColor: accentSecondary.withOpacity(0.75),
+                              borderColor: accentSecondary.withValues(
+                                alpha: 0.75,
+                              ),
                               textColor: Colors.white,
                               onTap: _isLoading ? null : _signInWithApple,
                             ),
@@ -856,7 +864,9 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                               icon: Icons.email_outlined,
                               label: 'Email',
                               backgroundColor: surfaceLight,
-                              borderColor: accentPrimary.withOpacity(0.55),
+                              borderColor: accentPrimary.withValues(
+                                alpha: 0.55,
+                              ),
                               textColor: textPrimary,
                               onTap: _isLoading ? null : _showEmailPasswordForm,
                             ),
@@ -884,7 +894,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                             'New to StatusXP? Use Email to create your account.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: textSecondary.withOpacity(0.8),
+                              color: textSecondary.withValues(alpha: 0.8),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -936,20 +946,20 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                 ? Border.all(color: borderColor, width: 1.1)
                 : Border.all(
                     color: isLightButton
-                        ? Colors.white.withOpacity(0.65)
-                        : accentPrimary.withOpacity(0.35),
+                        ? Colors.white.withValues(alpha: 0.65)
+                        : accentPrimary.withValues(alpha: 0.35),
                     width: 1,
                   ),
             boxShadow: [
               BoxShadow(
                 color: isLightButton
-                    ? Colors.black.withOpacity(0.12)
-                    : accentPrimary.withOpacity(0.09),
+                    ? Colors.black.withValues(alpha: 0.12)
+                    : accentPrimary.withValues(alpha: 0.09),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.12),
+                color: Colors.black.withValues(alpha: 0.12),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -965,8 +975,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                   height: 10,
                   decoration: BoxDecoration(
                     color: isLightButton
-                        ? Colors.black.withOpacity(0.08)
-                        : accentSecondary.withOpacity(0.25),
+                        ? Colors.black.withValues(alpha: 0.08)
+                        : accentSecondary.withValues(alpha: 0.25),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(8),
                       topRight: Radius.circular(8),
@@ -981,13 +991,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
                     height: 24,
                     decoration: BoxDecoration(
                       color: isLightButton
-                          ? Colors.black.withOpacity(0.08)
-                          : Colors.black.withOpacity(0.25),
+                          ? Colors.black.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: isLightButton
-                            ? Colors.black.withOpacity(0.15)
-                            : accentPrimary.withOpacity(0.35),
+                            ? Colors.black.withValues(alpha: 0.15)
+                            : accentPrimary.withValues(alpha: 0.35),
                         width: 0.8,
                       ),
                     ),
@@ -1054,7 +1064,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
       // Store credentials for biometric auth (if enabled)
       final biometricEnabled = await _biometricService.isBiometricEnabled();
       if (biometricEnabled) {
-        await _biometricService.storeCredentials(email, password);
+        await _biometricService.storeLegacyCredentials(email, password);
       }
 
       // Refresh biometric button visibility
@@ -1075,12 +1085,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
             backgroundColor: Colors.red,
           ),
         );
-
-        // Store credentials for biometric auth (if enabled)
-        final biometricEnabled = await _biometricService.isBiometricEnabled();
-        if (biometricEnabled) {
-          await _biometricService.storeCredentials(email, password);
-        }
       }
     } finally {
       if (mounted) {
@@ -1141,9 +1145,9 @@ class _AuthFeaturePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.07),
+        color: Colors.white.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withOpacity(0.14)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

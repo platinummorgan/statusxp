@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:statusxp/theme/colors.dart';
 
 /// A hero card displaying the user's platinum trophy count as the main focal point.
-/// 
+///
 /// Features a gradient background and large, prominent display of platinum count
 /// to emphasize it as the ultimate achievement metric.
 class PlatinumHeroCard extends StatelessWidget {
   /// The number of platinum trophies earned
   final int platinumCount;
-  
+
   /// The total number of games tracked (optional, for completion percentage)
   final int? totalGames;
 
@@ -21,7 +21,7 @@ class PlatinumHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -86,9 +86,9 @@ class PlatinumHeroCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Platinum count - big and bold
           Text(
             platinumCount.toString(),
@@ -105,7 +105,7 @@ class PlatinumHeroCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Platinum rate stat
           if (totalGames != null && (totalGames ?? 0) > 0) ...[
             const SizedBox(height: 16),

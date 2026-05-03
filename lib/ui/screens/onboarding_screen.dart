@@ -7,7 +7,7 @@ import 'package:statusxp/utils/html.dart' as html;
 import 'package:go_router/go_router.dart';
 
 /// Enhanced onboarding screen with interactive features and animations
-/// 
+///
 /// Features:
 /// - Animated transitions between pages
 /// - Feature spotlights with visual examples
@@ -16,7 +16,7 @@ import 'package:go_router/go_router.dart';
 /// - Skip option for experienced users
 class OnboardingScreen extends ConsumerStatefulWidget {
   final VoidCallback? onComplete;
-  
+
   const OnboardingScreen({super.key, this.onComplete});
 
   @override
@@ -66,15 +66,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   Future<void> _completeOnboarding() async {
     // On web, use cookie so it survives logout; on mobile use SharedPreferences
     if (kIsWeb) {
-      html.document.cookie = 'onboarding_complete=true; max-age=31536000; path=/; SameSite=Strict';
+      html.document.cookie =
+          'onboarding_complete=true; max-age=31536000; path=/; SameSite=Strict';
     } else {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('onboarding_complete', true);
     }
-    
+
     // Notify parent that onboarding is complete
     widget.onComplete?.call();
-    
+
     if (mounted) {
       context.go('/');
     }
@@ -120,7 +121,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ],
               ),
             ),
-            
+
             // Page view with enhanced pages
             Expanded(
               child: PageView(
@@ -134,7 +135,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ],
               ),
             ),
-            
+
             // Animated page indicators
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -151,11 +152,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       borderRadius: BorderRadius.circular(4),
                       color: _currentPage == index
                           ? accentPrimary
-                          : Colors.grey.withOpacity(0.3),
+                          : Colors.grey.withValues(alpha: 0.3),
                       boxShadow: _currentPage == index
                           ? [
                               BoxShadow(
-                                color: accentPrimary.withOpacity(0.4),
+                                color: accentPrimary.withValues(alpha: 0.4),
                                 blurRadius: 8,
                                 spreadRadius: 0,
                               ),
@@ -166,7 +167,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 ),
               ),
             ),
-            
+
             // Next/Get Started button with animation
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -237,13 +238,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      accentPrimary.withOpacity(0.2),
-                      accentSecondary.withOpacity(0.2),
+                      accentPrimary.withValues(alpha: 0.2),
+                      accentSecondary.withValues(alpha: 0.2),
                     ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: accentPrimary.withOpacity(0.3),
+                      color: accentPrimary.withValues(alpha: 0.3),
                       blurRadius: 30,
                       spreadRadius: 0,
                     ),
@@ -282,7 +283,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   color: surfaceLight,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: accentPrimary.withOpacity(0.2),
+                    color: accentPrimary.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Column(
@@ -335,10 +336,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             const SizedBox(height: 12),
             const Text(
               'Sync achievements from all your gaming accounts',
-              style: TextStyle(
-                fontSize: 16,
-                color: textSecondary,
-              ),
+              style: TextStyle(fontSize: 16, color: textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
@@ -370,27 +368,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: accentSuccess.withOpacity(0.1),
+                color: accentSuccess.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: accentSuccess.withOpacity(0.3),
-                ),
+                border: Border.all(color: accentSuccess.withValues(alpha: 0.3)),
               ),
               child: const Row(
                 children: [
-                  Icon(
-                    Icons.security,
-                    color: accentSuccess,
-                    size: 20,
-                  ),
+                  Icon(Icons.security, color: accentSuccess, size: 20),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Your credentials are secure and never stored',
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: textSecondary, fontSize: 12),
                     ),
                   ),
                 ],
@@ -423,10 +412,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             const SizedBox(height: 12),
             const Text(
               'Everything you need to master your games',
-              style: TextStyle(
-                fontSize: 16,
-                color: textSecondary,
-              ),
+              style: TextStyle(fontSize: 16, color: textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
@@ -475,81 +461,78 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      accentSuccess.withOpacity(0.3),
-                      accentPrimary.withOpacity(0.3),
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        accentSuccess.withValues(alpha: 0.3),
+                        accentPrimary.withValues(alpha: 0.3),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accentSuccess.withValues(alpha: 0.4),
+                        blurRadius: 40,
+                        spreadRadius: 0,
+                      ),
                     ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentSuccess.withOpacity(0.4),
-                      blurRadius: 40,
-                      spreadRadius: 0,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.rocket_launch,
-                  size: 80,
-                  color: accentSuccess,
-                ),
-              ),
-              const SizedBox(height: 48),
-              const Text(
-                'You\'re All Set!',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Ready to start tracking your achievements?',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: surfaceLight,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: accentPrimary.withOpacity(0.3),
+                  child: const Icon(
+                    Icons.rocket_launch,
+                    size: 80,
+                    color: accentSuccess,
                   ),
                 ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Next Steps:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildStepRow('1', 'Sign in to your account'),
-                    const SizedBox(height: 12),
-                    _buildStepRow('2', 'Connect your gaming platforms'),
-                    const SizedBox(height: 12),
-                    _buildStepRow('3', 'Sync your achievements'),
-                    const SizedBox(height: 12),
-                    _buildStepRow('4', 'Start tracking your progress!'),
-                  ],
+                const SizedBox(height: 48),
+                const Text(
+                  'You\'re All Set!',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                const Text(
+                  'Ready to start tracking your achievements?',
+                  style: TextStyle(fontSize: 18, color: textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: surfaceLight,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: accentPrimary.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Next Steps:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildStepRow('1', 'Sign in to your account'),
+                      const SizedBox(height: 12),
+                      _buildStepRow('2', 'Connect your gaming platforms'),
+                      const SizedBox(height: 12),
+                      _buildStepRow('3', 'Sync your achievements'),
+                      const SizedBox(height: 12),
+                      _buildStepRow('4', 'Start tracking your progress!'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -563,7 +546,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: color.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 20),
@@ -596,10 +579,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset((1 - value) * 100, 0),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
+          child: Opacity(opacity: value, child: child),
         );
       },
       child: Container(
@@ -607,16 +587,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         decoration: BoxDecoration(
           color: surfaceLight,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withOpacity(0.3),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 28),
@@ -637,10 +615,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: const TextStyle(
-                      color: textSecondary,
-                      fontSize: 12,
-                    ),
+                    style: const TextStyle(color: textSecondary, fontSize: 12),
                   ),
                 ],
               ),
@@ -662,9 +637,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       decoration: BoxDecoration(
         color: surfaceLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,7 +645,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -693,10 +666,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: const TextStyle(
-                    color: textSecondary,
-                    fontSize: 13,
-                  ),
+                  style: const TextStyle(color: textSecondary, fontSize: 13),
                 ),
               ],
             ),
@@ -713,7 +683,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: accentPrimary.withOpacity(0.2),
+            color: accentPrimary.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -731,10 +701,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              color: textSecondary,
-              fontSize: 14,
-            ),
+            style: const TextStyle(color: textSecondary, fontSize: 14),
           ),
         ),
       ],

@@ -29,9 +29,7 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
     }
     // Open WebView login screen for Microsoft OAuth
     final accessToken = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (context) => const XboxWebViewLoginScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const XboxWebViewLoginScreen()),
     );
 
     // User canceled login
@@ -108,7 +106,10 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
 
     final extracted = _extractCode(code);
     if (extracted == null || extracted.isEmpty) {
-      setState(() => _error = 'Invalid code. Please paste the full URL or the code value.');
+      setState(
+        () => _error =
+            'Invalid code. Please paste the full URL or the code value.',
+      );
       return;
     }
 
@@ -145,7 +146,7 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _successMessage = 
+          _successMessage =
               'Successfully linked Xbox account!\n'
               'Gamertag: ${result.gamertag}\n'
               'Gamerscore: ${result.gamerscore}\n'
@@ -172,9 +173,7 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Connect Xbox Live'),
-      ),
+      appBar: AppBar(title: const Text('Connect Xbox Live')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -195,17 +194,14 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            
+
             const Text(
               'Link Your Xbox Account',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            
+
             const Text(
               'Sign in with your Microsoft account to automatically import your Xbox achievements and gaming stats.',
               style: TextStyle(fontSize: 16),
@@ -233,7 +229,7 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
                   ],
                 ),
               ),
-            
+
             // Success message
             if (_successMessage != null)
               Container(
@@ -256,7 +252,7 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
                   ],
                 ),
               ),
-            
+
             // Sign in button
             SizedBox(
               width: double.infinity,
@@ -284,14 +280,11 @@ class _XboxConnectScreenState extends ConsumerState<XboxConnectScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Help text
             Text(
               'By connecting your Xbox account, you agree to allow StatusXP to access your achievement data.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
           ],

@@ -31,10 +31,10 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
 
   Future<void> _loadAchievements() async {
     setState(() => _isLoading = true);
-    
+
     final repository = ref.read(metaAchievementRepositoryProvider);
     final achievements = await repository.getAllAchievements(widget.userId);
-    
+
     if (mounted) {
       setState(() {
         _achievements = achievements;
@@ -89,7 +89,7 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: CyberpunkTheme.neonOrange.withOpacity(0.3),
+                  color: CyberpunkTheme.neonOrange.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -105,7 +105,9 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
                       fontWeight: FontWeight.w900,
                       shadows: [
                         Shadow(
-                          color: CyberpunkTheme.neonOrange.withOpacity(0.5),
+                          color: CyberpunkTheme.neonOrange.withValues(
+                            alpha: 0.5,
+                          ),
                           blurRadius: 10,
                         ),
                       ],
@@ -146,17 +148,23 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
                       });
                     },
                     style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      backgroundColor: WidgetStateProperty.resolveWith((
+                        states,
+                      ) {
                         if (states.contains(WidgetState.selected)) {
-                          return CyberpunkTheme.neonOrange.withOpacity(0.3);
+                          return CyberpunkTheme.neonOrange.withValues(
+                            alpha: 0.3,
+                          );
                         }
-                        return const Color(0xFF1a1f3a).withOpacity(0.5);
+                        return const Color(0xFF1a1f3a).withValues(alpha: 0.5);
                       }),
-                      foregroundColor: WidgetStateProperty.resolveWith((states) {
+                      foregroundColor: WidgetStateProperty.resolveWith((
+                        states,
+                      ) {
                         if (states.contains(WidgetState.selected)) {
                           return CyberpunkTheme.neonOrange;
                         }
-                        return Colors.white.withOpacity(0.6);
+                        return Colors.white.withValues(alpha: 0.6);
                       }),
                     ),
                   ),
@@ -170,40 +178,42 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
             child: _isLoading
                 ? const Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonOrange),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        CyberpunkTheme.neonOrange,
+                      ),
                     ),
                   )
                 : _filteredAchievements.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _showLockedOnly ? Icons.lock : Icons.emoji_events,
-                              size: 64,
-                              color: Colors.white.withOpacity(0.3),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              _showLockedOnly
-                                  ? 'All achievements unlocked! 🎉'
-                                  : 'No unlocked titles yet',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _showLockedOnly ? Icons.lock : Icons.emoji_events,
+                          size: 64,
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _filteredAchievements.length,
-                        itemBuilder: (context, index) {
-                          final achievement = _filteredAchievements[index];
-                          return _buildAchievementTile(achievement);
-                        },
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _showLockedOnly
+                              ? 'All achievements unlocked! 🎉'
+                              : 'No unlocked titles yet',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _filteredAchievements.length,
+                    itemBuilder: (context, index) {
+                      final achievement = _filteredAchievements[index];
+                      return _buildAchievementTile(achievement);
+                    },
+                  ),
           ),
         ],
       ),
@@ -219,13 +229,13 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isSelected
-            ? CyberpunkTheme.neonOrange.withOpacity(0.2)
-            : const Color(0xFF1a1f3a).withOpacity(0.5),
+            ? CyberpunkTheme.neonOrange.withValues(alpha: 0.2)
+            : const Color(0xFF1a1f3a).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isSelected
               ? CyberpunkTheme.neonOrange
-              : categoryColor.withOpacity(0.3),
+              : categoryColor.withValues(alpha: 0.3),
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -235,9 +245,14 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
           onTap: isLocked
               ? null
               : () async {
-                  final repository = ref.read(metaAchievementRepositoryProvider);
-                  final success = await repository.selectTitle(widget.userId, achievement.id);
-                  
+                  final repository = ref.read(
+                    metaAchievementRepositoryProvider,
+                  );
+                  final success = await repository.selectTitle(
+                    widget.userId,
+                    achievement.id,
+                  );
+
                   if (success && mounted) {
                     Navigator.pop(context, achievement.displayTitle);
                   }
@@ -254,10 +269,10 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: categoryColor.withOpacity(0.2),
+                      color: categoryColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: categoryColor.withOpacity(0.5),
+                        color: categoryColor.withValues(alpha: 0.5),
                         width: 1,
                       ),
                     ),
@@ -280,7 +295,7 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
                           achievement.displayTitle,
                           style: TextStyle(
                             color: isLocked
-                                ? Colors.white.withOpacity(0.5)
+                                ? Colors.white.withValues(alpha: 0.5)
                                 : Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -290,7 +305,7 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
                         Text(
                           achievement.description,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 12,
                           ),
                         ),
@@ -299,7 +314,7 @@ class _TitleSelectorModalState extends ConsumerState<TitleSelectorModal> {
                           Text(
                             'Unlocked ${_formatDate(achievement.unlockedAt ?? DateTime.now())}',
                             style: TextStyle(
-                              color: categoryColor.withOpacity(0.6),
+                              color: categoryColor.withValues(alpha: 0.6),
                               fontSize: 10,
                               fontStyle: FontStyle.italic,
                             ),

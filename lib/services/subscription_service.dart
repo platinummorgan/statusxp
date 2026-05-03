@@ -3,9 +3,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:in_app_purchase_android/in_app_purchase_android.dart';
-import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/utils/supabase_guard.dart';
+import 'package:statusxp/utils/statusxp_logger.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Subscription plans available
@@ -26,7 +26,7 @@ class SubscriptionPlan {
 }
 
 /// Subscription Service for managing premium subscriptions
-/// 
+///
 /// Handles:
 /// - Purchasing subscriptions via Google Play / App Store
 /// - Restoring purchases
@@ -38,24 +38,24 @@ class SubscriptionService {
   SubscriptionService._internal();
 
   final InAppPurchase _iap = InAppPurchase.instance;
-  final SupabaseClient _supabase = Supabase.instance.client;
-  
+  final SupabaseClient? _supabase = tryGetSupabaseClient();
+
   StreamSubscription<List<PurchaseDetails>>? _subscription;
-  
+
   // Product IDs (configure these in Google Play Console and App Store Connect)
   static const String monthlySubscriptionId = 'statusxp_premium_monthly';
-  
+
   // AI Pack Product IDs (consumable)
   static const String aiPackSmallId = 'statusxp_ai_pack_small';
   static const String aiPackMediumId = 'statusxp_ai_pack_medium';
   static const String aiPackLargeId = 'statusxp_ai_pack_large';
-  
+
   // Available subscription plans
   List<ProductDetails> _products = [];
   List<ProductDetails> _aiPackProducts = [];
   bool _isAvailable = false;
   bool _purchasePending = false;
-  
+
   List<ProductDetails> get products => _products;
   List<ProductDetails> get aiPackProducts => _aiPackProducts;
   bool get isAvailable => _isAvailable;
@@ -71,7 +71,7 @@ class SubscriptionService {
 
     // Check if IAP is available
     _isAvailable = await _iap.isAvailable();
-    
+
     if (!_isAvailable) {
       return;
     }
@@ -85,7 +85,7 @@ class SubscriptionService {
 
     // Load products
     await _loadProducts();
-    
+
     // Check for pending purchases on startup
     await _restorePurchases(silent: true);
   }
@@ -100,26 +100,38 @@ class SubscriptionService {
       aiPackMediumId,
       aiPackLargeId,
     };
-    
+
     try {
-      final ProductDetailsResponse response = await _iap.queryProductDetails(productIds);
-      
+      final ProductDetailsResponse response = await _iap.queryProductDetails(
+        productIds,
+      );
+
       if (response.error != null) {
         return;
       }
-      
+
       if (response.productDetails.isEmpty) {
         return;
       }
-      
+
       // Separate subscription from consumable products
-      _products = response.productDetails.where((p) => p.id == monthlySubscriptionId).toList();
-      _aiPackProducts = response.productDetails.where((p) => 
-        p.id == aiPackSmallId || p.id == aiPackMediumId || p.id == aiPackLargeId
-      ).toList();
-      
-      debugPrint('Loaded ${_products.length} subscription(s) and ${_aiPackProducts.length} AI pack(s)');
+      _products = response.productDetails
+          .where((p) => p.id == monthlySubscriptionId)
+          .toList();
+      _aiPackProducts = response.productDetails
+          .where(
+            (p) =>
+                p.id == aiPackSmallId ||
+                p.id == aiPackMediumId ||
+                p.id == aiPackLargeId,
+          )
+          .toList();
+
+      debugPrint(
+        'Loaded ${_products.length} subscription(s) and ${_aiPackProducts.length} AI pack(s)',
+      );
     } catch (e) {
+      statusxpLog('Failed loading IAP products: $e');
     }
   }
 
@@ -130,8 +142,8 @@ class SubscriptionService {
         _purchasePending = true;
       } else {
         _purchasePending = false;
-        
-        if (purchase.status == PurchaseStatus.purchased || 
+
+        if (purchase.status == PurchaseStatus.purchased ||
             purchase.status == PurchaseStatus.restored) {
           // Check if it's subscription or AI pack
           if (purchase.productID == monthlySubscriptionId) {
@@ -140,10 +152,11 @@ class SubscriptionService {
             await _verifyAndGrantAICredits(purchase);
           }
         }
-        
+
         if (purchase.status == PurchaseStatus.error) {
+          statusxpLog('Purchase failed: ${purchase.error}');
         }
-        
+
         // Mark purchase as complete
         if (purchase.pendingCompletePurchase) {
           await _iap.completePurchase(purchase);
@@ -154,15 +167,20 @@ class SubscriptionService {
 
   /// Check if product ID is an AI pack
   bool _isAIPackProduct(String productId) {
-    return productId == aiPackSmallId || 
-           productId == aiPackMediumId || 
-           productId == aiPackLargeId;
+    return productId == aiPackSmallId ||
+        productId == aiPackMediumId ||
+        productId == aiPackLargeId;
   }
 
   /// Verify AI pack purchase and grant credits
   Future<bool> _verifyAndGrantAICredits(PurchaseDetails purchase) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) {
+        return false;
+      }
+
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) {
         return false;
       }
@@ -183,7 +201,7 @@ class SubscriptionService {
       }
 
       // Grant AI credits via RPC function
-      final response = await _supabase.rpc(
+      final response = await supabase.rpc(
         'add_ai_pack_credits',
         params: {
           'p_user_id': userId,
@@ -196,11 +214,10 @@ class SubscriptionService {
 
       final result = response as Map<String, dynamic>;
       final success = result['success'] ?? false;
-      
+
       if (success) {
-      } else {
-      }
-      
+      } else {}
+
       return success;
     } catch (e) {
       return false;
@@ -210,55 +227,64 @@ class SubscriptionService {
   /// Verify purchase with backend and activate premium status
   Future<bool> _verifyAndActivateSubscription(PurchaseDetails purchase) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) {
+        return false;
+      }
+
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) {
         return false;
       }
 
       String premiumSource;
-      
+
       // Web doesn't support purchase completion
       if (kIsWeb) return false;
-      
-      if (Platform.isAndroid && purchase is GooglePlayPurchaseDetails) {
+
+      if (Platform.isAndroid) {
         premiumSource = 'google';
-      } else if (Platform.isIOS && purchase is AppStorePurchaseDetails) {
+      } else if (Platform.isIOS) {
         premiumSource = 'apple';
       } else {
         return false;
       }
 
       // Check for existing premium from Stripe or Twitch
-      final existingPremiumResponse = await _supabase
+      final existingPremiumResponse = await supabase
           .from('user_premium_status')
           .select('premium_source, is_premium')
           .eq('user_id', userId)
           .maybeSingle();
-      
-      final hasOtherSubscription = existingPremiumResponse?['is_premium'] == true &&
+
+      final hasOtherSubscription =
+          existingPremiumResponse?['is_premium'] == true &&
           existingPremiumResponse?['premium_source'] != null &&
           existingPremiumResponse!['premium_source'] != premiumSource;
 
       // Apple/Google IAP overwrites Stripe and Twitch (stores take precedence)
       debugPrint('Activating $premiumSource premium for user $userId');
-      
-      await _supabase.from('user_premium_status').upsert({
+
+      await supabase.from('user_premium_status').upsert({
         'user_id': userId,
         'is_premium': true,
         'premium_source': premiumSource,
-        'premium_since': purchase.transactionDate ?? DateTime.now().toIso8601String(),
-        'premium_expires_at': null, // IAP subscriptions don't have a fixed expiry (managed by stores)
+        'premium_since':
+            purchase.transactionDate ?? DateTime.now().toIso8601String(),
+        'premium_expires_at':
+            null, // IAP subscriptions don't have a fixed expiry (managed by stores)
         'updated_at': DateTime.now().toIso8601String(),
       });
 
       // Create notification if they had another subscription (generic message)
       if (hasOtherSubscription) {
         try {
-          await _supabase.from('notifications').insert({
+          await supabase.from('notifications').insert({
             'user_id': userId,
             'type': 'subscription_changed',
             'title': 'Premium Source Updated',
-            'message': 'Your premium subscription source has been updated. Please cancel your previous subscription to avoid double charges.',
+            'message':
+                'Your premium subscription source has been updated. Please cancel your previous subscription to avoid double charges.',
             'created_at': DateTime.now().toIso8601String(),
           });
         } catch (_) {
@@ -279,7 +305,12 @@ class SubscriptionService {
     }
 
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) {
+        return false;
+      }
+
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) {
         return false;
       }
@@ -289,10 +320,12 @@ class SubscriptionService {
       );
 
       _purchasePending = true;
-      
+
       // Subscriptions use buyNonConsumable (auto-renewing)
-      final bool success = await _iap.buyNonConsumable(purchaseParam: purchaseParam);
-      
+      final bool success = await _iap.buyNonConsumable(
+        purchaseParam: purchaseParam,
+      );
+
       return success;
     } catch (e) {
       _purchasePending = false;
@@ -325,10 +358,15 @@ class SubscriptionService {
   /// Check if user has active premium subscription
   Future<bool> isPremiumActive() async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) {
+        return false;
+      }
+
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) return false;
 
-      final response = await _supabase
+      final response = await supabase
           .from('user_premium_status')
           .select('is_premium')
           .eq('user_id', userId)
@@ -348,13 +386,16 @@ class SubscriptionService {
         // Could open a web URL for subscription management
         return;
       }
-      
+
       if (Platform.isAndroid) {
         // Open Google Play subscriptions page
-        final uri = Uri.parse('https://play.google.com/store/account/subscriptions');
+        final uri = Uri.parse(
+          'https://play.google.com/store/account/subscriptions',
+        );
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
+          statusxpLog('Could not launch Google Play subscriptions URL');
         }
       } else if (Platform.isIOS) {
         // Open App Store subscriptions page
@@ -362,9 +403,11 @@ class SubscriptionService {
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
+          statusxpLog('Could not launch App Store subscriptions URL');
         }
       }
     } catch (e) {
+      statusxpLog('Failed opening subscription management: $e');
     }
   }
 
@@ -394,7 +437,12 @@ class SubscriptionService {
     }
 
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final supabase = _supabase;
+      if (supabase == null) {
+        return false;
+      }
+
+      final userId = supabase.auth.currentUser?.id;
       if (userId == null) {
         return false;
       }
@@ -404,17 +452,19 @@ class SubscriptionService {
       );
 
       _purchasePending = true;
-      
+
       // Consumable purchase
-      final bool success = await _iap.buyConsumable(purchaseParam: purchaseParam);
-      
+      final bool success = await _iap.buyConsumable(
+        purchaseParam: purchaseParam,
+      );
+
       return success;
     } catch (e) {
       _purchasePending = false;
       return false;
     }
   }
-  
+
   /// Get AI pack details by product ID
   Map<String, dynamic>? getAIPackDetails(String productId) {
     switch (productId) {

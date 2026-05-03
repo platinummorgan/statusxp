@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:statusxp/theme/colors.dart';
 
 /// Premium Subscription Success Screen
-/// 
+///
 /// Shown after successful Stripe payment
 class PremiumSuccessScreen extends StatelessWidget {
   const PremiumSuccessScreen({super.key});
@@ -24,8 +24,8 @@ class PremiumSuccessScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      accentPrimary.withOpacity(0.3),
-                      accentSecondary.withOpacity(0.3),
+                      accentPrimary.withValues(alpha: 0.3),
+                      accentSecondary.withValues(alpha: 0.3),
                     ],
                   ),
                 ),
@@ -70,10 +70,7 @@ class PremiumSuccessScreen extends StatelessWidget {
                   ),
                   child: const Text(
                     'Start Exploring',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),

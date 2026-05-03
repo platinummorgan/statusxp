@@ -8,20 +8,20 @@ class LeaderboardEntry {
   final int? previousRank;
   final int rankChange;
   final bool isNew;
-  
+
   // PSN Trophy Breakdown
   final int? platinumCount;
   final int? goldCount;
   final int? silverCount;
   final int? bronzeCount;
   final int? totalTrophies;
-  
+
   // PSN Possible Trophy Counts
   final int? possiblePlatinum;
   final int? possibleGold;
   final int? possibleSilver;
   final int? possibleBronze;
-  
+
   // Potential Stats
   final int? potentialScore;
 

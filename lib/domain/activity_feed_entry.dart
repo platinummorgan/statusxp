@@ -88,7 +88,10 @@ class ActivityFeedGroup {
       eventDate: DateTime.parse(json['event_date'] as String),
       storyCount: (json['story_count'] as num).toInt(),
       stories: (json['stories'] as List<dynamic>)
-          .map((story) => ActivityFeedEntry.fromJson(story as Map<String, dynamic>))
+          .map(
+            (story) =>
+                ActivityFeedEntry.fromJson(story as Map<String, dynamic>),
+          )
           .toList(),
     );
   }
@@ -101,4 +104,3 @@ class ActivityFeedGroup {
     };
   }
 }
-

@@ -15,45 +15,49 @@ class SupabaseUserStatsRepository {
   /// Calculates stats from V2 `user_progress` metadata for PSN platforms.
   Future<UserStats> getUserStats(String userId) async {
     try {
-      const psnPlatformIds = [1, 2, 5, 9];
+      final results = await Future.wait([
+        _client
+            .from('profiles')
+            .select('username, psn_online_id, psn_avatar_url, psn_is_plus')
+            .eq('id', userId)
+            .maybeSingle(),
+        _client
+            .from('psn_leaderboard_cache')
+            .select(
+              'platinum_count,gold_count,silver_count,bronze_count,total_trophies,total_games',
+            )
+            .eq('user_id', userId)
+            .maybeSingle(),
+      ]);
 
-      // Read live per-game progress rows (same source sync updates).
-      final gamesResponse = await _client
-          .from('user_progress')
-          .select('platform_id, metadata')
-          .eq('user_id', userId);
+      final profileResponse = results[0];
+      final psnCache = results[1];
 
-      final games = gamesResponse as List;
-      final psnGames = games.where((row) {
-        final platformId = _toInt((row as Map)['platform_id']);
-        return platformId != null && psnPlatformIds.contains(platformId);
-      }).toList();
-      final totalGames = psnGames.length;
+      final int bronzeCount;
+      final int silverCount;
+      final int goldCount;
+      final int platinumCount;
+      final int totalGames;
+      final int totalTrophies;
 
-      // Sum trophy counts from PSN metadata.
-      int bronzeCount = 0;
-      int silverCount = 0;
-      int goldCount = 0;
-      int platinumCount = 0;
-
-      for (final game in psnGames) {
-        final metadata = (game as Map)['metadata'];
-        if (metadata is! Map) continue;
-        bronzeCount += _toInt(metadata['bronze_trophies']) ?? 0;
-        silverCount += _toInt(metadata['silver_trophies']) ?? 0;
-        goldCount += _toInt(metadata['gold_trophies']) ?? 0;
-        platinumCount += _toInt(metadata['platinum_trophies']) ?? 0;
+      if (psnCache != null) {
+        bronzeCount = _toInt(psnCache['bronze_count']) ?? 0;
+        silverCount = _toInt(psnCache['silver_count']) ?? 0;
+        goldCount = _toInt(psnCache['gold_count']) ?? 0;
+        platinumCount = _toInt(psnCache['platinum_count']) ?? 0;
+        totalGames = _toInt(psnCache['total_games']) ?? 0;
+        totalTrophies =
+            _toInt(psnCache['total_trophies']) ??
+            bronzeCount + silverCount + goldCount + platinumCount;
+      } else {
+        final legacy = await _getStatsFromUserGames(userId);
+        bronzeCount = legacy.bronzeCount;
+        silverCount = legacy.silverCount;
+        goldCount = legacy.goldCount;
+        platinumCount = legacy.platinumCount;
+        totalGames = legacy.totalGames;
+        totalTrophies = legacy.totalTrophies;
       }
-
-      final totalPlatinums = platinumCount;
-      final totalTrophies =
-          bronzeCount + silverCount + goldCount + platinumCount;
-      // Get username from profiles
-      final profileResponse = await _client
-          .from('profiles')
-          .select('username, psn_online_id, psn_avatar_url, psn_is_plus')
-          .eq('id', userId)
-          .maybeSingle();
 
       final username =
           profileResponse?['psn_online_id'] as String? ??
@@ -66,7 +70,7 @@ class SupabaseUserStatsRepository {
         username: username,
         avatarUrl: avatarUrl,
         isPsPlus: isPsPlus,
-        totalPlatinums: totalPlatinums,
+        totalPlatinums: platinumCount,
         totalGamesTracked: totalGames,
         totalTrophies: totalTrophies,
         bronzeTrophies: bronzeCount,
@@ -80,6 +84,45 @@ class SupabaseUserStatsRepository {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<_LegacyStats> _getStatsFromUserGames(String userId) async {
+    const psnPlatformIds = [1, 2, 5, 9];
+
+    final gamesResponse = await _client
+        .from('user_games')
+        .select(
+          'platform_id, bronze_trophies, silver_trophies, gold_trophies, platinum_trophies',
+        )
+        .eq('user_id', userId);
+
+    final games = gamesResponse as List;
+    final psnGames = games.where((row) {
+      final platformId = _toInt((row as Map)['platform_id']);
+      return platformId != null && psnPlatformIds.contains(platformId);
+    }).toList();
+
+    int bronzeCount = 0;
+    int silverCount = 0;
+    int goldCount = 0;
+    int platinumCount = 0;
+
+    for (final game in psnGames) {
+      final row = game as Map;
+      bronzeCount += _toInt(row['bronze_trophies']) ?? 0;
+      silverCount += _toInt(row['silver_trophies']) ?? 0;
+      goldCount += _toInt(row['gold_trophies']) ?? 0;
+      platinumCount += _toInt(row['platinum_trophies']) ?? 0;
+    }
+
+    return _LegacyStats(
+      bronzeCount: bronzeCount,
+      silverCount: silverCount,
+      goldCount: goldCount,
+      platinumCount: platinumCount,
+      totalGames: psnGames.length,
+      totalTrophies: bronzeCount + silverCount + goldCount + platinumCount,
+    );
   }
 
   int? _toInt(dynamic value) {
@@ -113,4 +156,22 @@ class SupabaseUserStatsRepository {
       rethrow;
     }
   }
+}
+
+class _LegacyStats {
+  final int bronzeCount;
+  final int silverCount;
+  final int goldCount;
+  final int platinumCount;
+  final int totalGames;
+  final int totalTrophies;
+
+  const _LegacyStats({
+    required this.bronzeCount,
+    required this.silverCount,
+    required this.goldCount,
+    required this.platinumCount,
+    required this.totalGames,
+    required this.totalTrophies,
+  });
 }

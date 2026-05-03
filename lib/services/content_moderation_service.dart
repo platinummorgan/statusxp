@@ -8,7 +8,8 @@ class ContentModerationService {
   /// Returns true if content is safe, false if flagged
   Future<ModerationResult> moderateContent(String text) async {
     final supabase = Supabase.instance.client;
-    final functionUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/moderate-content';
+    final functionUrl =
+        '${SupabaseConfig.supabaseUrl}/functions/v1/moderate-content';
     final accessToken = supabase.auth.currentSession?.accessToken;
 
     if (accessToken == null) {
@@ -22,9 +23,7 @@ class ContentModerationService {
         'Content-Type': 'application/json',
         'apikey': SupabaseConfig.supabaseAnonKey,
       },
-      body: jsonEncode({
-        'text': text,
-      }),
+      body: jsonEncode({'text': text}),
     );
 
     if (response.statusCode != 200) {
@@ -41,11 +40,7 @@ class ModerationResult {
   final String? reason;
   final Map<String, bool>? categories;
 
-  ModerationResult({
-    required this.isSafe,
-    this.reason,
-    this.categories,
-  });
+  ModerationResult({required this.isSafe, this.reason, this.categories});
 
   factory ModerationResult.fromJson(Map<String, dynamic> json) {
     return ModerationResult(

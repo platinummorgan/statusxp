@@ -4,19 +4,23 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/theme/colors.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Provider for fetching app updates
-final appUpdatesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final appUpdatesProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
   try {
     final supabase = Supabase.instance.client;
-    
+
     final response = await supabase
         .from('app_updates')
         .select('id, title, description, release_date, version')
         .order('release_date', ascending: false);
-    
+
     return List<Map<String, dynamic>>.from(response as List);
   } catch (e) {
-    print('Error fetching app updates: $e');
+    statusxpLog('Error fetching app updates: $e');
     return [];
   }
 });
@@ -62,14 +66,14 @@ class UpdatesScreen extends ConsumerWidget {
           final groupedUpdates = <String, List<Map<String, dynamic>>>{};
           for (final update in updates) {
             final dateStr = update['release_date'] as String?;
-            final DateTime? releaseDate = dateStr != null 
-                ? DateTime.tryParse(dateStr) 
+            final DateTime? releaseDate = dateStr != null
+                ? DateTime.tryParse(dateStr)
                 : null;
-            
+
             final dateKey = releaseDate != null
                 ? DateFormat('MMMM d, yyyy').format(releaseDate)
                 : 'Unknown date';
-            
+
             if (!groupedUpdates.containsKey(dateKey)) {
               groupedUpdates[dateKey] = [];
             }
@@ -126,7 +130,7 @@ class UpdatesScreen extends ConsumerWidget {
         data: ThemeData(
           dividerColor: Colors.transparent,
           splashColor: Colors.white10,
-          highlightColor: Colors.white.withOpacity(0.05),
+          highlightColor: Colors.white.withValues(alpha: 0.05),
         ),
         child: ExpansionTile(
           initiallyExpanded: true,
@@ -134,7 +138,11 @@ class UpdatesScreen extends ConsumerWidget {
           childrenPadding: const EdgeInsets.only(bottom: 12),
           title: Row(
             children: [
-              const Icon(Icons.calendar_today, color: accentSecondary, size: 20),
+              const Icon(
+                Icons.calendar_today,
+                color: accentSecondary,
+                size: 20,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -149,7 +157,7 @@ class UpdatesScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: accentSecondary.withOpacity(0.2),
+                  color: accentSecondary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -182,7 +190,10 @@ class UpdatesScreen extends ConsumerWidget {
       decoration: BoxDecoration(
         color: backgroundDark,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.05),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -191,9 +202,12 @@ class UpdatesScreen extends ConsumerWidget {
             children: [
               if (version != null) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: accentSecondary.withOpacity(0.2),
+                    color: accentSecondary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: accentSecondary, width: 1),
                   ),
@@ -220,9 +234,9 @@ class UpdatesScreen extends ConsumerWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           Text(
             description,
             style: const TextStyle(

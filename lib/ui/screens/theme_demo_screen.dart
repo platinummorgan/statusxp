@@ -4,7 +4,7 @@ import 'package:statusxp/ui/widgets/stat_card.dart';
 import 'package:statusxp/ui/widgets/section_header.dart';
 
 /// Theme Demo Screen
-/// 
+///
 /// Demonstrates all theme components and widgets for v0.1.
 /// This is a temporary demo screen to showcase the design system.
 class ThemeDemoScreen extends StatelessWidget {
@@ -15,9 +15,7 @@ class ThemeDemoScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('StatusXP Theme Demo'),
-      ),
+      appBar: AppBar(title: const Text('StatusXP Theme Demo')),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,7 +32,10 @@ class ThemeDemoScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text('Headline Large', style: theme.textTheme.headlineLarge),
                   const SizedBox(height: 8),
-                  Text('Headline Medium', style: theme.textTheme.headlineMedium),
+                  Text(
+                    'Headline Medium',
+                    style: theme.textTheme.headlineMedium,
+                  ),
                   const SizedBox(height: 8),
                   Text('Title Large', style: theme.textTheme.titleLarge),
                   const SizedBox(height: 8),

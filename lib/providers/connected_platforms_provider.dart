@@ -3,10 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Provider that detects which gaming platforms the user has connected
 /// Returns a set of platform codes: {'psn', 'xbox', 'steam'}
-final connectedPlatformsProvider = FutureProvider.autoDispose<Set<String>>((ref) async {
+final connectedPlatformsProvider = FutureProvider.autoDispose<Set<String>>((
+  ref,
+) async {
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
-  
+
   if (userId == null) return {};
 
   try {
@@ -17,22 +19,24 @@ final connectedPlatformsProvider = FutureProvider.autoDispose<Set<String>>((ref)
         .single();
 
     final platforms = <String>{};
-    
+
     // Check if PSN is connected (has PSN ID)
-    if (profile['psn_online_id'] != null && 
+    if (profile['psn_online_id'] != null &&
         (profile['psn_online_id'] as String).isNotEmpty) {
       platforms.add('psn');
     }
-    
+
     // Check if Xbox is connected (has gamertag)
-    if (profile['xbox_gamertag'] != null && 
+    if (profile['xbox_gamertag'] != null &&
         (profile['xbox_gamertag'] as String).isNotEmpty) {
       platforms.add('xbox');
     }
-    
+
     // Check if Steam is connected (has Steam ID or display name)
-    if ((profile['steam_id'] != null && (profile['steam_id'] as String).isNotEmpty) ||
-        (profile['steam_display_name'] != null && (profile['steam_display_name'] as String).isNotEmpty)) {
+    if ((profile['steam_id'] != null &&
+            (profile['steam_id'] as String).isNotEmpty) ||
+        (profile['steam_display_name'] != null &&
+            (profile['steam_display_name'] as String).isNotEmpty)) {
       platforms.add('steam');
     }
 

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:statusxp/utils/statusxp_logger.dart';
 import 'package:statusxp/utils/html.dart' as html;
 
 /// Service for managing Supabase authentication.
@@ -19,12 +20,9 @@ class AuthService {
 
   // Hardcoded Google OAuth Client IDs - these are not sensitive and need to be in the app
   // Web client for backend/Supabase
-  // Android client for Android OAuth flow
   // iOS client for iOS OAuth flow
   static const String _googleWebClientId =
       '395832690159-arutlclucst0mb9b3tctgn1m71i52q1v.apps.googleusercontent.com';
-  static const String _googleAndroidClientId =
-      '395832690159-fe24vs3m6udhe15ufm2m3jnn0k1pdrap.apps.googleusercontent.com';
   static const String _googleiOSClientId =
       '395832690159-psp0hu5uggjc7u2lmfhnmim016j2lhq2.apps.googleusercontent.com';
 
@@ -165,19 +163,19 @@ class AuthService {
   /// This ensures that any stored refresh token becomes invalid and cannot be
   /// used to restore the session via biometric authentication.
   Future<void> signOut() async {
-    print('=== LOGOUT CALLED ===');
+    statusxpLog('=== LOGOUT CALLED ===');
 
     // Supabase's signOut() automatically invalidates the refresh token on the server
     await _client.auth.signOut(scope: SignOutScope.global);
 
-    print('Supabase signOut completed');
+    statusxpLog('Supabase signOut completed');
 
     // On web, nuclear option: clear ALL localStorage after signOut
     if (kIsWeb) {
       await Future.delayed(const Duration(milliseconds: 300));
       html.window.localStorage.clear();
       html.window.sessionStorage.clear();
-      print('ALL storage cleared on web');
+      statusxpLog('ALL storage cleared on web');
     }
   }
 
@@ -423,16 +421,6 @@ class AuthService {
       return data is Map<String, dynamic> ? data : <String, dynamic>{};
     } catch (_) {
       return <String, dynamic>{};
-    }
-  }
-
-  /// Extract the nonce from an ID token.
-  String? _extractNonceFromIdToken(String idToken) {
-    try {
-      final claims = _extractClaimsFromIdToken(idToken);
-      return claims['nonce'] as String?;
-    } catch (_) {
-      return null;
     }
   }
 

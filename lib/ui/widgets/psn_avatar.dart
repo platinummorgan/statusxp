@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 
 /// PSN Profile Avatar with optional PS Plus badge overlay
-/// 
+///
 /// Displays a circular avatar with neon border and PS Plus indicator
 class PsnAvatar extends StatelessWidget {
   final String? avatarUrl;
   final bool isPsPlus;
   final double size;
   final Color borderColor;
-  
+
   const PsnAvatar({
     super.key,
     this.avatarUrl,
@@ -17,7 +17,7 @@ class PsnAvatar extends StatelessWidget {
     this.size = 56,
     this.borderColor = CyberpunkTheme.neonCyan,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -31,18 +31,15 @@ class PsnAvatar extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: borderColor,
-                width: 3,
-              ),
+              border: Border.all(color: borderColor, width: 3),
               boxShadow: [
                 BoxShadow(
-                  color: borderColor.withOpacity(0.6),
+                  color: borderColor.withValues(alpha: 0.6),
                   blurRadius: 16,
                   spreadRadius: 2,
                 ),
                 BoxShadow(
-                  color: borderColor.withOpacity(0.3),
+                  color: borderColor.withValues(alpha: 0.3),
                   blurRadius: 32,
                   spreadRadius: 4,
                 ),
@@ -60,20 +57,23 @@ class PsnAvatar extends StatelessWidget {
                           child: CircularProgressIndicator(
                             value: loadingProgress.expectedTotalBytes != null
                                 ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
+                                      loadingProgress.expectedTotalBytes!
                                 : null,
                           ),
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
                         debugPrint('Avatar load error: $error');
-                        return _DefaultAvatar(size: size, borderColor: borderColor);
+                        return _DefaultAvatar(
+                          size: size,
+                          borderColor: borderColor,
+                        );
                       },
                     )
                   : _DefaultAvatar(size: size, borderColor: borderColor),
             ),
           ),
-          
+
           // PS Plus badge overlay (bottom right)
           if (isPsPlus)
             Positioned(
@@ -98,12 +98,9 @@ class PsnAvatar extends StatelessWidget {
 class _DefaultAvatar extends StatelessWidget {
   final double size;
   final Color borderColor;
-  
-  const _DefaultAvatar({
-    required this.size,
-    required this.borderColor,
-  });
-  
+
+  const _DefaultAvatar({required this.size, required this.borderColor});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -111,7 +108,7 @@ class _DefaultAvatar extends StatelessWidget {
       child: Icon(
         Icons.person,
         size: size * 0.6,
-        color: borderColor.withOpacity(0.5),
+        color: borderColor.withValues(alpha: 0.5),
       ),
     );
   }

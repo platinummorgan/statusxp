@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Repository for fetching unified cross-platform game data
 class UnifiedGamesRepository {
   final SupabaseClient _client;
@@ -94,7 +96,7 @@ class UnifiedGamesRepository {
           try {
             lastPlayedAt = DateTime.parse(lastPlayedAtStr);
           } catch (e) {
-            print('Error parsing last_played_at: $e');
+            statusxpLog('Error parsing last_played_at: $e');
           }
         }
 
@@ -102,7 +104,7 @@ class UnifiedGamesRepository {
           try {
             lastTrophyEarnedAt = DateTime.parse(lastTrophyEarnedAtStr);
           } catch (e) {
-            print('Error parsing last_trophy_earned_at: $e');
+            statusxpLog('Error parsing last_trophy_earned_at: $e');
           }
         }
 

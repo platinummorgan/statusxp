@@ -2,31 +2,31 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
 /// Dashboard statistics showing cross-platform gaming metrics
-/// 
+///
 /// Displays StatusXP unified score and platform-specific achievement counts
 @immutable
 class DashboardStats extends Equatable {
   /// User's selected display name (PSN/Steam/Xbox)
   final String displayName;
-  
+
   /// Platform of the selected display name ('psn', 'steam', 'xbox')
   final String displayPlatform;
-  
+
   /// PSN avatar URL (if available)
   final String? avatarUrl;
-  
+
   /// PlayStation Plus subscription status
   final bool isPsPlus;
-  
+
   /// Total StatusXP across all platforms
   final double totalStatusXP;
-  
+
   /// PSN platform stats
   final PlatformStats psnStats;
-  
+
   /// Xbox platform stats
   final PlatformStats xboxStats;
-  
+
   /// Steam platform stats
   final PlatformStats steamStats;
 
@@ -66,15 +66,15 @@ class DashboardStats extends Equatable {
 
   @override
   List<Object?> get props => [
-        displayName,
-        displayPlatform,
-        avatarUrl,
-        isPsPlus,
-        totalStatusXP,
-        psnStats,
-        xboxStats,
-        steamStats,
-      ];
+    displayName,
+    displayPlatform,
+    avatarUrl,
+    isPsPlus,
+    totalStatusXP,
+    psnStats,
+    xboxStats,
+    steamStats,
+  ];
 
   @override
   bool get stringify => true;
@@ -85,21 +85,21 @@ class DashboardStats extends Equatable {
 class PlatformStats extends Equatable {
   /// Number of platinum trophies (PSN only, 0 for other platforms)
   final int platinums;
-  
+
   /// Total achievements/trophies unlocked on this platform
   final int achievementsUnlocked;
-  
+
   /// Xbox Gamerscore (Xbox only, 0 for other platforms)
   final int gamerscore;
-  
+
   /// Number of games with achievements on this platform
   final int gamesCount;
-  
+
   /// StatusXP earned on this platform
   final double statusXP;
-  
+
   /// Average achievements per game (calculated)
-  double get averagePerGame => 
+  double get averagePerGame =>
       gamesCount > 0 ? achievementsUnlocked / gamesCount : 0.0;
 
   const PlatformStats({
@@ -112,14 +112,20 @@ class PlatformStats extends Equatable {
 
   /// Creates empty platform stats
   const PlatformStats.empty()
-      : platinums = 0,
-        achievementsUnlocked = 0,
-        gamerscore = 0,
-        gamesCount = 0,
-        statusXP = 0;
+    : platinums = 0,
+      achievementsUnlocked = 0,
+      gamerscore = 0,
+      gamesCount = 0,
+      statusXP = 0;
 
   @override
-  List<Object?> get props => [platinums, achievementsUnlocked, gamerscore, gamesCount, statusXP];
+  List<Object?> get props => [
+    platinums,
+    achievementsUnlocked,
+    gamerscore,
+    gamesCount,
+    statusXP,
+  ];
 
   @override
   bool get stringify => true;

@@ -4,6 +4,8 @@ import 'package:statusxp/data/repositories/flex_room_repository.dart';
 import 'package:statusxp/domain/flex_room_data.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Modal for selecting an achievement to assign to a Flex Room tile
 /// Three-step selection: Platform → Game → Achievement (or use Smart Suggestions)
 class AchievementPickerModal extends ConsumerStatefulWidget {
@@ -47,7 +49,7 @@ class _AchievementPickerModalState
           end: Alignment.bottomRight,
           colors: [
             const Color(0xFF0A0E27),
-            const Color(0xFF1a1f3a).withOpacity(0.95),
+            const Color(0xFF1a1f3a).withValues(alpha: 0.95),
           ],
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -58,9 +60,7 @@ class _AchievementPickerModalState
           _buildHeader(),
 
           // Content based on current view
-          Expanded(
-            child: _buildCurrentView(),
-          ),
+          Expanded(child: _buildCurrentView()),
         ],
       ),
     );
@@ -69,7 +69,7 @@ class _AchievementPickerModalState
   Widget _buildHeader() {
     String title;
     String subtitle;
-    
+
     switch (_currentView) {
       case PickerView.suggestions:
         title = 'Smart Suggestions';
@@ -94,7 +94,7 @@ class _AchievementPickerModalState
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+            color: CyberpunkTheme.neonPurple.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -128,7 +128,11 @@ class _AchievementPickerModalState
                 });
               },
             ),
-          const Icon(Icons.military_tech, color: CyberpunkTheme.neonOrange, size: 28),
+          const Icon(
+            Icons.military_tech,
+            color: CyberpunkTheme.neonOrange,
+            size: 28,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -142,7 +146,7 @@ class _AchievementPickerModalState
                     fontWeight: FontWeight.w900,
                     shadows: [
                       Shadow(
-                        color: CyberpunkTheme.neonPurple.withOpacity(0.6),
+                        color: CyberpunkTheme.neonPurple.withValues(alpha: 0.6),
                         blurRadius: 8,
                       ),
                     ],
@@ -152,7 +156,7 @@ class _AchievementPickerModalState
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: CyberpunkTheme.neonOrange.withOpacity(0.8),
+                    color: CyberpunkTheme.neonOrange.withValues(alpha: 0.8),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -183,8 +187,9 @@ class _AchievementPickerModalState
   }
 
   Widget _buildPlatformSelectView() {
-    final hasSuggestions = widget.suggestions != null && widget.suggestions!.isNotEmpty;
-    
+    final hasSuggestions =
+        widget.suggestions != null && widget.suggestions!.isNotEmpty;
+
     return Column(
       children: [
         // Smart Suggestions button at top if available
@@ -208,20 +213,24 @@ class _AchievementPickerModalState
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               children: [
-                Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
+                Expanded(
+                  child: Divider(color: Colors.white.withValues(alpha: 0.2)),
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
                     'OR BROWSE MANUALLY',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                     ),
                   ),
                 ),
-                Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
+                Expanded(
+                  child: Divider(color: Colors.white.withValues(alpha: 0.2)),
+                ),
               ],
             ),
           ),
@@ -291,19 +300,16 @@ class _AchievementPickerModalState
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.4),
-            width: 2,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.4), width: 2),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: color, size: 32),
@@ -321,7 +327,7 @@ class _AchievementPickerModalState
                       fontWeight: FontWeight.w900,
                       shadows: [
                         Shadow(
-                          color: color.withOpacity(0.6),
+                          color: color.withValues(alpha: 0.6),
                           blurRadius: 8,
                         ),
                       ],
@@ -331,14 +337,18 @@ class _AchievementPickerModalState
                   Text(
                     description,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 13,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, color: color.withOpacity(0.6), size: 20),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: color.withValues(alpha: 0.6),
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -366,7 +376,9 @@ class _AchievementPickerModalState
           setState(() => _currentView = PickerView.platformSelect);
         }
       });
-      return const Center(child: CircularProgressIndicator(color: CyberpunkTheme.neonPurple));
+      return const Center(
+        child: CircularProgressIndicator(color: CyberpunkTheme.neonPurple),
+      );
     }
 
     return Column(
@@ -379,28 +391,31 @@ class _AchievementPickerModalState
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Search games...',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
               prefixIcon: Icon(
                 Icons.search,
-                color: CyberpunkTheme.neonCyan.withOpacity(0.6),
+                color: CyberpunkTheme.neonCyan.withValues(alpha: 0.6),
               ),
               filled: true,
-              fillColor: const Color(0xFF1a1f3a).withOpacity(0.6),
+              fillColor: const Color(0xFF1a1f3a).withValues(alpha: 0.6),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: CyberpunkTheme.neonCyan, width: 2),
+                borderSide: const BorderSide(
+                  color: CyberpunkTheme.neonCyan,
+                  width: 2,
+                ),
               ),
             ),
           ),
@@ -409,7 +424,9 @@ class _AchievementPickerModalState
         // Games list
         Expanded(
           child: FutureBuilder<List<Map<String, dynamic>>>(
-            future: ref.read(flexRoomRepositoryProvider).getGamesForPlatform(
+            future: ref
+                .read(flexRoomRepositoryProvider)
+                .getGamesForPlatform(
                   widget.userId,
                   _selectedPlatform!,
                   searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
@@ -417,27 +434,41 @@ class _AchievementPickerModalState
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                  child: CircularProgressIndicator(color: CyberpunkTheme.neonPurple),
+                  child: CircularProgressIndicator(
+                    color: CyberpunkTheme.neonPurple,
+                  ),
                 );
               }
 
               if (snapshot.hasError) {
-                print('❌ FutureBuilder error in getGamesForPlatform: ${snapshot.error}');
-                print('Stack trace: ${snapshot.stackTrace}');
+                statusxpLog(
+                  '❌ FutureBuilder error in getGamesForPlatform: ${snapshot.error}',
+                );
+                statusxpLog('Stack trace: ${snapshot.stackTrace}');
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red.withOpacity(0.8), size: 48),
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red.withValues(alpha: 0.8),
+                        size: 48,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Error loading games',
-                        style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 16),
+                        style: TextStyle(
+                          color: Colors.red.withValues(alpha: 0.8),
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '${snapshot.error}',
-                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -452,11 +483,20 @@ class _AchievementPickerModalState
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.videogame_asset_off, color: Colors.white.withOpacity(0.4), size: 48),
+                      Icon(
+                        Icons.videogame_asset_off,
+                        color: Colors.white.withValues(alpha: 0.4),
+                        size: 48,
+                      ),
                       const SizedBox(height: 16),
                       Text(
-                        _searchQuery.isNotEmpty ? 'No games found' : 'No games yet',
-                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16),
+                        _searchQuery.isNotEmpty
+                            ? 'No games found'
+                            : 'No games yet',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),
@@ -489,10 +529,10 @@ class _AchievementPickerModalState
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1a1f3a).withOpacity(0.6),
+        color: const Color(0xFF1a1f3a).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _getPlatformColor(_selectedPlatform!).withOpacity(0.3),
+          color: _getPlatformColor(_selectedPlatform!).withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -517,9 +557,13 @@ class _AchievementPickerModalState
                 height: 60,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  color: _getPlatformColor(_selectedPlatform!).withOpacity(0.2),
+                  color: _getPlatformColor(
+                    _selectedPlatform!,
+                  ).withValues(alpha: 0.2),
                   border: Border.all(
-                    color: _getPlatformColor(_selectedPlatform!).withOpacity(0.5),
+                    color: _getPlatformColor(
+                      _selectedPlatform!,
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
                 child: gameCoverUrl != null
@@ -563,7 +607,7 @@ class _AchievementPickerModalState
                     Text(
                       '$achievementCount ${achievementCount == 1 ? 'achievement' : 'achievements'}',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -575,7 +619,9 @@ class _AchievementPickerModalState
 
               Icon(
                 Icons.arrow_forward_ios,
-                color: _getPlatformColor(_selectedPlatform!).withOpacity(0.6),
+                color: _getPlatformColor(
+                  _selectedPlatform!,
+                ).withValues(alpha: 0.6),
                 size: 18,
               ),
             ],
@@ -596,28 +642,31 @@ class _AchievementPickerModalState
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Search achievements...',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
               prefixIcon: Icon(
                 Icons.search,
-                color: CyberpunkTheme.neonCyan.withOpacity(0.6),
+                color: CyberpunkTheme.neonCyan.withValues(alpha: 0.6),
               ),
               filled: true,
-              fillColor: const Color(0xFF1a1f3a).withOpacity(0.6),
+              fillColor: const Color(0xFF1a1f3a).withValues(alpha: 0.6),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: CyberpunkTheme.neonCyan, width: 2),
+                borderSide: const BorderSide(
+                  color: CyberpunkTheme.neonCyan,
+                  width: 2,
+                ),
               ),
             ),
           ),
@@ -626,7 +675,9 @@ class _AchievementPickerModalState
         // Achievements list
         Expanded(
           child: FutureBuilder<List<FlexTile>>(
-            future: ref.read(flexRoomRepositoryProvider).getAchievementsForGame(
+            future: ref
+                .read(flexRoomRepositoryProvider)
+                .getAchievementsForGame(
                   widget.userId,
                   _selectedGameId,
                   _selectedPlatform!,
@@ -637,27 +688,41 @@ class _AchievementPickerModalState
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                  child: CircularProgressIndicator(color: CyberpunkTheme.neonPurple),
+                  child: CircularProgressIndicator(
+                    color: CyberpunkTheme.neonPurple,
+                  ),
                 );
               }
 
               if (snapshot.hasError) {
-                print('❌ FutureBuilder error in getAchievementsForGame: ${snapshot.error}');
-                print('Stack trace: ${snapshot.stackTrace}');
+                statusxpLog(
+                  '❌ FutureBuilder error in getAchievementsForGame: ${snapshot.error}',
+                );
+                statusxpLog('Stack trace: ${snapshot.stackTrace}');
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, color: Colors.red.withOpacity(0.8), size: 48),
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red.withValues(alpha: 0.8),
+                        size: 48,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Error loading achievements',
-                        style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 16),
+                        style: TextStyle(
+                          color: Colors.red.withValues(alpha: 0.8),
+                          fontSize: 16,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         '${snapshot.error}',
-                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -670,8 +735,13 @@ class _AchievementPickerModalState
               if (achievements.isEmpty) {
                 return Center(
                   child: Text(
-                    _searchQuery.isNotEmpty ? 'No achievements found' : 'No achievements yet',
-                    style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 16),
+                    _searchQuery.isNotEmpty
+                        ? 'No achievements found'
+                        : 'No achievements yet',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 16,
+                    ),
                   ),
                 );
               }
@@ -695,12 +765,12 @@ class _AchievementPickerModalState
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1a1f3a).withOpacity(0.6),
+        color: const Color(0xFF1a1f3a).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: issuggestion
-              ? CyberpunkTheme.neonOrange.withOpacity(0.5)
-              : Colors.white.withOpacity(0.1),
+              ? CyberpunkTheme.neonOrange.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.1),
           width: issuggestion ? 2 : 1,
         ),
       ),
@@ -717,9 +787,13 @@ class _AchievementPickerModalState
                 height: 60,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  color: _getPlatformColor(tile.platform).withOpacity(0.2),
+                  color: _getPlatformColor(
+                    tile.platform,
+                  ).withValues(alpha: 0.2),
                   border: Border.all(
-                    color: _getPlatformColor(tile.platform).withOpacity(0.5),
+                    color: _getPlatformColor(
+                      tile.platform,
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
                 child: tile.gameCoverUrl != null
@@ -763,7 +837,7 @@ class _AchievementPickerModalState
                     Text(
                       tile.gameName,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                       maxLines: 1,
@@ -794,7 +868,9 @@ class _AchievementPickerModalState
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: _getRarityColor(tile.rarityBand).withOpacity(0.2),
+                    color: _getRarityColor(
+                      tile.rarityBand,
+                    ).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: _getRarityColor(tile.rarityBand),
@@ -817,7 +893,7 @@ class _AchievementPickerModalState
                           style: TextStyle(
                             color: _getRarityColor(
                               tile.rarityBand,
-                            ).withOpacity(0.8),
+                            ).withValues(alpha: 0.8),
                             fontSize: 8,
                             fontWeight: FontWeight.w600,
                           ),

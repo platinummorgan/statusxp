@@ -10,6 +10,10 @@ class PlatformSyncWidget extends StatelessWidget {
   final int syncProgress;
   final DateTime? lastSyncAt;
   final String? errorMessage;
+  final String? warningMessage;
+  final String? warningActionLabel;
+  final VoidCallback? onWarningActionPressed;
+  final Map<String, String>? diagnostics;
   final bool isSyncing;
   final VoidCallback onSyncPressed;
   final VoidCallback? onStopPressed;
@@ -24,6 +28,10 @@ class PlatformSyncWidget extends StatelessWidget {
     required this.syncProgress,
     required this.lastSyncAt,
     required this.errorMessage,
+    this.warningMessage,
+    this.warningActionLabel,
+    this.onWarningActionPressed,
+    this.diagnostics,
     required this.isSyncing,
     required this.onSyncPressed,
     this.onStopPressed,
@@ -49,7 +57,55 @@ class PlatformSyncWidget extends StatelessWidget {
             ),
             child: Center(child: platformIcon),
           ),
-          
+
+          if (diagnostics != null && diagnostics!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sync Diagnostics',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    ...diagnostics!.entries.map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 120,
+                              child: Text(
+                                entry.key,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                entry.value,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
           const SizedBox(height: 24),
 
           // Title
@@ -107,7 +163,7 @@ class PlatformSyncWidget extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
+
                   if (isSyncing && syncProgress > 0) ...[
                     const SizedBox(height: 16),
                     LinearProgressIndicator(
@@ -127,10 +183,7 @@ class PlatformSyncWidget extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Last synced:',
-                          style: theme.textTheme.bodyMedium,
-                        ),
+                        Text('Last synced:', style: theme.textTheme.bodyMedium),
                         Text(
                           _formatLastSync(lastSyncAt!),
                           style: theme.textTheme.bodyMedium?.copyWith(
@@ -159,6 +212,41 @@ class PlatformSyncWidget extends StatelessWidget {
                               style: const TextStyle(color: Colors.red),
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (warningMessage != null) ...[
+                    const Divider(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              warningMessage!,
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                          ),
+                          if (onWarningActionPressed != null &&
+                              warningActionLabel != null)
+                            TextButton(
+                              onPressed: onWarningActionPressed,
+                              child: Text(warningActionLabel!),
+                            ),
                         ],
                       ),
                     ),
@@ -199,7 +287,7 @@ class PlatformSyncWidget extends StatelessWidget {
 
           // How it works info card
           Card(
-            color: platformColor.withOpacity(0.1),
+            color: platformColor.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -219,25 +307,34 @@ class PlatformSyncWidget extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  ...syncDescription.map((desc) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('• ', style: TextStyle(color: platformColor, fontSize: 14, fontWeight: FontWeight.bold)),
-                        Expanded(
-                          child: Text(
-                            desc,
+                  ...syncDescription.map(
+                    (desc) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '• ',
                             style: TextStyle(
-                              color: Colors.grey[800],
+                              color: platformColor,
                               fontSize: 14,
-                              height: 1.4,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            child: Text(
+                              desc,
+                              style: TextStyle(
+                                color: Colors.grey[800],
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  )),
+                  ),
                 ],
               ),
             ),
@@ -259,6 +356,14 @@ class PlatformSyncWidget extends StatelessWidget {
       );
     }
 
+    if (warningMessage != null) {
+      return const Icon(
+        Icons.warning_amber_rounded,
+        color: Colors.orange,
+        size: 24,
+      );
+    }
+
     if (syncStatus == 'success') {
       return const Icon(Icons.check_circle, color: Colors.green, size: 24);
     }
@@ -272,6 +377,7 @@ class PlatformSyncWidget extends StatelessWidget {
 
   String _getStatusText() {
     if (isSyncing) return 'Syncing...';
+    if (warningMessage != null) return 'Action required';
     if (syncStatus == 'success') return 'Synced successfully';
     if (syncStatus == 'error') return 'Sync failed';
     if (syncStatus == 'stopped') return 'Sync stopped';
@@ -280,6 +386,7 @@ class PlatformSyncWidget extends StatelessWidget {
 
   Color _getStatusColor() {
     if (isSyncing) return platformColor;
+    if (warningMessage != null) return Colors.orange;
     if (syncStatus == 'success') return Colors.green;
     if (syncStatus == 'error') return Colors.red;
     return Colors.grey;

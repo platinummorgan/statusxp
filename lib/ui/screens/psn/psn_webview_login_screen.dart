@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// WebView screen for PSN OAuth login flow
-/// 
+///
 /// This screen opens Sony's login page in a WebView, allows the user to authenticate,
 /// then automatically extracts the NPSSO token from the cookie.
 class PSNWebViewLoginScreen extends StatefulWidget {
@@ -53,24 +53,24 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
           },
         ),
       )
-      ..loadRequest(
-        Uri.parse('https://www.playstation.com/'),
-      );
+      ..loadRequest(Uri.parse('https://www.playstation.com/'));
   }
 
   Future<void> _extractNPSSO() async {
     try {
       // Get the page content (which should be JSON with the NPSSO)
-      final content = await _controller.runJavaScriptReturningResult(
-        'document.body.innerText',
-      ) as String;
+      final content =
+          await _controller.runJavaScriptReturningResult(
+                'document.body.innerText',
+              )
+              as String;
 
       // Remove outer quotes that JavaScript adds
       var cleanContent = content;
       if (cleanContent.startsWith('"') && cleanContent.endsWith('"')) {
         cleanContent = cleanContent.substring(1, cleanContent.length - 1);
       }
-      
+
       // Unescape any escaped characters
       cleanContent = cleanContent.replaceAll(r'\"', '"');
       cleanContent = cleanContent.replaceAll(r'\n', '');
@@ -99,7 +99,7 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
           }
         }
       }
-      
+
       // If we get here, extraction failed
       if (mounted) {
         setState(() {
@@ -139,10 +139,7 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
           if (_error != null)
             Center(
               child: Column(
@@ -172,7 +169,7 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
           color: Theme.of(context).colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
             ),
           ],

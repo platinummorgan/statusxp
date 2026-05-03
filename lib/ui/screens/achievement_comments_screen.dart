@@ -7,20 +7,18 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Provider for loading comments for a specific achievement
-final achievementCommentsProvider = FutureProvider.autoDispose.family<List<AchievementComment>, int>(
-  (ref, achievementId) async {
-    final service = ref.read(achievementCommentServiceProvider);
-    return service.getComments(achievementId);
-  },
-);
+final achievementCommentsProvider = FutureProvider.autoDispose
+    .family<List<AchievementComment>, int>((ref, achievementId) async {
+      final service = ref.read(achievementCommentServiceProvider);
+      return service.getComments(achievementId);
+    });
 
 /// Provider for comment count
-final achievementCommentCountProvider = FutureProvider.autoDispose.family<int, int>(
-  (ref, achievementId) async {
-    final service = ref.read(achievementCommentServiceProvider);
-    return service.getCommentCount(achievementId);
-  },
-);
+final achievementCommentCountProvider = FutureProvider.autoDispose
+    .family<int, int>((ref, achievementId) async {
+      final service = ref.read(achievementCommentServiceProvider);
+      return service.getCommentCount(achievementId);
+    });
 
 class AchievementCommentsScreen extends ConsumerWidget {
   final int achievementId;
@@ -60,7 +58,7 @@ class AchievementCommentsScreen extends ConsumerWidget {
               color: const Color(0xFF1a1f3a),
               border: Border(
                 bottom: BorderSide(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                 ),
               ),
             ),
@@ -77,12 +75,16 @@ class AchievementCommentsScreen extends ConsumerWidget {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: CyberpunkTheme.neonCyan.withOpacity(0.1),
+                            color: CyberpunkTheme.neonCyan.withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             Icons.emoji_events,
-                            color: CyberpunkTheme.neonCyan.withOpacity(0.5),
+                            color: CyberpunkTheme.neonCyan.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                         );
                       },
@@ -107,7 +109,7 @@ class AchievementCommentsScreen extends ConsumerWidget {
                       Text(
                         'Community Comments & Coordination',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -141,7 +143,9 @@ class AchievementCommentsScreen extends ConsumerWidget {
               },
               loading: () => const Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    CyberpunkTheme.neonCyan,
+                  ),
                 ),
               ),
               error: (error, stack) => Center(
@@ -153,7 +157,7 @@ class AchievementCommentsScreen extends ConsumerWidget {
                       Icon(
                         Icons.error_outline,
                         size: 48,
-                        color: Colors.red.withOpacity(0.7),
+                        color: Colors.red.withValues(alpha: 0.7),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -168,7 +172,7 @@ class AchievementCommentsScreen extends ConsumerWidget {
                       Text(
                         error.toString(),
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.center,
@@ -176,7 +180,9 @@ class AchievementCommentsScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
-                          ref.invalidate(achievementCommentsProvider(achievementId));
+                          ref.invalidate(
+                            achievementCommentsProvider(achievementId),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: CyberpunkTheme.neonCyan,
@@ -216,13 +222,13 @@ class _EmptyCommentsState extends StatelessWidget {
             Icon(
               Icons.chat_bubble_outline,
               size: 64,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No comments yet',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white.withValues(alpha: 0.6),
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -231,7 +237,7 @@ class _EmptyCommentsState extends StatelessWidget {
             Text(
               'Be the first to share tips or coordinate with others!',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.4),
+                color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 14,
               ),
               textAlign: TextAlign.center,
@@ -240,10 +246,10 @@ class _EmptyCommentsState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: CyberpunkTheme.neonCyan.withOpacity(0.1),
+                color: CyberpunkTheme.neonCyan.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -269,7 +275,7 @@ class _EmptyCommentsState extends StatelessWidget {
                     '• Coordinate boosting sessions\n'
                     '• Ask for or offer help',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 13,
                     ),
                   ),
@@ -384,9 +390,7 @@ class _CommentCard extends ConsumerWidget {
       color: const Color(0xFF1a1f3a),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: CyberpunkTheme.neonCyan.withOpacity(0.2),
-        ),
+        side: BorderSide(color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -398,7 +402,9 @@ class _CommentCard extends ConsumerWidget {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                  backgroundColor: CyberpunkTheme.neonCyan.withValues(
+                    alpha: 0.2,
+                  ),
                   backgroundImage: comment.avatarUrl != null
                       ? NetworkImage(comment.avatarUrl!)
                       : null,
@@ -426,7 +432,7 @@ class _CommentCard extends ConsumerWidget {
                       Text(
                         timeAgo,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                           fontSize: 12,
                         ),
                       ),
@@ -438,7 +444,7 @@ class _CommentCard extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
                     iconSize: 20,
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                     onPressed: () => _deleteComment(context, ref),
                     tooltip: 'Delete comment',
                   ),
@@ -451,7 +457,7 @@ class _CommentCard extends ConsumerWidget {
             Text(
               comment.commentText,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
                 fontSize: 14,
                 height: 1.4,
               ),
@@ -576,7 +582,7 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
         color: const Color(0xFF1a1f3a),
         border: Border(
           top: BorderSide(
-            color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
           ),
         ),
       ),
@@ -600,27 +606,24 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
                 maxLength: _maxLength,
                 textCapitalization: TextCapitalization.sentences,
                 textInputAction: TextInputAction.send,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Share a tip or coordinate...',
                   hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                   ),
                   filled: true,
                   fillColor: const Color(0xFF0f1729),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                      color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                      color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -635,7 +638,7 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
                     vertical: 12,
                   ),
                   counterStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                     fontSize: 12,
                   ),
                 ),
@@ -664,15 +667,17 @@ class _CommentInputState extends ConsumerState<_CommentInput> {
                   : const Icon(Icons.send),
               style: IconButton.styleFrom(
                 backgroundColor: _textController.text.trim().isEmpty
-                    ? CyberpunkTheme.neonCyan.withOpacity(0.2)
+                    ? CyberpunkTheme.neonCyan.withValues(alpha: 0.2)
                     : CyberpunkTheme.neonCyan,
                 foregroundColor: _textController.text.trim().isEmpty
-                    ? CyberpunkTheme.neonCyan.withOpacity(0.5)
+                    ? CyberpunkTheme.neonCyan.withValues(alpha: 0.5)
                     : const Color(0xFF0f1729),
-                disabledBackgroundColor:
-                    CyberpunkTheme.neonCyan.withOpacity(0.2),
-                disabledForegroundColor:
-                    CyberpunkTheme.neonCyan.withOpacity(0.5),
+                disabledBackgroundColor: CyberpunkTheme.neonCyan.withValues(
+                  alpha: 0.2,
+                ),
+                disabledForegroundColor: CyberpunkTheme.neonCyan.withValues(
+                  alpha: 0.5,
+                ),
                 padding: const EdgeInsets.all(12),
               ),
             ),

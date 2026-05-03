@@ -195,10 +195,10 @@ class UnifiedGamesListScreen extends ConsumerWidget {
           margin: const EdgeInsets.symmetric(horizontal: 4),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
-            color: color.withOpacity(isSelected ? 0.15 : 0.05),
+            color: color.withValues(alpha: isSelected ? 0.15 : 0.05),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: color.withOpacity(isSelected ? 0.5 : 0.2),
+              color: color.withValues(alpha: isSelected ? 0.5 : 0.2),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -253,20 +253,24 @@ class UnifiedGamesListScreen extends ConsumerWidget {
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Search games...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
                 prefixIcon: const Icon(Icons.search, color: Colors.white70),
                 filled: true,
-                fillColor: Colors.black.withOpacity(0.3),
+                fillColor: Colors.black.withValues(alpha: 0.3),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                  borderSide: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.2),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -298,7 +302,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: CyberpunkTheme.neonOrange.withOpacity(0.5),
+          color: CyberpunkTheme.neonOrange.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -333,10 +337,10 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.4),
+          color: Colors.black.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: CyberpunkTheme.neonOrange.withOpacity(0.5),
+            color: CyberpunkTheme.neonOrange.withValues(alpha: 0.5),
             width: 1.5,
           ),
         ),
@@ -463,11 +467,11 @@ class UnifiedGamesListScreen extends ConsumerWidget {
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: const Color(0xFF0A0E27).withOpacity(0.8),
+      color: const Color(0xFF0A0E27).withValues(alpha: 0.8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+          color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -555,7 +559,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.5),
+        color: Colors.black.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: CyberpunkTheme.neonPurple, width: 2),
       ),
@@ -667,7 +671,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color, width: 1.5),
       ),
@@ -761,7 +765,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: platformColor.withOpacity(0.15),
+                          color: platformColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: platformColor, width: 2),
                         ),

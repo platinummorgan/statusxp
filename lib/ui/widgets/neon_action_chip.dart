@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 
 /// Neon action chip - Floating pill button with glass effect
-/// 
+///
 /// Used for quick actions like Sync PSN, View Games, etc.
 class NeonActionChip extends StatelessWidget {
   final String label;
@@ -10,7 +10,7 @@ class NeonActionChip extends StatelessWidget {
   final VoidCallback onTap;
   final Color? accentColor;
   final bool isPrimary;
-  
+
   const NeonActionChip({
     super.key,
     required this.label,
@@ -19,12 +19,12 @@ class NeonActionChip extends StatelessWidget {
     this.accentColor,
     this.isPrimary = false,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = accentColor ?? CyberpunkTheme.neonCyan;
-    
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -33,8 +33,8 @@ class NeonActionChip extends StatelessWidget {
           gradient: isPrimary
               ? LinearGradient(
                   colors: [
-                    color.withOpacity(0.2),
-                    color.withOpacity(0.15),
+                    color.withValues(alpha: 0.2),
+                    color.withValues(alpha: 0.15),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -43,25 +43,25 @@ class NeonActionChip extends StatelessWidget {
           color: isPrimary ? null : CyberpunkTheme.glassLight,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: color.withOpacity(isPrimary ? 0.7 : 0.35),
+            color: color.withValues(alpha: isPrimary ? 0.7 : 0.35),
             width: isPrimary ? 2 : 1,
           ),
           boxShadow: isPrimary
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.4),
+                    color: color.withValues(alpha: 0.4),
                     blurRadius: 20,
                     spreadRadius: 0,
                   ),
                   BoxShadow(
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     blurRadius: 40,
                     spreadRadius: 4,
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: color.withOpacity(0.15),
+                    color: color.withValues(alpha: 0.15),
                     blurRadius: 12,
                     spreadRadius: 0,
                   ),
@@ -75,12 +75,7 @@ class NeonActionChip extends StatelessWidget {
               size: 19,
               color: color,
               shadows: isPrimary
-                  ? [
-                      Shadow(
-                        color: color.withOpacity(0.6),
-                        blurRadius: 8,
-                      ),
-                    ]
+                  ? [Shadow(color: color.withValues(alpha: 0.6), blurRadius: 8)]
                   : null,
             ),
             const SizedBox(width: 10),
@@ -94,7 +89,7 @@ class NeonActionChip extends StatelessWidget {
                 shadows: isPrimary
                     ? [
                         Shadow(
-                          color: color.withOpacity(0.4),
+                          color: color.withValues(alpha: 0.4),
                           blurRadius: 6,
                         ),
                       ]

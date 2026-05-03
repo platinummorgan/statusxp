@@ -125,7 +125,8 @@ class SyncIntelligenceRepository {
       final achievementsRelation = row['achievements'];
       int scoreValue = 0;
       if (achievementsRelation is Map<String, dynamic>) {
-        scoreValue = (achievementsRelation['score_value'] as num?)?.toInt() ?? 0;
+        scoreValue =
+            (achievementsRelation['score_value'] as num?)?.toInt() ?? 0;
       } else if (achievementsRelation is List &&
           achievementsRelation.isNotEmpty) {
         final first = achievementsRelation.first;
@@ -177,7 +178,9 @@ class SyncIntelligenceRepository {
 
       final dbEarned = db?.count ?? 0;
       final dbScore = db?.score ?? 0;
-      final missingAchievements = (apiEarned - dbEarned).clamp(0, 1 << 30).toInt();
+      final missingAchievements = (apiEarned - dbEarned)
+          .clamp(0, 1 << 30)
+          .toInt();
 
       // Platform-specific gap logic:
       // - PSN/Steam: count-based progress is authoritative for diagnostics.

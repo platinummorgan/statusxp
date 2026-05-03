@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/trophy_help_request.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 class TrophyHelpService {
   TrophyHelpService(this._supabase);
 
@@ -57,7 +59,10 @@ class TrophyHelpService {
         .single();
 
     // Dev verification: ensure profile_id was saved
-    assert(row['profile_id'] != null, 'MIGRATION ERROR: profile_id is null after insert');
+    assert(
+      row['profile_id'] != null,
+      'MIGRATION ERROR: profile_id is null after insert',
+    );
 
     // New data exists; open list is now stale
     _invalidateOpenCache();
@@ -73,38 +78,44 @@ class TrophyHelpService {
     String? platform,
     String? gameId,
   }) async {
-    print('[SERVICE] getOpenRequests called with platform=$platform, gameId=$gameId at ${DateTime.now().millisecondsSinceEpoch}');
-    
+    statusxpLog(
+      '[SERVICE] getOpenRequests called with platform=$platform, gameId=$gameId at ${DateTime.now().millisecondsSinceEpoch}',
+    );
+
     final key = _OpenKey(platform: platform, gameId: gameId);
 
     // 1) Return fresh cache if still valid
     final cached = _openCache[key];
     if (cached != null && !cached.isExpired(_openRequestsTtl)) {
-      print('[SERVICE] Returning cached data (${cached.value.length} items)');
+      statusxpLog(
+        '[SERVICE] Returning cached data (${cached.value.length} items)',
+      );
       return cached.value;
     }
 
     // 2) If there is an in-flight request for the same key, await it
     final existingFuture = _openInFlight[key];
     if (existingFuture != null) {
-      print('[SERVICE] Returning in-flight future');
+      statusxpLog('[SERVICE] Returning in-flight future');
       return existingFuture;
     }
 
-    print('[SERVICE] Making NEW network request');
-    
+    statusxpLog('[SERVICE] Making NEW network request');
+
     // 3) Start a new request, store it in-flight, and clean up when done
     final future = _fetchOpenRequests(platform: platform, gameId: gameId)
         .then((results) {
           _openCache[key] = _CacheEntry(results, DateTime.now());
           return results;
-        }).catchError((e) {
-      // If fetch fails, return stale cache if any, otherwise empty list
-      final stale = _openCache[key];
-      return stale?.value ?? <TrophyHelpRequest>[];
-    }).whenComplete(() {
-      _openInFlight.remove(key);
-    });
+        })
+        .catchError((e) {
+          // If fetch fails, return stale cache if any, otherwise empty list
+          final stale = _openCache[key];
+          return stale?.value ?? <TrophyHelpRequest>[];
+        })
+        .whenComplete(() {
+          _openInFlight.remove(key);
+        });
 
     _openInFlight[key] = future;
     return future;
@@ -160,7 +171,8 @@ class TrophyHelpService {
         .insert({
           'request_id': requestId,
           'helper_user_id': userId, // Deprecated but still required
-          'helper_profile_id': userId, // New column (profiles.id == auth.users.id)
+          'helper_profile_id':
+              userId, // New column (profiles.id == auth.users.id)
           'message': message,
           'status': 'pending',
         })
@@ -168,7 +180,10 @@ class TrophyHelpService {
         .single();
 
     // Dev verification: ensure helper_profile_id was saved
-    assert(row['helper_profile_id'] != null, 'MIGRATION ERROR: helper_profile_id is null after insert');
+    assert(
+      row['helper_profile_id'] != null,
+      'MIGRATION ERROR: helper_profile_id is null after insert',
+    );
 
     return TrophyHelpResponse.fromJson(row);
   }
@@ -189,8 +204,10 @@ class TrophyHelpService {
       final helperProfile = row['helper_username'];
       if (helperProfile != null && helperProfile is Map) {
         flatRow['helper_username'] = helperProfile['username'] as String?;
-        flatRow['helper_psn_online_id'] = helperProfile['psn_online_id'] as String?;
-        flatRow['helper_xbox_gamertag'] = helperProfile['xbox_gamertag'] as String?;
+        flatRow['helper_psn_online_id'] =
+            helperProfile['psn_online_id'] as String?;
+        flatRow['helper_xbox_gamertag'] =
+            helperProfile['xbox_gamertag'] as String?;
         flatRow['helper_steam_id'] = helperProfile['steam_id'] as String?;
       }
       return flatRow;
@@ -296,9 +313,7 @@ class _OpenKey {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is _OpenKey &&
-          other.platform == platform &&
-          other.gameId == gameId;
+      other is _OpenKey && other.platform == platform && other.gameId == gameId;
 
   @override
   int get hashCode => Object.hash(platform, gameId);

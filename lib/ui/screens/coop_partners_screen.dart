@@ -74,7 +74,7 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  
+
   String? _selectedPlatform;
   List<TrophyHelpRequest> _allRequests = [];
   bool _isLoading = true;
@@ -130,27 +130,27 @@ class _FindHelpTabState extends ConsumerState<_FindHelpTab>
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? _ErrorState(message: 'Error: $_error')
-                  : () {
-                      // Filter on UI side
-                      final requests = _selectedPlatform == null
-                          ? _allRequests
-                          : _allRequests
-                              .where((r) => r.platform == _selectedPlatform)
-                              .toList();
+              ? _ErrorState(message: 'Error: $_error')
+              : () {
+                  // Filter on UI side
+                  final requests = _selectedPlatform == null
+                      ? _allRequests
+                      : _allRequests
+                            .where((r) => r.platform == _selectedPlatform)
+                            .toList();
 
-                      if (requests.isEmpty) return const _EmptyFindHelpState();
+                  if (requests.isEmpty) return const _EmptyFindHelpState();
 
-                      return RefreshIndicator(
-                        onRefresh: _loadRequests,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: requests.length,
-                          itemBuilder: (context, index) =>
-                              _RequestCard(request: requests[index]),
-                        ),
-                      );
-                    }(),
+                  return RefreshIndicator(
+                    onRefresh: _loadRequests,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: requests.length,
+                      itemBuilder: (context, index) =>
+                          _RequestCard(request: requests[index]),
+                    ),
+                  );
+                }(),
         ),
       ],
     );
@@ -174,7 +174,7 @@ class _PlatformFilterBar extends StatelessWidget {
         color: const Color(0xFF1a1f3a),
         border: Border(
           bottom: BorderSide(
-            color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -248,7 +248,7 @@ class _PlatformChip extends StatelessWidget {
       selected: isSelected,
       onSelected: (selectedNow) => onChanged(selectedNow ? value : null),
       backgroundColor: const Color(0xFF1a1f3a),
-      selectedColor: CyberpunkTheme.neonCyan.withOpacity(0.3),
+      selectedColor: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
       checkmarkColor: CyberpunkTheme.neonCyan,
       labelStyle: TextStyle(
         color: isSelected ? CyberpunkTheme.neonCyan : Colors.white70,
@@ -270,19 +270,23 @@ class _EmptyFindHelpState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.group_off, size: 64, color: Colors.white.withOpacity(0.3)),
+          Icon(
+            Icons.group_off,
+            size: 64,
+            color: Colors.white.withValues(alpha: 0.3),
+          ),
           const SizedBox(height: 16),
           Text(
             'No active requests',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               fontSize: 18,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Be the first to request help!',
-            style: TextStyle(color: Colors.white.withOpacity(0.4)),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
           ),
         ],
       ),
@@ -309,7 +313,7 @@ class _RequestCard extends ConsumerWidget {
       color: const Color(0xFF1a1f3a),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.2)),
+        side: BorderSide(color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2)),
       ),
       child: InkWell(
         onTap: () => context.push('/coop-partners/${request.id}'),
@@ -330,7 +334,7 @@ class _RequestCard extends ConsumerWidget {
                   Text(
                     createdAgo,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 12,
                     ),
                   ),
@@ -353,14 +357,14 @@ class _RequestCard extends ConsumerWidget {
                   Icon(
                     Icons.emoji_events,
                     size: 16,
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.7),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.7),
                   ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       request.achievementName,
                       style: TextStyle(
-                        color: CyberpunkTheme.neonCyan.withOpacity(0.9),
+                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.9),
                         fontSize: 14,
                       ),
                       maxLines: 2,
@@ -374,7 +378,7 @@ class _RequestCard extends ConsumerWidget {
                 Text(
                   request.description!,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 13,
                   ),
                   maxLines: 2,
@@ -385,13 +389,16 @@ class _RequestCard extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.schedule,
-                        size: 14, color: Colors.white.withOpacity(0.5)),
+                    Icon(
+                      Icons.schedule,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       request.availability!,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -414,7 +421,9 @@ class _RequestCard extends ConsumerWidget {
                   icon: const Icon(Icons.handshake, size: 18),
                   label: const Text('Offer Help'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                    backgroundColor: CyberpunkTheme.neonCyan.withValues(
+                      alpha: 0.2,
+                    ),
                     foregroundColor: CyberpunkTheme.neonCyan,
                     side: const BorderSide(color: CyberpunkTheme.neonCyan),
                   ),
@@ -444,7 +453,7 @@ class _PlatformPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color),
       ),
@@ -540,19 +549,24 @@ class _MyRequestsTabState extends ConsumerState<_MyRequestsTab>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined,
-                size: 64, color: Colors.white.withOpacity(0.3)),
+            Icon(
+              Icons.inbox_outlined,
+              size: 64,
+              color: Colors.white.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: 16),
             Text(
               'No requests yet',
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(color: Colors.white.withOpacity(0.6)),
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Create a request to find co-op partners',
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: Colors.white.withOpacity(0.4)),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: Colors.white.withValues(alpha: 0.4),
+              ),
             ),
           ],
         ),
@@ -564,11 +578,10 @@ class _MyRequestsTabState extends ConsumerState<_MyRequestsTab>
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _myRequests.length,
-        itemBuilder: (context, index) =>
-            _MyRequestCard(
-              request: _myRequests[index],
-              onDeleted: _loadMyRequests,
-            ),
+        itemBuilder: (context, index) => _MyRequestCard(
+          request: _myRequests[index],
+          onDeleted: _loadMyRequests,
+        ),
       ),
     );
   }
@@ -578,10 +591,7 @@ class _MyRequestCard extends ConsumerWidget {
   final TrophyHelpRequest request;
   final VoidCallback onDeleted;
 
-  const _MyRequestCard({
-    required this.request,
-    required this.onDeleted,
-  });
+  const _MyRequestCard({required this.request, required this.onDeleted});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -596,7 +606,7 @@ class _MyRequestCard extends ConsumerWidget {
       color: const Color(0xFF1a1f3a),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.2)),
+        side: BorderSide(color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2)),
       ),
       child: InkWell(
         onTap: () => context.push('/coop-partners/${request.id}'),
@@ -614,12 +624,15 @@ class _MyRequestCard extends ConsumerWidget {
                     icon: platformStyle.icon,
                   ),
                   const SizedBox(width: 8),
-                  _StatusPill(label: statusStyle.label, color: statusStyle.color),
+                  _StatusPill(
+                    label: statusStyle.label,
+                    color: statusStyle.color,
+                  ),
                   const Spacer(),
                   Text(
                     createdAgo,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 12,
                     ),
                   ),
@@ -638,7 +651,7 @@ class _MyRequestCard extends ConsumerWidget {
               Text(
                 request.achievementName,
                 style: TextStyle(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.9),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.9),
                   fontSize: 14,
                 ),
               ),
@@ -647,7 +660,7 @@ class _MyRequestCard extends ConsumerWidget {
                 Text(
                   request.description!,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 13,
                   ),
                   maxLines: 2,
@@ -679,18 +692,24 @@ class _MyRequestCard extends ConsumerWidget {
                         final confirmed = await _confirm(
                           context,
                           title: 'Cancel Request',
-                          message: 'Are you sure you want to cancel this request?',
+                          message:
+                              'Are you sure you want to cancel this request?',
                           confirmLabel: 'Yes',
                         );
 
                         if (confirmed != true) return;
 
                         try {
-                          await service.updateRequestStatus(request.id, 'cancelled');
+                          await service.updateRequestStatus(
+                            request.id,
+                            'cancelled',
+                          );
                           // Request cancelled - user can pull to refresh to see updated list
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Request cancelled')),
+                              const SnackBar(
+                                content: Text('Request cancelled'),
+                              ),
                             );
                           }
                         } catch (e) {
@@ -705,7 +724,7 @@ class _MyRequestCard extends ConsumerWidget {
                     IconButton(
                       tooltip: 'Delete Request',
                       icon: const Icon(Icons.delete),
-                      color: Colors.red.withOpacity(0.7),
+                      color: Colors.red.withValues(alpha: 0.7),
                       onPressed: () async {
                         final confirmed = await _confirm(
                           context,
@@ -738,7 +757,11 @@ class _MyRequestCard extends ConsumerWidget {
                     ),
                   ],
                   if (request.status == 'completed')
-                    const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 24,
+                    ),
                 ],
               ),
             ],
@@ -855,7 +878,7 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color),
       ),

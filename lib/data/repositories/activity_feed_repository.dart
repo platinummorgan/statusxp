@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/activity_feed_entry.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 class ActivityFeedRepository {
   final SupabaseClient _client;
 
@@ -13,10 +15,7 @@ class ActivityFeedRepository {
     try {
       final response = await _client.rpc(
         'get_activity_feed_grouped',
-        params: {
-          'p_user_id': _client.auth.currentUser!.id,
-          'p_limit': limit,
-        },
+        params: {'p_user_id': _client.auth.currentUser!.id, 'p_limit': limit},
       );
 
       if (response == null) {
@@ -25,10 +24,13 @@ class ActivityFeedRepository {
 
       final List<dynamic> data = response as List<dynamic>;
       return data
-          .map((group) => ActivityFeedGroup.fromJson(group as Map<String, dynamic>))
+          .map(
+            (group) =>
+                ActivityFeedGroup.fromJson(group as Map<String, dynamic>),
+          )
           .toList();
     } catch (e) {
-      print('❌ Failed to fetch activity feed: $e');
+      statusxpLog('❌ Failed to fetch activity feed: $e');
       rethrow;
     }
   }
@@ -48,7 +50,7 @@ class ActivityFeedRepository {
 
       return (response as num).toInt();
     } catch (e) {
-      print('❌ Failed to fetch unread count: $e');
+      statusxpLog('❌ Failed to fetch unread count: $e');
       return 0;
     }
   }
@@ -66,7 +68,7 @@ class ActivityFeedRepository {
         params: {'p_user_id': userId},
       );
     } catch (e) {
-      print('❌ Failed to mark feed as viewed: $e');
+      statusxpLog('❌ Failed to mark feed as viewed: $e');
       rethrow;
     }
   }

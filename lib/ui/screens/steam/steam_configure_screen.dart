@@ -37,20 +37,20 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
       }
 
       final steamId = _steamIdController.text.trim();
-      
+
       // Check if this Steam ID is already linked to a different account
       final existingProfile = await supabase
           .from('profiles')
           .select('id')
           .eq('steam_id', steamId)
           .maybeSingle();
-      
+
       if (existingProfile != null && existingProfile['id'] != userId) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'This Steam account (Steam ID: $steamId) is already connected to another account. If this is your account, please contact support for assistance.'
+                'This Steam account (Steam ID: $steamId) is already connected to another account. If this is your account, please contact support for assistance.',
               ),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 5),
@@ -60,10 +60,13 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
         return;
       }
 
-      await supabase.from('profiles').update({
-        'steam_id': steamId,
-        'steam_api_key': _apiKeyController.text.trim(),
-      }).eq('id', userId);
+      await supabase
+          .from('profiles')
+          .update({
+            'steam_id': steamId,
+            'steam_api_key': _apiKeyController.text.trim(),
+          })
+          .eq('id', userId);
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -91,9 +94,7 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Configure Steam'),
-      ),
+      appBar: AppBar(title: const Text('Configure Steam')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -102,27 +103,17 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Header
-              const Icon(
-                Icons.cloud,
-                size: 64,
-                color: Color(0xFF66C0F4),
-              ),
+              const Icon(Icons.cloud, size: 64, color: Color(0xFF66C0F4)),
               const SizedBox(height: 16),
               const Text(
                 'Connect Your Steam Account',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 'Enter your Steam credentials to sync your achievements',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 textAlign: TextAlign.center,
               ),
 
@@ -207,7 +198,11 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
                     children: [
                       const Row(
                         children: [
-                          Icon(Icons.privacy_tip, color: Colors.orange, size: 28),
+                          Icon(
+                            Icons.privacy_tip,
+                            color: Colors.orange,
+                            size: 28,
+                          ),
                           SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -261,19 +256,19 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
                       _buildInstructionStep(
                         '1. Get your Steam ID',
                         '• Go to your Steam profile in a WEB BROWSER (not the app)\n'
-                        '• Look at the URL: steamcommunity.com/profiles/[YOUR_ID]\n'
-                        '• Copy the 17-digit number (starts with "7656")\n'
-                        '• Example: 76561198025758586',
+                            '• Look at the URL: steamcommunity.com/profiles/[YOUR_ID]\n'
+                            '• Copy the 17-digit number (starts with "7656")\n'
+                            '• Example: 76561198025758586',
                       ),
                       const SizedBox(height: 12),
                       _buildInstructionStep(
                         '2. Get your API Key',
                         '• IMPORTANT: Must use a WEB BROWSER (not the Steam app)\n'
-                        '• Visit: steamcommunity.com/dev/apikey\n'
-                        '• You MUST have Steam Guard 2FA enabled (Steam requires this)\n'
-                        '• For "Domain Name", enter anything (e.g., "StatusXP")\n'
-                        '• This is just a label - it doesn\'t affect anything\n'
-                        '• Click Register and copy the 32-character key',
+                            '• Visit: steamcommunity.com/dev/apikey\n'
+                            '• You MUST have Steam Guard 2FA enabled (Steam requires this)\n'
+                            '• For "Domain Name", enter anything (e.g., "StatusXP")\n'
+                            '• This is just a label - it doesn\'t affect anything\n'
+                            '• Click Register and copy the 32-character key',
                       ),
                       const SizedBox(height: 12),
                       Container(
@@ -285,7 +280,11 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.warning_amber, color: Colors.orange[800], size: 20),
+                            Icon(
+                              Icons.warning_amber,
+                              color: Colors.orange[800],
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -317,16 +316,10 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         ),
         const SizedBox(height: 4),
-        Text(
-          description,
-          style: const TextStyle(fontSize: 12),
-        ),
+        Text(description, style: const TextStyle(fontSize: 12)),
       ],
     );
   }

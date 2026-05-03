@@ -1,14 +1,6 @@
-enum SeasonalBoardType {
-  statusXP,
-  platinums,
-  xbox,
-  steam,
-}
+enum SeasonalBoardType { statusXP, platinums, xbox, steam }
 
-enum LeaderboardPeriodType {
-  weekly,
-  monthly,
-}
+enum LeaderboardPeriodType { weekly, monthly }
 
 class SeasonalLeaderboardEntry {
   final String userId;

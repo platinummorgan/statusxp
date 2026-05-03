@@ -7,23 +7,23 @@ class Achievement {
   final String name;
   final String? description;
   final String? iconUrl;
-  
+
   // Platform-specific fields
   final String? psnTrophyType; // bronze, silver, gold, platinum
   final String? psnTrophyGroupId;
   final bool? psnIsSecret;
-  
+
   final int? xboxGamerscore;
   final bool? xboxIsSecret;
   final String? xboxProgressionState;
-  
+
   final bool? steamHidden;
-  
+
   // Unified fields
   final double? rarityGlobal;
   final bool isDlc;
   final String? dlcName;
-  
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -65,7 +65,7 @@ class Achievement {
       xboxIsSecret: map['xbox_is_secret'] as bool?,
       xboxProgressionState: map['xbox_progression_state'] as String?,
       steamHidden: map['steam_hidden'] as bool?,
-      rarityGlobal: map['rarity_global'] != null 
+      rarityGlobal: map['rarity_global'] != null
           ? (map['rarity_global'] as num).toDouble()
           : null,
       isDlc: map['is_dlc'] as bool? ?? false,
@@ -138,7 +138,7 @@ class UserAchievement {
   final DateTime earnedAt;
   final Map<String, dynamic> platformUnlockData;
   final DateTime createdAt;
-  
+
   // Joined achievement data (when fetched with join)
   final Achievement? achievement;
 
@@ -158,9 +158,10 @@ class UserAchievement {
       userId: map['user_id'] as String,
       achievementId: map['achievement_id'] as int,
       earnedAt: DateTime.parse(map['earned_at'] as String),
-      platformUnlockData: map['platform_unlock_data'] as Map<String, dynamic>? ?? {},
+      platformUnlockData:
+          map['platform_unlock_data'] as Map<String, dynamic>? ?? {},
       createdAt: DateTime.parse(map['created_at'] as String),
-      achievement: map['achievements'] != null 
+      achievement: map['achievements'] != null
           ? Achievement.fromMap(map['achievements'] as Map<String, dynamic>)
           : null,
     );
@@ -246,6 +247,7 @@ class VirtualCompletion {
     };
   }
 
-  bool get isPlatinum => completionType == 'platinum' || completionType == 'both';
+  bool get isPlatinum =>
+      completionType == 'platinum' || completionType == 'both';
   bool get is100Percent => completionType == '100%' || completionType == 'both';
 }

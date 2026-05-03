@@ -3,16 +3,18 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 // Conditional import for web-only features
-import 'package:statusxp/utils/web_utils.dart' if (dart.library.io) 'package:statusxp/utils/web_utils_stub.dart';
+import 'package:statusxp/utils/web_utils.dart'
+    if (dart.library.io) 'package:statusxp/utils/web_utils_stub.dart';
 
 /// Screen for connecting Twitch account (WEB ONLY)
-/// 
+///
 /// OAuth flow for linking Twitch accounts to unlock premium access for subscribers
 class TwitchConnectScreen extends ConsumerStatefulWidget {
   const TwitchConnectScreen({super.key});
 
   @override
-  ConsumerState<TwitchConnectScreen> createState() => _TwitchConnectScreenState();
+  ConsumerState<TwitchConnectScreen> createState() =>
+      _TwitchConnectScreenState();
 }
 
 class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
@@ -53,7 +55,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
     if (code != null) {
       // Clean URL immediately
       WebUtils.replaceUrl('/settings');
-      
+
       // Process the OAuth code
       await _linkAccount(code);
     }
@@ -94,19 +96,19 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
     try {
       final twitchService = ref.read(twitchServiceProvider);
       const redirectUri = 'https://statusxp.com/twitch-callback';
-      
+
       final result = await twitchService.linkAccount(code, redirectUri);
 
       if (mounted) {
         setState(() {
           _isLoading = false;
           if (result.isSubscribed) {
-            _successMessage = 
+            _successMessage =
                 'Successfully linked Twitch account!\n'
                 'Twitch subscription detected! 🎉\n\n'
                 'Your premium status will be automatically managed based on your subscription.';
           } else {
-            _successMessage = 
+            _successMessage =
                 'Successfully linked Twitch account!\n\n'
                 'Subscribe to the Platinum Morgan Twitch channel to unlock premium access!';
           }
@@ -133,9 +135,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
   Widget build(BuildContext context) {
     if (!kIsWeb) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Connect Twitch'),
-        ),
+        appBar: AppBar(title: const Text('Connect Twitch')),
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -150,9 +150,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Connect Twitch'),
-      ),
+      appBar: AppBar(title: const Text('Connect Twitch')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -166,20 +164,13 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
                 color: const Color(0xFF9146FF),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
-                Icons.stream,
-                size: 60,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.stream, size: 60, color: Colors.white),
             ),
             const SizedBox(height: 32),
 
             const Text(
               'Link Your Twitch Account',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -225,7 +216,10 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle_outline, color: Colors.green.shade900),
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: Colors.green.shade900,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -253,7 +247,9 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(
@@ -268,10 +264,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
             // Info text
             const Text(
               '💡 Subscribers to the StatusXP Twitch channel get automatic premium access!',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.white70),
               textAlign: TextAlign.center,
             ),
           ],

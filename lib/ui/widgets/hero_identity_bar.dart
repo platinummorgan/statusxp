@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 
 /// Hero identity bar showing user info and inline trophy counts
-/// 
+///
 /// Compact horizontal bar with username, rank, and trophy tier counts
 class HeroIdentityBar extends StatelessWidget {
   final String username;
@@ -11,7 +11,7 @@ class HeroIdentityBar extends StatelessWidget {
   final int gold;
   final int platinum;
   final int total;
-  
+
   const HeroIdentityBar({
     super.key,
     required this.username,
@@ -21,11 +21,11 @@ class HeroIdentityBar extends StatelessWidget {
     required this.platinum,
     required this.total,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -53,12 +53,12 @@ class HeroIdentityBar extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     CyberpunkTheme.neonCyan,
-                    CyberpunkTheme.neonCyan.withOpacity(0),
+                    CyberpunkTheme.neonCyan.withValues(alpha: 0),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.6),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.6),
                     blurRadius: 8,
                   ),
                 ],
@@ -66,9 +66,9 @@ class HeroIdentityBar extends StatelessWidget {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Inline trophy counts
         Wrap(
           spacing: 16,
@@ -97,7 +97,7 @@ class HeroIdentityBar extends StatelessWidget {
             _TrophyCount(
               icon: Icons.stars,
               count: total,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               label: 'TOTAL',
             ),
           ],
@@ -113,26 +113,22 @@ class _TrophyCount extends StatelessWidget {
   final int count;
   final Color color;
   final String? label;
-  
+
   const _TrophyCount({
     required this.icon,
     required this.count,
     required this.color,
     this.label,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 14,
-          color: color,
-        ),
+        Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
         Text(
           count.toString(),
@@ -147,7 +143,7 @@ class _TrophyCount extends StatelessWidget {
           Text(
             label!,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: color.withOpacity(0.6),
+              color: color.withValues(alpha: 0.6),
               fontSize: 9,
               letterSpacing: 0.5,
             ),

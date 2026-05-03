@@ -696,9 +696,16 @@ async function upsertUserProgress({
   totalTrophies,
   earnedTrophies,
   mostRecentEarnedAt,
+  earnedTrophyBreakdown,
 }) {
   const completionPercentage = Number(title.progress ?? 0);
-  const earnedSummary = title.earnedTrophies || {};
+  const legacySummary = title.earnedTrophies || {};
+  const earnedSummary = earnedTrophyBreakdown || {
+    bronze: legacySummary.bronze || 0,
+    silver: legacySummary.silver || 0,
+    gold: legacySummary.gold || 0,
+    platinum: legacySummary.platinum || 0,
+  };
 
   const payload = {
     user_id: userId,
@@ -709,11 +716,11 @@ async function upsertUserProgress({
     achievements_earned: earnedTrophies,
     last_played_at: title.lastUpdatedDateTime || null,
     last_achievement_earned_at: mostRecentEarnedAt,
-    metadata: {
-      bronze_trophies: earnedSummary.bronze || 0,
-      silver_trophies: earnedSummary.silver || 0,
-      gold_trophies: earnedSummary.gold || 0,
-      platinum_trophies: earnedSummary.platinum || 0,
+      metadata: {
+        bronze_trophies: earnedSummary.bronze || 0,
+        silver_trophies: earnedSummary.silver || 0,
+        gold_trophies: earnedSummary.gold || 0,
+        platinum_trophies: earnedSummary.platinum || 0,
       has_platinum: (earnedSummary.platinum || 0) > 0,
       last_rarity_sync: new Date().toISOString(),
       sync_failed: false,
@@ -1272,6 +1279,25 @@ export async function syncPSNAchievements(
       const userTrophyMap = new Map();
       for (const ut of userTrophies) userTrophyMap.set(ut.trophyId, ut);
 
+      // Derive earned trophy counts from actual earned rows, not title summary.
+      // The summary payload can lag behind by minutes and causes stale plat counts.
+      const earnedTrophyBreakdown = {
+        bronze: 0,
+        silver: 0,
+        gold: 0,
+        platinum: 0,
+      };
+
+      for (const trophy of trophies) {
+        const earned = userTrophyMap.get(trophy.trophyId)?.earned === true;
+        if (!earned) continue;
+        const trophyType = String(trophy.trophyType || '').toLowerCase();
+        if (trophyType === 'bronze') earnedTrophyBreakdown.bronze += 1;
+        if (trophyType === 'silver') earnedTrophyBreakdown.silver += 1;
+        if (trophyType === 'gold') earnedTrophyBreakdown.gold += 1;
+        if (trophyType === 'platinum') earnedTrophyBreakdown.platinum += 1;
+      }
+
       // Batch upsert achievements (DB write is ONE call)
       await upsertAchievementsBatch({
         platformId,
@@ -1312,6 +1338,7 @@ export async function syncPSNAchievements(
         totalTrophies,
         earnedTrophies,
         mostRecentEarnedAt,
+        earnedTrophyBreakdown,
       });
 
       processedGames++;

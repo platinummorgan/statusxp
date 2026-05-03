@@ -61,8 +61,8 @@ class _HallOfFameScreenState extends ConsumerState<HallOfFameScreen> {
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.selected)
-                ? CyberpunkTheme.neonCyan.withOpacity(0.2)
-                : Colors.black.withOpacity(0.25),
+                ? CyberpunkTheme.neonCyan.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.25),
           ),
           foregroundColor: WidgetStateProperty.all(Colors.white),
         ),
@@ -117,11 +117,11 @@ class _HallOfFameScreenState extends ConsumerState<HallOfFameScreen> {
               fontWeight: FontWeight.w700,
             ),
             selectedColor: CyberpunkTheme.neonGreen,
-            backgroundColor: Colors.black.withOpacity(0.35),
+            backgroundColor: Colors.black.withValues(alpha: 0.35),
             side: BorderSide(
               color: selected
-                  ? CyberpunkTheme.neonGreen.withOpacity(0.8)
-                  : CyberpunkTheme.neonCyan.withOpacity(0.35),
+                  ? CyberpunkTheme.neonGreen.withValues(alpha: 0.8)
+                  : CyberpunkTheme.neonCyan.withValues(alpha: 0.35),
             ),
           );
         },
@@ -152,15 +152,15 @@ class _HallOfFameScreenState extends ConsumerState<HallOfFameScreen> {
           margin: const EdgeInsets.fromLTRB(16, 10, 16, 8),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF0A0E27).withOpacity(0.9),
+            color: const Color(0xFF0A0E27).withValues(alpha: 0.9),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: CyberpunkTheme.goldNeon.withOpacity(0.9),
+              color: CyberpunkTheme.goldNeon.withValues(alpha: 0.9),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: CyberpunkTheme.goldNeon.withOpacity(0.25),
+                color: CyberpunkTheme.goldNeon.withValues(alpha: 0.25),
                 blurRadius: 14,
                 spreadRadius: 1,
               ),
@@ -197,7 +197,7 @@ class _HallOfFameScreenState extends ConsumerState<HallOfFameScreen> {
                     Text(
                       '+${_fmt(champion.winnerGain)}  |  $dateLabel',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.75),
+                        color: Colors.white.withValues(alpha: 0.75),
                         fontSize: 12,
                       ),
                     ),
@@ -271,9 +271,11 @@ class _HallOfFameScreenState extends ConsumerState<HallOfFameScreen> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0E27).withOpacity(0.82),
+          color: const Color(0xFF0A0E27).withValues(alpha: 0.82),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: CyberpunkTheme.neonCyan.withOpacity(0.35)),
+          border: Border.all(
+            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.35),
+          ),
         ),
         child: Row(
           children: [
@@ -282,7 +284,7 @@ class _HallOfFameScreenState extends ConsumerState<HallOfFameScreen> {
               backgroundImage: entry.winnerAvatarUrl != null
                   ? NetworkImage(entry.winnerAvatarUrl!)
                   : null,
-              backgroundColor: CyberpunkTheme.neonCyan.withOpacity(0.2),
+              backgroundColor: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
               child: entry.winnerAvatarUrl == null
                   ? const Icon(Icons.person, color: CyberpunkTheme.neonCyan)
                   : null,
@@ -305,7 +307,7 @@ class _HallOfFameScreenState extends ConsumerState<HallOfFameScreen> {
                   Text(
                     '${_boardLabel(entry.boardType)}  |  $periodLabel',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),

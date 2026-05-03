@@ -1,6 +1,7 @@
 class TrophyHelpRequest {
   final String id;
-  final String userId; // Keep for backwards compatibility, use profileId for new code
+  final String
+  userId; // Keep for backwards compatibility, use profileId for new code
   final String? profileId; // New canonical field (profiles.id)
   final String gameId;
   final String gameTitle;
@@ -35,7 +36,7 @@ class TrophyHelpRequest {
     // Prefer profile_id if present, fallback to user_id for backwards compatibility
     final profileId = json['profile_id'] as String?;
     final userId = json['user_id'] as String? ?? profileId ?? '';
-    
+
     return TrophyHelpRequest(
       id: json['id'] as String,
       userId: userId,
@@ -111,7 +112,8 @@ class TrophyHelpRequest {
 class TrophyHelpResponse {
   final String id;
   final String requestId;
-  final String helperUserId; // Keep for backwards compatibility, use helperProfileId for new code
+  final String
+  helperUserId; // Keep for backwards compatibility, use helperProfileId for new code
   final String? helperProfileId; // New canonical field (profiles.id)
   final String? helperUsername; // Helper's username from profiles table
   final String? helperPsnOnlineId; // Helper's PSN username
@@ -138,13 +140,16 @@ class TrophyHelpResponse {
   factory TrophyHelpResponse.fromJson(Map<String, dynamic> json) {
     // Prefer helper_profile_id if present, fallback to helper_user_id for backwards compatibility
     final helperProfileId = json['helper_profile_id'] as String?;
-    final helperUserId = json['helper_user_id'] as String? ?? helperProfileId ?? '';
-    
+    final helperUserId =
+        json['helper_user_id'] as String? ?? helperProfileId ?? '';
+
     return TrophyHelpResponse(
       id: json['id'] as String,
       requestId: json['request_id'] as String,
       helperUserId: helperUserId,
-      helperProfileId: helperProfileId ?? helperUserId, // Ensure helperProfileId is always set
+      helperProfileId:
+          helperProfileId ??
+          helperUserId, // Ensure helperProfileId is always set
       helperUsername: json['helper_username'] as String?,
       helperPsnOnlineId: json['helper_psn_online_id'] as String?,
       helperXboxGamertag: json['helper_xbox_gamertag'] as String?,
@@ -160,7 +165,8 @@ class TrophyHelpResponse {
       'id': id,
       'request_id': requestId,
       'helper_user_id': helperUserId,
-      'helper_profile_id': helperProfileId ?? helperUserId, // Always include helper_profile_id
+      'helper_profile_id':
+          helperProfileId ?? helperUserId, // Always include helper_profile_id
       'helper_username': helperUsername,
       'message': message,
       'status': status,

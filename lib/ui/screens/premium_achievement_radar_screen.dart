@@ -551,8 +551,9 @@ class _PremiumAchievementRadarScreenState
       touchedLabel = 'Last activity';
     }
 
-    final touchedText =
-        lastTouched == null ? 'Unknown' : _dateFormat.format(lastTouched.toLocal());
+    final touchedText = lastTouched == null
+        ? 'Unknown'
+        : _dateFormat.format(lastTouched.toLocal());
 
     return Container(
       padding: const EdgeInsets.all(12),

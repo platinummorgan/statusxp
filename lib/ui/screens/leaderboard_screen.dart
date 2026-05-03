@@ -149,7 +149,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               isScrollable: false,
               indicatorColor: CyberpunkTheme.neonPurple,
               labelColor: CyberpunkTheme.neonPurple,
-              unselectedLabelColor: Colors.white.withOpacity(0.5),
+              unselectedLabelColor: Colors.white.withValues(alpha: 0.5),
               labelStyle: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
@@ -224,7 +224,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             child: Text(
               'No rankings available yet',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 16,
               ),
             ),
@@ -289,19 +289,19 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: isCurrentUser
-              ? accentColor.withOpacity(0.15)
-              : const Color(0xFF0A0E27).withOpacity(0.8),
+              ? accentColor.withValues(alpha: 0.15)
+              : const Color(0xFF0A0E27).withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isCurrentUser
                 ? accentColor
-                : medalColor ?? accentColor.withOpacity(0.3),
+                : medalColor ?? accentColor.withValues(alpha: 0.3),
             width: isCurrentUser ? 2 : 1,
           ),
           boxShadow: isCurrentUser
               ? [
                   BoxShadow(
-                    color: accentColor.withOpacity(0.3),
+                    color: accentColor.withValues(alpha: 0.3),
                     blurRadius: 12,
                     spreadRadius: 2,
                   ),
@@ -326,7 +326,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                         size: 36,
                         shadows: [
                           Shadow(
-                            color: medalColor!.withOpacity(0.6),
+                            color: medalColor!.withValues(alpha: 0.6),
                             blurRadius: 8,
                           ),
                         ],
@@ -336,7 +336,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                         '#$rank',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                         ),
@@ -346,7 +346,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                       _getOrdinal(rank),
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: medalColor ?? Colors.white.withOpacity(0.4),
+                        color:
+                            medalColor ?? Colors.white.withValues(alpha: 0.4),
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.5,
@@ -366,7 +367,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 backgroundImage: entry.avatarUrl != null
                     ? NetworkImage(entry.avatarUrl!)
                     : null,
-                backgroundColor: accentColor.withOpacity(0.3),
+                backgroundColor: accentColor.withValues(alpha: 0.3),
                 child: entry.avatarUrl == null
                     ? Icon(Icons.person, color: accentColor, size: 24)
                     : null,
@@ -392,7 +393,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                               shadows: isCurrentUser
                                   ? [
                                       Shadow(
-                                        color: accentColor.withOpacity(0.6),
+                                        color: accentColor.withValues(
+                                          alpha: 0.6,
+                                        ),
                                         blurRadius: 4,
                                       ),
                                     ]
@@ -409,7 +412,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: accentColor.withOpacity(0.2),
+                              color: accentColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4),
                               border: Border.all(color: accentColor, width: 1),
                             ),
@@ -550,7 +553,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         margin: const EdgeInsets.only(top: 3),
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
-          color: const Color(0xFF00A8E1).withOpacity(0.25),
+          color: const Color(0xFF00A8E1).withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(3),
           border: Border.all(color: const Color(0xFF00A8E1), width: 1.5),
         ),
@@ -573,7 +576,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
           width: 16,
           height: 2,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(1),
           ),
         ),
@@ -597,7 +600,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               color: color,
               fontSize: 10,
               fontWeight: FontWeight.w900,
-              shadows: [Shadow(color: color.withOpacity(0.6), blurRadius: 4)],
+              shadows: [
+                Shadow(color: color.withValues(alpha: 0.6), blurRadius: 4),
+              ],
             ),
           ),
         ],
@@ -649,7 +654,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               Text(
                 'Owned: ',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   fontSize: 9,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.3,
@@ -658,7 +663,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               Text(
                 '${entry.possiblePlatinum ?? 0} | ${entry.possibleGold ?? 0} | ${entry.possibleSilver ?? 0} | ${entry.possibleBronze ?? 0}',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 9,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,
@@ -684,7 +689,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             return Icon(
               Icons.emoji_events,
               size: 44,
-              color: accentColor.withOpacity(0.6),
+              color: accentColor.withValues(alpha: 0.6),
             );
           },
         ),
@@ -696,7 +701,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             fontSize: 16,
             fontWeight: FontWeight.w900,
             shadows: [
-              Shadow(color: accentColor.withOpacity(0.6), blurRadius: 6),
+              Shadow(color: accentColor.withValues(alpha: 0.6), blurRadius: 6),
             ],
           ),
         ),
@@ -704,7 +709,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         Text(
           '|',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -715,7 +720,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               ? _formatNumber(entry.potentialScore!)
               : '0',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -737,7 +742,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             return Icon(
               Icons.emoji_events,
               size: 44,
-              color: accentColor.withOpacity(0.6),
+              color: accentColor.withValues(alpha: 0.6),
             );
           },
         ),
@@ -749,7 +754,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             fontSize: 16,
             fontWeight: FontWeight.w900,
             shadows: [
-              Shadow(color: accentColor.withOpacity(0.6), blurRadius: 6),
+              Shadow(color: accentColor.withValues(alpha: 0.6), blurRadius: 6),
             ],
           ),
         ),
@@ -757,7 +762,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         Text(
           '|',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -768,7 +773,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               ? _formatNumber(entry.potentialScore!)
               : '0',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -790,7 +795,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             return Icon(
               Icons.emoji_events,
               size: 44,
-              color: accentColor.withOpacity(0.6),
+              color: accentColor.withValues(alpha: 0.6),
             );
           },
         ),
@@ -802,7 +807,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             fontSize: 16,
             fontWeight: FontWeight.w900,
             shadows: [
-              Shadow(color: accentColor.withOpacity(0.6), blurRadius: 6),
+              Shadow(color: accentColor.withValues(alpha: 0.6), blurRadius: 6),
             ],
           ),
         ),
@@ -810,7 +815,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         Text(
           '|',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -821,7 +826,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               ? _formatNumber(entry.potentialScore!)
               : '0',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
@@ -842,7 +847,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
           child: Text(
             _getSubtitle(entry, type),
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white.withValues(alpha: 0.5),
               fontSize: 12,
             ),
             overflow: TextOverflow.ellipsis,
@@ -859,7 +864,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 fontWeight: FontWeight.w900,
                 height: 1.0,
                 shadows: [
-                  Shadow(color: accentColor.withOpacity(0.6), blurRadius: 8),
+                  Shadow(
+                    color: accentColor.withValues(alpha: 0.6),
+                    blurRadius: 8,
+                  ),
                 ],
               ),
             ),
@@ -869,7 +877,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               child: Text(
                 _getScoreLabel(type),
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -899,7 +907,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
             return Icon(
               Icons.emoji_events,
               size: isLarge ? 20 : 12,
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
             );
           },
         ),
@@ -907,11 +915,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         Text(
           count.toString(),
           style: TextStyle(
-            color: color ?? Colors.white.withOpacity(isLarge ? 0.8 : 0.5),
+            color: color ?? Colors.white.withValues(alpha: isLarge ? 0.8 : 0.5),
             fontSize: isLarge ? 18 : 9,
             fontWeight: isLarge ? FontWeight.w900 : FontWeight.w500,
             shadows: isLarge && color != null
-                ? [Shadow(color: color.withOpacity(0.6), blurRadius: 6)]
+                ? [Shadow(color: color.withValues(alpha: 0.6), blurRadius: 6)]
                 : null,
           ),
         ),

@@ -100,10 +100,10 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0A0E27).withOpacity(0.82),
+                        color: const Color(0xFF0A0E27).withValues(alpha: 0.82),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                          color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                         ),
                       ),
                       child: const Text(
@@ -146,7 +146,9 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
         label: const Text('View Full Game History'),
         style: OutlinedButton.styleFrom(
           foregroundColor: CyberpunkTheme.neonCyan,
-          side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.55)),
+          side: BorderSide(
+            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.55),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -164,9 +166,11 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0E27).withOpacity(0.85),
+        color: const Color(0xFF0A0E27).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CyberpunkTheme.neonGreen.withOpacity(0.5)),
+        border: Border.all(
+          color: CyberpunkTheme.neonGreen.withValues(alpha: 0.5),
+        ),
       ),
       child: Row(
         children: [
@@ -175,7 +179,7 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
             backgroundImage: targetAvatarUrl != null
                 ? NetworkImage(targetAvatarUrl!)
                 : null,
-            backgroundColor: CyberpunkTheme.neonCyan.withOpacity(0.2),
+            backgroundColor: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
             child: targetAvatarUrl == null
                 ? const Icon(Icons.person, color: CyberpunkTheme.neonCyan)
                 : null,
@@ -199,7 +203,7 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
                 Text(
                   '${_boardLabel(boardType)} • $periodLabel',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.72),
+                    color: Colors.white.withValues(alpha: 0.72),
                     fontSize: 12,
                   ),
                 ),
@@ -242,9 +246,11 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0E27).withOpacity(0.82),
+        color: const Color(0xFF0A0E27).withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CyberpunkTheme.neonCyan.withOpacity(0.25)),
+        border: Border.all(
+          color: CyberpunkTheme.neonCyan.withValues(alpha: 0.25),
+        ),
       ),
       child: Row(
         children: [
@@ -284,10 +290,12 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.25),
+                        color: Colors.black.withValues(alpha: 0.25),
                         borderRadius: BorderRadius.circular(999),
                         border: Border.all(
-                          color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                          color: CyberpunkTheme.neonPurple.withValues(
+                            alpha: 0.5,
+                          ),
                         ),
                       ),
                       child: Text(
@@ -303,7 +311,7 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
                     Text(
                       '${row.earnedCount} unlocks',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.65),
+                        color: Colors.white.withValues(alpha: 0.65),
                         fontSize: 12,
                       ),
                     ),
@@ -332,7 +340,7 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
       height: 58,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: Colors.black.withOpacity(0.25),
+        color: Colors.black.withValues(alpha: 0.25),
       ),
       child: const Icon(Icons.videogame_asset, color: Colors.white38, size: 18),
     );

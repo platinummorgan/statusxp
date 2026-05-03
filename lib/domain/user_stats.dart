@@ -2,47 +2,47 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
 /// Represents aggregate statistics for a user's gaming achievements.
-/// 
+///
 /// This model contains high-level metrics about a user's gaming profile,
 /// including total platinums, games tracked, and notable accomplishments.
 @immutable
 class UserStats extends Equatable {
   /// User's display name or gamertag
   final String username;
-  
+
   /// PSN avatar URL (if available)
   final String? avatarUrl;
-  
+
   /// PlayStation Plus subscription status
   final bool isPsPlus;
-  
+
   /// Total number of platinum trophies earned
   final int totalPlatinums;
-  
+
   /// Total number of games being tracked
   final int totalGamesTracked;
-  
+
   /// Total number of trophies/achievements earned across all games
   final int totalTrophies;
-  
+
   /// Number of bronze trophies earned
   final int bronzeTrophies;
-  
+
   /// Number of silver trophies earned
   final int silverTrophies;
-  
+
   /// Number of gold trophies earned
   final int goldTrophies;
-  
+
   /// Number of platinum trophies earned (same as totalPlatinums)
   final int platinumTrophies;
-  
+
   /// Name of the most difficult platinum earned
   final String hardestPlatGame;
-  
+
   /// Name of the rarest trophy earned
   final String rarestTrophyName;
-  
+
   /// Rarity percentage of the rarest trophy (0.0 to 100.0)
   final double rarestTrophyRarity;
 
@@ -135,20 +135,20 @@ class UserStats extends Equatable {
 
   @override
   List<Object?> get props => [
-        username,
-        avatarUrl,
-        isPsPlus,
-        totalPlatinums,
-        totalGamesTracked,
-        totalTrophies,
-        bronzeTrophies,
-        silverTrophies,
-        goldTrophies,
-        platinumTrophies,
-        hardestPlatGame,
-        rarestTrophyName,
-        rarestTrophyRarity,
-      ];
+    username,
+    avatarUrl,
+    isPsPlus,
+    totalPlatinums,
+    totalGamesTracked,
+    totalTrophies,
+    bronzeTrophies,
+    silverTrophies,
+    goldTrophies,
+    platinumTrophies,
+    hardestPlatGame,
+    rarestTrophyName,
+    rarestTrophyRarity,
+  ];
 
   @override
   bool get stringify => true;

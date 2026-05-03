@@ -27,10 +27,7 @@ class PlatformPieChart extends StatelessWidget {
             ),
           ),
           // Legend
-          Expanded(
-            flex: 1,
-            child: _buildLegend(),
-          ),
+          Expanded(flex: 1, child: _buildLegend()),
         ],
       ),
     );
@@ -45,10 +42,7 @@ class PlatformPieChart extends StatelessWidget {
           children: [
             Icon(Icons.pie_chart, size: 48, color: Colors.white24),
             SizedBox(height: 8),
-            Text(
-              'No platform data',
-              style: TextStyle(color: Colors.white38),
-            ),
+            Text('No platform data', style: TextStyle(color: Colors.white38)),
           ],
         ),
       ),
@@ -61,16 +55,36 @@ class PlatformPieChart extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (data.psnCount > 0)
-          _buildLegendItem('PSN', data.psnCount, data.psnPercent, const Color(0xFF0070CC)),
+          _buildLegendItem(
+            'PSN',
+            data.psnCount,
+            data.psnPercent,
+            const Color(0xFF0070CC),
+          ),
         if (data.xboxCount > 0)
-          _buildLegendItem('Xbox', data.xboxCount, data.xboxPercent, const Color(0xFF107C10)),
+          _buildLegendItem(
+            'Xbox',
+            data.xboxCount,
+            data.xboxPercent,
+            const Color(0xFF107C10),
+          ),
         if (data.steamCount > 0)
-          _buildLegendItem('Steam', data.steamCount, data.steamPercent, const Color(0xFF66C0F4)),
+          _buildLegendItem(
+            'Steam',
+            data.steamCount,
+            data.steamPercent,
+            const Color(0xFF66C0F4),
+          ),
       ],
     );
   }
 
-  Widget _buildLegendItem(String label, int count, double percent, Color color) {
+  Widget _buildLegendItem(
+    String label,
+    int count,
+    double percent,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -98,10 +112,7 @@ class PlatformPieChart extends StatelessWidget {
                 ),
                 Text(
                   '$count (${percent.toStringAsFixed(1)}%)',
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 11),
                 ),
               ],
             ),

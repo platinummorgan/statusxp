@@ -21,9 +21,7 @@ class XboxService {
   Future<XboxLinkResult> linkAccount(String authCode) async {
     final response = await _client.functions.invoke(
       'xbox-link-account',
-      body: {
-        'authCode': authCode,
-      },
+      body: {'authCode': authCode},
     );
 
     if (response.status != 200) {
@@ -60,8 +58,10 @@ class XboxService {
     if (response.status == 429) {
       final data = response.data as Map<String, dynamic>;
       final nextSyncStr = data['nextSyncAvailableAt'] as String?;
-      final nextSyncAt = nextSyncStr != null ? DateTime.parse(nextSyncStr) : null;
-      
+      final nextSyncAt = nextSyncStr != null
+          ? DateTime.parse(nextSyncStr)
+          : null;
+
       throw XboxRateLimitException(
         data['message'] as String? ?? 'Sync cooldown active',
         nextSyncAvailableAt: nextSyncAt,
@@ -141,15 +141,17 @@ class XboxService {
         return XboxSyncStatus.fromJson(data);
       } catch (e) {
         lastError = e is Exception ? e : Exception(e.toString());
-        
+
         // Only retry on DNS/network errors
-        if (e.toString().contains('SocketException') || 
+        if (e.toString().contains('SocketException') ||
             e.toString().contains('Failed host lookup') ||
             e.toString().contains('No address associated')) {
           retries++;
           if (retries < maxRetries) {
             // Exponential backoff: 500ms, 1s, 2s
-            await Future.delayed(Duration(milliseconds: 500 * (1 << (retries - 1))));
+            await Future.delayed(
+              Duration(milliseconds: 500 * (1 << (retries - 1))),
+            );
             continue;
           }
         }
@@ -158,7 +160,8 @@ class XboxService {
       }
     }
 
-    throw lastError ?? Exception('Failed to get sync status after $maxRetries retries');
+    throw lastError ??
+        Exception('Failed to get sync status after $maxRetries retries');
   }
 
   /// Stream sync status updates (polls every 2 seconds during sync)
@@ -181,7 +184,8 @@ class XboxService {
       } catch (_) {
         // If actively syncing, retry silently without showing errors to the UI
         final previous = lastStatus;
-        if (previous != null && (previous.status == 'syncing' || previous.status == 'pending')) {
+        if (previous != null &&
+            (previous.status == 'syncing' || previous.status == 'pending')) {
           // Just retry without yielding—user doesn't need to see transient network blips
           await Future.delayed(const Duration(seconds: 5));
           continue;

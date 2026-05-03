@@ -13,7 +13,8 @@ class AchievementGuideService {
     String? platform,
   }) async* {
     final supabase = Supabase.instance.client;
-    final functionUrl = '${SupabaseConfig.supabaseUrl}/functions/v1/generate-achievement-guide';
+    final functionUrl =
+        '${SupabaseConfig.supabaseUrl}/functions/v1/generate-achievement-guide';
     final accessToken = supabase.auth.currentSession?.accessToken;
 
     if (accessToken == null) {
@@ -41,18 +42,21 @@ class AchievementGuideService {
     }
 
     // Parse SSE stream from OpenAI
-    await for (final chunk in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
+    await for (final chunk
+        in response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
       if (chunk.isEmpty || chunk.startsWith(':')) continue;
-      
+
       if (chunk.startsWith('data: ')) {
         final data = chunk.substring(6);
         if (data == '[DONE]') break;
-        
+
         try {
           final json = jsonDecode(data);
           final delta = json['choices']?[0]?['delta'];
           final content = delta?['content'];
-          
+
           if (content != null && content is String) {
             yield content;
           }

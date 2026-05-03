@@ -7,27 +7,22 @@ import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-final requestDetailsProvider = FutureProvider.autoDispose.family<TrophyHelpRequest?, String>(
-  (ref, requestId) async {
-    final service = ref.read(trophyHelpServiceProvider);
-    return service.getRequest(requestId);
-  },
-);
+final requestDetailsProvider = FutureProvider.autoDispose
+    .family<TrophyHelpRequest?, String>((ref, requestId) async {
+      final service = ref.read(trophyHelpServiceProvider);
+      return service.getRequest(requestId);
+    });
 
-final requestResponsesProvider = FutureProvider.autoDispose.family<List<TrophyHelpResponse>, String>(
-  (ref, requestId) async {
-    final service = ref.read(trophyHelpServiceProvider);
-    return service.getRequestResponses(requestId);
-  },
-);
+final requestResponsesProvider = FutureProvider.autoDispose
+    .family<List<TrophyHelpResponse>, String>((ref, requestId) async {
+      final service = ref.read(trophyHelpServiceProvider);
+      return service.getRequestResponses(requestId);
+    });
 
 class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
   final String requestId;
 
-  const TrophyHelpRequestDetailsScreen({
-    super.key,
-    required this.requestId,
-  });
+  const TrophyHelpRequestDetailsScreen({super.key, required this.requestId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,15 +45,15 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
         child: requestAsync.when(
           data: (request) {
             if (request == null) {
-              return const Center(
-                child: Text('Request not found'),
-              );
+              return const Center(child: Text('Request not found'));
             }
             return _buildContent(context, theme, request, responsesAsync, ref);
           },
           loading: () => const Center(
             child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                CyberpunkTheme.neonCyan,
+              ),
             ),
           ),
           error: (error, stack) => Center(
@@ -68,7 +63,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                 Icon(
                   Icons.error_outline,
                   size: 48,
-                  color: Colors.red.withOpacity(0.7),
+                  color: Colors.red.withValues(alpha: 0.7),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -79,7 +74,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                 Text(
                   error.toString(),
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -161,7 +156,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
             color: const Color(0xFF1a1f3a),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+              color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -171,9 +166,12 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: platformColor.withOpacity(0.2),
+                      color: platformColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(color: platformColor),
                     ),
@@ -195,9 +193,12 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
+                      color: statusColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(color: statusColor),
                     ),
@@ -214,7 +215,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                   Text(
                     timeago.format(request.createdAt),
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.4),
+                      color: Colors.white.withValues(alpha: 0.4),
                       fontSize: 12,
                     ),
                   ),
@@ -239,17 +240,18 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
               Text(
                 request.achievementName,
                 style: TextStyle(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.9),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.9),
                   fontSize: 16,
                 ),
               ),
 
-              if (request.description != null && request.description!.isNotEmpty) ...[
+              if (request.description != null &&
+                  request.description!.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text(
                   'Details',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -258,13 +260,14 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                 Text(
                   request.description!,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
               ],
 
-              if (request.availability != null && request.availability!.isNotEmpty) ...[
+              if (request.availability != null &&
+                  request.availability!.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -277,7 +280,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                     Text(
                       'Availability: ',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -286,7 +289,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                       child: Text(
                         request.availability!,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 14,
                         ),
                       ),
@@ -295,7 +298,8 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                 ),
               ],
 
-              if (request.platformUsername != null && request.platformUsername!.isNotEmpty) ...[
+              if (request.platformUsername != null &&
+                  request.platformUsername!.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -308,7 +312,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                     Text(
                       '${request.platform.toUpperCase()} Username: ',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -319,7 +323,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                           Text(
                             request.platformUsername!,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 14,
                             ),
                           ),
@@ -330,7 +334,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                                 ClipboardData(text: request.platformUsername!),
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Username copied to clipboard')),
+                                const SnackBar(
+                                  content: Text('Username copied to clipboard'),
+                                ),
                               );
                             },
                             icon: const Icon(Icons.copy, size: 16),
@@ -362,7 +368,8 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                   child: const Text('No'),
                                 ),
                                 TextButton(
@@ -375,13 +382,20 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
 
                           if (confirmed == true) {
                             try {
-                              final service = TrophyHelpService(ref.read(supabaseClientProvider));
-                              await service.updateRequestStatus(request.id, 'completed');
+                              final service = TrophyHelpService(
+                                ref.read(supabaseClientProvider),
+                              );
+                              await service.updateRequestStatus(
+                                request.id,
+                                'completed',
+                              );
                               ref.invalidate(requestDetailsProvider(requestId));
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Request marked as completed!'),
+                                    content: Text(
+                                      'Request marked as completed!',
+                                    ),
                                     backgroundColor: Colors.green,
                                   ),
                                 );
@@ -416,7 +430,8 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                               ),
                               actions: [
                                 TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
                                   child: const Text('No'),
                                 ),
                                 TextButton(
@@ -429,12 +444,19 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
 
                           if (confirmed == true) {
                             try {
-                              final service = TrophyHelpService(ref.read(supabaseClientProvider));
-                              await service.updateRequestStatus(request.id, 'cancelled');
+                              final service = TrophyHelpService(
+                                ref.read(supabaseClientProvider),
+                              );
+                              await service.updateRequestStatus(
+                                request.id,
+                                'cancelled',
+                              );
                               ref.invalidate(requestDetailsProvider(requestId));
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Request cancelled')),
+                                  const SnackBar(
+                                    content: Text('Request cancelled'),
+                                  ),
                                 );
                               }
                             } catch (e) {
@@ -467,7 +489,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
         Text(
           'OFFERS TO HELP',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.55),
+            color: Colors.white.withValues(alpha: 0.55),
             letterSpacing: 2.5,
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -485,7 +507,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                   color: const Color(0xFF1a1f3a),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Column(
@@ -493,13 +515,13 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                     Icon(
                       Icons.inbox_outlined,
                       size: 48,
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       'No offers yet',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 16,
                       ),
                     ),
@@ -507,7 +529,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                     Text(
                       'Wait for other players to offer help',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.4),
+                        color: Colors.white.withValues(alpha: 0.4),
                         fontSize: 13,
                       ),
                     ),
@@ -518,7 +540,13 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
 
             return Column(
               children: responses.map((response) {
-                return _buildResponseCard(context, request, response, isOwner, ref);
+                return _buildResponseCard(
+                  context,
+                  request,
+                  response,
+                  isOwner,
+                  ref,
+                );
               }).toList(),
             );
           },
@@ -526,14 +554,16 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
             child: Padding(
               padding: EdgeInsets.all(32),
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  CyberpunkTheme.neonCyan,
+                ),
               ),
             ),
           ),
           error: (error, stack) => Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
+              color: Colors.red.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -582,8 +612,8 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: response.status == 'accepted'
-              ? Colors.green.withOpacity(0.3)
-              : CyberpunkTheme.neonCyan.withOpacity(0.2),
+              ? Colors.green.withValues(alpha: 0.3)
+              : CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -609,7 +639,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
+                  color: statusColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(color: statusColor),
                 ),
@@ -637,7 +667,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
             Text(
               response.message!,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontSize: 14,
               ),
             ),
@@ -647,7 +677,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
           Text(
             timeago.format(response.createdAt),
             style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha: 0.4),
               fontSize: 12,
             ),
           ),
@@ -658,9 +688,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.withOpacity(0.3)),
+                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,17 +714,32 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (request.platform.toLowerCase().contains('ps') && response.helperPsnOnlineId != null)
-                    _buildContactRow(context, 'PSN ID', response.helperPsnOnlineId!)
-                  else if (request.platform.toLowerCase().contains('xbox') && response.helperXboxGamertag != null)
-                    _buildContactRow(context, 'Xbox Gamertag', response.helperXboxGamertag!)
-                  else if (request.platform.toLowerCase().contains('steam') && response.helperSteamId != null)
-                    _buildContactRow(context, 'Steam ID', response.helperSteamId!)
+                  if (request.platform.toLowerCase().contains('ps') &&
+                      response.helperPsnOnlineId != null)
+                    _buildContactRow(
+                      context,
+                      'PSN ID',
+                      response.helperPsnOnlineId!,
+                    )
+                  else if (request.platform.toLowerCase().contains('xbox') &&
+                      response.helperXboxGamertag != null)
+                    _buildContactRow(
+                      context,
+                      'Xbox Gamertag',
+                      response.helperXboxGamertag!,
+                    )
+                  else if (request.platform.toLowerCase().contains('steam') &&
+                      response.helperSteamId != null)
+                    _buildContactRow(
+                      context,
+                      'Steam ID',
+                      response.helperSteamId!,
+                    )
                   else
                     Text(
                       'No platform username available',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -712,24 +757,35 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       try {
-                        final service = TrophyHelpService(ref.read(supabaseClientProvider));
+                        final service = TrophyHelpService(
+                          ref.read(supabaseClientProvider),
+                        );
                         await service.acceptHelper(response.id);
                         // Update request status to assigned
-                        await service.updateRequestStatus(request.id, 'assigned');
+                        await service.updateRequestStatus(
+                          request.id,
+                          'assigned',
+                        );
                         ref.invalidate(requestResponsesProvider(requestId));
                         ref.invalidate(requestDetailsProvider(requestId));
                         if (context.mounted) {
                           // Show helper's contact info
                           String contactInfo = 'Helper accepted!';
                           final platform = request.platform.toLowerCase();
-                          if (platform.contains('ps') && response.helperPsnOnlineId != null) {
-                            contactInfo += '\n\nPSN: ${response.helperPsnOnlineId}';
-                          } else if (platform.contains('xbox') && response.helperXboxGamertag != null) {
-                            contactInfo += '\n\nXbox: ${response.helperXboxGamertag}';
-                          } else if (platform.contains('steam') && response.helperSteamId != null) {
-                            contactInfo += '\n\nSteam ID: ${response.helperSteamId}';
+                          if (platform.contains('ps') &&
+                              response.helperPsnOnlineId != null) {
+                            contactInfo +=
+                                '\n\nPSN: ${response.helperPsnOnlineId}';
+                          } else if (platform.contains('xbox') &&
+                              response.helperXboxGamertag != null) {
+                            contactInfo +=
+                                '\n\nXbox: ${response.helperXboxGamertag}';
+                          } else if (platform.contains('steam') &&
+                              response.helperSteamId != null) {
+                            contactInfo +=
+                                '\n\nSteam ID: ${response.helperSteamId}';
                           }
-                          
+
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialog(
@@ -738,23 +794,56 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                               actions: [
                                 TextButton(
                                   onPressed: () {
-                                    if (platform.contains('ps') && response.helperPsnOnlineId != null) {
-                                      Clipboard.setData(ClipboardData(text: response.helperPsnOnlineId!));
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('PSN ID copied to clipboard')),
+                                    if (platform.contains('ps') &&
+                                        response.helperPsnOnlineId != null) {
+                                      Clipboard.setData(
+                                        ClipboardData(
+                                          text: response.helperPsnOnlineId!,
+                                        ),
                                       );
-                                    } else if (platform.contains('xbox') && response.helperXboxGamertag != null) {
-                                      Clipboard.setData(ClipboardData(text: response.helperXboxGamertag!));
                                       Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Gamertag copied to clipboard')),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'PSN ID copied to clipboard',
+                                          ),
+                                        ),
                                       );
-                                    } else if (platform.contains('steam') && response.helperSteamId != null) {
-                                      Clipboard.setData(ClipboardData(text: response.helperSteamId!));
+                                    } else if (platform.contains('xbox') &&
+                                        response.helperXboxGamertag != null) {
+                                      Clipboard.setData(
+                                        ClipboardData(
+                                          text: response.helperXboxGamertag!,
+                                        ),
+                                      );
                                       Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Steam ID copied to clipboard')),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Gamertag copied to clipboard',
+                                          ),
+                                        ),
+                                      );
+                                    } else if (platform.contains('steam') &&
+                                        response.helperSteamId != null) {
+                                      Clipboard.setData(
+                                        ClipboardData(
+                                          text: response.helperSteamId!,
+                                        ),
+                                      );
+                                      Navigator.pop(context);
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Steam ID copied to clipboard',
+                                          ),
+                                        ),
                                       );
                                     } else {
                                       Navigator.pop(context);
@@ -772,16 +861,16 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
                         }
                       }
                     },
                     icon: const Icon(Icons.check, size: 18),
                     label: const Text('Accept'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.withOpacity(0.2),
+                      backgroundColor: Colors.green.withValues(alpha: 0.2),
                       foregroundColor: Colors.green,
                       side: const BorderSide(color: Colors.green),
                     ),
@@ -792,7 +881,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                   child: OutlinedButton.icon(
                     onPressed: () async {
                       try {
-                        final service = TrophyHelpService(ref.read(supabaseClientProvider));
+                        final service = TrophyHelpService(
+                          ref.read(supabaseClientProvider),
+                        );
                         await service.declineHelper(response.id);
                         ref.invalidate(requestResponsesProvider(requestId));
                         if (context.mounted) {
@@ -802,9 +893,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
                         }
                       }
                     },
@@ -830,7 +921,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
         Text(
           '$label: ',
           style: TextStyle(
-            color: Colors.white.withOpacity(0.6),
+            color: Colors.white.withValues(alpha: 0.6),
             fontSize: 12,
           ),
         ),

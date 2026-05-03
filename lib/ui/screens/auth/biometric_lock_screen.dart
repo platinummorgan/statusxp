@@ -6,7 +6,7 @@ import 'package:statusxp/theme/colors.dart';
 class BiometricLockScreen extends StatefulWidget {
   final VoidCallback onAuthenticated;
   final VoidCallback? onCancel;
-  
+
   const BiometricLockScreen({
     super.key,
     required this.onAuthenticated,
@@ -33,7 +33,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
 
   Future<void> _authenticateWithBiometrics() async {
     if (_isAuthenticating) return;
-    
+
     setState(() {
       _isAuthenticating = true;
       _errorMessage = '';
@@ -48,7 +48,8 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
         widget.onAuthenticated();
       } else {
         setState(() {
-          _errorMessage = result.errorMessage ?? 'Authentication failed. Please try again.';
+          _errorMessage =
+              result.errorMessage ?? 'Authentication failed. Please try again.';
         });
       }
     } catch (e) {
@@ -82,7 +83,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                   color: accentPrimary,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Title
                 const Text(
                   'StatusXP is Locked',
@@ -93,18 +94,15 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Description
                 const Text(
                   'Use your fingerprint or face to unlock',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: textSecondary),
                 ),
                 const SizedBox(height: 48),
-                
+
                 // Biometric icon button
                 if (!_isAuthenticating)
                   InkWell(
@@ -115,10 +113,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                       height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: accentPrimary,
-                          width: 2,
-                        ),
+                        border: Border.all(color: accentPrimary, width: 2),
                       ),
                       child: const Icon(
                         Icons.fingerprint,
@@ -127,24 +122,22 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                       ),
                     ),
                   ),
-                
+
                 // Loading indicator
                 if (_isAuthenticating)
-                  const CircularProgressIndicator(
-                    color: accentPrimary,
-                  ),
-                
+                  const CircularProgressIndicator(color: accentPrimary),
+
                 const SizedBox(height: 24),
-                
+
                 // Error message
                 if (_errorMessage.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.red.withOpacity(0.3),
+                        color: Colors.red.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -167,20 +160,18 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                       ],
                     ),
                   ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Retry button (only show after error)
                 if (_errorMessage.isNotEmpty && !_isAuthenticating)
                   TextButton.icon(
                     onPressed: _authenticateWithBiometrics,
                     icon: const Icon(Icons.refresh),
                     label: const Text('Try Again'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: accentPrimary,
-                    ),
+                    style: TextButton.styleFrom(foregroundColor: accentPrimary),
                   ),
-                  
+
                 // Cancel button - navigate to sign-in screen
                 if (widget.onCancel != null) ...[
                   const SizedBox(height: 16),
@@ -188,10 +179,7 @@ class _BiometricLockScreenState extends State<BiometricLockScreen> {
                     onPressed: widget.onCancel,
                     child: const Text(
                       'Cancel',
-                      style: TextStyle(
-                        color: textSecondary,
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(color: textSecondary, fontSize: 16),
                     ),
                   ),
                 ],

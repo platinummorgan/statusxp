@@ -3,17 +3,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:statusxp/domain/game.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Supabase-based implementation of game data persistence.
-/// 
+///
 /// Fetches and updates games from the Supabase `user_games` table,
 /// joining with `game_titles` for game metadata.
 class SupabaseGameRepository {
   final SupabaseClient _client;
-  
+
   SupabaseGameRepository(this._client);
 
   /// Load all games for a specific user.
-  /// 
+  ///
   /// Fetches from user_games and joins game_titles for name/cover data.
   /// Returns empty list if user has no games.
   Future<List<Game>> getGamesForUser(String userId) async {
@@ -44,7 +46,9 @@ class SupabaseGameRepository {
           ''')
           .eq('user_id', userId);
 
-      print('DEBUG: Got ${(response as List).length} games from database');
+      statusxpLog(
+        'DEBUG: Got ${(response as List).length} games from database',
+      );
 
       // Fetch platinum rarity for ALL games (don't filter by has_platinum flag)
       // because the flag may be outdated
@@ -52,16 +56,18 @@ class SupabaseGameRepository {
           .map((row) => row['game_title_id'] as int)
           .toList();
       final Map<int, double> platinumRarityMap = {};
-      
+
       if (gameTitleIds.isNotEmpty) {
         final rarityResponse = await _client
             .from('trophies')
             .select('game_title_id, rarity_global')
             .eq('tier', 'platinum')
             .inFilter('game_title_id', gameTitleIds);
-        
-        print('DEBUG: Got ${(rarityResponse as List).length} platinum trophy rarity records');
-        
+
+        statusxpLog(
+          'DEBUG: Got ${(rarityResponse as List).length} platinum trophy rarity records',
+        );
+
         for (final row in (rarityResponse as List)) {
           final gameTitleId = row['game_title_id'] as int;
           final rarity = row['rarity_global'] as num?;
@@ -75,26 +81,33 @@ class SupabaseGameRepository {
         final gameTitle = row['game_titles'] as Map<String, dynamic>;
         final platform = row['platforms'] as Map<String, dynamic>?;
         final gameTitleId = row['game_title_id'] as int;
-        
+
         // Get platinum rarity from our map
         final platinumRarity = platinumRarityMap[gameTitleId];
-        
-        if (platinumRarity != null) {
-        }
-        
+
+        if (platinumRarity != null) {}
+
         // Use last_trophy_earned_at from database, fallback to last_played_at
         final lastTrophyStr = row['last_trophy_earned_at'] as String?;
-        print('DEBUG REPO: Game ${gameTitle['name']} - last_trophy_earned_at from DB: $lastTrophyStr');
-        DateTime? updatedAt = lastTrophyStr != null ? DateTime.tryParse(lastTrophyStr) : null;
-        
+        statusxpLog(
+          'DEBUG REPO: Game ${gameTitle['name']} - last_trophy_earned_at from DB: $lastTrophyStr',
+        );
+        DateTime? updatedAt = lastTrophyStr != null
+            ? DateTime.tryParse(lastTrophyStr)
+            : null;
+
         if (updatedAt == null) {
           final lastPlayedStr = row['last_played_at'] as String?;
-          print('DEBUG REPO: Fallback to last_played_at: $lastPlayedStr');
-          updatedAt = lastPlayedStr != null ? DateTime.tryParse(lastPlayedStr) : null;
+          statusxpLog('DEBUG REPO: Fallback to last_played_at: $lastPlayedStr');
+          updatedAt = lastPlayedStr != null
+              ? DateTime.tryParse(lastPlayedStr)
+              : null;
         }
-        
-        print('DEBUG REPO: Final updatedAt for ${gameTitle['name']}: $updatedAt');
-        
+
+        statusxpLog(
+          'DEBUG REPO: Final updatedAt for ${gameTitle['name']}: $updatedAt',
+        );
+
         return Game(
           id: gameTitleId.toString(), // Use game_title_id, not user_games.id
           name: gameTitle['name'] as String? ?? 'Unknown Game',
@@ -104,7 +117,11 @@ class SupabaseGameRepository {
           hasPlatinum: row['has_platinum'] as bool? ?? false,
           rarityPercent: (row['completion_percent'] as num?)?.toDouble() ?? 0.0,
           platinumRarity: platinumRarity,
-          cover: kIsWeb ? (gameTitle['proxied_cover_url'] ?? gameTitle['cover_url']) as String? ?? '' : (gameTitle['cover_url'] as String? ?? ''),
+          cover: kIsWeb
+              ? (gameTitle['proxied_cover_url'] ?? gameTitle['cover_url'])
+                        as String? ??
+                    ''
+              : (gameTitle['cover_url'] as String? ?? ''),
           bronzeTrophies: row['bronze_trophies'] as int? ?? 0,
           silverTrophies: row['silver_trophies'] as int? ?? 0,
           goldTrophies: row['gold_trophies'] as int? ?? 0,
@@ -145,7 +162,7 @@ class SupabaseGameRepository {
 
       final gameTitle = response['game_titles'] as Map<String, dynamic>;
       final platform = response['platforms'] as Map<String, dynamic>;
-      
+
       return Game(
         id: response['id'].toString(),
         name: gameTitle['name'] as String? ?? 'Unknown Game',
@@ -153,7 +170,8 @@ class SupabaseGameRepository {
         totalTrophies: response['total_trophies'] as int? ?? 0,
         earnedTrophies: response['earned_trophies'] as int? ?? 0,
         hasPlatinum: response['has_platinum'] as bool? ?? false,
-        rarityPercent: (response['rarest_trophy_rarity'] as num?)?.toDouble() ?? 0.0,
+        rarityPercent:
+            (response['rarest_trophy_rarity'] as num?)?.toDouble() ?? 0.0,
         cover: gameTitle['cover_image'] as String? ?? 'placeholder.png',
         bronzeTrophies: response['bronze_trophies'] as int? ?? 0,
         silverTrophies: response['silver_trophies'] as int? ?? 0,
@@ -166,7 +184,7 @@ class SupabaseGameRepository {
   }
 
   /// Update an existing game's progress.
-  /// 
+  ///
   /// Updates earned_trophies, has_platinum, and rarest_trophy_rarity.
   Future<void> updateGame(Game game) async {
     try {
@@ -186,7 +204,7 @@ class SupabaseGameRepository {
   }
 
   /// Insert a new game for the user.
-  /// 
+  ///
   /// Requires game_title_id and platform_id to be valid foreign keys.
   /// For now, this accepts a Game model and maps it.
   Future<void> insertGame(String userId, Game game) async {
@@ -196,7 +214,9 @@ class SupabaseGameRepository {
       // assume they already exist in the database.
       await _client.from('user_games').insert({
         'user_id': userId,
-        'game_title_id': int.parse(game.id), // Assumes game.id maps to game_title_id
+        'game_title_id': int.parse(
+          game.id,
+        ), // Assumes game.id maps to game_title_id
         'platform_id': 1, // Default platform, should be looked up
         'total_trophies': game.totalTrophies,
         'earned_trophies': game.earnedTrophies,
@@ -211,17 +231,14 @@ class SupabaseGameRepository {
   /// Delete a game by ID.
   Future<void> deleteGame(int id) async {
     try {
-      await _client
-          .from('user_games')
-          .delete()
-          .eq('id', id);
+      await _client.from('user_games').delete().eq('id', id);
     } catch (e) {
       rethrow;
     }
   }
 
   /// Fetch ALL games from the catalog (not just user's games)
-  /// 
+  ///
   /// Returns all game titles. Gets platform info from achievements.
   /// Useful for browsing/searching the full game database.
   /// Games are grouped by achievement similarity (>90% match = same game across platforms)
@@ -234,53 +251,71 @@ class SupabaseGameRepository {
   }) async {
     try {
       // Use pre-computed achievement-matching grouping function for speed
-      final response = await _client.rpc('get_grouped_games_fast', params: {
-        'search_query': searchQuery,
-        'platform_filter': platformFilter,
-        'result_limit': limit,
-        'result_offset': offset,
-        'sort_by': sortBy,
-      });
+      final response = await _client.rpc(
+        'get_grouped_games_fast',
+        params: {
+          'search_query': searchQuery,
+          'platform_filter': platformFilter,
+          'result_limit': limit,
+          'result_offset': offset,
+          'sort_by': sortBy,
+        },
+      );
 
       final games = (response as List).map((game) {
         final platforms = (game['platforms'] as List?)?.cast<String>() ?? [];
-        final platformNames = (game['platform_names'] as List?)?.cast<String>() ?? [];
+        final platformNames =
+            (game['platform_names'] as List?)?.cast<String>() ?? [];
         final platformIds = (game['platform_ids'] as List?)?.cast<int>() ?? [];
-        final platformGameIds = (game['platform_game_ids'] as List?)?.cast<String>() ?? [];
-        
+        final platformGameIds =
+            (game['platform_game_ids'] as List?)?.cast<String>() ?? [];
+
         // Determine primary platform for display
         String? primaryPlatform;
         int? primaryPlatformId;
         String? primaryPlatformGameId;
-        
+
         if (platforms.isNotEmpty) {
           // Case-insensitive platform matching
           if (platformFilter != null) {
             final filterLower = platformFilter.toLowerCase();
             final matchIndex = platforms.indexWhere(
-              (p) => p.toLowerCase() == filterLower
+              (p) => p.toLowerCase() == filterLower,
             );
-            
+
             if (matchIndex >= 0) {
               primaryPlatform = platforms[matchIndex];
-              primaryPlatformId = platformIds.isNotEmpty ? platformIds[matchIndex] : null;
-              primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds[matchIndex] : null;
+              primaryPlatformId = platformIds.isNotEmpty
+                  ? platformIds[matchIndex]
+                  : null;
+              primaryPlatformGameId = platformGameIds.isNotEmpty
+                  ? platformGameIds[matchIndex]
+                  : null;
             } else {
               // Use first platform as default if filter doesn't match
               primaryPlatform = platforms.first;
-              primaryPlatformId = platformIds.isNotEmpty ? platformIds.first : null;
-              primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds.first : null;
+              primaryPlatformId = platformIds.isNotEmpty
+                  ? platformIds.first
+                  : null;
+              primaryPlatformGameId = platformGameIds.isNotEmpty
+                  ? platformGameIds.first
+                  : null;
             }
           } else {
             // Use first platform as default when no filter
             primaryPlatform = platforms.first;
-            primaryPlatformId = platformIds.isNotEmpty ? platformIds.first : null;
-            primaryPlatformGameId = platformGameIds.isNotEmpty ? platformGameIds.first : null;
+            primaryPlatformId = platformIds.isNotEmpty
+                ? platformIds.first
+                : null;
+            primaryPlatformGameId = platformGameIds.isNotEmpty
+                ? platformGameIds.first
+                : null;
           }
         }
 
         // Use values from RPC function if available, otherwise use derived values
-        final finalPlatformId = game['primary_platform_id'] ?? primaryPlatformId;
+        final finalPlatformId =
+            game['primary_platform_id'] ?? primaryPlatformId;
         final finalGameId = game['primary_game_id'] ?? primaryPlatformGameId;
 
         return {
@@ -290,8 +325,10 @@ class SupabaseGameRepository {
           'group_id': game['group_id'],
           'name': game['name'],
           'cover_url': game['cover_url'],
-          'proxied_cover_url': kIsWeb ? (game['proxied_cover_url'] ?? game['cover_url']) : game['cover_url'],
-          'platforms': primaryPlatform != null 
+          'proxied_cover_url': kIsWeb
+              ? (game['proxied_cover_url'] ?? game['cover_url'])
+              : game['cover_url'],
+          'platforms': primaryPlatform != null
               ? {'code': primaryPlatform, 'name': primaryPlatform}
               : null,
           'all_platforms': platforms,
@@ -328,7 +365,7 @@ class SupabaseGameRepository {
             .select('id')
             .eq('code', platformFilter)
             .maybeSingle();
-        
+
         if (platformResponse != null) {
           query = query.eq('platform_id', platformResponse['id']);
         }

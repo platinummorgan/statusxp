@@ -2,50 +2,50 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 
 /// Represents a video game with trophy/achievement tracking data.
-/// 
+///
 /// This model stores essential information about a tracked game including
 /// platform, trophy progress, platinum status, and rarity metrics.
 @immutable
 class Game extends Equatable {
   /// Unique identifier for the game
   final String id;
-  
+
   /// Display name of the game
   final String name;
-  
+
   /// Gaming platform (e.g., 'PS5', 'PS4', 'Xbox', 'Steam')
   final String platform;
-  
+
   /// Total number of trophies/achievements available in the game
   final int totalTrophies;
-  
+
   /// Number of trophies/achievements earned by the user
   final int earnedTrophies;
-  
+
   /// Whether the game has a platinum trophy/100% completion
   final bool hasPlatinum;
-  
+
   /// Rarity percentage of the rarest earned trophy (0.0 to 100.0)
   final double rarityPercent;
-  
+
   /// Platinum trophy rarity percentage (0.0 to 100.0)
   final double? platinumRarity;
-  
+
   /// Cover image filename or asset path
   final String cover;
-  
+
   /// Number of bronze trophies earned
   final int bronzeTrophies;
-  
+
   /// Number of silver trophies earned
   final int silverTrophies;
-  
+
   /// Number of gold trophies earned
   final int goldTrophies;
-  
+
   /// Number of platinum trophies earned (0 or 1)
   final int platinumTrophies;
-  
+
   /// Last updated timestamp (for sorting by recency)
   final DateTime? updatedAt;
 
@@ -114,7 +114,9 @@ class Game extends Equatable {
       silverTrophies: json['silverTrophies'] as int? ?? 0,
       goldTrophies: json['goldTrophies'] as int? ?? 0,
       platinumTrophies: json['platinumTrophies'] as int? ?? 0,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'] as String) : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'] as String)
+          : null,
     );
   }
 
@@ -145,21 +147,21 @@ class Game extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        platform,
-        totalTrophies,
-        earnedTrophies,
-        hasPlatinum,
-        rarityPercent,
-        platinumRarity,
-        cover,
-        bronzeTrophies,
-        silverTrophies,
-        goldTrophies,
-        platinumTrophies,
-        updatedAt,
-      ];
+    id,
+    name,
+    platform,
+    totalTrophies,
+    earnedTrophies,
+    hasPlatinum,
+    rarityPercent,
+    platinumRarity,
+    cover,
+    bronzeTrophies,
+    silverTrophies,
+    goldTrophies,
+    platinumTrophies,
+    updatedAt,
+  ];
 
   @override
   bool get stringify => true;

@@ -14,7 +14,9 @@ class MonthlyActivityChart extends StatelessWidget {
       return _buildEmptyState();
     }
 
-    final maxCount = data.months.map((m) => m.totalCount).reduce((a, b) => a > b ? a : b);
+    final maxCount = data.months
+        .map((m) => m.totalCount)
+        .reduce((a, b) => a > b ? a : b);
 
     return SizedBox(
       height: 200,
@@ -24,9 +26,7 @@ class MonthlyActivityChart extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: data.months.map((month) {
-                return Expanded(
-                  child: _buildStackedBar(month, maxCount),
-                );
+                return Expanded(child: _buildStackedBar(month, maxCount));
               }).toList(),
             ),
           ),
@@ -44,10 +44,7 @@ class MonthlyActivityChart extends StatelessWidget {
           children: [
             Icon(Icons.calendar_month, size: 48, color: Colors.white24),
             SizedBox(height: 8),
-            Text(
-              'No activity data',
-              style: TextStyle(color: Colors.white38),
-            ),
+            Text('No activity data', style: TextStyle(color: Colors.white38)),
           ],
         ),
       ),
@@ -78,10 +75,7 @@ class MonthlyActivityChart extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final barHeight = constraints.maxHeight * totalHeight;
-                final psnHeight = month.psnCount / month.totalCount * barHeight;
-                final xboxHeight = month.xboxCount / month.totalCount * barHeight;
-                final steamHeight = month.steamCount / month.totalCount * barHeight;
-                
+
                 return Align(
                   alignment: Alignment.bottomCenter,
                   child: Container(
@@ -100,7 +94,7 @@ class MonthlyActivityChart extends StatelessWidget {
                             flex: month.steamCount,
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(4),
                                 ),
@@ -111,9 +105,7 @@ class MonthlyActivityChart extends StatelessWidget {
                         if (month.xboxCount > 0)
                           Expanded(
                             flex: month.xboxCount,
-                            child: Container(
-                              color: const Color(0xFF107C10),
-                            ),
+                            child: Container(color: const Color(0xFF107C10)),
                           ),
                         // PSN (bottom - blue)
                         if (month.psnCount > 0)
@@ -139,10 +131,7 @@ class MonthlyActivityChart extends StatelessWidget {
           // Month label
           Text(
             month.label,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 9,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 9),
             maxLines: 1,
             overflow: TextOverflow.clip,
           ),

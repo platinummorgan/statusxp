@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:statusxp/theme/colors.dart';
 
 /// StatusXP Typography Scale
-/// 
+///
 /// Modern gaming-inspired typography with clear hierarchy.
 
-const String fontFamily = 'Inter'; // Will use system default until custom font added
+const String fontFamily =
+    'Inter'; // Will use system default until custom font added
 
 /// Display styles - Large, bold headings
 const TextStyle displayLarge = TextStyle(

@@ -42,28 +42,31 @@ class AchievementCommentService {
     return rows.map((row) {
       // Flatten the nested profile data
       final profiles = row['profiles'];
-      final profile = profiles is List && profiles.isNotEmpty 
+      final profile = profiles is List && profiles.isNotEmpty
           ? profiles[0] as Map<String, dynamic>
           : profiles as Map<String, dynamic>?;
-      
+
       final flattenedRow = Map<String, dynamic>.from(row);
       flattenedRow.remove('profiles');
-      
+
       if (profile != null) {
         // Determine display name and avatar based on preferred platform
-        final preferredPlatform = profile['preferred_display_platform'] as String? ?? 'psn';
-        
+        final preferredPlatform =
+            profile['preferred_display_platform'] as String? ?? 'psn';
+
         // Set display name based on preferred platform
         String? displayName;
         String? avatarUrl;
-        
+
         if (preferredPlatform == 'psn' && profile['psn_online_id'] != null) {
           displayName = profile['psn_online_id'] as String;
           avatarUrl = profile['psn_avatar_url'] as String?;
-        } else if (preferredPlatform == 'steam' && profile['steam_display_name'] != null) {
+        } else if (preferredPlatform == 'steam' &&
+            profile['steam_display_name'] != null) {
           displayName = profile['steam_display_name'] as String;
           avatarUrl = profile['steam_avatar_url'] as String?;
-        } else if (preferredPlatform == 'xbox' && profile['xbox_gamertag'] != null) {
+        } else if (preferredPlatform == 'xbox' &&
+            profile['xbox_gamertag'] != null) {
           displayName = profile['xbox_gamertag'] as String;
           avatarUrl = profile['xbox_avatar_url'] as String?;
         } else {
@@ -79,12 +82,12 @@ class AchievementCommentService {
             avatarUrl = profile['xbox_avatar_url'] as String?;
           }
         }
-        
+
         flattenedRow['username'] = displayName;
         flattenedRow['display_name'] = displayName;
         flattenedRow['avatar_url'] = avatarUrl;
       }
-      
+
       return AchievementComment.fromJson(flattenedRow);
     }).toList();
   }
@@ -98,7 +101,7 @@ class AchievementCommentService {
         .eq('is_hidden', false)
         .count(CountOption.exact);
 
-    return response.count ?? 0;
+    return response.count;
   }
 
   /// Get comments by multiple achievement IDs
@@ -113,14 +116,14 @@ class AchievementCommentService {
         .eq('is_hidden', false);
 
     final List<dynamic> rows = response as List<dynamic>;
-    
+
     // Count comments per achievement
     final Map<int, int> counts = {};
     for (final row in rows) {
       final achievementId = row['achievement_id'] as int;
       counts[achievementId] = (counts[achievementId] ?? 0) + 1;
     }
-    
+
     return counts;
   }
 
@@ -140,9 +143,13 @@ class AchievementCommentService {
     }
 
     // Moderate content before posting
-    final moderationResult = await _moderationService.moderateContent(commentText);
+    final moderationResult = await _moderationService.moderateContent(
+      commentText,
+    );
     if (!moderationResult.isSafe) {
-      throw Exception(moderationResult.reason ?? 'Comment contains inappropriate content');
+      throw Exception(
+        moderationResult.reason ?? 'Comment contains inappropriate content',
+      );
     }
 
     // Insert the comment
@@ -180,36 +187,39 @@ class AchievementCommentService {
 
     // Flatten the nested profile data
     final profiles = response['profiles'];
-    final profile = profiles is List && profiles.isNotEmpty 
+    final profile = profiles is List && profiles.isNotEmpty
         ? profiles[0] as Map<String, dynamic>
         : profiles as Map<String, dynamic>?;
-    
+
     final flattenedRow = Map<String, dynamic>.from(response);
     flattenedRow.remove('profiles');
-    
+
     if (profile != null) {
       // Determine display name and avatar based on preferred platform
-      final preferredPlatform = profile['preferred_display_platform'] as String? ?? 'psn';
-      
+      final preferredPlatform =
+          profile['preferred_display_platform'] as String? ?? 'psn';
+
       String? displayName;
       String? avatarUrl;
-      
+
       if (preferredPlatform == 'psn' && profile['psn_online_id'] != null) {
         displayName = profile['psn_online_id'] as String;
         avatarUrl = profile['psn_avatar_url'] as String?;
-      } else if (preferredPlatform == 'steam' && profile['steam_display_name'] != null) {
+      } else if (preferredPlatform == 'steam' &&
+          profile['steam_display_name'] != null) {
         displayName = profile['steam_display_name'] as String;
         avatarUrl = profile['steam_avatar_url'] as String?;
-      } else if (preferredPlatform == 'xbox' && profile['xbox_gamertag'] != null) {
+      } else if (preferredPlatform == 'xbox' &&
+          profile['xbox_gamertag'] != null) {
         displayName = profile['xbox_gamertag'] as String;
         avatarUrl = profile['xbox_avatar_url'] as String?;
       }
-      
+
       flattenedRow['username'] = displayName;
       flattenedRow['display_name'] = displayName;
       flattenedRow['avatar_url'] = avatarUrl;
     }
-    
+
     return AchievementComment.fromJson(flattenedRow);
   }
 
@@ -225,6 +235,9 @@ class AchievementCommentService {
         .from('achievement_comments')
         .delete()
         .eq('id', commentId)
-        .eq('user_id', userId); // RLS will enforce this too, but explicit check for better error
+        .eq(
+          'user_id',
+          userId,
+        ); // RLS will enforce this too, but explicit check for better error
   }
 }

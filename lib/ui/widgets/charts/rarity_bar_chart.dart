@@ -99,17 +99,20 @@ class RarityBarChart extends StatelessWidget {
           children: [
             Icon(Icons.bar_chart, size: 48, color: Colors.white24),
             SizedBox(height: 8),
-            Text(
-              'No rarity data',
-              style: TextStyle(color: Colors.white38),
-            ),
+            Text('No rarity data', style: TextStyle(color: Colors.white38)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBar(String label, int count, double percent, int max, Color color) {
+  Widget _buildBar(
+    String label,
+    int count,
+    double percent,
+    int max,
+    Color color,
+  ) {
     final heightPercent = count / max;
 
     return Padding(
@@ -130,10 +133,7 @@ class RarityBarChart extends StatelessWidget {
           // Percentage
           Text(
             '${percent.toStringAsFixed(0)}%',
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 11,
-            ),
+            style: TextStyle(color: Colors.grey[400], fontSize: 11),
           ),
           const SizedBox(height: 8),
           // Bar
@@ -149,17 +149,14 @@ class RarityBarChart extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [
-                          color.withOpacity(0.6),
-                          color,
-                        ],
+                        colors: [color.withValues(alpha: 0.6), color],
                       ),
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(8),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: color.withOpacity(0.4),
+                          color: color.withValues(alpha: 0.4),
                           blurRadius: 8,
                           spreadRadius: 0,
                         ),

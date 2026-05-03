@@ -3,7 +3,7 @@ import 'package:statusxp/theme/colors.dart';
 import 'package:statusxp/theme/typography.dart' as app_typography;
 
 /// StatusXP Main Theme Configuration
-/// 
+///
 /// Dark theme with neon accents for a modern gaming aesthetic.
 /// Designed for mobile-first with web compatibility.
 
@@ -47,9 +47,7 @@ final ThemeData statusXPTheme = ThemeData(
   cardTheme: CardThemeData(
     color: surfaceLight,
     elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
   ),
 
@@ -69,9 +67,7 @@ final ThemeData statusXPTheme = ThemeData(
       foregroundColor: backgroundDark,
       elevation: 0,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       textStyle: app_typography.labelLarge.copyWith(
         fontWeight: FontWeight.bold,
         color: backgroundDark,
@@ -85,9 +81,7 @@ final ThemeData statusXPTheme = ThemeData(
       foregroundColor: backgroundDark,
       elevation: 0,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       textStyle: app_typography.labelLarge.copyWith(
         fontWeight: FontWeight.bold,
         color: backgroundDark,
@@ -100,9 +94,7 @@ final ThemeData statusXPTheme = ThemeData(
       foregroundColor: accentPrimary,
       side: const BorderSide(color: accentPrimary, width: 2),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       textStyle: app_typography.labelLarge.copyWith(
         fontWeight: FontWeight.bold,
         color: accentPrimary,
@@ -151,10 +143,7 @@ final ThemeData statusXPTheme = ThemeData(
   ),
 
   // Icon theme
-  iconTheme: const IconThemeData(
-    color: textPrimary,
-    size: 24,
-  ),
+  iconTheme: const IconThemeData(color: textPrimary, size: 24),
 
   // Divider theme
   dividerTheme: const DividerThemeData(

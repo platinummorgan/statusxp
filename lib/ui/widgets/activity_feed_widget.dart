@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/activity_feed_entry.dart';
 import 'package:statusxp/data/repositories/activity_feed_repository.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
+import 'package:statusxp/utils/supabase_guard.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
@@ -12,8 +12,12 @@ import 'dart:async';
 // ============================================================
 
 /// Activity Feed Repository Provider
-final activityFeedRepositoryProvider = Provider<ActivityFeedRepository>((ref) {
-  return ActivityFeedRepository(Supabase.instance.client);
+final activityFeedRepositoryProvider = Provider<ActivityFeedRepository?>((ref) {
+  final client = tryGetSupabaseClient();
+  if (client == null) {
+    return null;
+  }
+  return ActivityFeedRepository(client);
 });
 
 /// Activity Feed Data Provider
@@ -21,12 +25,18 @@ final activityFeedProvider = FutureProvider<List<ActivityFeedGroup>>((
   ref,
 ) async {
   final repo = ref.watch(activityFeedRepositoryProvider);
+  if (repo == null) {
+    return const [];
+  }
   return await repo.getActivityFeedGrouped(limit: 50);
 });
 
 /// Unread Count Provider
 final unreadCountProvider = FutureProvider<int>((ref) async {
   final repo = ref.watch(activityFeedRepositoryProvider);
+  if (repo == null) {
+    return 0;
+  }
   return await repo.getUnreadCount();
 });
 
@@ -35,6 +45,9 @@ final activityFeedStreamProvider = StreamProvider<List<ActivityFeedGroup>>((
   ref,
 ) {
   final repo = ref.watch(activityFeedRepositoryProvider);
+  if (repo == null) {
+    return Stream.value(const []);
+  }
   return repo.watchActivityFeed();
 });
 
@@ -99,12 +112,14 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
             // Mark as viewed when expanded
             if (_isExpanded) {
               final repo = ref.read(activityFeedRepositoryProvider);
-              await repo.markAsViewed();
-              // Refresh unread count
-              ref.invalidate(unreadCountProvider);
+              if (repo != null) {
+                await repo.markAsViewed();
+                // Refresh unread count
+                ref.invalidate(unreadCountProvider);
+              }
             }
           },
-          hoverColor: CyberpunkTheme.neonPurple.withOpacity(0.1),
+          hoverColor: CyberpunkTheme.neonPurple.withValues(alpha: 0.1),
           child: Stack(
             children: [
               Container(
@@ -114,15 +129,15 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: CyberpunkTheme.neonPurple.withOpacity(0.5),
+                    color: CyberpunkTheme.neonPurple.withValues(alpha: 0.5),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                      color: CyberpunkTheme.neonPurple.withValues(alpha: 0.3),
                       blurRadius: 8,
                       spreadRadius: 1,
                     ),
@@ -211,7 +226,7 @@ class _ActivityFeedWidgetState extends ConsumerState<ActivityFeedWidget>
                               ],
                               colors: [
                                 Colors.transparent,
-                                Colors.white.withOpacity(0.15),
+                                Colors.white.withValues(alpha: 0.15),
                                 Colors.transparent,
                               ],
                             ),
@@ -339,7 +354,7 @@ class _DateGroupState extends State<_DateGroup> {
               color: const Color(0xFF1a1f3a),
               border: Border(
                 bottom: BorderSide(
-                  color: CyberpunkTheme.neonPurple.withOpacity(0.2),
+                  color: CyberpunkTheme.neonPurple.withValues(alpha: 0.2),
                 ),
               ),
             ),

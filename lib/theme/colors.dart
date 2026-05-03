@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// StatusXP Color Palette
-/// 
+///
 /// Dark theme with neon-style accents for a modern gaming aesthetic.
 
 // Background colors

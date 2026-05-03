@@ -14,8 +14,8 @@ void main() {
     await tester.pumpWidget(getTestApp());
     await tester.pumpAndSettle();
 
-    // Verify that the dashboard screen loads.
-    expect(find.text('Welcome back,'), findsOneWidget);
-    expect(find.text('Overview'), findsWidgets);
+    // Verify that the dashboard shell loads with current UI labels.
+    expect(find.text('StatusXP'), findsWidgets);
+    expect(find.text('MY GAMES'), findsOneWidget);
   });
 }

@@ -186,5 +186,6 @@ class AIPack {
   });
 
   String get displayPrice => '\$${price.toStringAsFixed(2)}';
-  String get perUsePrice => '${(pricePerUse * 100).toStringAsFixed(0)}¢ per use';
+  String get perUsePrice =>
+      '${(pricePerUse * 100).toStringAsFixed(0)}¢ per use';
 }

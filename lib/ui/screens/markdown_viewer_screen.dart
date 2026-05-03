@@ -52,9 +52,7 @@ class _MarkdownViewerScreenState extends State<MarkdownViewerScreen> {
         backgroundColor: surfaceLight,
         title: Text(
           widget.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -62,9 +60,7 @@ class _MarkdownViewerScreenState extends State<MarkdownViewerScreen> {
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: accentPrimary),
-            )
+          ? const Center(child: CircularProgressIndicator(color: accentPrimary))
           : Markdown(
               data: _markdownContent,
               selectable: true,
@@ -89,10 +85,7 @@ class _MarkdownViewerScreenState extends State<MarkdownViewerScreen> {
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
-                listBullet: const TextStyle(
-                  color: accentPrimary,
-                  fontSize: 14,
-                ),
+                listBullet: const TextStyle(color: accentPrimary, fontSize: 14),
                 a: const TextStyle(
                   color: accentPrimary,
                   decoration: TextDecoration.underline,

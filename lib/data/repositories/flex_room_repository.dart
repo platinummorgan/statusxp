@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/flex_room_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Repository for fetching and managing user's Flex Room data
 /// Handles featured achievements, superlative wall, and recent flexes
 class FlexRoomRepository {
@@ -300,7 +302,7 @@ class FlexRoomRepository {
 
       // Auto-fill superlatives if empty or has fewer than 3
       if (superlatives.length < 3) {
-        print('🎯 Superlatives mostly empty, auto-filling...');
+        statusxpLog('🎯 Superlatives mostly empty, auto-filling...');
         final autoFilled = await autofillSuperlatives(userId);
         if (autoFilled.isNotEmpty) {
           // Merge auto-filled with existing (keep existing ones)
@@ -321,7 +323,8 @@ class FlexRoomRepository {
 
           // Save asynchronously (don't wait)
           updateFlexRoomData(dataToSave).catchError((e) {
-            print('⚠️ Failed to save auto-filled superlatives: $e');
+            statusxpLog('⚠️ Failed to save auto-filled superlatives: $e');
+            return false;
           });
         }
       }
@@ -341,8 +344,8 @@ class FlexRoomRepository {
         recentFlexes: recentFlexes,
       );
     } catch (e, stackTrace) {
-      print('❌ Flex Room Error: $e');
-      print('Stack trace: $stackTrace');
+      statusxpLog('❌ Flex Room Error: $e');
+      statusxpLog('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -394,12 +397,12 @@ class FlexRoomRepository {
         'superlatives': superlativesJson,
       };
 
-      print('💾 Saving flex room with composite keys:');
-      print('  - userId: ${data.userId}');
-      print(
+      statusxpLog('💾 Saving flex room with composite keys:');
+      statusxpLog('  - userId: ${data.userId}');
+      statusxpLog(
         '  - flexOfAllTime: ${data.flexOfAllTime?.platformId}/${data.flexOfAllTime?.platformGameId}/${data.flexOfAllTime?.platformAchievementId}',
       );
-      print('  - payload: $payload');
+      statusxpLog('  - payload: $payload');
 
       await _client
           .from('flex_room_data')
@@ -416,14 +419,16 @@ class FlexRoomRepository {
           .eq('user_id', data.userId)
           .maybeSingle();
 
-      print('✅ Flex Room data saved successfully for user: ${data.userId}');
-      print(
+      statusxpLog(
+        '✅ Flex Room data saved successfully for user: ${data.userId}',
+      );
+      statusxpLog(
         '📋 Verification: ${verify != null ? "Found saved data" : "WARNING: Data not found after save!"}',
       );
       return true;
     } catch (e, stackTrace) {
-      print('❌ Error saving flex room data: $e');
-      print('Stack trace: $stackTrace');
+      statusxpLog('❌ Error saving flex room data: $e');
+      statusxpLog('Stack trace: $stackTrace');
       return false;
     }
   }
@@ -453,17 +458,6 @@ class FlexRoomRepository {
     } catch (e) {
       return null;
     }
-  }
-
-  /// DEPRECATED: Get achievement tile by V1 achievement_id (for backwards compatibility with saved flex_room_data)
-  /// This is only used when loading saved flex room configurations that still reference V1 achievement_id
-  Future<FlexTile?> _getAchievementTile(
-    int achievementId,
-    String userId,
-  ) async {
-    // For now, return null - saved flex room data will need to be regenerated
-    // TODO: Either migrate flex_room_data table to V2 composite keys or implement V1->V2 lookup
-    return null;
   }
 
   /// Get user's rarest achievement (auto-suggestion)
@@ -664,7 +658,7 @@ class FlexRoomRepository {
   /// Auto-fill superlatives with smart suggestions
   Future<Map<String, FlexTile>> autofillSuperlatives(String userId) async {
     try {
-      print('🤖 Auto-filling superlatives for user $userId');
+      statusxpLog('🤖 Auto-filling superlatives for user $userId');
       final superlatives = <String, FlexTile>{};
 
       // Get suggestions for each category in parallel
@@ -702,7 +696,7 @@ class FlexRoomRepository {
           }
           return null;
         } catch (e) {
-          print('⚠️ Failed to get suggestion for $category: $e');
+          statusxpLog('⚠️ Failed to get suggestion for $category: $e');
           return null;
         }
       });
@@ -715,10 +709,10 @@ class FlexRoomRepository {
         }
       }
 
-      print('✅ Auto-filled ${superlatives.length} superlatives');
+      statusxpLog('✅ Auto-filled ${superlatives.length} superlatives');
       return superlatives;
     } catch (e) {
-      print('❌ Error auto-filling superlatives: $e');
+      statusxpLog('❌ Error auto-filling superlatives: $e');
       return {};
     }
   }
@@ -743,10 +737,11 @@ class FlexRoomRepository {
         int? targetPlatformId;
         if (platformFilter == 'psn') {
           targetPlatformId = 1;
-        } else if (platformFilter == 'steam')
+        } else if (platformFilter == 'steam') {
           targetPlatformId = 5;
-        else if (platformFilter == 'xbox')
+        } else if (platformFilter == 'xbox') {
           targetPlatformId = 10; // or 11, 12 for Xbox One, Series
+        }
 
         if (targetPlatformId != null) {
           query = query.eq('platform_id', targetPlatformId);
@@ -823,7 +818,7 @@ class FlexRoomRepository {
 
       return games;
     } catch (e) {
-      print('❌ Error in getGamesForPlatform: $e');
+      statusxpLog('❌ Error in getGamesForPlatform: $e');
       return [];
     }
   }
@@ -919,7 +914,7 @@ class FlexRoomRepository {
 
       return achievements;
     } catch (e) {
-      print('❌ Error in getAchievementsForGame: $e');
+      statusxpLog('❌ Error in getAchievementsForGame: $e');
       return [];
     }
   }

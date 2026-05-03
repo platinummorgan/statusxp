@@ -13,6 +13,7 @@ import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/ui/widgets/title_selector_modal.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/utils/statusxp_logger.dart';
 
 /// Flex Room - Cross-platform curated museum of gaming achievements
 /// User's hand-picked showcase across PS / Xbox / Steam
@@ -132,7 +133,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               _isPsPlus = profile['psn_is_plus'] as bool? ?? false;
           }
         });
-      } else {}
+      }
 
       // Load selected title
       final titleData = await supabase
@@ -152,7 +153,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               titleData['meta_achievements']?['icon_emoji'] as String?;
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      statusxpLog('Failed loading Flex Room profile: $e');
+    }
   }
 
   @override
@@ -203,13 +206,13 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               Icon(
                 Icons.error_outline,
                 size: 64,
-                color: CyberpunkTheme.neonOrange.withOpacity(0.6),
+                color: CyberpunkTheme.neonOrange.withValues(alpha: 0.6),
               ),
               const SizedBox(height: 16),
               Text(
                 'Failed to load Flex Room',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                 ),
@@ -218,7 +221,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               Text(
                 error.toString(),
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 12,
                 ),
                 textAlign: TextAlign.center,
@@ -232,7 +235,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               child: Text(
                 'No Flex Room data available',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 16,
                 ),
               ),
@@ -274,7 +277,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           end: Alignment.bottomRight,
           colors: [
             const Color(0xFF0A0E27),
-            const Color(0xFF1a1f3a).withOpacity(0.8),
+            const Color(0xFF1a1f3a).withValues(alpha: 0.8),
             const Color(0xFF0A0E27),
           ],
         ),
@@ -324,12 +327,12 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0E27).withOpacity(0.55),
+          color: const Color(0xFF0A0E27).withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _isEditMode
-                ? CyberpunkTheme.neonOrange.withOpacity(0.5)
-                : CyberpunkTheme.neonCyan.withOpacity(0.35),
+                ? CyberpunkTheme.neonOrange.withValues(alpha: 0.5)
+                : CyberpunkTheme.neonCyan.withValues(alpha: 0.35),
           ),
         ),
         child: Row(
@@ -348,7 +351,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                     ? 'Edit mode is active. Tap save when done.'
                     : 'Customize your showcase cards and highlights.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.78),
+                  color: Colors.white.withValues(alpha: 0.78),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -405,7 +408,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           label: const Text('View Full Game History'),
           style: OutlinedButton.styleFrom(
             foregroundColor: CyberpunkTheme.neonCyan,
-            side: BorderSide(color: CyberpunkTheme.neonCyan.withOpacity(0.55)),
+            side: BorderSide(
+              color: CyberpunkTheme.neonCyan.withValues(alpha: 0.55),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -422,10 +427,10 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0E27).withOpacity(0.6),
+          color: const Color(0xFF0A0E27).withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: CyberpunkTheme.neonPurple.withOpacity(0.35),
+            color: CyberpunkTheme.neonPurple.withValues(alpha: 0.35),
           ),
         ),
         child: Row(
@@ -473,18 +478,18 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: isActive
-              ? CyberpunkTheme.neonPurple.withOpacity(0.25)
+              ? CyberpunkTheme.neonPurple.withValues(alpha: 0.25)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isActive
-                ? CyberpunkTheme.neonPurple.withOpacity(0.75)
-                : Colors.white.withOpacity(0.12),
+                ? CyberpunkTheme.neonPurple.withValues(alpha: 0.75)
+                : Colors.white.withValues(alpha: 0.12),
           ),
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: CyberpunkTheme.neonPurple.withOpacity(0.25),
+                    color: CyberpunkTheme.neonPurple.withValues(alpha: 0.25),
                     blurRadius: 10,
                     spreadRadius: 1,
                   ),
@@ -499,7 +504,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               size: 16,
               color: isActive
                   ? CyberpunkTheme.neonCyan
-                  : Colors.white.withOpacity(0.7),
+                  : Colors.white.withValues(alpha: 0.7),
             ),
             const SizedBox(width: 6),
             Flexible(
@@ -508,7 +513,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 style: TextStyle(
                   color: isActive
                       ? Colors.white
-                      : Colors.white.withOpacity(0.76),
+                      : Colors.white.withValues(alpha: 0.76),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                 ),
@@ -532,18 +537,18 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            CyberpunkTheme.neonPurple.withOpacity(0.1),
-            CyberpunkTheme.neonOrange.withOpacity(0.05),
+            CyberpunkTheme.neonPurple.withValues(alpha: 0.1),
+            CyberpunkTheme.neonOrange.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+          color: CyberpunkTheme.neonPurple.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: CyberpunkTheme.neonPurple.withOpacity(0.2),
+            color: CyberpunkTheme.neonPurple.withValues(alpha: 0.2),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -570,7 +575,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               fontWeight: FontWeight.w900,
               shadows: [
                 Shadow(
-                  color: CyberpunkTheme.neonPurple.withOpacity(0.6),
+                  color: CyberpunkTheme.neonPurple.withValues(alpha: 0.6),
                   blurRadius: 8,
                 ),
               ],
@@ -608,10 +613,10 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: CyberpunkTheme.neonOrange.withOpacity(0.2),
+                color: CyberpunkTheme.neonOrange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: CyberpunkTheme.neonOrange.withOpacity(0.5),
+                  color: CyberpunkTheme.neonOrange.withValues(alpha: 0.5),
                   width: 1,
                 ),
               ),
@@ -639,7 +644,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                     Icon(
                       Icons.edit,
                       size: 14,
-                      color: CyberpunkTheme.neonOrange.withOpacity(0.7),
+                      color: CyberpunkTheme.neonOrange.withValues(alpha: 0.7),
                     ),
                   ],
                 ],
@@ -655,7 +660,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 ? 'Updated today'
                 : 'Last updated $daysSinceUpdate ${daysSinceUpdate == 1 ? 'day' : 'days'} ago',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha: 0.4),
               fontSize: 12,
               fontStyle: FontStyle.italic,
             ),
@@ -674,7 +679,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           child: Text(
             'CROSS-PLATFORM FLEX',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 2,
@@ -753,18 +758,18 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 ? EdgeInsets.zero
                 : const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF0A0E27).withOpacity(0.8),
+              color: const Color(0xFF0A0E27).withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: tile != null
                     ? accentColor
-                    : Colors.white.withOpacity(0.1),
+                    : Colors.white.withValues(alpha: 0.1),
                 width: 2,
               ),
               boxShadow: tile != null
                   ? [
                       BoxShadow(
-                        color: accentColor.withOpacity(0.3),
+                        color: accentColor.withValues(alpha: 0.3),
                         blurRadius: 12,
                         spreadRadius: 1,
                       ),
@@ -820,11 +825,11 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.8),
+                    color: Colors.red.withValues(alpha: 0.8),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.red.withOpacity(0.5),
+                        color: Colors.red.withValues(alpha: 0.5),
                         blurRadius: 8,
                       ),
                     ],
@@ -881,7 +886,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                     child: Text(
                       label,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
                       ),
@@ -914,7 +919,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: _getRarityColor(tile.rarityBand).withOpacity(0.2),
+                    color: _getRarityColor(
+                      tile.rarityBand,
+                    ).withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -944,7 +951,6 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       onTap: _isEditMode
           ? () async {
               // Get smart suggestions for this category
-              final repository = ref.read(flexRoomRepositoryProvider);
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
 
@@ -996,7 +1002,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
             Icon(
               Icons.add_circle_outline,
               size: 48,
-              color: accentColor.withOpacity(0.5),
+              color: accentColor.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 8),
             Padding(
@@ -1005,7 +1011,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
+                  color: Colors.white.withValues(alpha: 0.5),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1016,7 +1022,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               Text(
                 'Tap to add',
                 style: TextStyle(
-                  color: accentColor.withOpacity(0.7),
+                  color: accentColor.withValues(alpha: 0.7),
                   fontSize: 10,
                   fontStyle: FontStyle.italic,
                 ),
@@ -1065,10 +1071,10 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0E27).withOpacity(0.6),
+        color: const Color(0xFF0A0E27).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+          color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -1112,14 +1118,16 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
             color: color,
             fontSize: 20,
             fontWeight: FontWeight.w900,
-            shadows: [Shadow(color: color.withOpacity(0.6), blurRadius: 6)],
+            shadows: [
+              Shadow(color: color.withValues(alpha: 0.6), blurRadius: 6),
+            ],
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 10,
             fontWeight: FontWeight.w600,
           ),
@@ -1137,7 +1145,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           child: Text(
             'SUPERLATIVE WALL',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 2,
@@ -1188,7 +1196,6 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       onTap: _isEditMode
           ? () async {
               // Get smart suggestions for this category
-              final repository = ref.read(flexRoomRepositoryProvider);
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
 
@@ -1273,13 +1280,13 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: isEmpty
-              ? const Color(0xFF1a1f3a).withOpacity(0.3)
-              : const Color(0xFF0A0E27).withOpacity(0.8),
+              ? const Color(0xFF1a1f3a).withValues(alpha: 0.3)
+              : const Color(0xFF0A0E27).withValues(alpha: 0.8),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isEmpty
-                ? CyberpunkTheme.neonOrange.withOpacity(0.2)
-                : CyberpunkTheme.neonOrange.withOpacity(0.5),
+                ? CyberpunkTheme.neonOrange.withValues(alpha: 0.2)
+                : CyberpunkTheme.neonOrange.withValues(alpha: 0.5),
             width: isEmpty ? 1 : 2,
           ),
         ),
@@ -1310,11 +1317,11 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.8),
+                      color: Colors.red.withValues(alpha: 0.8),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.withOpacity(0.5),
+                          color: Colors.red.withValues(alpha: 0.5),
                           blurRadius: 8,
                         ),
                       ],
@@ -1341,7 +1348,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           Icon(
             Icons.military_tech_outlined,
             size: 32,
-            color: CyberpunkTheme.neonOrange.withOpacity(0.3),
+            color: CyberpunkTheme.neonOrange.withValues(alpha: 0.3),
           ),
           const SizedBox(height: 8),
           Padding(
@@ -1350,7 +1357,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.4),
+                color: Colors.white.withValues(alpha: 0.4),
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -1363,7 +1370,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
             Icon(
               Icons.add_circle,
               size: 16,
-              color: CyberpunkTheme.neonOrange.withOpacity(0.6),
+              color: CyberpunkTheme.neonOrange.withValues(alpha: 0.6),
             ),
           ],
         ],
@@ -1381,10 +1388,10 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _getPlatformColor(tile.platform).withOpacity(0.1),
+              color: _getPlatformColor(tile.platform).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: _getPlatformColor(tile.platform).withOpacity(0.3),
+                color: _getPlatformColor(tile.platform).withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -1457,22 +1464,24 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF0A0E27).withOpacity(0.6),
+          color: const Color(0xFF0A0E27).withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: CyberpunkTheme.neonCyan.withOpacity(0.25)),
+          border: Border.all(
+            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.25),
+          ),
         ),
         child: Column(
           children: [
             Icon(
               Icons.history_toggle_off,
               size: 28,
-              color: Colors.white.withOpacity(0.45),
+              color: Colors.white.withValues(alpha: 0.45),
             ),
             const SizedBox(height: 8),
             Text(
               'No recent flexes yet.',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.72),
+                color: Colors.white.withValues(alpha: 0.72),
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
@@ -1482,7 +1491,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               'After your next sync, new achievements will appear here.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.45),
+                color: Colors.white.withValues(alpha: 0.45),
                 fontSize: 12,
               ),
             ),
@@ -1499,7 +1508,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           child: Text(
             'RECENT FLEXES',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 2,
@@ -1526,10 +1535,10 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0E27).withOpacity(0.6),
+        color: const Color(0xFF0A0E27).withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _getRarityColor(flex.rarityBand).withOpacity(0.3),
+          color: _getRarityColor(flex.rarityBand).withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -1539,7 +1548,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: _getPlatformColor(flex.platform).withOpacity(0.2),
+              color: _getPlatformColor(flex.platform).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -1559,7 +1568,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 Text(
                   flex.gameName,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 11,
                   ),
                 ),
@@ -1576,7 +1585,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 Text(
                   timeText,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
+                    color: Colors.white.withValues(alpha: 0.4),
                     fontSize: 10,
                   ),
                 ),
@@ -1588,7 +1597,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: _getRarityColor(flex.rarityBand).withOpacity(0.2),
+              color: _getRarityColor(flex.rarityBand).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
                 color: _getRarityColor(flex.rarityBand),
@@ -1608,7 +1617,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 Text(
                   flex.rarityBand.replaceAll('_', ' '),
                   style: TextStyle(
-                    color: _getRarityColor(flex.rarityBand).withOpacity(0.8),
+                    color: _getRarityColor(
+                      flex.rarityBand,
+                    ).withValues(alpha: 0.8),
                     fontSize: 8,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1640,12 +1651,12 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                 color: const Color(0xFF0A0E27),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: CyberpunkTheme.neonOrange.withOpacity(0.5),
+                  color: CyberpunkTheme.neonOrange.withValues(alpha: 0.5),
                   width: 2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: CyberpunkTheme.neonOrange.withOpacity(0.3),
+                    color: CyberpunkTheme.neonOrange.withValues(alpha: 0.3),
                     blurRadius: 30,
                     spreadRadius: 5,
                   ),
@@ -1694,14 +1705,14 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                         border: Border.all(
                           color: _getPlatformColor(
                             tile.platform,
-                          ).withOpacity(0.5),
+                          ).withValues(alpha: 0.5),
                           width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
                             color: _getPlatformColor(
                               tile.platform,
-                            ).withOpacity(0.3),
+                            ).withValues(alpha: 0.3),
                             blurRadius: 20,
                             spreadRadius: 2,
                           ),
@@ -1774,7 +1785,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -1792,10 +1803,12 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1a1f3a).withOpacity(0.5),
+                          color: const Color(0xFF1a1f3a).withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: CyberpunkTheme.neonPurple.withOpacity(0.3),
+                            color: CyberpunkTheme.neonPurple.withValues(
+                              alpha: 0.3,
+                            ),
                             width: 1,
                           ),
                         ),
@@ -1814,7 +1827,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                                 Container(
                                   width: 1,
                                   height: 40,
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                 ),
                                 Expanded(
                                   child: _buildDialogStatItem(
@@ -1842,7 +1855,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                                 Container(
                                   width: 1,
                                   height: 40,
-                                  color: Colors.white.withOpacity(0.2),
+                                  color: Colors.white.withValues(alpha: 0.2),
                                 ),
                                 Expanded(
                                   child: Column(
@@ -1875,7 +1888,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                             Text(
                               'Earned ${_formatEarnedDate(tile.earnedAt ?? DateTime.now())}',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withValues(alpha: 0.5),
                                 fontSize: 12,
                                 fontStyle: FontStyle.italic,
                               ),
@@ -1964,7 +1977,9 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               color: color,
               fontSize: 18,
               fontWeight: FontWeight.w900,
-              shadows: [Shadow(color: color.withOpacity(0.5), blurRadius: 8)],
+              shadows: [
+                Shadow(color: color.withValues(alpha: 0.5), blurRadius: 8),
+              ],
             ),
           ),
         ),
@@ -1974,7 +1989,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.5),
+            color: Colors.white.withValues(alpha: 0.5),
             fontSize: 10,
             fontWeight: FontWeight.w700,
             letterSpacing: 1,

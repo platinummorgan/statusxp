@@ -7,16 +7,13 @@ class TwitchService {
   TwitchService(this._supabase);
 
   /// Link Twitch account using OAuth code
-  /// 
+  ///
   /// Returns result with subscription status
   Future<TwitchLinkResult> linkAccount(String code, String redirectUri) async {
     try {
       final response = await _supabase.functions.invoke(
         'twitch-link-account',
-        body: {
-          'code': code,
-          'redirectUri': redirectUri,
-        },
+        body: {'code': code, 'redirectUri': redirectUri},
       );
 
       if (response.status != 200) {
@@ -25,7 +22,7 @@ class TwitchService {
       }
 
       final data = response.data as Map<String, dynamic>;
-      
+
       return TwitchLinkResult(
         success: data['success'] ?? false,
         twitchUserId: data['twitchUserId'],
@@ -39,7 +36,7 @@ class TwitchService {
   }
 
   /// Check current subscription status
-  /// 
+  ///
   /// Returns subscription status for linked account
   Future<TwitchSubscriptionStatus> checkSubscription() async {
     try {
@@ -48,10 +45,7 @@ class TwitchService {
       );
 
       if (response.status == 404) {
-        return TwitchSubscriptionStatus(
-          isLinked: false,
-          isSubscribed: false,
-        );
+        return TwitchSubscriptionStatus(isLinked: false, isSubscribed: false);
       }
 
       if (response.status != 200) {
@@ -60,7 +54,7 @@ class TwitchService {
       }
 
       final data = response.data as Map<String, dynamic>;
-      
+
       return TwitchSubscriptionStatus(
         isLinked: data['isLinked'] ?? false,
         isSubscribed: data['isSubscribed'] ?? false,
@@ -72,7 +66,7 @@ class TwitchService {
   }
 
   /// Disconnect Twitch account
-  /// 
+  ///
   /// Removes twitch_user_id from profile
   Future<void> disconnect() async {
     try {

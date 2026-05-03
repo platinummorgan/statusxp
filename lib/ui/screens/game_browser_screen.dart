@@ -18,7 +18,7 @@ class GameBrowserScreen extends ConsumerStatefulWidget {
 class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   List<Map<String, dynamic>> _games = [];
   bool _isLoading = false;
   bool _hasMore = true;
@@ -26,7 +26,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   final int _limit = 50;
   String? _platformFilter;
   String _searchQuery = '';
-  bool _isGridView = false; // Toggle between grid and list view - default to list
+  bool _isGridView =
+      false; // Toggle between grid and list view - default to list
   String _sortBy = 'name_asc'; // Default sort
 
   @override
@@ -82,9 +83,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading games: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading games: $e')));
       }
     }
   }
@@ -166,14 +167,20 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                     Icon(
                       Icons.sort_by_alpha,
                       size: 20,
-                      color: _sortBy == 'name_asc' ? CyberpunkTheme.neonCyan : Colors.white70,
+                      color: _sortBy == 'name_asc'
+                          ? CyberpunkTheme.neonCyan
+                          : Colors.white70,
                     ),
                     const SizedBox(width: 12),
                     Text(
                       'A → Z',
                       style: TextStyle(
-                        color: _sortBy == 'name_asc' ? CyberpunkTheme.neonCyan : Colors.white,
-                        fontWeight: _sortBy == 'name_asc' ? FontWeight.w700 : FontWeight.normal,
+                        color: _sortBy == 'name_asc'
+                            ? CyberpunkTheme.neonCyan
+                            : Colors.white,
+                        fontWeight: _sortBy == 'name_asc'
+                            ? FontWeight.w700
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -186,14 +193,20 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                     Icon(
                       Icons.sort_by_alpha,
                       size: 20,
-                      color: _sortBy == 'name_desc' ? CyberpunkTheme.neonCyan : Colors.white70,
+                      color: _sortBy == 'name_desc'
+                          ? CyberpunkTheme.neonCyan
+                          : Colors.white70,
                     ),
                     const SizedBox(width: 12),
                     Text(
                       'Z → A',
                       style: TextStyle(
-                        color: _sortBy == 'name_desc' ? CyberpunkTheme.neonCyan : Colors.white,
-                        fontWeight: _sortBy == 'name_desc' ? FontWeight.w700 : FontWeight.normal,
+                        color: _sortBy == 'name_desc'
+                            ? CyberpunkTheme.neonCyan
+                            : Colors.white,
+                        fontWeight: _sortBy == 'name_desc'
+                            ? FontWeight.w700
+                            : FontWeight.normal,
                       ),
                     ),
                   ],
@@ -213,7 +226,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                 _isGridView = !_isGridView;
               });
             },
-            tooltip: _isGridView ? 'Switch to List View' : 'Switch to Grid View',
+            tooltip: _isGridView
+                ? 'Switch to List View'
+                : 'Switch to Grid View',
           ),
         ],
       ),
@@ -228,20 +243,25 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Search games...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                prefixIcon: const Icon(Icons.search, color: CyberpunkTheme.neonCyan),
+                hintStyle: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: CyberpunkTheme.neonCyan,
+                ),
                 filled: true,
-                fillColor: const Color(0xFF1a1f3a).withOpacity(0.5),
+                fillColor: const Color(0xFF1a1f3a).withValues(alpha: 0.5),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                   ),
                 ),
                 focusedBorder: OutlineInputBorder(
@@ -285,13 +305,13 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                         Icon(
                           Icons.videogame_asset_off,
                           size: 64,
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'No games found',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 16,
                           ),
                         ),
@@ -299,62 +319,68 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                     ),
                   )
                 : _isGridView
-                    ? GridView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                ? GridView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           childAspectRatio: 0.7,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
                         ),
-                        itemCount: _games.length + (_hasMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == _games.length) {
-                            return const Center(
-                              child: CircularProgressIndicator(
-                                color: CyberpunkTheme.neonCyan,
-                              ),
-                            );
-                          }
+                    itemCount: _games.length + (_hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == _games.length) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: CyberpunkTheme.neonCyan,
+                          ),
+                        );
+                      }
 
-                          final game = _games[index];
-                          return _buildGameCard(game);
-                        },
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _games.length + (_hasMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == _games.length) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16),
-                                child: CircularProgressIndicator(
-                                  color: CyberpunkTheme.neonCyan,
-                                ),
-                              ),
-                            );
-                          }
+                      final game = _games[index];
+                      return _buildGameCard(game);
+                    },
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _games.length + (_hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == _games.length) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(
+                              color: CyberpunkTheme.neonCyan,
+                            ),
+                          ),
+                        );
+                      }
 
-                          final game = _games[index];
-                          return _buildGameListItem(game);
-                        },
-                      ),
+                      final game = _games[index];
+                      return _buildGameListItem(game);
+                    },
+                  ),
           ),
         ],
       ),
     );
   }
 
-  void _showPlatformSelectionDialog(BuildContext context, Map<String, dynamic> game) {
+  void _showPlatformSelectionDialog(
+    BuildContext context,
+    Map<String, dynamic> game,
+  ) {
     final name = game['name'] as String? ?? 'Unknown Game';
     final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [];
     final platformNames = game['platform_names'] as List<dynamic>? ?? [];
     final platformIds = game['platform_ids'] as List<dynamic>? ?? [];
     final platformGameIds = game['platform_game_ids'] as List<dynamic>? ?? [];
-    final coverUrl = kIsWeb ? (game['proxied_cover_url'] ?? game['cover_url']) as String? : game['cover_url'] as String?;
+    final coverUrl = kIsWeb
+        ? (game['proxied_cover_url'] ?? game['cover_url']) as String?
+        : game['cover_url'] as String?;
 
     showDialog(
       context: context,
@@ -381,10 +407,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                 const SizedBox(height: 8),
                 Text(
                   name,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -393,12 +416,18 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                 ...allPlatforms.asMap().entries.map((entry) {
                   final index = entry.key;
                   final platformCode = entry.value;
-                  
+
                   // Get platform_id and platform_game_id for this platform
-                  final platformId = index < platformIds.length ? platformIds[index] : null;
-                  final platformGameId = index < platformGameIds.length ? platformGameIds[index] : null;
-                  final platformName = index < platformNames.length ? platformNames[index].toString() : platformCode.toString();
-                  
+                  final platformId = index < platformIds.length
+                      ? platformIds[index]
+                      : null;
+                  final platformGameId = index < platformGameIds.length
+                      ? platformGameIds[index]
+                      : null;
+                  final platformName = index < platformNames.length
+                      ? platformNames[index].toString()
+                      : platformCode.toString();
+
                   Color platformColor;
                   IconData platformIcon;
 
@@ -438,12 +467,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: platformColor.withOpacity(0.1),
+                          color: platformColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: platformColor,
-                            width: 2,
-                          ),
+                          border: Border.all(color: platformColor, width: 2),
                         ),
                         child: Row(
                           children: [
@@ -483,7 +509,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
   Widget _buildFilterChip(String label, String? platformCode) {
     final isSelected = _platformFilter == platformCode;
-    
+
     return FilterChip(
       label: Text(
         label.toUpperCase(),
@@ -494,14 +520,15 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
         ),
       ),
       selected: isSelected,
-      onSelected: (selected) => _onPlatformFilter(selected ? platformCode : null),
-      backgroundColor: const Color(0xFF1a1f3a).withOpacity(0.5),
+      onSelected: (selected) =>
+          _onPlatformFilter(selected ? platformCode : null),
+      backgroundColor: const Color(0xFF1a1f3a).withValues(alpha: 0.5),
       selectedColor: CyberpunkTheme.neonCyan,
       checkmarkColor: Colors.black,
       side: BorderSide(
         color: isSelected
             ? CyberpunkTheme.neonCyan
-            : CyberpunkTheme.neonCyan.withOpacity(0.3),
+            : CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
         width: 1.5,
       ),
     );
@@ -509,12 +536,15 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
   Widget _buildGameCard(Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
-    final coverUrl = kIsWeb ? (game['proxied_cover_url'] ?? game['cover_url']) as String? : game['cover_url'] as String?;
+    final coverUrl = kIsWeb
+        ? (game['proxied_cover_url'] ?? game['cover_url']) as String?
+        : game['cover_url'] as String?;
     final platformId = game['platform_id'];
     final platformGameId = game['platform_game_id'];
     final platformData = game['platforms'] as Map<String, dynamic>?;
     final platformCode = platformData?['code'] as String? ?? '';
-    final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [platformCode];
+    final allPlatforms =
+        game['all_platforms'] as List<dynamic>? ?? [platformCode];
 
     return GestureDetector(
       onTap: () {
@@ -540,10 +570,12 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1a1f3a).withOpacity(0.5),
+          color: const Color(0xFF1a1f3a).withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _getPlatformColor(_platformFilter ?? platformCode).withOpacity(0.3),
+            color: _getPlatformColor(
+              _platformFilter ?? platformCode,
+            ).withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
@@ -553,7 +585,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
             // Game Cover
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(10),
+                ),
                 child: coverUrl != null && coverUrl.isNotEmpty
                     ? Image.network(
                         coverUrl,
@@ -563,7 +597,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                           child: Icon(
                             _getPlatformIcon(platformCode),
                             size: 48,
-                            color: _getPlatformColor(platformCode).withOpacity(0.5),
+                            color: _getPlatformColor(
+                              platformCode,
+                            ).withValues(alpha: 0.5),
                           ),
                         ),
                       )
@@ -572,7 +608,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                         child: Icon(
                           _getPlatformIcon(platformCode),
                           size: 48,
-                          color: _getPlatformColor(platformCode).withOpacity(0.5),
+                          color: _getPlatformColor(
+                            platformCode,
+                          ).withValues(alpha: 0.5),
                         ),
                       ),
               ),
@@ -604,43 +642,54 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                       spacing: 4,
                       runSpacing: 4,
                       children: allPlatforms.map((platform) {
-                      final platformStr = platform.toString();
-                      final isFiltered = _platformFilter != null && 
-                                        platformStr.toLowerCase() == _platformFilter!.toLowerCase();
-                      
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: isFiltered 
-                              ? _getPlatformColor(platformStr).withOpacity(0.2)
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: _getPlatformColor(platformStr).withOpacity(isFiltered ? 1.0 : 0.5),
-                            width: isFiltered ? 1.5 : 1,
+                        final platformStr = platform.toString();
+                        final isFiltered =
+                            _platformFilter != null &&
+                            platformStr.toLowerCase() ==
+                                _platformFilter!.toLowerCase();
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
                           ),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _getPlatformIcon(platformStr),
-                              size: 10,
-                              color: _getPlatformColor(platformStr),
+                          decoration: BoxDecoration(
+                            color: isFiltered
+                                ? _getPlatformColor(
+                                    platformStr,
+                                  ).withValues(alpha: 0.2)
+                                : Colors.transparent,
+                            border: Border.all(
+                              color: _getPlatformColor(
+                                platformStr,
+                              ).withValues(alpha: isFiltered ? 1.0 : 0.5),
+                              width: isFiltered ? 1.5 : 1,
                             ),
-                            const SizedBox(width: 3),
-                            Text(
-                              platformStr.toUpperCase(),
-                              style: TextStyle(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _getPlatformIcon(platformStr),
+                                size: 10,
                                 color: _getPlatformColor(platformStr),
-                                fontSize: 9,
-                                fontWeight: isFiltered ? FontWeight.w800 : FontWeight.w600,
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                              const SizedBox(width: 3),
+                              Text(
+                                platformStr.toUpperCase(),
+                                style: TextStyle(
+                                  color: _getPlatformColor(platformStr),
+                                  fontSize: 9,
+                                  fontWeight: isFiltered
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],
@@ -654,12 +703,15 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
   Widget _buildGameListItem(Map<String, dynamic> game) {
     final name = game['name'] as String? ?? 'Unknown Game';
-    final coverUrl = kIsWeb ? (game['proxied_cover_url'] ?? game['cover_url']) as String? : game['cover_url'] as String?;
+    final coverUrl = kIsWeb
+        ? (game['proxied_cover_url'] ?? game['cover_url']) as String?
+        : game['cover_url'] as String?;
     final platformId = game['platform_id'];
     final platformGameId = game['platform_game_id'];
     final platformData = game['platforms'] as Map<String, dynamic>?;
     final platformCode = platformData?['code'] as String? ?? '';
-    final allPlatforms = game['all_platforms'] as List<dynamic>? ?? [platformCode];
+    final allPlatforms =
+        game['all_platforms'] as List<dynamic>? ?? [platformCode];
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -688,10 +740,12 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
         child: Container(
           height: 100,
           decoration: BoxDecoration(
-            color: const Color(0xFF1a1f3a).withOpacity(0.5),
+            color: const Color(0xFF1a1f3a).withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _getPlatformColor(_platformFilter ?? platformCode).withOpacity(0.3),
+              color: _getPlatformColor(
+                _platformFilter ?? platformCode,
+              ).withValues(alpha: 0.3),
               width: 1.5,
             ),
           ),
@@ -699,7 +753,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
             children: [
               // Game Cover
               ClipRRect(
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(10),
+                ),
                 child: SizedBox(
                   width: 80,
                   height: 100,
@@ -712,7 +768,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                             child: Icon(
                               _getPlatformIcon(platformCode),
                               size: 32,
-                              color: _getPlatformColor(platformCode).withOpacity(0.5),
+                              color: _getPlatformColor(
+                                platformCode,
+                              ).withValues(alpha: 0.5),
                             ),
                           ),
                         )
@@ -721,7 +779,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                           child: Icon(
                             _getPlatformIcon(platformCode),
                             size: 32,
-                            color: _getPlatformColor(platformCode).withOpacity(0.5),
+                            color: _getPlatformColor(
+                              platformCode,
+                            ).withValues(alpha: 0.5),
                           ),
                         ),
                 ),
@@ -758,18 +818,29 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                               for (var i = 0; i < allPlatforms.length; i++) ...[
                                 Builder(
                                   builder: (context) {
-                                    final platformStr = allPlatforms[i].toString();
-                                    final isFiltered = _platformFilter != null && 
-                                                      platformStr.toLowerCase() == _platformFilter!.toLowerCase();
-                                    
+                                    final platformStr = allPlatforms[i]
+                                        .toString();
+                                    final isFiltered =
+                                        _platformFilter != null &&
+                                        platformStr.toLowerCase() ==
+                                            _platformFilter!.toLowerCase();
+
                                     return Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: isFiltered 
-                                            ? _getPlatformColor(platformStr).withOpacity(0.2)
+                                        color: isFiltered
+                                            ? _getPlatformColor(
+                                                platformStr,
+                                              ).withValues(alpha: 0.2)
                                             : Colors.transparent,
                                         border: Border.all(
-                                          color: _getPlatformColor(platformStr).withOpacity(isFiltered ? 1.0 : 0.5),
+                                          color: _getPlatformColor(platformStr)
+                                              .withValues(
+                                                alpha: isFiltered ? 1.0 : 0.5,
+                                              ),
                                           width: isFiltered ? 1.5 : 1,
                                         ),
                                         borderRadius: BorderRadius.circular(6),
@@ -780,15 +851,21 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                                           Icon(
                                             _getPlatformIcon(platformStr),
                                             size: 12,
-                                            color: _getPlatformColor(platformStr),
+                                            color: _getPlatformColor(
+                                              platformStr,
+                                            ),
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
                                             platformStr.toUpperCase(),
                                             style: TextStyle(
-                                              color: _getPlatformColor(platformStr),
+                                              color: _getPlatformColor(
+                                                platformStr,
+                                              ),
                                               fontSize: 11,
-                                              fontWeight: isFiltered ? FontWeight.w800 : FontWeight.w600,
+                                              fontWeight: isFiltered
+                                                  ? FontWeight.w800
+                                                  : FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -796,7 +873,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                                     );
                                   },
                                 ),
-                                if (i < allPlatforms.length - 1) const SizedBox(width: 6),
+                                if (i < allPlatforms.length - 1)
+                                  const SizedBox(width: 6),
                               ],
                             ],
                           ),

@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/meta_achievement.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final metaAchievementRepositoryProvider = Provider<MetaAchievementRepository>((ref) {
+final metaAchievementRepositoryProvider = Provider<MetaAchievementRepository>((
+  ref,
+) {
   return MetaAchievementRepository(Supabase.instance.client);
 });
 
@@ -45,34 +47,36 @@ class MetaAchievementRepository {
         // Check platform requirements if filtering is enabled
         if (connectedPlatforms != null) {
           final requiredPlatforms = achievement['required_platforms'] as List?;
-          
+
           // If achievement has platform requirements, check if user meets them
           if (requiredPlatforms != null && requiredPlatforms.isNotEmpty) {
             // User must have ALL required platforms
             final hasAllRequired = requiredPlatforms.every(
               (platform) => connectedPlatforms.contains(platform as String),
             );
-            
+
             // Skip this achievement if user doesn't have required platforms
             if (!hasAllRequired) continue;
           }
         }
 
-        achievements.add(MetaAchievement(
-          id: id,
-          category: achievement['category'] as String,
-          defaultTitle: achievement['default_title'] as String,
-          description: achievement['description'] as String,
-          iconEmoji: achievement['icon_emoji'] as String?,
-          sortOrder: achievement['sort_order'] as int? ?? 0,
-          unlockedAt: unlocked?['unlocked_at'] != null
-              ? DateTime.parse(unlocked!['unlocked_at'] as String)
-              : null,
-          customTitle: unlocked?['custom_title'] as String?,
-          requiredPlatforms: achievement['required_platforms'] != null
-              ? List<String>.from(achievement['required_platforms'] as List)
-              : null,
-        ));
+        achievements.add(
+          MetaAchievement(
+            id: id,
+            category: achievement['category'] as String,
+            defaultTitle: achievement['default_title'] as String,
+            description: achievement['description'] as String,
+            iconEmoji: achievement['icon_emoji'] as String?,
+            sortOrder: achievement['sort_order'] as int? ?? 0,
+            unlockedAt: unlocked?['unlocked_at'] != null
+                ? DateTime.parse(unlocked!['unlocked_at'] as String)
+                : null,
+            customTitle: unlocked?['custom_title'] as String?,
+            requiredPlatforms: achievement['required_platforms'] != null
+                ? List<String>.from(achievement['required_platforms'] as List)
+                : null,
+          ),
+        );
       }
 
       return achievements;
@@ -105,12 +109,15 @@ class MetaAchievementRepository {
   /// Uses atomic database function to prevent race conditions
   Future<bool> unlockAchievement(String userId, String achievementId) async {
     try {
-      final response = await _client.rpc('unlock_achievement_if_new', params: {
-        'p_user_id': userId,
-        'p_achievement_id': achievementId,
-        'p_unlocked_at': DateTime.now().toIso8601String(),
-      });
-      
+      await _client.rpc(
+        'unlock_achievement_if_new',
+        params: {
+          'p_user_id': userId,
+          'p_achievement_id': achievementId,
+          'p_unlocked_at': DateTime.now().toIso8601String(),
+        },
+      );
+
       // Function always succeeds (inserts new or ignores existing)
       return true;
     } catch (e) {

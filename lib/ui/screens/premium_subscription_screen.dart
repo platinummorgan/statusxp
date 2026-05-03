@@ -7,17 +7,21 @@ import 'package:statusxp/ui/screens/markdown_viewer_screen.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:statusxp/utils/statusxp_logger.dart';
+
 /// Premium Subscription Screen
-/// 
+///
 /// Shows subscription benefits and allows users to subscribe to Premium
 class PremiumSubscriptionScreen extends ConsumerStatefulWidget {
   const PremiumSubscriptionScreen({super.key});
 
   @override
-  ConsumerState<PremiumSubscriptionScreen> createState() => _PremiumSubscriptionScreenState();
+  ConsumerState<PremiumSubscriptionScreen> createState() =>
+      _PremiumSubscriptionScreenState();
 }
 
-class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionScreen> {
+class _PremiumSubscriptionScreenState
+    extends ConsumerState<PremiumSubscriptionScreen> {
   final SubscriptionService _subscriptionService = SubscriptionService();
   bool _isLoading = true;
   bool _isPremium = false;
@@ -76,7 +80,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       // Wait a moment for purchase to process
       await Future.delayed(const Duration(seconds: 2));
       final isPremium = await _subscriptionService.isPremiumActive();
-      
+
       setState(() {
         _isPremium = isPremium;
         _isLoading = false;
@@ -92,10 +96,10 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
 
   Future<void> _subscribeWithStripe() async {
     setState(() => _isProcessingStripe = true);
-    
+
     try {
       final supabase = ref.read(supabaseClientProvider);
-      
+
       // Call Stripe checkout Edge Function (auth header added automatically)
       final response = await supabase.functions.invoke(
         'stripe-create-checkout',
@@ -103,7 +107,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
 
       if (response.data != null && response.data['url'] != null) {
         final checkoutUrl = response.data['url'] as String;
-        
+
         // Open Stripe Checkout in browser
         final uri = Uri.parse(checkoutUrl);
         if (await canLaunchUrl(uri)) {
@@ -115,7 +119,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
         _showError('Failed to create checkout session');
       }
     } catch (e) {
-      print('Stripe checkout error: $e');
+      statusxpLog('Stripe checkout error: $e');
       _showError('Failed to start checkout process');
     } finally {
       setState(() => _isProcessingStripe = false);
@@ -125,14 +129,14 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
   Future<void> _manageStripeSubscription() async {
     try {
       final supabase = ref.read(supabaseClientProvider);
-      
+
       // Refresh session to ensure it's valid
       final sessionResponse = await supabase.auth.refreshSession();
       if (sessionResponse.session == null) {
         _showError('Please sign in again');
         return;
       }
-      
+
       final response = await supabase.functions.invoke(
         'stripe-customer-portal',
         headers: {
@@ -143,7 +147,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       if (response.data != null && response.data['url'] != null) {
         final portalUrl = response.data['url'] as String;
         final uri = Uri.parse(portalUrl);
-        
+
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
@@ -153,23 +157,23 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
         _showError('Failed to create portal session');
       }
     } catch (e) {
-      print('Error opening billing portal: $e');
+      statusxpLog('Error opening billing portal: $e');
       _showError('Failed to open subscription management');
     }
   }
 
   Future<void> _restorePurchases() async {
     setState(() => _isLoading = true);
-    
+
     final success = await _subscriptionService.restorePurchases();
-    
+
     if (success) {
       final isPremium = await _subscriptionService.isPremiumActive();
       setState(() {
         _isPremium = isPremium;
         _isLoading = false;
       });
-      
+
       if (_isPremium && mounted) {
         _showSuccess('Purchases restored successfully!');
       } else if (mounted) {
@@ -184,20 +188,14 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
   void _showError(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: accentWarning,
-      ),
+      SnackBar(content: Text(message), backgroundColor: accentWarning),
     );
   }
 
   void _showSuccess(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: accentSuccess,
-      ),
+      SnackBar(content: Text(message), backgroundColor: accentSuccess),
     );
   }
 
@@ -211,10 +209,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
         backgroundColor: Colors.transparent,
         title: const Text(
           'STATUSXP PREMIUM',
-          style: TextStyle(
-            letterSpacing: 2,
-            fontWeight: FontWeight.w900,
-          ),
+          style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w900),
         ),
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -222,9 +217,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
         ),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: accentPrimary),
-            )
+          ? const Center(child: CircularProgressIndicator(color: accentPrimary))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -256,23 +249,19 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            accentPrimary.withOpacity(0.2),
-            accentSecondary.withOpacity(0.2),
+            accentPrimary.withValues(alpha: 0.2),
+            accentSecondary.withValues(alpha: 0.2),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: accentPrimary.withOpacity(0.5),
+          color: accentPrimary.withValues(alpha: 0.5),
           width: 2,
         ),
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.stars,
-            size: 64,
-            color: accentPrimary,
-          ),
+          const Icon(Icons.stars, size: 64, color: accentPrimary),
           const SizedBox(height: 16),
           const Text(
             'You\'re Premium! 🎉',
@@ -285,14 +274,13 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
           const SizedBox(height: 8),
           const Text(
             'Enjoying unlimited features',
-            style: TextStyle(
-              fontSize: 16,
-              color: textSecondary,
-            ),
+            style: TextStyle(fontSize: 16, color: textSecondary),
           ),
           const SizedBox(height: 24),
           OutlinedButton(
-            onPressed: kIsWeb ? _manageStripeSubscription : () => _subscriptionService.manageSubscription(),
+            onPressed: kIsWeb
+                ? _manageStripeSubscription
+                : () => _subscriptionService.manageSubscription(),
             style: OutlinedButton.styleFrom(
               foregroundColor: accentPrimary,
               side: const BorderSide(color: accentPrimary),
@@ -312,14 +300,12 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            accentPrimary.withOpacity(0.1),
-            accentSecondary.withOpacity(0.1),
+            accentPrimary.withValues(alpha: 0.1),
+            accentSecondary.withValues(alpha: 0.1),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: accentPrimary.withOpacity(0.3),
-        ),
+        border: Border.all(color: accentPrimary.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -329,16 +315,12 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
               shape: BoxShape.circle,
               gradient: LinearGradient(
                 colors: [
-                  accentPrimary.withOpacity(0.3),
-                  accentSecondary.withOpacity(0.3),
+                  accentPrimary.withValues(alpha: 0.3),
+                  accentSecondary.withValues(alpha: 0.3),
                 ],
               ),
             ),
-            child: const Icon(
-              Icons.diamond,
-              size: 48,
-              color: accentPrimary,
-            ),
+            child: const Icon(Icons.diamond, size: 48, color: accentPrimary),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -354,10 +336,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
           const Text(
             'Get unlimited AI guides and faster syncs',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: textSecondary,
-            ),
+            style: TextStyle(fontSize: 16, color: textSecondary),
           ),
         ],
       ),
@@ -382,9 +361,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
           decoration: BoxDecoration(
             color: surfaceLight,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: accentPrimary.withOpacity(0.2),
-            ),
+            border: Border.all(color: accentPrimary.withValues(alpha: 0.2)),
           ),
           child: Center(
             child: Text(
@@ -408,13 +385,10 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       decoration: BoxDecoration(
         color: surfaceLight,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: accentPrimary,
-          width: 2,
-        ),
+        border: Border.all(color: accentPrimary, width: 2),
         boxShadow: [
           BoxShadow(
-            color: accentPrimary.withOpacity(0.3),
+            color: accentPrimary.withValues(alpha: 0.3),
             blurRadius: 20,
           ),
         ],
@@ -432,10 +406,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
           const SizedBox(height: 4),
           const Text(
             'Auto-Renewable Monthly Subscription',
-            style: TextStyle(
-              fontSize: 12,
-              color: textSecondary,
-            ),
+            style: TextStyle(fontSize: 12, color: textSecondary),
           ),
           const SizedBox(height: 12),
           Row(
@@ -456,10 +427,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                 padding: EdgeInsets.only(top: 8),
                 child: Text(
                   '/month',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 16, color: textSecondary),
                 ),
               ),
             ],
@@ -468,11 +436,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
           const Text(
             'Subscription automatically renews monthly.\nCancel anytime from your account settings.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
-              color: textSecondary,
-              height: 1.4,
-            ),
+            style: TextStyle(fontSize: 11, color: textSecondary, height: 1.4),
           ),
         ],
       ),
@@ -505,10 +469,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
                 )
               : const Text(
                   'Subscribe with Card',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
         ),
       );
@@ -518,7 +479,9 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _subscriptionService.purchasePending ? null : _subscribeToPremium,
+        onPressed: _subscriptionService.purchasePending
+            ? null
+            : _subscribeToPremium,
         style: ElevatedButton.styleFrom(
           backgroundColor: accentPrimary,
           foregroundColor: backgroundDark,
@@ -538,10 +501,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
               )
             : const Text(
                 'Subscribe Now',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
       ),
     );
@@ -557,10 +517,7 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
       onPressed: _restorePurchases,
       child: const Text(
         'Restore Purchases',
-        style: TextStyle(
-          color: accentPrimary,
-          fontSize: 14,
-        ),
+        style: TextStyle(color: accentPrimary, fontSize: 14),
       ),
     );
   }
@@ -572,28 +529,16 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
           'Subscription renews automatically unless cancelled.\n'
           'Managed through your Google Play or App Store account.',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 11,
-            color: textMuted,
-          ),
+          style: TextStyle(fontSize: 11, color: textMuted),
         ),
         const SizedBox(height: 16),
         Wrap(
           alignment: WrapAlignment.center,
           spacing: 16,
           children: [
-            _buildLinkButton(
-              'Terms of Use',
-              'TERMS_OF_SERVICE.md',
-            ),
-            const Text(
-              '•',
-              style: TextStyle(color: textMuted),
-            ),
-            _buildLinkButton(
-              'Privacy Policy',
-              'PRIVACY.md',
-            ),
+            _buildLinkButton('Terms of Use', 'TERMS_OF_SERVICE.md'),
+            const Text('•', style: TextStyle(color: textMuted)),
+            _buildLinkButton('Privacy Policy', 'PRIVACY.md'),
           ],
         ),
       ],
@@ -618,10 +563,8 @@ class _PremiumSubscriptionScreenState extends ConsumerState<PremiumSubscriptionS
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MarkdownViewerScreen(
-          title: title,
-          assetPath: assetPath,
-        ),
+        builder: (context) =>
+            MarkdownViewerScreen(title: title, assetPath: assetPath),
       ),
     );
   }

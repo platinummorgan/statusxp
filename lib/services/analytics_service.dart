@@ -66,9 +66,28 @@ class AnalyticsService {
 
     await analytics.logEvent(
       name: 'sync_data',
+      parameters: {'platform': platform, 'is_auto_sync': isAutoSync},
+    );
+  }
+
+  /// Log categorized sync reliability outcomes.
+  Future<void> logSyncIssue({
+    required String platform,
+    required String category,
+    String? status,
+    bool requiresRelink = false,
+  }) async {
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    await analytics.logEvent(
+      name: 'sync_issue_detected',
       parameters: {
         'platform': platform,
-        'is_auto_sync': isAutoSync,
+        'category': category,
+        if (status != null) 'status': status,
+        'requires_relink': requiresRelink,
       },
     );
   }
@@ -84,10 +103,7 @@ class AnalyticsService {
 
     await analytics.logEvent(
       name: 'view_game',
-      parameters: {
-        'game_name': gameName,
-        'platform': platform,
-      },
+      parameters: {'game_name': gameName, 'platform': platform},
     );
   }
 
@@ -102,10 +118,7 @@ class AnalyticsService {
 
     await analytics.logEvent(
       name: 'unlock_guide',
-      parameters: {
-        'achievement_name': achievementName,
-        'game_name': gameName,
-      },
+      parameters: {'achievement_name': achievementName, 'game_name': gameName},
     );
   }
 
@@ -146,27 +159,19 @@ class AnalyticsService {
   }
 
   /// Log when user searches for games
-  Future<void> logSearchGames({
-    required String query,
-    String? platform,
-  }) async {
+  Future<void> logSearchGames({required String query, String? platform}) async {
     _ensureFirebaseAnalyticsReady();
     final analytics = _analytics;
     if (analytics == null) return;
 
     await analytics.logEvent(
       name: 'search_games',
-      parameters: {
-        'query': query,
-        if (platform != null) 'platform': platform,
-      },
+      parameters: {'query': query, if (platform != null) 'platform': platform},
     );
   }
 
   /// Log when user links a new gaming account
-  Future<void> logLinkAccount({
-    required String platform,
-  }) async {
+  Future<void> logLinkAccount({required String platform}) async {
     _ensureFirebaseAnalyticsReady();
     final analytics = _analytics;
     if (analytics == null) return;
@@ -178,9 +183,7 @@ class AnalyticsService {
   }
 
   /// Log when user views another user's profile
-  Future<void> logViewUserProfile({
-    required String userId,
-  }) async {
+  Future<void> logViewUserProfile({required String userId}) async {
     _ensureFirebaseAnalyticsReady();
     final analytics = _analytics;
     if (analytics == null) return;
@@ -219,14 +222,14 @@ class AnalyticsService {
     if (userId != null) {
       await analytics.setUserId(id: userId);
     }
-    
+
     if (isPremium != null) {
       await analytics.setUserProperty(
         name: 'is_premium',
         value: isPremium.toString(),
       );
     }
-    
+
     if (platformCount != null) {
       await analytics.setUserProperty(
         name: 'linked_platforms',

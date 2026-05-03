@@ -34,7 +34,7 @@ class MetaAchievement {
       description: json['description'] as String,
       iconEmoji: json['icon_emoji'] as String?,
       sortOrder: json['sort_order'] as int? ?? 0,
-      unlockedAt: json['unlocked_at'] != null 
+      unlockedAt: json['unlocked_at'] != null
           ? DateTime.parse(json['unlocked_at'] as String)
           : null,
       customTitle: json['custom_title'] as String?,

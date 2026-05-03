@@ -4,7 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/main.dart';
+import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/game.dart';
+import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/domain/user_stats.dart';
 
 final sampleGames = <Game>[
@@ -41,6 +43,64 @@ const sampleStats = UserStats(
   rarestTrophyRarity: 0.0,
 );
 
+const sampleDashboardStats = DashboardStats(
+  displayName: 'Test User',
+  displayPlatform: 'psn',
+  avatarUrl: null,
+  isPsPlus: false,
+  totalStatusXP: 1234,
+  psnStats: PlatformStats(
+    platinums: 3,
+    achievementsUnlocked: 120,
+    gamesCount: 8,
+    statusXP: 800,
+  ),
+  xboxStats: PlatformStats(
+    achievementsUnlocked: 40,
+    gamerscore: 2500,
+    gamesCount: 3,
+    statusXP: 300,
+  ),
+  steamStats: PlatformStats(
+    achievementsUnlocked: 20,
+    gamesCount: 1,
+    statusXP: 134,
+  ),
+);
+
+final sampleUnifiedGames = <UnifiedGame>[
+  const UnifiedGame(
+    title: 'Elden Ring',
+    coverUrl: null,
+    overallCompletion: 100.0,
+    platforms: [
+      PlatformGameData(
+        platform: 'psn',
+        gameId: 'psn-elden-ring',
+        achievementsEarned: 42,
+        achievementsTotal: 42,
+        completion: 100.0,
+        hasPlatinum: true,
+        platinumCount: 1,
+      ),
+    ],
+  ),
+  const UnifiedGame(
+    title: 'Returnal',
+    coverUrl: null,
+    overallCompletion: 65.0,
+    platforms: [
+      PlatformGameData(
+        platform: 'psn',
+        gameId: 'psn-returnal',
+        achievementsEarned: 26,
+        achievementsTotal: 40,
+        completion: 65.0,
+      ),
+    ],
+  ),
+];
+
 /// Get standard provider overrides for tests with a mock authenticated user.
 ///
 /// This sets up a test environment where:
@@ -76,6 +136,8 @@ List<Override> getTestProviderOverrides() {
     // Sample data providers.
     gamesProvider.overrideWith((ref) async => sampleGames),
     userStatsProvider.overrideWith((ref) async => sampleStats),
+    dashboardStatsProvider.overrideWith((ref) async => sampleDashboardStats),
+    unifiedGamesProvider.overrideWith((ref) async => sampleUnifiedGames),
   ];
 }
 
@@ -101,6 +163,8 @@ List<Override> getDemoModeProviderOverrides() {
     // when auth service has no current user (no override needed here).
     gamesProvider.overrideWith((ref) async => sampleGames),
     userStatsProvider.overrideWith((ref) async => sampleStats),
+    dashboardStatsProvider.overrideWith((ref) async => sampleDashboardStats),
+    unifiedGamesProvider.overrideWith((ref) async => sampleUnifiedGames),
   ];
 }
 
@@ -110,6 +174,6 @@ List<Override> getDemoModeProviderOverrides() {
 Widget getTestApp() {
   return ProviderScope(
     overrides: getTestProviderOverrides(),
-    child: const StatusXPApp(),
+    child: const TickerMode(enabled: false, child: StatusXPApp()),
   );
 }

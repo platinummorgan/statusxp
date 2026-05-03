@@ -20,19 +20,25 @@ import 'package:statusxp/services/sync_resume_service.dart';
 import 'package:statusxp/theme/theme.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
 import 'package:statusxp/utils/html.dart' as html;
+import 'package:statusxp/utils/runtime_mode.dart';
 import 'package:statusxp/utils/statusxp_logger.dart';
+import 'package:statusxp/utils/supabase_guard.dart';
 
 late final AuthRefreshService authRefreshService;
+bool _isAuthRefreshReady = false;
 final BiometricAuthService _biometric = BiometricAuthService();
 
 class _AppLifecycleObserver extends WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
+    if (!_isAuthRefreshReady) return;
 
     Future.delayed(const Duration(seconds: 1), () {
       authRefreshService.refreshIfNeededOnResume().catchError((e) {
-        _safeLog('Token refresh on resume failed (will retry later): ${_safeStr(e)}');
+        _safeLog(
+          'Token refresh on resume failed (will retry later): ${_safeStr(e)}',
+        );
       });
     });
   }
@@ -44,7 +50,7 @@ void main() async {
   FlutterError.onError = (details) {
     _safeLog('FlutterError caught: ${_safeStr(details.exception)}');
     _safeLog('Stack: ${_safeStr(details.stack)}');
-    
+
     // Enhanced logging for null check operator errors
     if (_safeStr(details.exception).contains('Null check operator')) {
       _safeLog('🔍 NULL CHECK ERROR DETAILS:');
@@ -61,47 +67,46 @@ void main() async {
     }
   };
 
-  runZonedGuarded(
-    () async => _initializeApp(),
-    (error, stack) async {
-      // IMPORTANT: never let logging crash the error handler
-      final errStr = _safeStr(error);
-      
-      // Enhanced null check error debugging
-      if (errStr.contains('Null check operator') || errStr.contains('null value')) {
-        _safeLog('🚨 CRITICAL NULL CHECK ERROR:');
-        _safeLog('Error: $errStr');
-        _safeLog('Error type: ${error.runtimeType}');
-        _safeLog('Stack trace:');
-        final stackLines = stack.toString().split('\n');
-        for (int i = 0; i < stackLines.length && i < 15; i++) {
-          _safeLog('  $i: ${stackLines[i]}');
-        }
-              
-        // Try to capture additional runtime context
-        _safeLog('Runtime context:');
-        _safeLog('  - kIsWeb: $kIsWeb');
-        try {
-          _safeLog('  - Error occurred during app initialization');
-        } catch (e) {
-          _safeLog('  - Could not get additional context: ${_safeStr(e)}');
-        }
+  runZonedGuarded(() async => _initializeApp(), (error, stack) async {
+    // IMPORTANT: never let logging crash the error handler
+    final errStr = _safeStr(error);
+
+    // Enhanced null check error debugging
+    if (errStr.contains('Null check operator') ||
+        errStr.contains('null value')) {
+      _safeLog('🚨 CRITICAL NULL CHECK ERROR:');
+      _safeLog('Error: $errStr');
+      _safeLog('Error type: ${error.runtimeType}');
+      _safeLog('Stack trace:');
+      final stackLines = stack.toString().split('\n');
+      for (int i = 0; i < stackLines.length && i < 15; i++) {
+        _safeLog('  $i: ${stackLines[i]}');
       }
-      final stackStr = _safeStr(stack);
 
-      _safeLog('Uncaught error in zone: $errStr');
-      _safeLog('Stack: $stackStr');
+      // Try to capture additional runtime context
+      _safeLog('Runtime context:');
+      _safeLog('  - kIsWeb: $kIsWeb');
+      try {
+        _safeLog('  - Error occurred during app initialization');
+      } catch (e) {
+        _safeLog('  - Could not get additional context: ${_safeStr(e)}');
+      }
+    }
+    final stackStr = _safeStr(stack);
 
-      if (!kIsWeb) return;
+    _safeLog('Uncaught error in zone: $errStr');
+    _safeLog('Stack: $stackStr');
 
-      // This is your current loop trigger. Try targeted cleanup before “nuke”.
-      final looksLikeNullCrash =
-          errStr.contains('Null check operator') || errStr.contains("reading 'toString'");
-      if (!looksLikeNullCrash) return;
+    if (!kIsWeb) return;
 
-      await _attemptWebStorageRecovery();
-    },
-  );
+    // This is your current loop trigger. Try targeted cleanup before “nuke”.
+    final looksLikeNullCrash =
+        errStr.contains('Null check operator') ||
+        errStr.contains("reading 'toString'");
+    if (!looksLikeNullCrash) return;
+
+    await _attemptWebStorageRecovery();
+  });
 }
 
 Future<void> _initializeApp() async {
@@ -142,7 +147,7 @@ Future<void> _initializeApp() async {
       ),
       realtimeClientOptions: const RealtimeClientOptions(eventsPerSecond: 2),
     );
-    
+
     if (kIsWeb) {
       try {
         if (Supabase.instance.client.auth.currentSession != null) {
@@ -152,7 +157,7 @@ Future<void> _initializeApp() async {
         _safeLog('Error clearing logout flag: ${_safeStr(e)}');
       }
     }
-    
+
     // Check if we have a session but it's invalid (corrupt refresh token)
     if (Supabase.instance.client.auth.currentSession != null) {
       try {
@@ -160,7 +165,7 @@ Future<void> _initializeApp() async {
         await Supabase.instance.client.auth.refreshSession();
       } catch (e) {
         // If refresh fails with invalid token error, clear the corrupt session
-        if (e.toString().contains('refresh_token_not_found') || 
+        if (e.toString().contains('refresh_token_not_found') ||
             e.toString().contains('Invalid Refresh Token')) {
           _safeLog('🔄 Detected corrupt refresh token, clearing session...');
           try {
@@ -173,6 +178,7 @@ Future<void> _initializeApp() async {
     }
 
     authRefreshService = AuthRefreshService(Supabase.instance.client);
+    _isAuthRefreshReady = true;
 
     if (Supabase.instance.client.auth.currentSession != null) {
       authRefreshService.startPeriodicRefresh();
@@ -196,12 +202,16 @@ Future<void> _initializeApp() async {
       }
     });
   } catch (e) {
-    _safeLog('Supabase initialization error (likely corrupt session): ${_safeStr(e)}');
+    _safeLog(
+      'Supabase initialization error (likely corrupt session): ${_safeStr(e)}',
+    );
     // Clear ALL storage and force clean restart
     if (kIsWeb) {
       try {
         html.window.localStorage.clear();
-        _safeLog('Cleared all storage due to initialization error - page will reload');
+        _safeLog(
+          'Cleared all storage due to initialization error - page will reload',
+        );
       } catch (clearError) {
         _safeLog('Failed to clear storage: ${_safeStr(clearError)}');
       }
@@ -242,23 +252,31 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
     } else {
       _initDeepLinks();
     }
-    
-    // Check for interrupted syncs after a short delay to allow providers to initialize
-    Future.delayed(const Duration(seconds: 2), () {
-      _checkForInterruptedSyncs();
-    });
+
+    // Skip startup sync polling in widget tests.
+    if (!isFlutterTestMode) {
+      // Check for interrupted syncs once after first frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkForInterruptedSyncs();
+      });
+    }
   }
-  
+
   Future<void> _checkForInterruptedSyncs() async {
     if (_hasCheckedInterruptedSyncs) return;
     _hasCheckedInterruptedSyncs = true;
-    
+
     try {
-      // Only check if user is authenticated
-      if (Supabase.instance.client.auth.currentSession == null) {
+      final client = tryGetSupabaseClient();
+      if (client == null) {
         return;
       }
-      
+
+      // Only check if user is authenticated
+      if (client.auth.currentSession == null) {
+        return;
+      }
+
       final syncResumeService = ref.read(syncResumeServiceProvider);
       await syncResumeService.checkAndResumeInterruptedSyncs();
     } catch (e) {
@@ -280,28 +298,40 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
 
     // Refresh tokens and resume any stale syncs without blocking UI
     Future.delayed(const Duration(seconds: 1), () {
-      authRefreshService.refreshIfNeededOnResume().catchError((e) {
-        _safeLog('Token refresh on resume failed (will retry later): ${_safeStr(e)}');
-      });
+      if (_isAuthRefreshReady) {
+        authRefreshService.refreshIfNeededOnResume().catchError((e) {
+          _safeLog(
+            'Token refresh on resume failed (will retry later): ${_safeStr(e)}',
+          );
+        });
+      }
 
       try {
         final syncResumeService = ref.read(syncResumeServiceProvider);
         syncResumeService.checkAndResumeInterruptedSyncs();
       } catch (e) {
-        _safeLog('Sync resume on app resume failed (non-blocking): ${_safeStr(e)}');
+        _safeLog(
+          'Sync resume on app resume failed (non-blocking): ${_safeStr(e)}',
+        );
       }
     });
   }
 
   Future<void> _handleWebAuthCallback() async {
     try {
+      final client = tryGetSupabaseClient();
+      if (client == null) {
+        return;
+      }
+
       final uri = Uri.base;
-      final hasAuthStuff = uri.fragment.isNotEmpty || uri.queryParameters.containsKey('code');
+      final hasAuthStuff =
+          uri.fragment.isNotEmpty || uri.queryParameters.containsKey('code');
 
       if (!hasAuthStuff) return;
 
       try {
-        await Supabase.instance.client.auth.getSessionFromUrl(uri);
+        await client.auth.getSessionFromUrl(uri);
       } finally {
         final cleanUri = uri.replace(query: '', fragment: '');
         html.window.history.replaceState(null, '', cleanUri.toString());
@@ -340,24 +370,29 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
     }
 
     try {
+      final client = tryGetSupabaseClient();
+      if (client == null) {
+        return;
+      }
+
       _safeLog('Password reset link detected - processing token');
 
-      await Supabase.instance.client.auth.getSessionFromUrl(Uri.parse(fullUrl));
-      
+      await client.auth.getSessionFromUrl(Uri.parse(fullUrl));
+
       _safeLog('Token processed successfully, navigating to reset screen');
 
       if (!mounted) return;
-      
+
       // Wait for auth state to settle
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       _safeLog('Navigating to /reset-password');
       appRouter.go('/reset-password');
       _safeLog('Navigation complete');
     } catch (e, stack) {
       _safeLog('Error handling password reset: ${_safeStr(e)}');
       _safeLog('Stack: ${_safeStr(stack)}');
-      
+
       // Even if token processing fails, try to navigate to reset screen
       if (mounted) {
         appRouter.go('/reset-password');
@@ -402,9 +437,9 @@ bool _isSupabaseAuthStorageKey(String key) {
 
 bool _isOAuthFlowKey(String key) {
   // Preserve OAuth PKCE flow keys - these are needed during active login
-  return key.contains('code-verifier') || 
-         key.contains('code_challenge') ||
-         key.contains('oauth-state');
+  return key.contains('code-verifier') ||
+      key.contains('code_challenge') ||
+      key.contains('oauth-state');
 }
 
 Future<void> _attemptWebStorageRecovery() async {

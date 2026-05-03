@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/utils/statusxp_logger.dart';
 
 class SyncLimitStatus {
   final bool canSync;
@@ -21,7 +22,7 @@ class SyncLimitStatus {
 
   String get waitTimeFormatted {
     if (waitSeconds <= 0) return '';
-    
+
     final hours = waitSeconds ~/ 3600;
     final minutes = (waitSeconds % 3600) ~/ 60;
     final seconds = waitSeconds % 60;
@@ -54,10 +55,7 @@ class SyncLimitService {
       // Call the database function
       final response = await _supabase.rpc(
         'can_user_sync',
-        params: {
-          'p_user_id': userId,
-          'p_platform': platform.toLowerCase(),
-        },
+        params: {'p_user_id': userId, 'p_platform': platform.toLowerCase()},
       );
 
       return SyncLimitStatus.fromJson(response as Map<String, dynamic>);
@@ -82,6 +80,7 @@ class SyncLimitService {
         'success': success,
       });
     } catch (e) {
+      statusxpLog('Failed to record sync for $platform: $e');
     }
   }
 

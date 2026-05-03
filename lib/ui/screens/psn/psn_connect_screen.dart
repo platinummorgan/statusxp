@@ -20,9 +20,7 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
   Future<void> _signInWithPlayStation() async {
     // Open WebView login screen
     final npsso = await Navigator.of(context).push<String>(
-      MaterialPageRoute(
-        builder: (context) => const PSNWebViewLoginScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const PSNWebViewLoginScreen()),
     );
 
     // User canceled login
@@ -55,12 +53,15 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
       // Check if confirmation is required
       if (result.requiresConfirmation) {
         if (!mounted) return;
-        
+
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Link Existing Account?'),
-            content: Text(result.message ?? 'This PSN account is already connected to another account. Do you want to link it to this account?'),
+            content: Text(
+              result.message ??
+                  'This PSN account is already connected to another account. Do you want to link it to this account?',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -76,12 +77,16 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
 
         if (confirmed == true && result.credentials != null) {
           // User confirmed - perform the merge
-          await psnService.confirmMerge(result.existingUserId!, result.credentials!);
-          
+          await psnService.confirmMerge(
+            result.existingUserId!,
+            result.credentials!,
+          );
+
           if (mounted) {
             setState(() {
               _isLoading = false;
-              _successMessage = 'Account linked successfully! Your gaming data has been merged.';
+              _successMessage =
+                  'Account linked successfully! Your gaming data has been merged.';
             });
 
             Future.delayed(const Duration(seconds: 2), () {
@@ -103,7 +108,7 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _successMessage = 
+          _successMessage =
               'Successfully linked PSN account!\n'
               'Trophy Level: ${result.trophyLevel}\n'
               'Total Trophies: ${result.totalTrophies}';
@@ -129,9 +134,7 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Connect PlayStation Network'),
-      ),
+      appBar: AppBar(title: const Text('Connect PlayStation Network')),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -144,17 +147,14 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(height: 32),
-            
+
             const Text(
               'Link Your PlayStation Account',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            
+
             const Text(
               'Sign in with your PlayStation Network credentials to automatically import your trophies and gaming stats.',
               style: TextStyle(fontSize: 16),
@@ -182,7 +182,7 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
                   ],
                 ),
               ),
-            
+
             // Success message
             if (_successMessage != null)
               Container(
@@ -205,7 +205,7 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
                   ],
                 ),
               ),
-            
+
             // Sign in button
             if (_successMessage == null)
               SizedBox(
@@ -219,7 +219,9 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Icon(Icons.login),
@@ -233,9 +235,9 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
                   ),
                 ),
               ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Privacy note
             Text(
               'Your credentials are entered securely on Sony\'s official website. '

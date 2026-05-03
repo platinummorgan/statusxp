@@ -10,16 +10,16 @@ class FlexRoomData {
   final String userId;
   final String tagline;
   final DateTime lastUpdated;
-  
+
   // Cross-Platform Flex Row (4 featured achievements)
   final FlexTile? flexOfAllTime;
   final FlexTile? rarestFlex;
   final FlexTile? mostTimeSunk;
   final FlexTile? sweattiestPlatinum;
-  
+
   // Superlative Wall (customizable tiles)
   final Map<String, FlexTile> superlatives;
-  
+
   // Recent notable unlocks
   final List<RecentFlex> recentFlexes;
 
@@ -50,7 +50,9 @@ class FlexRoomData {
           ? FlexTile.fromJson(json['most_time_sunk'] as Map<String, dynamic>)
           : null,
       sweattiestPlatinum: json['sweattiest_platinum'] != null
-          ? FlexTile.fromJson(json['sweattiest_platinum'] as Map<String, dynamic>)
+          ? FlexTile.fromJson(
+              json['sweattiest_platinum'] as Map<String, dynamic>,
+            )
           : null,
       superlatives: json['superlatives'] != null
           ? Map<String, FlexTile>.fromEntries(
@@ -64,8 +66,9 @@ class FlexRoomData {
           : {},
       recentFlexes: json['recent_flexes'] != null
           ? List<RecentFlex>.from(
-              (json['recent_flexes'] as List)
-                  .map((e) => RecentFlex.fromJson(e as Map<String, dynamic>)),
+              (json['recent_flexes'] as List).map(
+                (e) => RecentFlex.fromJson(e as Map<String, dynamic>),
+              ),
             )
           : [],
     );
@@ -80,7 +83,9 @@ class FlexRoomData {
       'rarest_flex': rarestFlex?.toJson(),
       'most_time_sunk': mostTimeSunk?.toJson(),
       'sweattiest_platinum': sweattiestPlatinum?.toJson(),
-      'superlatives': superlatives.map((key, value) => MapEntry(key, value.toJson())),
+      'superlatives': superlatives.map(
+        (key, value) => MapEntry(key, value.toJson()),
+      ),
       'recent_flexes': recentFlexes.map((e) => e.toJson()).toList(),
     };
   }
@@ -99,10 +104,18 @@ class FlexRoomData {
       userId: userId,
       tagline: tagline ?? this.tagline,
       lastUpdated: lastUpdated ?? this.lastUpdated,
-      flexOfAllTime: flexOfAllTime == _undefined ? this.flexOfAllTime : flexOfAllTime as FlexTile?,
-      rarestFlex: rarestFlex == _undefined ? this.rarestFlex : rarestFlex as FlexTile?,
-      mostTimeSunk: mostTimeSunk == _undefined ? this.mostTimeSunk : mostTimeSunk as FlexTile?,
-      sweattiestPlatinum: sweattiestPlatinum == _undefined ? this.sweattiestPlatinum : sweattiestPlatinum as FlexTile?,
+      flexOfAllTime: flexOfAllTime == _undefined
+          ? this.flexOfAllTime
+          : flexOfAllTime as FlexTile?,
+      rarestFlex: rarestFlex == _undefined
+          ? this.rarestFlex
+          : rarestFlex as FlexTile?,
+      mostTimeSunk: mostTimeSunk == _undefined
+          ? this.mostTimeSunk
+          : mostTimeSunk as FlexTile?,
+      sweattiestPlatinum: sweattiestPlatinum == _undefined
+          ? this.sweattiestPlatinum
+          : sweattiestPlatinum as FlexTile?,
       superlatives: superlatives ?? this.superlatives,
       recentFlexes: recentFlexes ?? this.recentFlexes,
     );
@@ -173,7 +186,6 @@ class FlexTile {
       'platform_id': platformId,
       'platform_game_id': platformGameId,
       'platform_achievement_id': platformAchievementId,
-      'platform_game_id': platformGameId,
       'game_cover_url': gameCoverUrl,
       'platform': platform,
       'rarity_percent': rarityPercent,

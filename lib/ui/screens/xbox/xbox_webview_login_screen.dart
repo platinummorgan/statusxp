@@ -19,13 +19,14 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
     'XBOX_CLIENT_ID',
     defaultValue: 'f64fede5-9343-4dc9-a145-8daa499357a3',
   );
-  static const String redirectUri = 'https://login.live.com/oauth20_desktop.srf';
+  static const String redirectUri =
+      'https://login.live.com/oauth20_desktop.srf';
   static const String scope = 'XboxLive.signin XboxLive.offline_access';
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Microsoft OAuth URL
     final authUrl = Uri.https('login.live.com', '/oauth20_authorize.srf', {
       'client_id': clientId,
@@ -48,9 +49,11 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
             if (mounted) {
               setState(() => _isLoading = false);
             }
-            
+
             // Use JavaScript to get the actual URL (not sanitized)
-            final actualUrl = await _controller.runJavaScriptReturningResult('window.location.href');
+            final actualUrl = await _controller.runJavaScriptReturningResult(
+              'window.location.href',
+            );
             final cleanUrl = actualUrl.toString().replaceAll('"', '');
             _checkForAuthCode(cleanUrl);
           },
@@ -72,16 +75,17 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
 
   void _checkForAuthCode(String url) {
     final uri = Uri.parse(url);
-    
+
     // Debug: Print the URL we're checking
     // Check if we're at the redirect URI
-    if (uri.host == 'login.live.com' && uri.path.contains('oauth20_desktop.srf')) {
+    if (uri.host == 'login.live.com' &&
+        uri.path.contains('oauth20_desktop.srf')) {
       // Extract code without converting '+' to space
       String? code = _extractCodeFromUrl(url);
       if (code == null && uri.fragment.isNotEmpty) {
         code = _extractCodeFromUrl('?${uri.fragment}');
       }
-      
+
       final error = uri.queryParameters['error'];
       if (error != null) {
         // OAuth error occurred
@@ -94,7 +98,7 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
         );
         return;
       }
-      
+
       if (code != null) {
         // Successfully got authorization code
         Navigator.of(context).pop(code);
@@ -115,10 +119,7 @@ class _XboxWebViewLoginScreenState extends State<XboxWebViewLoginScreen> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );

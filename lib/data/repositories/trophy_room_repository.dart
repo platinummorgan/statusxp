@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repository for fetching Trophy Room data
-/// 
+///
 /// Provides aggregated trophy statistics for showcase features like
 /// rarest platinums, newest platinums, ultra-rare trophies, and recent unlocks.
 class TrophyRoomRepository {
@@ -16,7 +16,9 @@ class TrophyRoomRepository {
     return int.parse(value.toString());
   }
 
-  Future<Map<int, Map<String, dynamic>>> _loadTrophiesById(List<dynamic> trophyIds) async {
+  Future<Map<int, Map<String, dynamic>>> _loadTrophiesById(
+    List<dynamic> trophyIds,
+  ) async {
     if (trophyIds.isEmpty) return {};
 
     final response = await _client
@@ -39,7 +41,9 @@ class TrophyRoomRepository {
     return map;
   }
 
-  Future<Map<int, Map<String, dynamic>>> _loadGamesById(List<int> gameTitleIds) async {
+  Future<Map<int, Map<String, dynamic>>> _loadGamesById(
+    List<int> gameTitleIds,
+  ) async {
     if (gameTitleIds.isEmpty) return {};
 
     final response = await _client
@@ -108,7 +112,10 @@ class TrophyRoomRepository {
   }
 
   /// Get ultra-rare trophies (earned and rarity < 2%)
-  Future<List<Map<String, dynamic>>> getUltraRareTrophies(String userId, {int limit = 5}) async {
+  Future<List<Map<String, dynamic>>> getUltraRareTrophies(
+    String userId, {
+    int limit = 5,
+  }) async {
     try {
       final unlocks = await _client
           .from('user_trophies')
@@ -167,7 +174,10 @@ class TrophyRoomRepository {
   }
 
   /// Get recent trophies (last N earned across all games)
-  Future<List<Map<String, dynamic>>> getRecentTrophies(String userId, {int limit = 10}) async {
+  Future<List<Map<String, dynamic>>> getRecentTrophies(
+    String userId, {
+    int limit = 10,
+  }) async {
     try {
       final unlocks = await _client
           .from('user_trophies')

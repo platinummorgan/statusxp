@@ -6,10 +6,10 @@ import 'package:flutter/foundation.dart';
 class TrophyRoomData extends Equatable {
   /// All earned platinum trophies with game details
   final List<PlatinumTrophy> platinums;
-  
+
   /// Ultra-rare trophies (< 2% rarity)
   final List<UltraRareTrophy> ultraRareTrophies;
-  
+
   /// Recent trophy unlocks
   final List<RecentTrophy> recentTrophies;
 
@@ -22,9 +22,9 @@ class TrophyRoomData extends Equatable {
   /// Get the rarest platinum trophy (lowest rarity percentage)
   PlatinumTrophy? get rarestPlatinum {
     if (platinums.isEmpty) return null;
-    
-    return platinums.reduce((curr, next) => 
-      curr.rarity < next.rarity ? curr : next
+
+    return platinums.reduce(
+      (curr, next) => curr.rarity < next.rarity ? curr : next,
     );
   }
 
@@ -34,9 +34,9 @@ class TrophyRoomData extends Equatable {
   /// Get the newest platinum trophy (most recent)
   PlatinumTrophy? get newestPlatinum {
     if (platinums.isEmpty) return null;
-    
-    return platinums.reduce((curr, next) => 
-      curr.earnedAt.isAfter(next.earnedAt) ? curr : next
+
+    return platinums.reduce(
+      (curr, next) => curr.earnedAt.isAfter(next.earnedAt) ? curr : next,
     );
   }
 
@@ -78,7 +78,15 @@ class PlatinumTrophy extends Equatable {
   }
 
   @override
-  List<Object?> get props => [trophyId, trophyName, gameName, coverUrl, rarity, earnedAt, iconUrl];
+  List<Object?> get props => [
+    trophyId,
+    trophyName,
+    gameName,
+    coverUrl,
+    rarity,
+    earnedAt,
+    iconUrl,
+  ];
 }
 
 /// Ultra-rare trophy (< 2% rarity)
@@ -115,7 +123,15 @@ class UltraRareTrophy extends Equatable {
   }
 
   @override
-  List<Object?> get props => [trophyId, trophyName, gameName, tier, rarity, earnedAt, iconUrl];
+  List<Object?> get props => [
+    trophyId,
+    trophyName,
+    gameName,
+    tier,
+    rarity,
+    earnedAt,
+    iconUrl,
+  ];
 }
 
 /// Recent trophy unlock
@@ -149,5 +165,12 @@ class RecentTrophy extends Equatable {
   }
 
   @override
-  List<Object?> get props => [trophyId, trophyName, gameName, tier, earnedAt, iconUrl];
+  List<Object?> get props => [
+    trophyId,
+    trophyName,
+    gameName,
+    tier,
+    earnedAt,
+    iconUrl,
+  ];
 }

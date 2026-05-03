@@ -22,6 +22,9 @@ import 'package:statusxp/domain/trophy_room_data.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/domain/user_stats.dart';
 import 'package:statusxp/domain/user_stats_calculator.dart';
+import 'package:statusxp/utils/supabase_guard.dart';
+
+import 'package:statusxp/utils/statusxp_logger.dart';
 
 /// Provider for the Supabase client instance.
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -77,7 +80,9 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
         error.toString().contains('AuthRetryableFetchException') ||
         error.toString().contains('No address associated with hostname')) {
       // Don't propagate network errors - just log them
-      print('Network error during auth state change (will auto-retry): $error');
+      statusxpLog(
+        'Network error during auth state change (will auto-retry): $error',
+      );
       return;
     }
     // Re-throw other errors (like actual auth failures)
@@ -180,6 +185,10 @@ final unifiedGamesRepositoryProvider = Provider<UnifiedGamesRepository>((ref) {
 /// This provider loads games asynchronously from Supabase.
 /// Returns empty list if no user is authenticated.
 final gamesProvider = FutureProvider<List<Game>>((ref) async {
+  if (!isSupabaseInitialized()) {
+    return [];
+  }
+
   final repository = ref.watch(gameRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
 
@@ -194,6 +203,10 @@ final gamesProvider = FutureProvider<List<Game>>((ref) async {
 ///
 /// Groups games by title across all platforms (PSN/Xbox/Steam).
 final unifiedGamesProvider = FutureProvider<List<UnifiedGame>>((ref) async {
+  if (!isSupabaseInitialized()) {
+    return [];
+  }
+
   final repository = ref.watch(unifiedGamesRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
 
@@ -219,6 +232,10 @@ final publicUnifiedGamesProvider =
 /// This provider loads user stats asynchronously from Supabase.
 /// Throws if no user is authenticated (should not happen in normal flow).
 final userStatsProvider = FutureProvider<UserStats>((ref) async {
+  if (!isSupabaseInitialized()) {
+    throw Exception('Cannot load stats: Supabase is not initialized');
+  }
+
   final repository = ref.watch(userStatsRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
 
@@ -234,6 +251,10 @@ final userStatsProvider = FutureProvider<UserStats>((ref) async {
 /// This provider loads cross-platform dashboard stats including StatusXP score.
 /// Returns empty stats if no user is authenticated.
 final dashboardStatsProvider = FutureProvider<DashboardStats?>((ref) async {
+  if (!isSupabaseInitialized()) {
+    return null;
+  }
+
   final repository = ref.watch(dashboardRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
 
@@ -244,10 +265,12 @@ final dashboardStatsProvider = FutureProvider<DashboardStats?>((ref) async {
   try {
     return await repository.getDashboardStats(userId);
   } catch (e) {
-    // Silently return null on network errors to prevent error dialogs
+    // Silently return null on network/timeout errors to prevent hard error screens.
     if (e.toString().contains('SocketException') ||
         e.toString().contains('Failed host lookup') ||
-        e.toString().contains('AuthRetryableFetchException')) {
+        e.toString().contains('AuthRetryableFetchException') ||
+        e.toString().contains('statement timeout') ||
+        e.toString().contains('57014')) {
       return null;
     }
     rethrow;

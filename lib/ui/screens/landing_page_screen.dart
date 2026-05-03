@@ -5,7 +5,7 @@ import 'package:statusxp/theme/colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Public landing page for statusxp.com
-/// 
+///
 /// Features:
 /// - Hero section with branding
 /// - Feature showcase
@@ -18,18 +18,14 @@ class LandingPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWideScreen = MediaQuery.of(context).size.width > 900;
-    
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0A0E27),
-              backgroundDark,
-              Color(0xFF1a1f3a),
-            ],
+            colors: [Color(0xFF0A0E27), backgroundDark, Color(0xFF1a1f3a)],
           ),
         ),
         child: SingleChildScrollView(
@@ -37,27 +33,27 @@ class LandingPageScreen extends StatelessWidget {
             children: [
               // Header/Nav
               _buildHeader(context),
-              
+
               // Hero Section
               _buildHeroSection(context, isWideScreen),
-              
+
               const SizedBox(height: 80),
-              
+
               // Features Section
               _buildFeaturesSection(context, isWideScreen),
-              
+
               const SizedBox(height: 80),
-              
+
               // Platform Section
               _buildPlatformSection(context, isWideScreen),
-              
+
               const SizedBox(height: 80),
-              
+
               // CTA Section
               _buildCTASection(context, isWideScreen),
-              
+
               const SizedBox(height: 60),
-              
+
               // Footer
               _buildFooter(context),
             ],
@@ -81,8 +77,8 @@ class LandingPageScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      accentPrimary.withOpacity(0.2),
-                      accentSecondary.withOpacity(0.2),
+                      accentPrimary.withValues(alpha: 0.2),
+                      accentSecondary.withValues(alpha: 0.2),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -105,7 +101,7 @@ class LandingPageScreen extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // Sign In Button
           TextButton(
             onPressed: () => context.go('/'),
@@ -115,10 +111,7 @@ class LandingPageScreen extends StatelessWidget {
             ),
             child: const Text(
               'Launch App',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -146,9 +139,9 @@ class LandingPageScreen extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Subheadline
           Text(
             'Track achievements across PlayStation, Xbox, and Steam.\nShowcase your gaming journey in one unified profile.',
@@ -159,9 +152,9 @@ class LandingPageScreen extends StatelessWidget {
               height: 1.6,
             ),
           ),
-          
+
           const SizedBox(height: 48),
-          
+
           // CTA Buttons
           Wrap(
             alignment: WrapAlignment.center,
@@ -190,7 +183,7 @@ class LandingPageScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               OutlinedButton.icon(
                 onPressed: () => _scrollToDownloads(),
                 style: OutlinedButton.styleFrom(
@@ -215,9 +208,9 @@ class LandingPageScreen extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 60),
-          
+
           // Platform Badges
           Wrap(
             alignment: WrapAlignment.center,
@@ -238,10 +231,10 @@ class LandingPageScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: surfaceLight.withOpacity(0.5),
+        color: surfaceLight.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(50),
         border: Border.all(
-          color: accentPrimary.withOpacity(0.3),
+          color: accentPrimary.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -265,9 +258,7 @@ class LandingPageScreen extends StatelessWidget {
 
   Widget _buildFeaturesSection(BuildContext context, bool isWideScreen) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isWideScreen ? 80 : 24,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isWideScreen ? 80 : 24),
       child: Column(
         children: [
           Text(
@@ -278,9 +269,9 @@ class LandingPageScreen extends StatelessWidget {
               color: textPrimary,
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           Text(
             'A complete achievement tracking platform',
             style: TextStyle(
@@ -288,13 +279,12 @@ class LandingPageScreen extends StatelessWidget {
               color: textSecondary,
             ),
           ),
-          
+
           const SizedBox(height: 60),
-          
+
           // Features Grid
           LayoutBuilder(
             builder: (context, constraints) {
-              final crossAxisCount = isWideScreen ? 3 : 1;
               return Wrap(
                 spacing: 24,
                 runSpacing: 24,
@@ -369,12 +359,9 @@ class LandingPageScreen extends StatelessWidget {
       width: width,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: surfaceLight.withOpacity(0.3),
+        color: surfaceLight.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: accentColor.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,21 +371,17 @@ class LandingPageScreen extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  accentColor.withOpacity(0.2),
-                  accentColor.withOpacity(0.05),
+                  accentColor.withValues(alpha: 0.2),
+                  accentColor.withValues(alpha: 0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: accentColor,
-              size: 32,
-            ),
+            child: Icon(icon, color: accentColor, size: 32),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           Text(
             title,
             style: const TextStyle(
@@ -407,9 +390,9 @@ class LandingPageScreen extends StatelessWidget {
               color: textPrimary,
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           Text(
             description,
             style: const TextStyle(
@@ -425,9 +408,7 @@ class LandingPageScreen extends StatelessWidget {
 
   Widget _buildPlatformSection(BuildContext context, bool isWideScreen) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: isWideScreen ? 80 : 24,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isWideScreen ? 80 : 24),
       child: Column(
         children: [
           Text(
@@ -439,9 +420,9 @@ class LandingPageScreen extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          
+
           const SizedBox(height: 60),
-          
+
           // Platform Cards
           Wrap(
             spacing: 24,
@@ -490,16 +471,10 @@ class LandingPageScreen extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.2),
-            color.withOpacity(0.05),
-          ],
+          colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: color.withOpacity(0.4),
-          width: 2,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 2),
       ),
       child: Column(
         children: [
@@ -530,20 +505,18 @@ class LandingPageScreen extends StatelessWidget {
 
   Widget _buildCTASection(BuildContext context, bool isWideScreen) {
     return Container(
-      margin: EdgeInsets.symmetric(
-        horizontal: isWideScreen ? 80 : 24,
-      ),
+      margin: EdgeInsets.symmetric(horizontal: isWideScreen ? 80 : 24),
       padding: EdgeInsets.all(isWideScreen ? 60 : 40),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            accentPrimary.withOpacity(0.2),
-            accentSecondary.withOpacity(0.2),
+            accentPrimary.withValues(alpha: 0.2),
+            accentSecondary.withValues(alpha: 0.2),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: accentPrimary.withOpacity(0.3),
+          color: accentPrimary.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -558,9 +531,9 @@ class LandingPageScreen extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           Text(
             'Join gamers worldwide tracking their achievements',
             style: TextStyle(
@@ -569,9 +542,9 @@ class LandingPageScreen extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          
+
           const SizedBox(height: 40),
-          
+
           // Download Buttons
           Wrap(
             alignment: WrapAlignment.center,
@@ -592,19 +565,19 @@ class LandingPageScreen extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           Text(
             'Or use the web version',
             style: TextStyle(
               fontSize: 14,
-              color: textSecondary.withOpacity(0.7),
+              color: textSecondary.withValues(alpha: 0.7),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           TextButton(
             onPressed: () => context.go('/'),
             style: TextButton.styleFrom(
@@ -616,10 +589,7 @@ class LandingPageScreen extends StatelessWidget {
               children: [
                 Text(
                   'Launch Web App',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(width: 8),
                 Icon(Icons.arrow_forward, size: 20),
@@ -647,7 +617,7 @@ class LandingPageScreen extends StatelessWidget {
           color: surfaceLight,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: textPrimary.withOpacity(0.2),
+            color: textPrimary.withValues(alpha: 0.2),
             width: 1,
           ),
         ),
@@ -678,7 +648,7 @@ class LandingPageScreen extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: textSecondary.withOpacity(0.1),
+            color: textSecondary.withValues(alpha: 0.1),
             width: 1,
           ),
         ),
@@ -708,14 +678,14 @@ class LandingPageScreen extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           Text(
             '© ${DateTime.now().year} StatusXP. All rights reserved.',
             style: TextStyle(
               fontSize: 12,
-              color: textSecondary.withOpacity(0.6),
+              color: textSecondary.withValues(alpha: 0.6),
             ),
           ),
         ],

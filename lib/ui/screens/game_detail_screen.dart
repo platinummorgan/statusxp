@@ -6,7 +6,7 @@ import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
 
 /// Game Detail Screen - Edit existing game data
-/// 
+///
 /// Allows editing of game properties and saves changes to local JSON.
 /// After saving, triggers refresh of all provider data.
 class GameDetailScreen extends ConsumerStatefulWidget {
@@ -85,7 +85,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
       );
 
       final service = ref.read(gameEditServiceProvider);
-      
+
       if (service == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -93,7 +93,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
         );
         return;
       }
-      
+
       await service.updateGame(updatedGame);
 
       // Refresh all data
@@ -173,10 +173,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
                 ),
               ),
               items: _platformOptions.map((platform) {
-                return DropdownMenuItem(
-                  value: platform,
-                  child: Text(platform),
-                );
+                return DropdownMenuItem(value: platform, child: Text(platform));
               }).toList(),
               onChanged: (value) {
                 if (value != null) {
@@ -282,7 +279,9 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
               ],

@@ -8,10 +8,7 @@ import 'package:statusxp/theme/cyberpunk_theme.dart';
 class OfferHelpDialog extends ConsumerStatefulWidget {
   final TrophyHelpRequest request;
 
-  const OfferHelpDialog({
-    super.key,
-    required this.request,
-  });
+  const OfferHelpDialog({super.key, required this.request});
 
   @override
   ConsumerState<OfferHelpDialog> createState() => _OfferHelpDialogState();
@@ -32,7 +29,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
 
     try {
       final service = TrophyHelpService(ref.read(supabaseClientProvider));
-      
+
       await service.offerHelp(
         requestId: widget.request.id,
         message: _messageController.text.trim().isEmpty
@@ -68,7 +65,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     // Platform-specific styling
     Color platformColor;
     IconData platformIcon;
@@ -89,14 +86,12 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
         platformColor = Colors.grey;
         platformIcon = Icons.gamepad;
     }
-    
+
     return Dialog(
       backgroundColor: const Color(0xFF0f1729),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: CyberpunkTheme.neonCyan.withOpacity(0.3),
-        ),
+        side: BorderSide(color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3)),
       ),
       child: SingleChildScrollView(
         child: Padding(
@@ -126,7 +121,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                   IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                   ),
                 ],
               ),
@@ -140,7 +135,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                   color: CyberpunkTheme.glassLight,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Column(
@@ -148,9 +143,12 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                   children: [
                     // Platform badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: platformColor.withOpacity(0.2),
+                        color: platformColor.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: platformColor),
                       ),
@@ -176,7 +174,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                     Text(
                       'Game',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -195,7 +193,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                     Text(
                       'Achievement',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
+                        color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 12,
                       ),
                     ),
@@ -214,7 +212,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                       Text(
                         'Details',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -222,7 +220,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                       Text(
                         widget.request.description!,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 13,
                         ),
                       ),
@@ -234,7 +232,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                       Text(
                         'Availability',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 12,
                         ),
                       ),
@@ -251,7 +249,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                             child: Text(
                               widget.request.availability!,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 13,
                               ),
                             ),
@@ -279,22 +277,23 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                 maxLength: 500,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: 'Introduce yourself and let them know you can help...',
+                  hintText:
+                      'Introduce yourself and let them know you can help...',
                   hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.white.withValues(alpha: 0.3),
                   ),
                   filled: true,
                   fillColor: CyberpunkTheme.glassLight,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                      color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: CyberpunkTheme.neonCyan.withOpacity(0.2),
+                      color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -312,10 +311,10 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: CyberpunkTheme.neonCyan.withOpacity(0.1),
+                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: CyberpunkTheme.neonCyan.withOpacity(0.3),
+                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -330,7 +329,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                       child: Text(
                         'The requester will see your offer and can accept to connect with you.',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 12,
                         ),
                       ),
@@ -352,7 +351,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: BorderSide(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),

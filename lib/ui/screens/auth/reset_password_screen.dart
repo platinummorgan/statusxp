@@ -9,25 +9,26 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   bool _isLoading = false;
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
-  
+
   @override
   void dispose() {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
-  
+
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password is required';
@@ -37,28 +38,28 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     }
     return null;
   }
-  
+
   String? _validateConfirmPassword(String? value) {
     if (value != _passwordController.text) {
       return 'Passwords do not match';
     }
     return null;
   }
-  
+
   Future<void> _resetPassword() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final authService = ref.read(authServiceProvider);
       await authService.updatePassword(newPassword: _passwordController.text);
-      
+
       // Sign out immediately
       await authService.signOut();
-      
+
       if (mounted) {
         // Show success and navigate
         ScaffoldMessenger.of(context).showSnackBar(
@@ -68,17 +69,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             duration: Duration(seconds: 3),
           ),
         );
-        
+
         // Navigate to root (sign in screen) using GoRouter
         context.go('/');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -87,7 +85,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,13 +106,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Icon
-                  const Icon(
-                    Icons.lock_reset,
-                    size: 80,
-                    color: accentPrimary,
-                  ),
+                  const Icon(Icons.lock_reset, size: 80, color: accentPrimary),
                   const SizedBox(height: 24),
-                  
+
                   // Title
                   const Text(
                     'Create New Password',
@@ -126,18 +120,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Subtitle
                   const Text(
                     'Enter your new password below',
-                    style: TextStyle(
-                      color: textSecondary,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(color: textSecondary, fontSize: 16),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 40),
-                  
+
                   // New Password Field
                   TextFormField(
                     controller: _passwordController,
@@ -151,7 +142,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       prefixIcon: const Icon(Icons.lock, color: accentPrimary),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _passwordVisible ? Icons.visibility_off : Icons.visibility,
+                          _passwordVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: textSecondary,
                         ),
                         onPressed: () {
@@ -168,18 +161,24 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: accentPrimary, width: 2),
+                        borderSide: const BorderSide(
+                          color: accentPrimary,
+                          width: 2,
+                        ),
                       ),
                       errorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
                       ),
                     ),
                     validator: _validatePassword,
                     enabled: !_isLoading,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Confirm Password Field
                   TextFormField(
                     controller: _confirmPasswordController,
@@ -190,10 +189,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       labelStyle: const TextStyle(color: textSecondary),
                       hintText: 'Re-enter new password',
                       hintStyle: const TextStyle(color: textSecondary),
-                      prefixIcon: const Icon(Icons.lock_outline, color: accentPrimary),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: accentPrimary,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _confirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                          _confirmPasswordVisible
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                           color: textSecondary,
                         ),
                         onPressed: () {
@@ -210,18 +214,24 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: accentPrimary, width: 2),
+                        borderSide: const BorderSide(
+                          color: accentPrimary,
+                          width: 2,
+                        ),
                       ),
                       errorBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.red, width: 2),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
                       ),
                     ),
                     validator: _validateConfirmPassword,
                     enabled: !_isLoading,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Reset Password Button
                   ElevatedButton(
                     onPressed: _isLoading ? null : _resetPassword,

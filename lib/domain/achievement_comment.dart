@@ -8,7 +8,7 @@ class AchievementComment {
   final bool isHidden;
   final bool isFlagged;
   final int flagCount;
-  
+
   // Joined from profiles table
   final String? username;
   final String? displayName;

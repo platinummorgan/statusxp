@@ -2,12 +2,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/data/repositories/leaderboard_repository.dart' as lb;
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
+import 'package:statusxp/services/sync_reconcile_service.dart';
+import 'package:statusxp/services/analytics_service.dart';
+import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
 import 'package:statusxp/services/sync_limit_service.dart';
+
+import 'package:statusxp/utils/statusxp_logger.dart';
+import 'package:statusxp/utils/sync_issue_classifier.dart';
 
 /// Screen for syncing Xbox achievements
 class XboxSyncScreen extends ConsumerStatefulWidget {
@@ -24,6 +31,10 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
   SyncLimitStatus? _rateLimitStatus;
   Timer? _countdownTimer;
   DateTime? _nextLiveDataRefreshAt;
+  DateTime? _syncStartedAt;
+  DateTime? _lastSyncAtBeforeSync;
+  bool _suspectNoFreshWrite = false;
+  String? _diagnosticWarningMessage;
   static const Duration _liveDataRefreshInterval = Duration(seconds: 8);
 
   @override
@@ -57,6 +68,11 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     // Check rate limit first
     final limitStatus = await _syncLimitService.canUserSync('xbox');
     if (!limitStatus.canSync) {
+      _logSyncIssue(
+        category: 'rate_limited',
+        status: 'error',
+        requiresRelink: false,
+      );
       setState(() {
         _errorMessage = limitStatus.reason;
       });
@@ -65,6 +81,13 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     setState(() {
       _isSyncing = true;
       _errorMessage = null;
+      _suspectNoFreshWrite = false;
+      _diagnosticWarningMessage = null;
+      _syncStartedAt = DateTime.now();
+      _lastSyncAtBeforeSync = ref
+          .read(xboxSyncStatusProvider)
+          .valueOrNull
+          ?.lastSyncAt;
     });
 
     try {
@@ -84,6 +107,11 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     } on XboxRateLimitException catch (e) {
       // Record failed sync
       await _syncLimitService.recordSync('xbox', success: false);
+      _logSyncIssue(
+        category: 'rate_limited',
+        status: 'error',
+        requiresRelink: false,
+      );
 
       if (mounted) {
         setState(() {
@@ -94,6 +122,11 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     } catch (e) {
       // Record failed sync
       await _syncLimitService.recordSync('xbox', success: false);
+      _logSyncIssue(
+        category: 'start_failed',
+        status: 'error',
+        requiresRelink: false,
+      );
 
       if (mounted) {
         setState(() {
@@ -127,11 +160,11 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
 
           // If status is pending, automatically continue sync
           if (status.status == 'pending') {
-            print('Status is PENDING - calling startSync()');
+            statusxpLog('Status is PENDING - calling startSync()');
             try {
               final xboxService = ref.read(xboxServiceProvider);
               await xboxService.startSync();
-              print('startSync() completed successfully');
+              statusxpLog('startSync() completed successfully');
             } catch (e) {
               // Don't stop polling - keep trying
             }
@@ -163,9 +196,29 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
             await autoSyncService.updateXboxSyncTime();
 
             if (mounted) {
+              final suspectNoFreshWrite = SyncIssueClassifier.hasNoFreshWrite(
+                syncStartedAt: _syncStartedAt,
+                previousLastSyncAt: _lastSyncAtBeforeSync,
+                currentLastSyncAt: status.lastSyncAt,
+              );
+              if (suspectNoFreshWrite) {
+                _logSyncIssue(
+                  category: 'success_no_fresh_write',
+                  status: status.status,
+                  requiresRelink: false,
+                );
+              }
               setState(() {
                 _isSyncing = false;
+                _suspectNoFreshWrite = suspectNoFreshWrite;
+                _diagnosticWarningMessage = suspectNoFreshWrite
+                    ? SyncIssueClassifier.noFreshWriteWarning('Xbox')
+                    : null;
               });
+
+              await SyncReconcileService(
+                ref.read(supabaseClientProvider),
+              ).reconcileCurrentUser(trigger: 'xbox_sync_success_immediate');
 
               // Force refresh sync status to get updated last_sync_at timestamp
               ref.invalidate(xboxSyncStatusProvider);
@@ -202,12 +255,26 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                     ),
                   );
                 }
-              } catch (e) {}
+              } catch (e) {
+                statusxpLog(
+                  'Failed checking post-sync achievements (Xbox): $e',
+                );
+              }
             }
             return;
           }
 
           if (status.status == 'error') {
+            final issue = SyncIssueClassifier.analyze(
+              platformName: 'Xbox',
+              syncStatus: status.status,
+              errorMessage: status.error,
+            );
+            _logSyncIssue(
+              category: issue.category,
+              status: status.status,
+              requiresRelink: issue.requiresRelink,
+            );
             if (mounted) {
               setState(() {
                 _isSyncing = false;
@@ -272,14 +339,22 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
 
   void _schedulePostSyncReconciles() {
     // Some writes settle a few seconds after sync success; reconcile twice.
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () async {
+      if (!mounted) return;
+      await SyncReconcileService(
+        ref.read(supabaseClientProvider),
+      ).reconcileCurrentUser(trigger: 'xbox_sync_t+3s');
       if (!mounted) return;
       ref.refreshCoreData();
       ref.invalidate(lb.leaderboardProvider);
       ref.invalidate(leaderboardRanksProvider);
     });
 
-    Future.delayed(const Duration(seconds: 12), () {
+    Future.delayed(const Duration(seconds: 12), () async {
+      if (!mounted) return;
+      await SyncReconcileService(
+        ref.read(supabaseClientProvider),
+      ).reconcileCurrentUser(trigger: 'xbox_sync_t+12s');
       if (!mounted) return;
       ref.refreshCoreData();
       ref.invalidate(lb.leaderboardProvider);
@@ -289,13 +364,60 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     });
   }
 
-  bool _shouldShowRelinkHint(String? message) {
-    if (message == null) return false;
-    final lower = message.toLowerCase();
-    return lower.contains('relink') ||
-        lower.contains('invalid_client') ||
-        lower.contains('refresh') ||
-        lower.contains('expired');
+  Future<void> _reconnectNow() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reconnect Xbox?'),
+        content: const Text(
+          'This will disconnect your current Xbox link and start relinking now.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Reconnect'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final userId = ref.read(currentUserIdProvider);
+      if (userId == null) throw Exception('Not authenticated');
+
+      final supabase = Supabase.instance.client;
+      await supabase
+          .from('profiles')
+          .update({
+            'xbox_xuid': null,
+            'xbox_gamertag': null,
+            'xbox_access_token': null,
+            'xbox_refresh_token': null,
+            'xbox_token_expires_at': null,
+            'xbox_sync_status': 'never_synced',
+            'xbox_sync_error': null,
+          })
+          .eq('id', userId);
+
+      if (!mounted) return;
+      final relinked = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (context) => const XboxConnectScreen()),
+      );
+      if (relinked == true && mounted) {
+        ref.invalidate(xboxSyncStatusProvider);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Reconnect failed: $e')));
+    }
   }
 
   @override
@@ -355,8 +477,14 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
             }
           }
 
-          final effectiveError = _errorMessage ?? status.error;
-          final showRelinkHint = _shouldShowRelinkHint(effectiveError);
+          final syncIssue = SyncIssueClassifier.analyze(
+            platformName: 'Xbox',
+            syncStatus: status.status,
+            errorMessage: _errorMessage ?? status.error,
+          );
+          final effectiveError = syncIssue.effectiveErrorMessage;
+          final effectiveWarning =
+              _diagnosticWarningMessage ?? syncIssue.warningMessage;
 
           return Column(
             children: [
@@ -366,7 +494,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                   padding: const EdgeInsets.all(16),
                   margin: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.2),
+                    color: Colors.orange.withValues(alpha: 0.2),
                     border: Border.all(color: Colors.orange),
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -383,36 +511,6 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                     ],
                   ),
                 ),
-              if (showRelinkHint)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.15),
-                    border: Border.all(color: Colors.orange.withOpacity(0.4)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.orange,
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Xbox link expired. Go to Settings → Xbox → Disconnect, then reconnect.',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => context.go('/settings'),
-                        child: const Text('Open Settings'),
-                      ),
-                    ],
-                  ),
-                ),
               Expanded(
                 child: PlatformSyncWidget(
                   platformName: 'Xbox',
@@ -422,10 +520,25 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                     size: 64,
                     color: Colors.white,
                   ),
-                  syncStatus: status.status,
+                  syncStatus: syncIssue.effectiveStatus,
                   syncProgress: status.progress,
                   lastSyncAt: status.lastSyncAt,
                   errorMessage: effectiveError,
+                  warningMessage: effectiveWarning,
+                  warningActionLabel: effectiveWarning == null
+                      ? null
+                      : 'Reconnect Now',
+                  onWarningActionPressed: effectiveWarning == null
+                      ? null
+                      : _reconnectNow,
+                  diagnostics: {
+                    'Raw status': status.status,
+                    'Issue category': _suspectNoFreshWrite
+                        ? 'success_no_fresh_write'
+                        : syncIssue.category,
+                    'Relink required': syncIssue.requiresRelink ? 'Yes' : 'No',
+                    'Progress': '${status.progress}%',
+                  },
                   isSyncing: isSyncing,
                   onSyncPressed: _startSync,
                   onStopPressed: _stopSync,
@@ -450,6 +563,21 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _logSyncIssue({
+    required String category,
+    required String status,
+    required bool requiresRelink,
+  }) {
+    unawaited(
+      AnalyticsService().logSyncIssue(
+        platform: 'xbox',
+        category: category,
+        status: status,
+        requiresRelink: requiresRelink,
       ),
     );
   }

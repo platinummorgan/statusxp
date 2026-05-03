@@ -84,7 +84,7 @@ class DailyTrendChart extends StatelessWidget {
       return Container(
         height: 4,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
+          color: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(2),
         ),
       );
@@ -103,7 +103,7 @@ class DailyTrendChart extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
-              color: Colors.white.withOpacity(0.08),
+              color: Colors.white.withValues(alpha: 0.08),
               width: 0.5,
             ),
           ),
@@ -114,7 +114,7 @@ class DailyTrendChart extends StatelessWidget {
                   flex: point.steamCount,
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(3),
                       ),
