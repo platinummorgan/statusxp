@@ -1058,7 +1058,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     if (preSnapshot) {
       console.log('📊 Detecting changes and generating activity feed stories...');
       try {
-        await detectChangesAndGenerateStories(userId, preSnapshot);
+        await detectChangesAndGenerateStories(userId, preSnapshot, { syncSource: 'steam' });
         console.log('✅ Activity feed stories generated');
       } catch (feedError) {
         console.error('⚠️ Activity feed generation failed (non-fatal):', feedError);

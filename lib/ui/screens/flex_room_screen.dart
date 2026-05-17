@@ -954,9 +954,11 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
 
-              // TODO: Re-enable when SQL functions are executed
-              // final suggestions =
-              //     await repository.getSmartSuggestions(userId, categoryId);
+              final repository = ref.read(flexRoomRepositoryProvider);
+              final suggestions = await repository.getSmartSuggestions(
+                userId,
+                categoryId,
+              );
 
               if (!mounted) return;
 
@@ -969,7 +971,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                   userId: userId,
                   categoryId: categoryId,
                   categoryLabel: label,
-                  suggestions: const [], // Disabled for performance
+                  suggestions: suggestions,
                 ),
               );
 
@@ -1199,9 +1201,11 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
               final userId = ref.read(currentUserIdProvider);
               if (userId == null) return;
 
-              // TODO: Re-enable when SQL functions are executed
-              // final suggestions =
-              //     await repository.getSmartSuggestions(userId, categoryId);
+              final repository = ref.read(flexRoomRepositoryProvider);
+              final suggestions = await repository.getSmartSuggestions(
+                userId,
+                categoryId,
+              );
 
               if (!mounted) return;
 
@@ -1214,7 +1218,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
                   userId: userId,
                   categoryId: categoryId,
                   categoryLabel: label,
-                  suggestions: const [], // Disabled for performance
+                  suggestions: suggestions,
                 ),
               );
 

@@ -11,6 +11,10 @@ class FlexRoomRepository {
 
   FlexRoomRepository(this._client);
 
+  static const List<int> _psnPlatformIds = [1, 2, 5, 9];
+  static const List<int> _xboxPlatformIds = [10, 11, 12];
+  static const List<int> _steamPlatformIds = [4];
+
   /// Calculate rarity band from rarity percentage
   String _getRarityBand(double? rarityPercent) {
     if (rarityPercent == null) return 'COMMON';
@@ -38,6 +42,14 @@ class FlexRoomRepository {
     } else {
       return 10; // COMMON: 10 XP
     }
+  }
+
+  FlexTile? _chooseFlexOfAllTime({
+    required FlexTile? rarestFlex,
+    required FlexTile? mostTimeSunk,
+    required FlexTile? sweattiestPlatinum,
+  }) {
+    return rarestFlex ?? mostTimeSunk ?? sweattiestPlatinum;
   }
 
   /// Helper to convert RPC response to FlexTile with game data already included
@@ -180,7 +192,7 @@ class FlexRoomRepository {
           .maybeSingle();
 
       if (response == null) {
-        // No flex room data exists yet, return default empty state
+        // No flex room data exists yet; auto-populate a useful starting layout.
         // Load all tiles in parallel for speed
         final results = await Future.wait([
           _getRarestAchievement(userId),
@@ -189,17 +201,40 @@ class FlexRoomRepository {
           _getRecentNotableAchievements(userId),
         ]);
 
-        return FlexRoomData(
+        final rarestFlex = results[0] as FlexTile?;
+        final mostTimeSunk = results[1] as FlexTile?;
+        final sweattiestPlatinum = results[2] as FlexTile?;
+        final recentFlexes = (results[3] as List?)?.cast<RecentFlex>() ?? [];
+
+        final superlatives = await autofillSuperlatives(userId);
+        final flexOfAllTime = _chooseFlexOfAllTime(
+          rarestFlex: rarestFlex,
+          mostTimeSunk: mostTimeSunk,
+          sweattiestPlatinum: sweattiestPlatinum,
+        );
+
+        final autoData = FlexRoomData(
           userId: userId,
           tagline: 'Completionist', // Default tagline
           lastUpdated: DateTime.now(),
-          flexOfAllTime: null,
-          rarestFlex: results[0] as FlexTile?,
-          mostTimeSunk: results[1] as FlexTile?,
-          sweattiestPlatinum: results[2] as FlexTile?,
-          superlatives: {},
-          recentFlexes: (results[3] as List?)?.cast<RecentFlex>() ?? [],
+          flexOfAllTime: flexOfAllTime,
+          rarestFlex: rarestFlex,
+          mostTimeSunk: mostTimeSunk,
+          sweattiestPlatinum: sweattiestPlatinum,
+          superlatives: superlatives,
+          recentFlexes: recentFlexes,
         );
+
+        final currentUserId = _client.auth.currentUser?.id;
+        if (currentUserId == userId) {
+          // Persist auto-populated defaults for owner only (respects RLS).
+          updateFlexRoomData(autoData).catchError((e) {
+            statusxpLog('⚠️ Failed to persist auto-created flex room data: $e');
+            return false;
+          });
+        }
+
+        return autoData;
       }
 
       // If flex room data exists, load the configured tiles
@@ -286,10 +321,16 @@ class FlexRoomRepository {
       final results = await Future.wait(featuredQueries);
 
       // Extract results
-      final flexOfAllTime = results[0] as FlexTile?;
+      final configuredFlexOfAllTime = results[0] as FlexTile?;
       final rarestFlex = results[1] as FlexTile?;
       final mostTimeSunk = results[2] as FlexTile?;
       final sweattiestPlatinum = results[3] as FlexTile?;
+      final autoFlexOfAllTime = _chooseFlexOfAllTime(
+        rarestFlex: rarestFlex,
+        mostTimeSunk: mostTimeSunk,
+        sweattiestPlatinum: sweattiestPlatinum,
+      );
+      final flexOfAllTime = configuredFlexOfAllTime ?? autoFlexOfAllTime;
 
       // Build superlatives map from remaining results
       var superlatives = <String, FlexTile>{};
@@ -313,10 +354,10 @@ class FlexRoomRepository {
             userId: userId,
             tagline: data['tagline'] ?? 'Completionist',
             lastUpdated: DateTime.now(),
-            flexOfAllTime: results[0] as FlexTile?,
-            rarestFlex: results[1] as FlexTile?,
-            mostTimeSunk: results[2] as FlexTile?,
-            sweattiestPlatinum: results[3] as FlexTile?,
+            flexOfAllTime: flexOfAllTime,
+            rarestFlex: rarestFlex,
+            mostTimeSunk: mostTimeSunk,
+            sweattiestPlatinum: sweattiestPlatinum,
             superlatives: superlatives,
             recentFlexes: const [],
           );
@@ -504,6 +545,65 @@ class FlexRoomRepository {
       // RPC returns complete data with JOINs - use it directly
       return _buildFlexTile(response);
     } catch (e) {
+      statusxpLog(
+        '⚠️ get_sweatiest_platinum_v2 failed, using fallback query: $e',
+      );
+      return await _getSweattiestPlatinumFallback(userId);
+    }
+  }
+
+  Future<FlexTile?> _getSweattiestPlatinumFallback(String userId) async {
+    try {
+      final response = await _client
+          .from('user_achievements')
+          .select('''
+            user_id,
+            platform_id,
+            platform_game_id,
+            platform_achievement_id,
+            earned_at,
+            achievements!inner(
+              rarity_global,
+              metadata
+            )
+          ''')
+          .eq('user_id', userId)
+          .inFilter('platform_id', _psnPlatformIds)
+          .limit(1000);
+
+      if (response.isEmpty) return null;
+
+      Map<String, dynamic>? bestRow;
+      double? bestRarity;
+
+      for (final raw in response) {
+        final row = Map<String, dynamic>.from(raw as Map);
+        final achievement = row['achievements'];
+        final achievementMap = achievement is List && achievement.isNotEmpty
+            ? Map<String, dynamic>.from(achievement.first as Map)
+            : (achievement is Map
+                  ? Map<String, dynamic>.from(achievement)
+                  : null);
+        if (achievementMap == null) continue;
+
+        final trophyType = achievementMap['metadata'] is Map
+            ? (achievementMap['metadata'] as Map)['psn_trophy_type']?.toString()
+            : null;
+        if (trophyType?.toLowerCase() != 'platinum') continue;
+
+        final rarity = (achievementMap['rarity_global'] as num?)?.toDouble();
+        if (rarity == null) continue;
+
+        if (bestRow == null || rarity < (bestRarity ?? 1000)) {
+          bestRow = row;
+          bestRarity = rarity;
+        }
+      }
+
+      if (bestRow == null) return null;
+      return _buildFlexTileFromUserAchievement(bestRow);
+    } catch (e) {
+      statusxpLog('⚠️ Sweatiest fallback query failed: $e');
       return null;
     }
   }
@@ -733,18 +833,22 @@ class FlexRoomRepository {
 
       // Apply platform filter if specified
       if (platformFilter != null && platformFilter.isNotEmpty) {
-        // Map platform code to platform_id
-        int? targetPlatformId;
+        // Map platform code to platform_id(s)
+        List<int>? targetPlatformIds;
         if (platformFilter == 'psn') {
-          targetPlatformId = 1;
+          targetPlatformIds = _psnPlatformIds;
         } else if (platformFilter == 'steam') {
-          targetPlatformId = 5;
+          targetPlatformIds = _steamPlatformIds;
         } else if (platformFilter == 'xbox') {
-          targetPlatformId = 10; // or 11, 12 for Xbox One, Series
+          targetPlatformIds = _xboxPlatformIds;
         }
 
-        if (targetPlatformId != null) {
-          query = query.eq('platform_id', targetPlatformId);
+        if (targetPlatformIds != null && targetPlatformIds.isNotEmpty) {
+          if (targetPlatformIds.length == 1) {
+            query = query.eq('platform_id', targetPlatformIds.first);
+          } else {
+            query = query.inFilter('platform_id', targetPlatformIds);
+          }
         }
       }
 
@@ -775,46 +879,66 @@ class FlexRoomRepository {
     String? searchQuery,
   }) async {
     try {
-      // Map platform name to platform_id
-      int? targetPlatformId;
+      // Map platform name to platform_id(s)
+      List<int> targetPlatformIds;
       switch (platform.toLowerCase()) {
         case 'psn':
         case 'playstation':
-          targetPlatformId = 1;
+          targetPlatformIds = _psnPlatformIds;
           break;
         case 'steam':
-          targetPlatformId = 5;
+          targetPlatformIds = _steamPlatformIds;
           break;
         case 'xbox':
-          targetPlatformId = 10;
+          targetPlatformIds = _xboxPlatformIds;
           break;
+        default:
+          targetPlatformIds = const [];
       }
 
-      if (targetPlatformId == null) {
+      if (targetPlatformIds.isEmpty) {
         return [];
       }
 
-      // Single efficient query with JOIN and aggregation
-      final response = await _client.rpc(
-        'get_user_games_for_platform',
-        params: {
-          'p_user_id': userId,
-          'p_platform_id': targetPlatformId,
-          'p_search_query': searchQuery,
-        },
+      // Query each platform variant (e.g., Xbox 360/One/Series) and merge.
+      final responses = await Future.wait(
+        targetPlatformIds.map(
+          (platformId) => _client.rpc(
+            'get_user_games_for_platform',
+            params: {
+              'p_user_id': userId,
+              'p_platform_id': platformId,
+              'p_search_query': searchQuery,
+            },
+          ),
+        ),
       );
 
       final games = <Map<String, dynamic>>[];
-      for (final row in response as List) {
-        games.add({
-          'platform_id': row['platform_id'],
-          'platform_game_id': row['platform_game_id'],
-          'game_id': row['platform_game_id'],
-          'game_name': row['game_name'],
-          'game_cover_url': row['cover_url'],
-          'achievement_count': row['achievement_count'],
-        });
+      final seen = <String>{};
+
+      for (final response in responses) {
+        for (final row in response as List) {
+          final key = '${row['platform_id']}:${row['platform_game_id']}';
+          if (seen.contains(key)) continue;
+          seen.add(key);
+
+          games.add({
+            'platform_id': row['platform_id'],
+            'platform_game_id': row['platform_game_id'],
+            'game_id': row['platform_game_id'],
+            'game_name': row['game_name'],
+            'game_cover_url': row['cover_url'],
+            'achievement_count': row['achievement_count'],
+          });
+        }
       }
+
+      games.sort((a, b) {
+        final aName = (a['game_name'] as String? ?? '').toLowerCase();
+        final bName = (b['game_name'] as String? ?? '').toLowerCase();
+        return aName.compareTo(bName);
+      });
 
       return games;
     } catch (e) {
@@ -844,7 +968,7 @@ class FlexRoomRepository {
             targetPlatformId = 1;
             break;
           case 'steam':
-            targetPlatformId = 5;
+            targetPlatformId = 4;
             break;
           case 'xbox':
             targetPlatformId = 10;

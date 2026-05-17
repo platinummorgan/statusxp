@@ -1397,7 +1397,7 @@ export async function syncPSNAchievements(
     if (preSnapshot) {
       console.log('📊 Detecting changes and generating activity feed stories...');
       try {
-        await detectChangesAndGenerateStories(userId, preSnapshot);
+        await detectChangesAndGenerateStories(userId, preSnapshot, { syncSource: 'psn' });
         activityFeedGenerated = true;
         console.log('✅ Activity feed stories generated');
       } catch (feedError) {
@@ -1425,7 +1425,7 @@ export async function syncPSNAchievements(
     if (preSnapshot && !activityFeedGenerated) {
       console.log('📊 Sync failed after start; attempting activity feed generation from partial progress...');
       try {
-        await detectChangesAndGenerateStories(userId, preSnapshot);
+        await detectChangesAndGenerateStories(userId, preSnapshot, { syncSource: 'psn' });
         activityFeedGenerated = true;
         console.log('✅ Activity feed stories generated after partial failure');
       } catch (feedError) {

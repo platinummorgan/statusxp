@@ -1869,7 +1869,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     if (preSnapshot) {
       console.log('📊 Detecting changes and generating activity feed stories...');
       try {
-        await detectChangesAndGenerateStories(userId, preSnapshot);
+        await detectChangesAndGenerateStories(userId, preSnapshot, { syncSource: 'xbox' });
         console.log('✅ Activity feed stories generated');
       } catch (feedError) {
         console.error('⚠️ Activity feed generation failed (non-fatal):', feedError);

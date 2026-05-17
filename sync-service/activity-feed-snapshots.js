@@ -12,6 +12,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const SOURCE_PLATFORM_IDS = Object.freeze({
+  psn: [1, 2, 5, 9],
+  xbox: [10, 11, 12],
+  steam: [4],
+});
+
 /**
  * Create pre-sync snapshot
  */
@@ -46,20 +52,34 @@ export async function createPreSyncSnapshot(userId) {
     const silverCount = psnTrophies?.[0]?.silver_count || 0;
     const bronzeCount = psnTrophies?.[0]?.bronze_count || 0;
     
-    // Get Xbox gamerscore (if linked)
-    const { data: xboxData } = await supabase
+    // Get Xbox gamerscore (if linked).
+    // V2 schema stores per-title gamerscore in user_progress.current_score and
+    // uses platform IDs 10/11/12 (Xbox 360 / One / Series X|S).
+    const { data: xboxProgressRows, error: xboxProgressError } = await supabase
       .from('user_progress')
-      .select('total_gamerscore')
+      .select('current_score')
       .eq('user_id', userId)
-      .eq('platform_id', 10) // Xbox Live
-      .maybeSingle();
+      .in('platform_id', [10, 11, 12]);
+
+    if (xboxProgressError) {
+      console.error('⚠️ Failed to fetch Xbox user_progress rows for snapshot:', xboxProgressError.message);
+    }
+
+    const totalGamerscore = (xboxProgressRows || []).reduce((sum, row) => {
+      return sum + (Number(row?.current_score) || 0);
+    }, 0);
     
-    // Get Steam achievement count (if linked)
-    const { count: steamCount } = await supabase
+    // Get Steam achievement count (if linked).
+    // user_achievements has no synthetic "id" in V2 schema, so count by PK column.
+    const { count: steamCount, error: steamCountError } = await supabase
       .from('user_achievements')
-      .select('id', { count: 'exact', head: true })
+      .select('platform_achievement_id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('platform_id', 4); // Steam
+
+    if (steamCountError) {
+      console.error('⚠️ Failed to fetch Steam achievement count for snapshot:', steamCountError.message);
+    }
     
     // Get latest game for context.
     //
@@ -121,7 +141,7 @@ export async function createPreSyncSnapshot(userId) {
         psn_gold_count: goldCount,
         psn_silver_count: silverCount,
         psn_bronze_count: bronzeCount,
-        gamerscore: xboxData?.total_gamerscore || 0,
+        gamerscore: totalGamerscore,
         steam_achievement_count: steamCount || 0,
         latest_game_title: latestGame?.game_title,
         latest_platform_id: latestGame?.platform_id,
@@ -153,7 +173,7 @@ export async function createPostSyncSnapshot(userId) {
 /**
  * Detect changes between snapshots and generate activity stories
  */
-export async function detectChangesAndGenerateStories(userId, preSnapshot) {
+export async function detectChangesAndGenerateStories(userId, preSnapshot, options = {}) {
   if (!preSnapshot) {
     console.log('ℹ️  No pre-snapshot, skipping activity feed generation');
     return;
@@ -165,12 +185,44 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
     console.error('❌ Failed to create post-snapshot');
     return;
   }
+
+  const syncSource = options?.syncSource || null;
+  const includePsnEvents = !syncSource || syncSource === 'psn';
+  const includeXboxEvents = !syncSource || syncSource === 'xbox';
+  const includeSteamEvents = !syncSource || syncSource === 'steam';
+
+  // Guard against cross-platform bleed when PSN/Steam/Xbox syncs run concurrently.
+  // A source-specific sync should only emit StatusXP feed entries if that source
+  // actually wrote achievements in this snapshot window.
+  let sourceWindowAchievementCount = null;
+  if (syncSource && SOURCE_PLATFORM_IDS[syncSource]) {
+    const { count: sourceCount, error: sourceCountError } = await supabase
+      .from('user_achievements')
+      .select('platform_achievement_id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .in('platform_id', SOURCE_PLATFORM_IDS[syncSource])
+      .gte('synced_at', preSnapshot.synced_at)
+      .lte('synced_at', postSnapshot.synced_at);
+
+    if (sourceCountError) {
+      console.warn(
+        `⚠️  Failed counting ${syncSource} achievements in snapshot window, allowing StatusXP event fallback:`,
+        sourceCountError.message
+      );
+    } else {
+      sourceWindowAchievementCount = sourceCount || 0;
+    }
+  }
+
+  const sourceTouchedAchievements = sourceWindowAchievementCount === null
+    ? true
+    : sourceWindowAchievementCount > 0;
   
   // Detect all changes
   const changes = [];
   
   // StatusXP change
-  if (postSnapshot.total_statusxp > preSnapshot.total_statusxp) {
+  if (sourceTouchedAchievements && postSnapshot.total_statusxp > preSnapshot.total_statusxp) {
     changes.push({
       type: 'statusxp_gain',
       oldValue: preSnapshot.total_statusxp,
@@ -181,7 +233,7 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   }
   
   // Platinum milestone
-  if (postSnapshot.platinum_count > preSnapshot.platinum_count) {
+  if (includePsnEvents && postSnapshot.platinum_count > preSnapshot.platinum_count) {
     const platinumDelta = postSnapshot.platinum_count - preSnapshot.platinum_count;
 
     // Identify which game(s) contributed new platinum(s) during this sync based on synced_at.
@@ -249,7 +301,7 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   const silverDiff = postSnapshot.psn_silver_count - preSnapshot.psn_silver_count;
   const bronzeDiff = postSnapshot.psn_bronze_count - preSnapshot.psn_bronze_count;
   
-  if (goldDiff > 0 || silverDiff > 0 || bronzeDiff > 0) {
+  if (includePsnEvents && (goldDiff > 0 || silverDiff > 0 || bronzeDiff > 0)) {
     // Determine whether this sync touched one game or many for PS trophies.
     const { data: psWindowAchievements } = await supabase
       .from('user_achievements')
@@ -345,48 +397,94 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot) {
   }
   
   // Gamerscore change (Xbox)
-  if (postSnapshot.gamerscore > preSnapshot.gamerscore) {
+  if (includeXboxEvents) {
     let xboxGameTitle = postSnapshot.latest_game_title || null;
     const { data: xboxRows } = await supabase
       .from('user_achievements')
-      .select('platform_id,platform_game_id,earned_at,synced_at')
+      .select(`
+        platform_id,
+        platform_game_id,
+        earned_at,
+        synced_at,
+        achievements(
+          score_value,
+          metadata
+        )
+      `)
       .eq('user_id', userId)
       .in('platform_id', [10, 11, 12])
       .gte('synced_at', preSnapshot.synced_at)
       .lte('synced_at', postSnapshot.synced_at);
 
-    if (xboxRows?.length) {
-      const rep = xboxRows.reduce((best, row) => {
-        const bestAt = (best?.earned_at || best?.synced_at) ? new Date(best.earned_at || best.synced_at) : null;
-        const rowAt = (row?.earned_at || row?.synced_at) ? new Date(row.earned_at || row.synced_at) : null;
-        if (!bestAt) return row;
-        if (!rowAt) return best;
-        return rowAt > bestAt ? row : best;
-      }, null);
-
-      if (rep?.platform_id && rep?.platform_game_id) {
-        const { data: repGame } = await supabase
-          .from('games')
-          .select('name')
-          .eq('platform_id', rep.platform_id)
-          .eq('platform_game_id', rep.platform_game_id)
-          .maybeSingle();
-        xboxGameTitle = repGame?.name ?? xboxGameTitle;
-      }
-    }
-
-    changes.push({
-      type: 'gamerscore_gain',
-      oldValue: preSnapshot.gamerscore,
-      newValue: postSnapshot.gamerscore,
-      change: postSnapshot.gamerscore - preSnapshot.gamerscore,
-      changeType: categorizeChange(postSnapshot.gamerscore - preSnapshot.gamerscore, 'gamerscore'),
-      gameTitle: xboxGameTitle,
+    const xboxRowsWithScore = (xboxRows || []).map((row) => {
+      const achievement = Array.isArray(row?.achievements) ? row.achievements[0] : row?.achievements;
+      const scoreFromColumn = Number(achievement?.score_value);
+      const scoreFromMetadata = Number(achievement?.metadata?.gamerscore);
+      const rawScore = Number.isFinite(scoreFromColumn)
+        ? scoreFromColumn
+        : (Number.isFinite(scoreFromMetadata) ? scoreFromMetadata : 0);
+      return {
+        ...row,
+        _score: Math.max(0, rawScore),
+      };
     });
+
+    const earnedGamerscore = xboxRowsWithScore.reduce((sum, row) => sum + (Number(row?._score) || 0), 0);
+    const snapshotDelta = (postSnapshot.gamerscore || 0) - (preSnapshot.gamerscore || 0);
+
+    if (earnedGamerscore > 0 && xboxRowsWithScore.length > 0) {
+      const distinctGameKeys = new Set(
+        xboxRowsWithScore.map((row) => `${row.platform_id}:${row.platform_game_id}`)
+      );
+
+      if (distinctGameKeys.size > 1) {
+        xboxGameTitle = 'Multiple games';
+      } else {
+        const rep = xboxRowsWithScore.reduce((best, row) => {
+          const bestAt = (best?.earned_at || best?.synced_at) ? new Date(best.earned_at || best.synced_at) : null;
+          const rowAt = (row?.earned_at || row?.synced_at) ? new Date(row.earned_at || row.synced_at) : null;
+          if (!bestAt) return row;
+          if (!rowAt) return best;
+          return rowAt > bestAt ? row : best;
+        }, null);
+
+        if (rep?.platform_id && rep?.platform_game_id) {
+          const { data: repGame } = await supabase
+            .from('games')
+            .select('name')
+            .eq('platform_id', rep.platform_id)
+            .eq('platform_game_id', rep.platform_game_id)
+            .maybeSingle();
+          xboxGameTitle = repGame?.name ?? xboxGameTitle;
+        }
+      }
+
+      const oldGamerscore = preSnapshot.gamerscore || 0;
+      const newGamerscore = oldGamerscore + earnedGamerscore;
+
+      if (snapshotDelta > 0 && Math.abs(snapshotDelta - earnedGamerscore) >= 1000) {
+        console.warn(
+          `⚠️ Xbox snapshot delta mismatch for ${userId}: snapshot=${snapshotDelta}, earned_sum=${earnedGamerscore}`
+        );
+      }
+
+      changes.push({
+        type: 'gamerscore_gain',
+        oldValue: oldGamerscore,
+        newValue: newGamerscore,
+        change: earnedGamerscore,
+        changeType: categorizeChange(earnedGamerscore, 'gamerscore'),
+        gameTitle: xboxGameTitle,
+      });
+    } else if (snapshotDelta > 0) {
+      console.log(
+        `ℹ️ Skipping Xbox gamerscore story for ${userId}: snapshot increased by ${snapshotDelta} but no scored Xbox achievements in window`
+      );
+    }
   }
   
   // Steam achievements
-  if (postSnapshot.steam_achievement_count > preSnapshot.steam_achievement_count) {
+  if (includeSteamEvents && postSnapshot.steam_achievement_count > preSnapshot.steam_achievement_count) {
     let steamGameTitle = postSnapshot.latest_game_title || null;
     const { data: steamRows } = await supabase
       .from('user_achievements')
