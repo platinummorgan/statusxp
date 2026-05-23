@@ -217,6 +217,51 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot, optio
   const sourceTouchedAchievements = sourceWindowAchievementCount === null
     ? true
     : sourceWindowAchievementCount > 0;
+
+  // Build game context for StatusXP-only stories from the actual sync window.
+  // This lets feed entries name the game when the sync clearly maps to one title.
+  let statusXpGameTitle = null;
+  if (sourceTouchedAchievements) {
+    let statusWindowQuery = supabase
+      .from('user_achievements')
+      .select('platform_id,platform_game_id,earned_at,synced_at')
+      .eq('user_id', userId)
+      .gte('synced_at', preSnapshot.synced_at)
+      .lte('synced_at', postSnapshot.synced_at);
+
+    if (syncSource && SOURCE_PLATFORM_IDS[syncSource]) {
+      statusWindowQuery = statusWindowQuery.in('platform_id', SOURCE_PLATFORM_IDS[syncSource]);
+    }
+
+    const { data: statusWindowRows } = await statusWindowQuery;
+    if (statusWindowRows?.length) {
+      const distinctGameKeys = new Set(
+        statusWindowRows.map((row) => `${row.platform_id}:${row.platform_game_id}`)
+      );
+
+      if (distinctGameKeys.size > 1) {
+        statusXpGameTitle = 'Multiple games';
+      } else {
+        const rep = statusWindowRows.reduce((best, row) => {
+          const bestAt = (best?.earned_at || best?.synced_at) ? new Date(best.earned_at || best.synced_at) : null;
+          const rowAt = (row?.earned_at || row?.synced_at) ? new Date(row.earned_at || row.synced_at) : null;
+          if (!bestAt) return row;
+          if (!rowAt) return best;
+          return rowAt > bestAt ? row : best;
+        }, null);
+
+        if (rep?.platform_id && rep?.platform_game_id) {
+          const { data: repGame } = await supabase
+            .from('games')
+            .select('name')
+            .eq('platform_id', rep.platform_id)
+            .eq('platform_game_id', rep.platform_game_id)
+            .maybeSingle();
+          statusXpGameTitle = repGame?.name ?? null;
+        }
+      }
+    }
+  }
   
   // Detect all changes
   const changes = [];
@@ -229,6 +274,7 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot, optio
       newValue: postSnapshot.total_statusxp,
       change: postSnapshot.total_statusxp - preSnapshot.total_statusxp,
       changeType: categorizeChange(postSnapshot.total_statusxp - preSnapshot.total_statusxp, 'statusxp'),
+      gameTitle: statusXpGameTitle,
     });
   }
   

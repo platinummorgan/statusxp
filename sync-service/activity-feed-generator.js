@@ -29,9 +29,10 @@ export async function generateActivityStory(username, change) {
   // If no OpenAI API key, fallback to template stories immediately
   if (!client) {
     console.warn('⚠️  OPENAI_API_KEY not set - using template stories instead');
+    const fallbackStory = buildTemplateStory(username, change);
     return {
       success: false,
-      story: buildTemplateStory(username, change),
+      story: enforceRequiredStoryFields(fallbackStory, username, change),
       model: null,
       error: 'OPENAI_API_KEY not configured'
     };
@@ -63,14 +64,15 @@ export async function generateActivityStory(username, change) {
     const storyText = sanitizeStoryText(response.choices[0].message.content.trim());
     return {
       success: true,
-      story: storyText,
+      story: enforceRequiredStoryFields(storyText, username, change),
       model: 'gpt-4o-mini'
     };
   } catch (error) {
     console.error('❌ AI generation failed:', error.message);
+    const fallbackStory = buildTemplateStory(username, change);
     return {
       success: false,
-      story: buildTemplateStory(username, change),
+      story: enforceRequiredStoryFields(fallbackStory, username, change),
       model: null,
       error: error.message
     };
@@ -85,6 +87,23 @@ function buildPrompt(username, change) {
   
   switch (type) {
     case 'statusxp_gain':
+      if (gameTitle && gameTitle !== 'Multiple games') {
+        return `${username} just gained ${amount} StatusXP in ${gameTitle} (${oldValue} → ${newValue}).
+                Change magnitude: ${changeType}.
+                ALWAYS include game title and before/after values in parentheses.
+                Write a ${changeType === 'massive' ? 'very exciting' : 'upbeat'} announcement.
+                Examples of tone:
+                - Small: "Nice! ${username} added 47 StatusXP in ${gameTitle} (5,234 → 5,281)."
+                - Large: "${username} is crushing it in ${gameTitle}! 🔥 Gained 847 StatusXP (10,500 → 11,347)!"
+                - Massive: "WHOA! ${username} just EXPLODED with 2,134 StatusXP in ${gameTitle} (15k → 17k)!"`;
+      }
+
+      if (gameTitle === 'Multiple games') {
+        return `${username} just gained ${amount} StatusXP across multiple games (${oldValue} → ${newValue}).
+                Change magnitude: ${changeType}.
+                ALWAYS include before/after values and make it clear this was across multiple games.`;
+      }
+
       return `${username} just gained ${amount} StatusXP (${oldValue} → ${newValue}).
               Change magnitude: ${changeType}.
               ALWAYS include before/after values in parentheses.
@@ -229,6 +248,12 @@ function buildPrompt(username, change) {
 function buildTemplateStory(username, change) {
   switch (change.type) {
     case 'statusxp_gain':
+      if (change.gameTitle && change.gameTitle !== 'Multiple games') {
+        return `${username} gained ${change.change} StatusXP in ${change.gameTitle} (${change.oldValue} → ${change.newValue})`;
+      }
+      if (change.gameTitle === 'Multiple games') {
+        return `${username} gained ${change.change} StatusXP across multiple games (${change.oldValue} → ${change.newValue})`;
+      }
       return `${username} gained ${change.change} StatusXP (${change.oldValue} → ${change.newValue})`;
       
     case 'platinum_milestone':
@@ -345,4 +370,73 @@ function sanitizeStoryText(text) {
   if (!text) return text;
   // Remove wrapping quotes if the model returns a quoted sentence.
   return text.replace(/^["']+/, '').replace(/["']+$/, '').trim();
+}
+
+function normalizeTextForContains(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function storyNeedsGameTitle(change) {
+  if (!change?.gameTitle) return false;
+  const gameTitle = String(change.gameTitle).trim();
+  if (!gameTitle || gameTitle.toLowerCase() === 'multiple games') return false;
+
+  return [
+    'platinum_milestone',
+    'trophy_detail',
+    'trophy_with_statusxp',
+    'statusxp_gain',
+    'gamerscore_gain',
+    'steam_achievement_gain',
+    'gamerscore_with_statusxp',
+    'steam_with_statusxp',
+  ].includes(change.type);
+}
+
+function enforceRequiredStoryFields(story, username, change) {
+  const safeStory = sanitizeStoryText(story || '');
+  if (!storyNeedsGameTitle(change)) return safeStory;
+
+  const gameTitle = String(change.gameTitle).trim();
+  const normalizedStory = normalizeTextForContains(safeStory);
+  const normalizedGame = normalizeTextForContains(gameTitle);
+  if (normalizedStory.includes(normalizedGame)) return safeStory;
+
+  // Hard fallback so game context is never omitted for these event types.
+  if (change.type === 'platinum_milestone') {
+    return `${username} earned their ${getOrdinal(change.newValue)} platinum in ${gameTitle} (${change.oldValue} → ${change.newValue})`;
+  }
+
+  if (change.type === 'statusxp_gain') {
+    return `${username} gained ${change.change} StatusXP in ${gameTitle} (${change.oldValue} → ${change.newValue})`;
+  }
+
+  if (change.type === 'trophy_with_statusxp') {
+    const parts = [];
+    if (change.goldCount > 0) parts.push(`${change.goldCount} Gold`);
+    if (change.silverCount > 0) parts.push(`${change.silverCount} Silver`);
+    if (change.bronzeCount > 0) parts.push(`${change.bronzeCount} Bronze`);
+    const trophyList = parts.join(', ') || 'trophies';
+    return `${username} earned ${trophyList} in ${gameTitle}, gaining ${change.statusxpChange} StatusXP (${change.statusxpOld} → ${change.statusxpNew})`;
+  }
+
+  if (change.type === 'trophy_detail') {
+    const parts = [];
+    if (change.goldCount > 0) parts.push(`${change.goldCount} Gold`);
+    if (change.silverCount > 0) parts.push(`${change.silverCount} Silver`);
+    if (change.bronzeCount > 0) parts.push(`${change.bronzeCount} Bronze`);
+    return `${username} earned ${parts.join(', ') || 'new trophies'} in ${gameTitle}`;
+  }
+
+  if (change.type === 'gamerscore_gain' || change.type === 'gamerscore_with_statusxp') {
+    return `${username} increased Gamerscore by ${change.change} in ${gameTitle} (${change.oldValue} → ${change.newValue})`;
+  }
+
+  if (change.type === 'steam_achievement_gain' || change.type === 'steam_with_statusxp') {
+    return `${username} earned ${change.change} Steam achievements in ${gameTitle} (${change.oldValue} → ${change.newValue})`;
+  }
+
+  return `${safeStory} in ${gameTitle}`;
 }
