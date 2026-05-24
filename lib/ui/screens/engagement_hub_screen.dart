@@ -17,6 +17,7 @@ class EngagementHubScreen extends ConsumerStatefulWidget {
 
 class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
   bool _updatingPreferences = false;
+  final Set<String> _claimingChallengeIds = <String>{};
 
   Future<void> _refreshAll() async {
     ref.invalidate(engagementSnapshotProvider);
@@ -75,6 +76,40 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
       ref.invalidate(engagementSnapshotProvider);
     } finally {
       if (mounted) setState(() => _updatingPreferences = false);
+    }
+  }
+
+  Future<void> _claimChallenge(ChallengeProgress challenge) async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null || _claimingChallengeIds.contains(challenge.id)) return;
+    if (!challenge.claimable) return;
+
+    setState(() => _claimingChallengeIds.add(challenge.id));
+    try {
+      final repository = ref.read(engagementRepositoryProvider);
+      final claim = await repository.claimChallengeReward(
+        userId: userId,
+        challengeId: challenge.id,
+      );
+
+      ref.invalidate(engagementSnapshotProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Claimed +${claim.rewardXp} bonus XP. Lifetime bonus: ${claim.totalRewardXp}.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_challengeClaimErrorText(error))));
+    } finally {
+      if (mounted) {
+        setState(() => _claimingChallengeIds.remove(challenge.id));
+      }
     }
   }
 
@@ -338,15 +373,28 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
   }
 
   Widget _buildChallengeSummary(EngagementSnapshot snapshot) {
+    final stats = [
+      ('Current Streak', '${snapshot.currentStreak}d'),
+      ('Best Streak', '${snapshot.longestStreak}d'),
+      ('Today Unlocks', '${snapshot.todayUnlocks}'),
+      ('This Week', '${snapshot.weeklyUnlocks}'),
+      ('Today XP', snapshot.todayStatusXp.toStringAsFixed(0)),
+      ('Claimable', '+${snapshot.availableRewardXp} XP'),
+      ('Bonus This Week', '${snapshot.weeklyRewardXp} XP'),
+      ('Lifetime Bonus', '${snapshot.totalRewardXp} XP'),
+    ];
+
     return _panel(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _summaryStat('Current Streak', '${snapshot.currentStreak}d'),
-          _summaryStat('Best Streak', '${snapshot.longestStreak}d'),
-          _summaryStat('Today', '${snapshot.todayUnlocks} unlocks'),
-          _summaryStat('Today XP', snapshot.todayStatusXp.toStringAsFixed(0)),
-        ],
+      child: GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 2.55,
+        children: stats
+            .map((entry) => _summaryStat(label: entry.$1, value: entry.$2))
+            .toList(),
       ),
     );
   }
@@ -364,6 +412,7 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
     return _panel(
       child: Column(
         children: snapshot.challenges.map((challenge) {
+          final claiming = _claimingChallengeIds.contains(challenge.id);
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Container(
@@ -402,6 +451,13 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
                     challenge.description,
                     style: const TextStyle(color: textSecondary, fontSize: 12),
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    challenge.periodType == 'weekly'
+                        ? 'Weekly challenge'
+                        : 'Daily challenge',
+                    style: const TextStyle(color: textMuted, fontSize: 11),
+                  ),
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
                     value: challenge.progressFraction,
@@ -410,15 +466,53 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
                     backgroundColor: Colors.white.withValues(alpha: 0.1),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    challenge.completed
-                        ? 'Completed • +${challenge.rewardXp} bonus XP'
-                        : 'Reward: +${challenge.rewardXp} bonus XP',
-                    style: TextStyle(
-                      color: challenge.completed ? accentSuccess : textMuted,
-                      fontSize: 11,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _challengeStatusText(challenge),
+                          style: TextStyle(
+                            color: challenge.claimed
+                                ? accentSuccess
+                                : (challenge.completed
+                                      ? accentPrimary
+                                      : textMuted),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                      if (challenge.claimable)
+                        FilledButton.tonal(
+                          onPressed: claiming
+                              ? null
+                              : () => _claimChallenge(challenge),
+                          style: FilledButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                          ),
+                          child: claiming
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text('Claim +${challenge.rewardXp}'),
+                        ),
+                    ],
                   ),
+                  if (challenge.claimed && challenge.claimedAt != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'Claimed ${DateFormat('MMM d, h:mm a').format(challenge.claimedAt!.toLocal())}',
+                        style: const TextStyle(color: textMuted, fontSize: 11),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -426,6 +520,30 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
         }).toList(),
       ),
     );
+  }
+
+  String _challengeStatusText(ChallengeProgress challenge) {
+    if (challenge.claimed) {
+      return 'Reward claimed • +${challenge.rewardXp} bonus XP';
+    }
+    if (challenge.claimable) {
+      return 'Completed • reward ready';
+    }
+    if (challenge.completed) {
+      return 'Completed • +${challenge.rewardXp} bonus XP';
+    }
+    return 'Reward: +${challenge.rewardXp} bonus XP';
+  }
+
+  String _challengeClaimErrorText(Object error) {
+    final message = error.toString().toLowerCase();
+    if (message.contains('already claimed')) {
+      return 'This challenge reward is already claimed for the current period.';
+    }
+    if (message.contains('not completed')) {
+      return 'Challenge is not completed yet.';
+    }
+    return 'Unable to claim reward right now. Please try again.';
   }
 
   Widget _buildNotificationPreferences(EngagementSnapshot snapshot) {
@@ -588,20 +706,29 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
     );
   }
 
-  Widget _summaryStat(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: accentPrimary,
-            fontWeight: FontWeight.w800,
-            fontSize: 16,
+  Widget _summaryStat({required String label, required String value}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: accentPrimary,
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
-      ],
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(color: textMuted, fontSize: 11)),
+        ],
+      ),
     );
   }
 

@@ -86,6 +86,11 @@ class ChallengeProgress extends Equatable {
   final int progress;
   final int rewardXp;
   final bool completed;
+  final bool claimed;
+  final DateTime? claimedAt;
+  final String periodType;
+  final DateTime? periodStart;
+  final bool readyToClaim;
 
   const ChallengeProgress({
     required this.id,
@@ -95,12 +100,19 @@ class ChallengeProgress extends Equatable {
     required this.progress,
     required this.rewardXp,
     required this.completed,
+    required this.claimed,
+    required this.claimedAt,
+    required this.periodType,
+    required this.periodStart,
+    required this.readyToClaim,
   });
 
   double get progressFraction {
     if (target <= 0) return 0;
     return (progress / target).clamp(0, 1).toDouble();
   }
+
+  bool get claimable => readyToClaim || (completed && !claimed);
 
   @override
   List<Object?> get props => [
@@ -111,6 +123,11 @@ class ChallengeProgress extends Equatable {
     progress,
     rewardXp,
     completed,
+    claimed,
+    claimedAt,
+    periodType,
+    periodStart,
+    readyToClaim,
   ];
 }
 
@@ -170,6 +187,9 @@ class EngagementSnapshot extends Equatable {
   final int todayUnlocks;
   final int weeklyUnlocks;
   final double todayStatusXp;
+  final int totalRewardXp;
+  final int weeklyRewardXp;
+  final int availableRewardXp;
   final List<ChallengeProgress> challenges;
   final NotificationPreferences notificationPreferences;
 
@@ -179,6 +199,9 @@ class EngagementSnapshot extends Equatable {
     required this.todayUnlocks,
     required this.weeklyUnlocks,
     required this.todayStatusXp,
+    required this.totalRewardXp,
+    required this.weeklyRewardXp,
+    required this.availableRewardXp,
     required this.challenges,
     required this.notificationPreferences,
   });
@@ -190,8 +213,40 @@ class EngagementSnapshot extends Equatable {
     todayUnlocks,
     weeklyUnlocks,
     todayStatusXp,
+    totalRewardXp,
+    weeklyRewardXp,
+    availableRewardXp,
     challenges,
     notificationPreferences,
+  ];
+}
+
+@immutable
+class ChallengeClaimResult extends Equatable {
+  final String challengeId;
+  final int rewardXp;
+  final String periodType;
+  final DateTime periodStart;
+  final DateTime claimedAt;
+  final int totalRewardXp;
+
+  const ChallengeClaimResult({
+    required this.challengeId,
+    required this.rewardXp,
+    required this.periodType,
+    required this.periodStart,
+    required this.claimedAt,
+    required this.totalRewardXp,
+  });
+
+  @override
+  List<Object?> get props => [
+    challengeId,
+    rewardXp,
+    periodType,
+    periodStart,
+    claimedAt,
+    totalRewardXp,
   ];
 }
 
