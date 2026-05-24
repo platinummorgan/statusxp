@@ -230,23 +230,20 @@ class EngagementRepository {
     required String userId,
     required String challengeId,
   }) async {
-    final response =
-        await _client.rpc(
-              'claim_engagement_challenge_reward',
-              params: {'p_challenge_id': challengeId, 'p_user_id': userId},
-            )
-            as List<dynamic>;
+    final response = await _client.rpc(
+      'claim_engagement_challenge_reward',
+      params: {'p_challenge_id': challengeId, 'p_user_id': userId},
+    );
 
-    if (response.isEmpty) {
+    if (response is List<dynamic> && response.isEmpty) {
       throw Exception('Challenge claim response was empty');
     }
 
-    final row = Map<String, dynamic>.from(response.first as Map);
-    final periodStart = _parseDateTime(row['period_start']);
-    final claimedAt = _parseDateTime(row['claimed_at']);
-    if (periodStart == null || claimedAt == null) {
-      throw Exception('Challenge claim response had invalid timestamps');
-    }
+    final row = _extractClaimRow(response);
+    final periodStart =
+        _parseDateTime(row['period_start']) ?? DateTime.now().toUtc();
+    final claimedAt =
+        _parseDateTime(row['claimed_at']) ?? DateTime.now().toUtc();
 
     return ChallengeClaimResult(
       challengeId: row['challenge_id']?.toString() ?? challengeId,
@@ -256,6 +253,25 @@ class EngagementRepository {
       claimedAt: claimedAt,
       totalRewardXp: (row['total_reward_xp'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  Map<String, dynamic> _extractClaimRow(dynamic response) {
+    if (response is List<dynamic>) {
+      if (response.isEmpty) {
+        throw Exception('Challenge claim response was empty');
+      }
+      final first = response.first;
+      if (first is Map) {
+        return Map<String, dynamic>.from(first);
+      }
+      throw Exception('Challenge claim response row had unexpected shape');
+    }
+
+    if (response is Map) {
+      return Map<String, dynamic>.from(response);
+    }
+
+    throw Exception('Challenge claim response had unexpected payload');
   }
 
   ChallengeProgress _toChallenge(Map<String, dynamic> row) {
