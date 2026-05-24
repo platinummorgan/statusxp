@@ -97,7 +97,7 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Claimed +${claim.rewardXp} bonus XP. Lifetime bonus: ${claim.totalRewardXp}.',
+            'Claimed +${claim.rewardXp} engagement points. Lifetime points: ${claim.totalRewardXp}.',
           ),
         ),
       );
@@ -378,10 +378,10 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
       ('Best Streak', '${snapshot.longestStreak}d'),
       ('Today Unlocks', '${snapshot.todayUnlocks}'),
       ('This Week', '${snapshot.weeklyUnlocks}'),
-      ('Today XP', snapshot.todayStatusXp.toStringAsFixed(0)),
-      ('Claimable', '+${snapshot.availableRewardXp} XP'),
-      ('Bonus This Week', '${snapshot.weeklyRewardXp} XP'),
-      ('Lifetime Bonus', '${snapshot.totalRewardXp} XP'),
+      ('Today StatusXP', snapshot.todayStatusXp.toStringAsFixed(0)),
+      ('Claimable Points', '+${snapshot.availableRewardXp}'),
+      ('Points This Week', '${snapshot.weeklyRewardXp}'),
+      ('Lifetime Points', '${snapshot.totalRewardXp}'),
     ];
 
     return _panel(
@@ -501,7 +501,7 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : Text('Claim +${challenge.rewardXp}'),
+                              : Text('Claim +${challenge.rewardXp} pts'),
                         ),
                     ],
                   ),
@@ -524,15 +524,15 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
 
   String _challengeStatusText(ChallengeProgress challenge) {
     if (challenge.claimed) {
-      return 'Reward claimed • +${challenge.rewardXp} bonus XP';
+      return 'Reward claimed • +${challenge.rewardXp} engagement points';
     }
     if (challenge.claimable) {
       return 'Completed • reward ready';
     }
     if (challenge.completed) {
-      return 'Completed • +${challenge.rewardXp} bonus XP';
+      return 'Completed • +${challenge.rewardXp} engagement points';
     }
-    return 'Reward: +${challenge.rewardXp} bonus XP';
+    return 'Reward: +${challenge.rewardXp} engagement points';
   }
 
   String _challengeClaimErrorText(Object error) {

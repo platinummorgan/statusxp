@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/state/engagement_providers.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
@@ -414,6 +415,12 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dashboardStatsAsync = ref.watch(dashboardStatsProvider);
+    final engagementSnapshotAsync = ref.watch(engagementSnapshotProvider);
+    final claimableChallengePoints = engagementSnapshotAsync.maybeWhen(
+      data: (snapshot) => snapshot.availableRewardXp,
+      orElse: () => 0,
+    );
+    final challengesLoading = engagementSnapshotAsync.isLoading;
 
     return Scaffold(
       appBar: AppBar(
@@ -607,7 +614,13 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         ),
         data: (stats) => stats == null
             ? const Center(child: Text('No data available'))
-            : _buildDashboardContent(context, theme, stats),
+            : _buildDashboardContent(
+                context,
+                theme,
+                stats,
+                claimablePoints: claimableChallengePoints,
+                challengesLoading: challengesLoading,
+              ),
       ),
     );
   }
@@ -615,8 +628,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   Widget _buildDashboardContent(
     BuildContext context,
     ThemeData theme,
-    DashboardStats stats,
-  ) {
+    DashboardStats stats, {
+    required int claimablePoints,
+    required bool challengesLoading,
+  }) {
     final gamesAsync = ref.watch(unifiedGamesProvider);
 
     return Stack(
@@ -673,7 +688,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                         position: _statusXPCircleSlide,
                         child: FadeTransition(
                           opacity: _statusXPCircleAnimation,
-                          child: _buildStatusXPCircle(stats.totalStatusXP),
+                          child: _buildStatusXPCircle(
+                            stats.totalStatusXP,
+                            claimablePoints: claimablePoints,
+                            challengesLoading: challengesLoading,
+                          ),
                         ),
                       ),
 
@@ -1192,7 +1211,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     );
   }
 
-  Widget _buildStatusXPCircle(double totalStatusXP) {
+  Widget _buildStatusXPCircle(
+    double totalStatusXP, {
+    required int claimablePoints,
+    required bool challengesLoading,
+  }) {
     return GestureDetector(
       onTap: () {
         _hideHintPermanently();
@@ -1264,6 +1287,72 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             ],
           ),
           // One-time hint badge
+          Positioned(
+            top: -14,
+            right: -6,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => context.push('/engagement-hub'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0A0E27).withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: claimablePoints > 0
+                          ? CyberpunkTheme.neonGreen
+                          : CyberpunkTheme.neonCyan.withValues(alpha: 0.7),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            (claimablePoints > 0
+                                    ? CyberpunkTheme.neonGreen
+                                    : CyberpunkTheme.neonCyan)
+                                .withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.bolt_rounded,
+                        size: 13,
+                        color: claimablePoints > 0
+                            ? CyberpunkTheme.neonGreen
+                            : CyberpunkTheme.neonCyan,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        challengesLoading
+                            ? 'Challenges...'
+                            : claimablePoints > 0
+                            ? 'Challenges +$claimablePoints pts'
+                            : 'Challenges',
+                        style: TextStyle(
+                          color: claimablePoints > 0
+                              ? CyberpunkTheme.neonGreen
+                              : Colors.white.withValues(alpha: 0.9),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
           if (_showStatusXPHint)
             Positioned(
               bottom: -10,
