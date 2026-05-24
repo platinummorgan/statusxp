@@ -102,6 +102,8 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
         ),
       );
     } catch (error) {
+      // Sync snapshot even on errors in case reward was claimed server-side.
+      ref.invalidate(engagementSnapshotProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -542,6 +544,11 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
     }
     if (message.contains('not completed')) {
       return 'Challenge is not completed yet.';
+    }
+    if (message.contains('unexpected payload') ||
+        message.contains('unexpected shape') ||
+        message.contains('invalid timestamp')) {
+      return 'Claim may have succeeded. Pull to refresh and verify challenge status.';
     }
     return 'Unable to claim reward right now. Please try again.';
   }
