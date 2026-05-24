@@ -21,6 +21,9 @@ class EngagementRepository {
         todayUnlocks: 0,
         weeklyUnlocks: 0,
         todayStatusXp: 0,
+        totalRewardXp: 0,
+        weeklyRewardXp: 0,
+        availableRewardXp: 0,
         challenges: [],
         notificationPreferences: NotificationPreferences(
           pushEnabled: true,
@@ -45,6 +48,9 @@ class EngagementRepository {
       todayUnlocks: (row['today_unlocks'] as num?)?.toInt() ?? 0,
       weeklyUnlocks: (row['weekly_unlocks'] as num?)?.toInt() ?? 0,
       todayStatusXp: (row['today_statusxp'] as num?)?.toDouble() ?? 0,
+      totalRewardXp: (row['total_reward_xp'] as num?)?.toInt() ?? 0,
+      weeklyRewardXp: (row['weekly_reward_xp'] as num?)?.toInt() ?? 0,
+      availableRewardXp: (row['available_reward_xp'] as num?)?.toInt() ?? 0,
       challenges: challengesRaw
           .whereType<Map>()
           .map((entry) => _toChallenge(Map<String, dynamic>.from(entry)))
@@ -220,6 +226,38 @@ class EngagementRepository {
     });
   }
 
+  Future<ChallengeClaimResult> claimChallengeReward({
+    required String userId,
+    required String challengeId,
+  }) async {
+    final response =
+        await _client.rpc(
+              'claim_engagement_challenge_reward',
+              params: {'p_challenge_id': challengeId, 'p_user_id': userId},
+            )
+            as List<dynamic>;
+
+    if (response.isEmpty) {
+      throw Exception('Challenge claim response was empty');
+    }
+
+    final row = Map<String, dynamic>.from(response.first as Map);
+    final periodStart = _parseDateTime(row['period_start']);
+    final claimedAt = _parseDateTime(row['claimed_at']);
+    if (periodStart == null || claimedAt == null) {
+      throw Exception('Challenge claim response had invalid timestamps');
+    }
+
+    return ChallengeClaimResult(
+      challengeId: row['challenge_id']?.toString() ?? challengeId,
+      rewardXp: (row['reward_xp'] as num?)?.toInt() ?? 0,
+      periodType: row['period_type']?.toString() ?? 'daily',
+      periodStart: periodStart,
+      claimedAt: claimedAt,
+      totalRewardXp: (row['total_reward_xp'] as num?)?.toInt() ?? 0,
+    );
+  }
+
   ChallengeProgress _toChallenge(Map<String, dynamic> row) {
     return ChallengeProgress(
       id: row['id']?.toString() ?? 'challenge',
@@ -229,6 +267,16 @@ class EngagementRepository {
       progress: (row['progress'] as num?)?.toInt() ?? 0,
       rewardXp: (row['reward_xp'] as num?)?.toInt() ?? 0,
       completed: row['completed'] as bool? ?? false,
+      claimed: row['claimed'] as bool? ?? false,
+      claimedAt: _parseDateTime(row['claimed_at']),
+      periodType: row['period_type']?.toString() ?? 'daily',
+      periodStart: _parseDateTime(row['period_start']),
+      readyToClaim: row['ready_to_claim'] as bool? ?? false,
     );
+  }
+
+  DateTime? _parseDateTime(dynamic raw) {
+    if (raw == null) return null;
+    return DateTime.tryParse(raw.toString());
   }
 }
