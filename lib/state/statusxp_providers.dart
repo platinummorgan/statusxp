@@ -6,6 +6,7 @@ import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/data/psn_service.dart';
 import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/data/twitch_service.dart';
+import 'package:statusxp/data/steam_service.dart';
 import 'package:statusxp/data/repositories/supabase_game_repository.dart';
 import 'package:statusxp/data/repositories/supabase_trophies_repository.dart';
 import 'package:statusxp/data/repositories/supabase_user_stats_repository.dart';
@@ -114,6 +115,12 @@ final xboxServiceProvider = Provider<XboxService>((ref) {
 final twitchServiceProvider = Provider<TwitchService>((ref) {
   final client = ref.watch(supabaseClientProvider);
   return TwitchService(client);
+});
+
+/// Provider for the SteamService instance.
+final steamServiceProvider = Provider<SteamService>((ref) {
+  final client = ref.watch(supabaseClientProvider);
+  return SteamService(client);
 });
 
 /// StreamProvider for PSN sync status.

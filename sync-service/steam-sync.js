@@ -17,6 +17,8 @@ const STEAM_ALWAYS_FETCH_APPDETAILS = process.env.STEAM_ALWAYS_FETCH_APPDETAILS 
 const STEAM_DEBUG_SYNC = process.env.STEAM_DEBUG_SYNC === 'true';
 const STEAM_RELINK_ERROR_MESSAGE =
   'Steam API key is invalid or expired. Disconnect and reconnect Steam in Settings, then sync again.';
+const SHARED_STEAM_API_KEY =
+  process.env.STEAM_WEB_API_KEY || process.env.STEAM_API_KEY || '';
 
 // Helper to download external avatar and upload to Supabase Storage
 async function uploadExternalAvatar(externalUrl, userId, platform) {
@@ -168,14 +170,23 @@ function normalizeSteamSyncError(error) {
 export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, options = {}) {
   console.log(`Starting Steam sync for user ${userId}`);
   const syncStartedAtMs = Date.now();
+  const effectiveApiKey =
+    (typeof apiKey === 'string' && apiKey.trim().length > 0 ? apiKey.trim() : '') ||
+    SHARED_STEAM_API_KEY;
   
   try {
+    if (!effectiveApiKey) {
+      throw new Error(
+        'Steam API key is not configured on the sync service. Set STEAM_WEB_API_KEY in Railway.',
+      );
+    }
+
     // Fetch Steam persona name
     console.log('[STEAM NAME FETCH] Starting fetch for steamId:', steamId);
     let displayName = null;
     try {
-      const playerUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${apiKey}&steamids=${steamId}`;
-      console.log('[STEAM NAME FETCH] URL:', playerUrl.replace(apiKey, 'API_KEY_HIDDEN'));
+      const playerUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${effectiveApiKey}&steamids=${steamId}`;
+      console.log('[STEAM NAME FETCH] URL:', playerUrl.replace(effectiveApiKey, 'API_KEY_HIDDEN'));
       const playerResponse = await fetch(playerUrl);
       
       console.log('[STEAM NAME FETCH] Response status:', playerResponse.status);
@@ -255,7 +266,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
     // Fetch owned games
     const gamesResponse = await fetch(
-      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${apiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1&skip_unvetted_apps=false`
+      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${effectiveApiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1&skip_unvetted_apps=false`
     );
     const gamesData = await ensureSteamJsonResponse(gamesResponse, 'owned games');
     const ownedGames = gamesData.response?.games || [];
@@ -489,7 +500,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             
             // Get game schema (achievements list)
             const schemaResponse = await fetch(
-              `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${apiKey}&appid=${game.appid}`
+              `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${effectiveApiKey}&appid=${game.appid}`
             );
             console.log('Schema fetch status:', schemaResponse.status);
             
@@ -512,7 +523,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
             // Get player achievements to check counts
             const playerAchievementsResponse = await fetch(
-              `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${apiKey}&steamid=${steamId}&appid=${game.appid}`
+              `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${effectiveApiKey}&steamid=${steamId}&appid=${game.appid}`
             );
             console.log('Player achievements fetch status:', playerAchievementsResponse.status);
             

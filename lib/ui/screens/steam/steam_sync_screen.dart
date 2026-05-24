@@ -125,7 +125,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
     if (_steamId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Steam credentials not configured'),
+          content: Text('Steam account not connected'),
           backgroundColor: Colors.red,
         ),
       );
@@ -422,7 +422,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
           child: Padding(
             padding: EdgeInsets.all(24.0),
             child: Text(
-              'Steam credentials not configured.\n\nPlease add your Steam ID and API key in Settings.',
+              'Steam account not connected.\n\nPlease connect Steam in Settings first.',
               textAlign: TextAlign.center,
             ),
           ),
@@ -520,20 +520,20 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
               onSyncPressed: _startSync,
               onStopPressed: _stopSync,
               syncDescription: const [
-                '� IMPORTANT - Privacy Settings:',
+                'IMPORTANT - Privacy Settings:',
                 'Your Steam profile MUST be set to PUBLIC during sync.',
                 'Go to: Profile → Edit Profile → Privacy Settings',
                 'Set "Game details" to Public',
                 '(You can change it back to Private after sync finishes)',
                 '',
-                '💻 How to Sync Steam:',
+                'How to Sync Steam:',
                 '',
-                '1. Get your Steam ID and API Key from Settings',
+                '1. Connect Steam from Settings (one-click sign in)',
                 '2. Make sure your Steam profile is set to Public (see above)',
                 '3. Tap "Start Sync" button above',
-                '4. Sync begins immediately (no browser login needed)',
+                '4. Sync begins immediately',
                 '',
-                '✨ What gets synced:',
+                'What gets synced:',
                 '• All your Steam games with achievements',
                 '• Achievement unlock dates and progress',
                 '• Global achievement percentages from Steam',

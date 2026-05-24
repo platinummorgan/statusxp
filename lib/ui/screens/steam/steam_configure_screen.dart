@@ -1,326 +1,336 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 
-/// Screen for configuring Steam credentials
-class SteamConfigureScreen extends StatefulWidget {
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/ui/screens/steam/steam_webview_login_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+/// Screen for connecting Steam via OpenID.
+///
+/// New flow:
+/// - User taps "Sign in with Steam"
+/// - We create a short-lived link session server-side
+/// - User authenticates on Steam
+/// - Callback is verified server-side and Steam ID is linked to profile
+class SteamConfigureScreen extends ConsumerStatefulWidget {
   const SteamConfigureScreen({super.key});
 
   @override
-  State<SteamConfigureScreen> createState() => _SteamConfigureScreenState();
+  ConsumerState<SteamConfigureScreen> createState() =>
+      _SteamConfigureScreenState();
 }
 
-class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _steamIdController = TextEditingController();
-  final _apiKeyController = TextEditingController();
+class _SteamConfigureScreenState extends ConsumerState<SteamConfigureScreen> {
   bool _isLoading = false;
+  String? _error;
+  String? _successMessage;
+  bool _handledWebCallback = false;
 
   @override
-  void dispose() {
-    _steamIdController.dispose();
-    _apiKeyController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _autoHandleWebCallbackIfPresent();
+      });
+    }
   }
 
-  Future<void> _saveCredentials() async {
-    if (!_formKey.currentState!.validate()) return;
+  Uri _buildReturnToUri() {
+    if (kIsWeb) {
+      return Uri.base.replace(
+        path: '/steam-callback',
+        query: null,
+        fragment: null,
+      );
+    }
+    return Uri.parse('https://statusxp.com/steam-callback');
+  }
 
-    setState(() => _isLoading = true);
+  bool _hasOpenIdCallbackParams(Uri uri) {
+    if (!uri.queryParameters.containsKey('steam_state')) return false;
+    return uri.queryParameters.keys.any((key) => key.startsWith('openid.'));
+  }
+
+  Future<void> _autoHandleWebCallbackIfPresent() async {
+    if (_handledWebCallback || !mounted) return;
+    final uri = Uri.base;
+    if (!_hasOpenIdCallbackParams(uri)) return;
+    _handledWebCallback = true;
+    await _completeLinkWithCallback(
+      uri.toString(),
+      navigateToSettingsOnSuccess: true,
+    );
+  }
+
+  Future<void> _startSteamLink() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      _successMessage = null;
+    });
 
     try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
+      final steamService = ref.read(steamServiceProvider);
+      final startResult = await steamService.startLink(
+        returnTo: _buildReturnToUri().toString(),
+      );
 
-      if (userId == null) {
-        throw Exception('Not authenticated');
-      }
+      if (!mounted) return;
 
-      final steamId = _steamIdController.text.trim();
-
-      // Check if this Steam ID is already linked to a different account
-      final existingProfile = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('steam_id', steamId)
-          .maybeSingle();
-
-      if (existingProfile != null && existingProfile['id'] != userId) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'This Steam account (Steam ID: $steamId) is already connected to another account. If this is your account, please contact support for assistance.',
-              ),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 5),
-            ),
-          );
+      if (kIsWeb) {
+        final launched = await launchUrl(
+          Uri.parse(startResult.authUrl),
+          webOnlyWindowName: '_self',
+        );
+        if (!launched && mounted) {
+          setState(() {
+            _isLoading = false;
+            _error = 'Could not open Steam sign-in page.';
+          });
         }
         return;
       }
 
-      await supabase
-          .from('profiles')
-          .update({
-            'steam_id': steamId,
-            'steam_api_key': _apiKeyController.text.trim(),
-          })
-          .eq('id', userId);
-
-      if (mounted) {
-        Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Steam credentials saved successfully!'),
-            backgroundColor: Colors.green,
+      final callbackUrl = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (context) => SteamWebViewLoginScreen(
+            authUrl: startResult.authUrl,
+            returnTo: startResult.returnTo,
           ),
-        );
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (callbackUrl == null || callbackUrl.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Steam sign-in was cancelled.';
+        });
+        return;
+      }
+
+      await _completeLinkWithCallback(callbackUrl, popOnSuccess: true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _error = _formatError(e);
+      });
+    }
+  }
+
+  Future<void> _completeLinkWithCallback(
+    String callbackUrl, {
+    bool popOnSuccess = false,
+    bool navigateToSettingsOnSuccess = false,
+  }) async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      _successMessage = null;
+    });
+
+    try {
+      final steamService = ref.read(steamServiceProvider);
+      final result = await steamService.completeLink(callbackUrl: callbackUrl);
+
+      if (!mounted) return;
+
+      final displayName = result.steamDisplayName?.trim();
+      final linkedAs = (displayName != null && displayName.isNotEmpty)
+          ? displayName
+          : result.steamId;
+
+      setState(() {
+        _isLoading = false;
+        _successMessage = 'Steam connected as $linkedAs';
+      });
+
+      if (popOnSuccess) {
+        Future.delayed(const Duration(milliseconds: 700), () {
+          if (mounted) {
+            Navigator.of(context).pop(true);
+          }
+        });
+      } else if (navigateToSettingsOnSuccess) {
+        Future.delayed(const Duration(milliseconds: 900), () {
+          if (mounted) {
+            context.go('/settings');
+          }
+        });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save credentials: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      setState(() => _isLoading = false);
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _error = _formatError(e);
+      });
     }
+  }
+
+  String _formatError(Object error) {
+    final text = error.toString();
+    if (text.startsWith('Exception: ')) {
+      return text.substring('Exception: '.length);
+    }
+    return text;
   }
 
   @override
   Widget build(BuildContext context) {
+    final showingCallbackState = kIsWeb && _hasOpenIdCallbackParams(Uri.base);
+    final title = showingCallbackState
+        ? 'Complete Steam Link'
+        : 'Connect Steam';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Configure Steam')),
+      appBar: AppBar(title: Text(title)),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              const Icon(Icons.cloud, size: 64, color: Color(0xFF66C0F4)),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Icon(Icons.cloud, size: 72, color: Color(0xFF66C0F4)),
+            const SizedBox(height: 16),
+            const Text(
+              'Link Your Steam Account',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'One-click Steam sign-in. No Steam ID or API key required.',
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+
+            if (_error != null) ...[
+              _buildStatusCard(
+                icon: Icons.error_outline,
+                color: Colors.red,
+                message: _error!,
+              ),
               const SizedBox(height: 16),
-              const Text(
-                'Connect Your Steam Account',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Enter your Steam credentials to sync your achievements',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 32),
-
-              // Steam ID Field
-              TextFormField(
-                controller: _steamIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Steam ID',
-                  hintText: '76561198025758586',
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
-                  helperText: 'Your 17-digit Steam ID',
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your Steam ID';
-                  }
-                  if (value.length != 17) {
-                    return 'Steam ID must be 17 digits';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // API Key Field
-              TextFormField(
-                controller: _apiKeyController,
-                decoration: const InputDecoration(
-                  labelText: 'Steam Web API Key',
-                  hintText: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-                  prefixIcon: Icon(Icons.key),
-                  border: OutlineInputBorder(),
-                  helperText: 'Your Steam Web API key',
-                ),
-                maxLength: 32,
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your API key';
-                  }
-                  if (value.length != 32) {
-                    return 'API key must be 32 characters';
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 24),
-
-              // Save Button
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveCredentials,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text(
-                        'Save Credentials',
-                        style: TextStyle(fontSize: 16),
-                      ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Privacy Warning Card
-              Card(
-                color: Colors.orange[50],
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.privacy_tip,
-                            color: Colors.orange,
-                            size: 28,
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Privacy Settings Required',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: Colors.orange,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Your Steam profile must be set to PUBLIC during sync or you\'ll get errors. Go to Profile → Edit Profile → Privacy Settings and set "Game details" to Public. You can change it back to Private after sync completes.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.orange[900],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Instructions Card
-              Card(
-                color: Colors.blue[50],
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.info, color: Colors.blue),
-                          SizedBox(width: 8),
-                          Text(
-                            'How to get your credentials',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInstructionStep(
-                        '1. Get your Steam ID',
-                        '• Go to your Steam profile in a WEB BROWSER (not the app)\n'
-                            '• Look at the URL: steamcommunity.com/profiles/[YOUR_ID]\n'
-                            '• Copy the 17-digit number (starts with "7656")\n'
-                            '• Example: 76561198025758586',
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInstructionStep(
-                        '2. Get your API Key',
-                        '• IMPORTANT: Must use a WEB BROWSER (not the Steam app)\n'
-                            '• Visit: steamcommunity.com/dev/apikey\n'
-                            '• You MUST have Steam Guard 2FA enabled (Steam requires this)\n'
-                            '• For "Domain Name", enter anything (e.g., "StatusXP")\n'
-                            '• This is just a label - it doesn\'t affect anything\n'
-                            '• Click Register and copy the 32-character key',
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.yellow[100],
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: Colors.orange.shade300),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.warning_amber,
-                              color: Colors.orange[800],
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Steam requires 2FA (Mobile Authenticator) to generate API keys. This is a Steam requirement, not ours.',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.orange[900],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
-          ),
+
+            if (_successMessage != null) ...[
+              _buildStatusCard(
+                icon: Icons.check_circle_outline,
+                color: Colors.green,
+                message: _successMessage!,
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            if (!_isLoading && _successMessage == null)
+              ElevatedButton.icon(
+                onPressed: _startSteamLink,
+                icon: const Icon(Icons.login),
+                label: const Text('Sign in with Steam'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1B2838),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              )
+            else
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+
+            const SizedBox(height: 28),
+
+            Card(
+              color: Colors.orange.withValues(alpha: 0.15),
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.privacy_tip, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text(
+                          'Privacy Requirement',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'Steam profile Game details must be Public during sync, or Steam will hide your achievements.',
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'After sync finishes, you can switch back to Private.',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Card(
+              color: Colors.blue.withValues(alpha: 0.12),
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.lightBlue),
+                        SizedBox(width: 8),
+                        Text(
+                          'What Changed',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Text('1. Tap Sign in with Steam'),
+                    Text('2. Approve Steam login'),
+                    Text('3. Return here automatically'),
+                    Text('4. Start Steam sync from Settings'),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildInstructionStep(String title, String description) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-        ),
-        const SizedBox(height: 4),
-        Text(description, style: const TextStyle(fontSize: 12)),
-      ],
+  Widget _buildStatusCard({
+    required IconData icon,
+    required Color color,
+    required String message,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: 10),
+          Expanded(child: Text(message)),
+        ],
+      ),
     );
   }
 }

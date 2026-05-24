@@ -14,6 +14,7 @@ import 'package:statusxp/ui/screens/flex_room_screen.dart';
 import 'package:statusxp/ui/screens/achievements_screen.dart';
 import 'package:statusxp/ui/screens/psn/psn_sync_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_sync_screen.dart';
+import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
 import 'package:statusxp/ui/screens/status_poster_screen.dart';
 import 'package:statusxp/ui/screens/settings_screen.dart';
 import 'package:statusxp/ui/screens/landing_page_screen.dart';
@@ -195,6 +196,13 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const XboxSyncScreen(),
         ),
 
+        // Steam OpenID callback + account linking screen
+        GoRoute(
+          path: '/steam-callback',
+          name: 'steam-callback',
+          builder: (context, state) => const SteamConfigureScreen(),
+        ),
+
         // Flex Room - Cross-platform achievement showcase
         GoRoute(
           path: '/flex-room',
@@ -366,4 +374,3 @@ final GoRouter appRouter = GoRouter(
     ),
   ),
 );
-

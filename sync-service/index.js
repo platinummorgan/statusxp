@@ -189,11 +189,10 @@ async function resumeStuckSyncs() {
     // Steam
     const { data: steamUsers } = await supabase
       .from('profiles')
-      .select('id, steam_id, steam_api_key, steam_sync_status, updated_at')
+      .select('id, steam_id, steam_sync_status, updated_at')
       .eq('steam_sync_status', 'syncing')
       .lt('updated_at', cutoffIso)
-      .not('steam_id', 'is', null)
-      .not('steam_api_key', 'is', null);
+      .not('steam_id', 'is', null);
 
     if (steamUsers?.length) {
       const mod = await import('./steam-sync.js');
@@ -216,7 +215,7 @@ async function resumeStuckSyncs() {
         syncSteamAchievements(
           user.id,
           user.steam_id,
-          user.steam_api_key,
+          undefined,
           logRow.id,
           { batchSize: process.env.BATCH_SIZE, maxConcurrent: process.env.MAX_CONCURRENT }
         ).catch((err) => {
@@ -437,7 +436,7 @@ app.post('/sync/steam', checkAuth, async (req, res) => {
   const { userId, steamId, apiKey, syncLogId, batchSize, maxConcurrent } = req.body;
 
   // Validate required fields
-  const missing = validateRequired(['userId', 'steamId', 'apiKey', 'syncLogId'], req.body);
+  const missing = validateRequired(['userId', 'steamId', 'syncLogId'], req.body);
   if (missing.length > 0) {
     console.error('❌ Steam sync validation failed - missing fields:', missing);
     return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });

@@ -75,7 +75,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           .from('profiles')
           .select(
             'psn_account_id, psn_online_id, xbox_xuid, xbox_gamertag, '
-            'steam_id, steam_api_key, steam_display_name, preferred_display_platform, '
+            'steam_id, steam_display_name, preferred_display_platform, '
             'last_psn_sync_at, last_xbox_sync_at, last_steam_sync_at, show_on_leaderboard, '
             'psn_sync_status, psn_sync_error, '
             'xbox_sync_status, xbox_sync_error, '
