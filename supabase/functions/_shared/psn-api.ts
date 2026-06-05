@@ -8,6 +8,205 @@
 const AUTH_BASE_URL = 'https://ca.account.sony.com/api/authz/v3/oauth';
 const TROPHY_BASE_URL = 'https://m.np.playstation.com/api/trophy';
 const USER_BASE_URL = 'https://m.np.playstation.com/api/userProfile/v1/internal/users';
+const USER_LEGACY_BASE_URL = 'https://us-prof.np.community.playstation.net/userProfile/v1/users';
+const BASIC_PROFILE_BASE_URL = 'https://web.np.playstation.com/api/basicProfile/v1/profile/users';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function compactText(value: string, maxLength = 500): string {
+  const compacted = value.replace(/\s+/g, ' ').trim();
+  return compacted.length > maxLength ? `${compacted.slice(0, maxLength)}...` : compacted;
+}
+
+function extractResponseMessage(parsed: unknown, rawText: string): string {
+  if (isRecord(parsed)) {
+    const error = parsed.error;
+    if (typeof error === 'string') return compactText(error);
+
+    if (isRecord(error)) {
+      const message = error.message || error.error_description || error.reason || error.code;
+      if (typeof message === 'string' || typeof message === 'number') {
+        return compactText(String(message));
+      }
+
+      try {
+        return compactText(JSON.stringify(error));
+      } catch {
+        return 'Unknown PSN error';
+      }
+    }
+
+    const message = parsed.message || parsed.error_description || parsed.reason;
+    if (typeof message === 'string' || typeof message === 'number') {
+      return compactText(String(message));
+    }
+  }
+
+  return rawText ? compactText(rawText) : 'No response body';
+}
+
+async function parseJsonOrText(response: Response): Promise<{ parsed: unknown; rawText: string }> {
+  const rawText = await response.text();
+  if (!rawText) return { parsed: null, rawText };
+
+  try {
+    return { parsed: JSON.parse(rawText), rawText };
+  } catch {
+    return { parsed: null, rawText };
+  }
+}
+
+async function parsePsnJsonResponse<T>(response: Response, action: string): Promise<T> {
+  const { parsed, rawText } = await parseJsonOrText(response);
+
+  if (!response.ok) {
+    const statusText = response.statusText || 'Unknown status';
+    throw new Error(
+      `${action} failed (${response.status} ${statusText}): ${extractResponseMessage(parsed, rawText)}`
+    );
+  }
+
+  if (isRecord(parsed) && parsed.error) {
+    throw new Error(`${action} failed: ${extractResponseMessage(parsed, rawText)}`);
+  }
+
+  return parsed as T;
+}
+
+function psnApiHeaders(authorization: AuthorizationPayload): HeadersInit {
+  return {
+    'Authorization': `Bearer ${authorization.accessToken}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Accept-Language': 'en-US',
+  };
+}
+
+async function psnGetJson<T>(
+  requestUrl: string,
+  authorization: AuthorizationPayload,
+  action: string
+): Promise<T> {
+  const response = await fetch(requestUrl, {
+    headers: psnApiHeaders(authorization),
+  });
+
+  return await parsePsnJsonResponse<T>(response, action);
+}
+
+function normalizeAvatarUrls(profile: Record<string, unknown>): Array<{ size: string; avatarUrl: string }> {
+  const avatarUrls: Array<{ size: string; avatarUrl: string }> = [];
+
+  const legacyAvatars = profile.avatarUrls;
+  if (Array.isArray(legacyAvatars)) {
+    for (const avatar of legacyAvatars) {
+      if (!isRecord(avatar)) continue;
+      const avatarUrl = avatar.avatarUrl || avatar.url;
+      if (typeof avatarUrl !== 'string') continue;
+      avatarUrls.push({
+        size: typeof avatar.size === 'string' ? avatar.size : '',
+        avatarUrl,
+      });
+    }
+  }
+
+  const basicAvatars = profile.avatars;
+  if (Array.isArray(basicAvatars)) {
+    for (const avatar of basicAvatars) {
+      if (!isRecord(avatar)) continue;
+      const avatarUrl = avatar.avatarUrl || avatar.url;
+      if (typeof avatarUrl !== 'string') continue;
+      avatarUrls.push({
+        size: typeof avatar.size === 'string' ? avatar.size : '',
+        avatarUrl,
+      });
+    }
+  }
+
+  return avatarUrls;
+}
+
+function normalizePsnUserProfile(rawProfile: unknown, fallbackAccountId: string): PSNUserProfile {
+  let profile: unknown = rawProfile;
+  if (isRecord(rawProfile)) {
+    if (isRecord(rawProfile.profile)) {
+      profile = rawProfile.profile;
+    } else if (Array.isArray(rawProfile.profiles) && rawProfile.profiles.length > 0) {
+      profile = rawProfile.profiles[0];
+    }
+  }
+
+  if (!isRecord(profile)) {
+    throw new Error('Failed to fetch user profile: unexpected profile response');
+  }
+
+  const onlineId = profile.onlineId;
+  if (typeof onlineId !== 'string' || onlineId.trim().length === 0) {
+    throw new Error('Failed to fetch user profile: missing onlineId');
+  }
+
+  const rawAccountId = profile.accountId || (isRecord(rawProfile) ? rawProfile.accountId : null);
+  const accountId =
+    typeof rawAccountId === 'string' && rawAccountId.trim().length > 0
+      ? rawAccountId
+      : fallbackAccountId;
+
+  const rawPlus = profile.plus ?? profile.isPlus;
+  const plus = typeof rawPlus === 'number' ? rawPlus : rawPlus === true ? 1 : 0;
+
+  return {
+    onlineId,
+    accountId,
+    npId: typeof profile.npId === 'string' ? profile.npId : '',
+    avatarUrls: normalizeAvatarUrls(profile),
+    plus,
+    aboutMe: typeof profile.aboutMe === 'string' ? profile.aboutMe : '',
+    languagesUsed: Array.isArray(profile.languagesUsed)
+      ? profile.languagesUsed.filter((language): language is string => typeof language === 'string')
+      : Array.isArray(profile.languages)
+        ? profile.languages.filter((language): language is string => typeof language === 'string')
+        : [],
+    isPlus: plus === 1,
+    isOfficiallyVerified: profile.isOfficiallyVerified === true,
+  };
+}
+
+function extractNumericAccountId(value: unknown): string | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+
+  const text = String(value);
+  if (/^\d{10,}$/.test(text)) return text;
+
+  const namedMatch = text.match(/(?:accountId|account_id|account)\D+(\d{10,})/i);
+  if (namedMatch) return namedMatch[1];
+
+  return null;
+}
+
+export function extractAccountIdFromAccessToken(accessToken: string): string | null {
+  try {
+    const payload = accessToken.split('.')[1];
+    if (!payload) return null;
+
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+    const claims = JSON.parse(atob(padded));
+
+    if (!isRecord(claims)) return null;
+
+    const claimKeys = ['accountId', 'account_id', 'userId', 'user_id', 'sub', 'uid', 'id'];
+    for (const key of claimKeys) {
+      const accountId = extractNumericAccountId(claims[key]);
+      if (accountId) return accountId;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export interface AuthorizationPayload {
   accessToken: string;
@@ -120,7 +319,11 @@ export async function exchangeNpssoForAccessCode(npssoToken: string): Promise<st
 
   const locationHeader = response.headers.get('location');
   if (!locationHeader || !locationHeader.includes('?code=')) {
-    throw new Error('Failed to retrieve PSN access code. Is your NPSSO token valid?');
+    const errorText = await response.text().catch(() => '');
+    throw new Error(
+      `Failed to retrieve PSN access code (${response.status} ${response.statusText || 'Unknown status'}). ` +
+        `Is your NPSSO token valid?${errorText ? ` ${compactText(errorText)}` : ''}`
+    );
   }
 
   const url = new URL(locationHeader);
@@ -153,17 +356,17 @@ export async function exchangeAccessCodeForAuthTokens(accessCode: string): Promi
     }),
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to exchange access code: ${response.statusText}`);
-  }
+  const data = await parsePsnJsonResponse<Record<string, unknown>>(response, 'Exchange PSN access code');
 
-  const data = await response.json();
+  if (typeof data.access_token !== 'string') {
+    throw new Error('Exchange PSN access code failed: missing access token');
+  }
 
   return {
     accessToken: data.access_token,
-    refreshToken: data.refresh_token,
-    expiresIn: data.expires_in,
-    tokenType: data.token_type,
+    refreshToken: typeof data.refresh_token === 'string' ? data.refresh_token : undefined,
+    expiresIn: typeof data.expires_in === 'number' ? data.expires_in : undefined,
+    tokenType: typeof data.token_type === 'string' ? data.token_type : undefined,
   };
 }
 
@@ -187,17 +390,17 @@ export async function exchangeRefreshTokenForAuthTokens(refreshToken: string): P
     }),
   });
 
-  if (!response.ok) {
-    throw new Error(`Failed to refresh token: ${response.statusText}`);
-  }
+  const data = await parsePsnJsonResponse<Record<string, unknown>>(response, 'Refresh PSN token');
 
-  const data = await response.json();
+  if (typeof data.access_token !== 'string') {
+    throw new Error('Refresh PSN token failed: missing access token');
+  }
 
   return {
     accessToken: data.access_token,
-    refreshToken: data.refresh_token,
-    expiresIn: data.expires_in,
-    tokenType: data.token_type,
+    refreshToken: typeof data.refresh_token === 'string' ? data.refresh_token : undefined,
+    expiresIn: typeof data.expires_in === 'number' ? data.expires_in : undefined,
+    tokenType: typeof data.token_type === 'string' ? data.token_type : undefined,
   };
 }
 
@@ -210,17 +413,11 @@ export async function getUserTrophyProfileSummary(
 ): Promise<UserTrophyProfileSummary> {
   const requestUrl = `${TROPHY_BASE_URL}/v1/users/${accountId}/trophySummary`;
 
-  const response = await fetch(requestUrl, {
-    headers: {
-      'Authorization': `Bearer ${authorization.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch trophy profile summary: ${response.statusText}`);
-  }
-
-  return await response.json();
+  return await psnGetJson<UserTrophyProfileSummary>(
+    requestUrl,
+    authorization,
+    'Fetch trophy profile summary'
+  );
 }
 
 /**
@@ -230,33 +427,41 @@ export async function getUserProfile(
   authorization: AuthorizationPayload,
   accountId: string
 ): Promise<PSNUserProfile> {
-  // Use the basic profile endpoint with minimal fields
-  const requestUrl = `https://us-prof.np.community.playstation.net/userProfile/v1/users/${accountId}/profile2?fields=onlineId,avatarUrls,plus`;
+  const fields = [
+    'npId',
+    'onlineId',
+    'accountId',
+    'avatarUrls',
+    'plus',
+    'aboutMe',
+    'languagesUsed',
+    'isOfficiallyVerified',
+  ].join(',');
 
-  const response = await fetch(requestUrl, {
-    headers: {
-      'Authorization': `Bearer ${authorization.accessToken}`,
-    },
-  });
+  const legacyRequestUrl = `${USER_LEGACY_BASE_URL}/${accountId}/profile2?${new URLSearchParams({ fields })}`;
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Failed to fetch user profile (${response.status}): ${errorText}`);
+  try {
+    const data = await psnGetJson<unknown>(
+      legacyRequestUrl,
+      authorization,
+      'Fetch legacy user profile'
+    );
+    return normalizePsnUserProfile(data, accountId);
+  } catch (legacyProfileError) {
+    console.warn(
+      'Legacy PSN profile endpoint failed, trying basic profile endpoint:',
+      (legacyProfileError as Error).message
+    );
   }
 
-  const data = await response.json();
-  const profile = data.profile || data;
-  
-  // Map plus (0/1) to isPlus boolean
-  return {
-    ...profile,
-    isPlus: profile.plus === 1,
-    accountId,
-    npId: profile.npId || '',
-    aboutMe: profile.aboutMe || '',
-    languagesUsed: profile.languagesUsed || [],
-    isOfficiallyVerified: profile.isOfficiallyVerified || false,
-  };
+  const basicRequestUrl = `${BASIC_PROFILE_BASE_URL}/${accountId}`;
+  const data = await psnGetJson<unknown>(
+    basicRequestUrl,
+    authorization,
+    'Fetch basic user profile'
+  );
+
+  return normalizePsnUserProfile(data, accountId);
 }
 
 /**
@@ -277,17 +482,11 @@ export async function getUserTitles(
 
   const requestUrl = `${TROPHY_BASE_URL}/v1/users/${accountId}/trophyTitles?${queryParams.toString()}`;
 
-  const response = await fetch(requestUrl, {
-    headers: {
-      'Authorization': `Bearer ${authorization.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch user titles: ${response.statusText}`);
-  }
-
-  return await response.json();
+  return await psnGetJson<{ trophyTitles: TrophyTitle[]; totalItemCount: number }>(
+    requestUrl,
+    authorization,
+    'Fetch user titles'
+  );
 }
 
 /**
@@ -314,17 +513,14 @@ export async function getTitleTrophyGroups(
 
   const requestUrl = `${TROPHY_BASE_URL}/v1/npCommunicationIds/${npCommunicationId}/trophyGroups?${queryParams.toString()}`;
 
-  const response = await fetch(requestUrl, {
-    headers: {
-      'Authorization': `Bearer ${authorization.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch trophy groups: ${response.statusText}`);
-  }
-
-  return await response.json();
+  return await psnGetJson<{
+    trophySetVersion: string;
+    trophyTitleName: string;
+    trophyTitleIconUrl: string;
+    trophyTitlePlatform: string;
+    definedTrophies: { bronze: number; silver: number; gold: number; platinum: number };
+    trophyGroups: TrophyGroup[];
+  }>(requestUrl, authorization, 'Fetch trophy groups');
 }
 
 /**
@@ -356,17 +552,12 @@ export async function getTitleTrophies(
 
   const requestUrl = `${TROPHY_BASE_URL}/v1/npCommunicationIds/${npCommunicationId}/trophyGroups/${trophyGroupId}/trophies?${queryParams.toString()}`;
 
-  const response = await fetch(requestUrl, {
-    headers: {
-      'Authorization': `Bearer ${authorization.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch title trophies: ${response.statusText}`);
-  }
-
-  return await response.json();
+  return await psnGetJson<{
+    trophySetVersion: string;
+    hasTrophyGroups: boolean;
+    trophies: Trophy[];
+    totalItemCount: number;
+  }>(requestUrl, authorization, 'Fetch title trophies');
 }
 
 /**
@@ -400,17 +591,13 @@ export async function getUserTrophiesEarnedForTitle(
 
   const requestUrl = `${TROPHY_BASE_URL}/v1/users/${accountId}/npCommunicationIds/${npCommunicationId}/trophyGroups/${trophyGroupId}/trophies?${queryParams.toString()}`;
 
-  const response = await fetch(requestUrl, {
-    headers: {
-      'Authorization': `Bearer ${authorization.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch user trophies: ${response.statusText}`);
-  }
-
-  return await response.json();
+  return await psnGetJson<{
+    trophySetVersion: string;
+    hasTrophyGroups: boolean;
+    lastUpdatedDateTime: string;
+    trophies: Trophy[];
+    totalItemCount: number;
+  }>(requestUrl, authorization, 'Fetch user trophies');
 }
 
 /**
@@ -443,15 +630,17 @@ export async function getUserTrophyGroupEarningsForTitle(
 
   const requestUrl = `${TROPHY_BASE_URL}/v1/users/${accountId}/npCommunicationIds/${npCommunicationId}/trophyGroups?${queryParams.toString()}`;
 
-  const response = await fetch(requestUrl, {
-    headers: {
-      'Authorization': `Bearer ${authorization.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch trophy group earnings: ${response.statusText}`);
-  }
-
-  return await response.json();
+  return await psnGetJson<{
+    trophySetVersion: string;
+    hiddenFlag: boolean;
+    progress: number;
+    earnedTrophies: { bronze: number; silver: number; gold: number; platinum: number };
+    trophyGroups: Array<{
+      trophyGroupId: string;
+      progress: number;
+      earnedTrophies: { bronze: number; silver: number; gold: number; platinum: number };
+      lastUpdatedDateTime: string;
+    }>;
+    lastUpdatedDateTime: string;
+  }>(requestUrl, authorization, 'Fetch trophy group earnings');
 }
