@@ -7,6 +7,8 @@ import 'package:statusxp/data/repositories/leaderboard_repository.dart' as lb;
 import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:statusxp/services/sync_reconcile_service.dart';
 import 'package:statusxp/services/analytics_service.dart';
+import 'package:statusxp/services/premium_trigger_service.dart';
+import 'package:statusxp/services/referral_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
@@ -135,6 +137,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
     // Check rate limit first
     final limitStatus = await _syncLimitService.canUserSync('steam');
     if (!limitStatus.canSync) {
+      if (!mounted) return;
       _logSyncIssue(
         category: 'rate_limited',
         status: 'error',
@@ -143,6 +146,10 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
       setState(() {
         _error = limitStatus.reason;
       });
+      await PremiumTriggerService().showIfEligible(
+        context,
+        offer: premiumOfferFor(PremiumTrigger.syncCooldown, platform: 'Steam'),
+      );
       return;
     }
 
@@ -232,6 +239,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
 
           if (newStatus == 'success' || newStatus == 'error') {
             setState(() => _isSyncing = false);
+            var completedAutoSync = false;
 
             // Record MANUAL sync completion in database for rate limiting
             // (auto-syncs are not recorded to avoid consuming rate limits)
@@ -269,6 +277,7 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
                       profileData['steam_sync_metadata']
                           as Map<String, dynamic>?;
                   isAutoSync = metadata?['isAutoSync'] as bool? ?? false;
+                  completedAutoSync = isAutoSync;
                 } catch (e) {
                   debugPrint('Failed to check if auto-sync: $e');
                 }
@@ -326,6 +335,20 @@ class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
               ref.invalidate(leaderboardRanksProvider);
               ref.invalidate(lb.latestPeriodWinnersProvider);
               _schedulePostSyncReconciles();
+              try {
+                await ReferralService(
+                  ref.read(supabaseClientProvider),
+                ).finalizeAfterFirstSync();
+              } catch (_) {
+                // Referral rewards retry on a later successful sync.
+              }
+
+              if (_lastSyncAtBeforeSync == null &&
+                  !completedAutoSync &&
+                  !_suspectNoFreshWrite &&
+                  mounted) {
+                context.go('/sync-results?platform=steam');
+              }
             }
             break;
           }

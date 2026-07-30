@@ -48,6 +48,9 @@ export async function generateActivityStory(username, change) {
           role: 'system',
           content: `You are a hype announcer for StatusXP, a gaming achievement tracker. 
                     Generate short, enthusiastic social media posts about user accomplishments.
+                    Write all commentary in English, regardless of the language or script used in game titles, trophy names, usernames, or source metadata.
+                    Preserve supplied proper names exactly as written; do not translate or transliterate them.
+                    A non-English proper name must never cause the surrounding sentence to switch away from English.
                     Keep it casual, fun, and varied - no two posts should sound identical.
                     Use emojis sparingly (0-1 per post). Max 150 characters.
                     ALWAYS include before/after values in parentheses like (6000 → 6500).`
@@ -62,6 +65,16 @@ export async function generateActivityStory(username, change) {
     });
     
     const storyText = sanitizeStoryText(response.choices[0].message.content.trim());
+    if (containsUnexpectedJapanese(storyText, change)) {
+      console.warn('⚠️  AI story switched languages - using English template fallback');
+      const fallbackStory = buildTemplateStory(username, change);
+      return {
+        success: false,
+        story: enforceRequiredStoryFields(fallbackStory, username, change),
+        model: null,
+        error: 'Generated commentary was not English'
+      };
+    }
     return {
       success: true,
       story: enforceRequiredStoryFields(storyText, username, change),
@@ -364,6 +377,25 @@ export function categorizeChange(amount, type) {
   }
   
   return 'medium';
+}
+
+/**
+ * Detect Japanese commentary while allowing Japanese characters inside proper
+ * names supplied by the platform. Any remaining Japanese script means the AI
+ * switched the surrounding story away from English.
+ */
+export function containsUnexpectedJapanese(story, change) {
+  let commentary = story;
+  const allowedNames = [change.gameTitle];
+  for (const trophy of change.rareTrophies || []) {
+    allowedNames.push(trophy?.name);
+  }
+
+  for (const name of allowedNames.filter(Boolean)) {
+    commentary = commentary.split(String(name)).join('');
+  }
+
+  return /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]/u.test(commentary);
 }
 
 function sanitizeStoryText(text) {

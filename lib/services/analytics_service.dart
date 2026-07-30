@@ -130,6 +130,35 @@ class AnalyticsService {
     await analytics.logEvent(name: 'share_poster');
   }
 
+  /// Tracks the purchase funnel without sending receipts, transaction IDs, or
+  /// account identifiers.
+  Future<void> logPurchaseFunnel({
+    required String stage,
+    required String productId,
+    required String productType,
+    double? value,
+    String? currency,
+  }) async {
+    _ensureFirebaseAnalyticsReady();
+    final analytics = _analytics;
+    if (analytics == null) return;
+
+    try {
+      await analytics.logEvent(
+        name: 'store_purchase_funnel',
+        parameters: {
+          'stage': stage,
+          'product_id': productId,
+          'product_type': productType,
+          if (value != null) 'value': value,
+          if (currency != null) 'currency': currency,
+        },
+      );
+    } catch (_) {
+      // Analytics must never interfere with billing or entitlement delivery.
+    }
+  }
+
   /// Log when user edits their Flex Room
   Future<void> logEditFlexRoom({
     required String section, // 'featured', 'superlatives'

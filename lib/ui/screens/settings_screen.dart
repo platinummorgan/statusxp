@@ -1157,7 +1157,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const PremiumSubscriptionScreen(),
+                                const PremiumSubscriptionScreen(
+                                  source: 'settings',
+                                ),
                           ),
                         );
                       },

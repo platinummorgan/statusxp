@@ -216,7 +216,7 @@ class _PremiumRivalCompareScreenState
           FilledButton(
             onPressed: () {
               context.pop();
-              context.push('/premium-subscription');
+              context.push('/premium-subscription?source=rival_compare');
             },
             child: const Text('Upgrade'),
           ),

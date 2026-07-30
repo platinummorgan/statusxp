@@ -1,19 +1,36 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:intl/intl.dart';
+import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'package:statusxp/ui/screens/markdown_viewer_screen.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/ui/widgets/premium_activation_checklist.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:statusxp/utils/statusxp_logger.dart';
+
+@visibleForTesting
+int? annualSavingsPercent({
+  required double monthlyPrice,
+  required double annualPrice,
+}) {
+  if (monthlyPrice <= 0 || annualPrice <= 0) return null;
+  final fullYear = monthlyPrice * 12;
+  final saving = ((fullYear - annualPrice) / fullYear * 100).round();
+  return saving > 0 ? saving : null;
+}
 
 /// Premium Subscription Screen
 ///
 /// Shows subscription benefits and allows users to subscribe to Premium
 class PremiumSubscriptionScreen extends ConsumerStatefulWidget {
-  const PremiumSubscriptionScreen({super.key});
+  const PremiumSubscriptionScreen({this.source = 'direct', super.key});
+
+  final String source;
 
   @override
   ConsumerState<PremiumSubscriptionScreen> createState() =>
@@ -25,7 +42,10 @@ class _PremiumSubscriptionScreenState
   final SubscriptionService _subscriptionService = SubscriptionService();
   bool _isLoading = true;
   bool _isPremium = false;
+  bool _isPurchasing = false;
   bool _isProcessingStripe = false;
+  ProductDetails? _selectedSubscriptionProduct;
+  PremiumEntitlement? _entitlement;
 
   @override
   void initState() {
@@ -52,15 +72,70 @@ class _PremiumSubscriptionScreenState
   Future<void> _initialize() async {
     await _subscriptionService.initialize();
     final isPremium = await _subscriptionService.isPremiumActive();
+    final entitlement = isPremium
+        ? await _subscriptionService.getPremiumEntitlement()
+        : null;
+    if (!mounted) return;
     setState(() {
       _isPremium = isPremium;
+      _entitlement = entitlement;
+      if (_subscriptionService.products.isNotEmpty) {
+        _selectedSubscriptionProduct = _defaultSubscriptionProduct();
+      }
       _isLoading = false;
     });
+    _logFunnel(isPremium ? 'active_member_view' : 'offer_view');
+  }
+
+  ProductDetails _defaultSubscriptionProduct() {
+    for (final product in _subscriptionChoices) {
+      if (_subscriptionService.isAnnualProduct(product)) return product;
+    }
+    return _subscriptionChoices.first;
+  }
+
+  void _logFunnel(String stage, {ProductDetails? product}) {
+    final selected = product ?? _selectedSubscriptionProduct;
+    AnalyticsService().logCustomEvent(
+      eventName: 'premium_funnel',
+      parameters: {
+        'stage': stage,
+        'source': widget.source,
+        'plan': selected == null
+            ? (kIsWeb ? 'web' : 'unavailable')
+            : _subscriptionService.subscriptionPeriod(selected),
+        if (selected != null)
+          'price': _subscriptionService.recurringRawPrice(selected),
+        if (selected != null)
+          'intro_offer': _subscriptionService.hasIntroductoryOffer(selected),
+      },
+    );
+  }
+
+  List<ProductDetails> get _subscriptionChoices {
+    final choices = <String, ProductDetails>{};
+    for (final product in _subscriptionService.products) {
+      final period = _subscriptionService.subscriptionPeriod(product);
+      final current = choices[period];
+      if (current == null || _offerRank(product) > _offerRank(current)) {
+        choices[period] = product;
+      }
+    }
+    return choices.values.toList();
+  }
+
+  int _offerRank(ProductDetails product) {
+    if (_subscriptionService.hasFreeTrial(product)) return 2;
+    if (_subscriptionService.hasIntroductoryOffer(product)) return 1;
+    return 0;
   }
 
   Future<void> _subscribeToPremium() async {
+    if (_isPurchasing || _subscriptionService.purchasePending) return;
+
     // Handle web Stripe payments
     if (kIsWeb) {
+      _logFunnel('checkout_start');
       await _subscribeWithStripe();
       return;
     }
@@ -71,27 +146,48 @@ class _PremiumSubscriptionScreenState
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() => _isPurchasing = true);
 
-    final product = _subscriptionService.products.first;
-    final success = await _subscriptionService.purchaseSubscription(product);
-
-    if (success) {
-      // Wait a moment for purchase to process
-      await Future.delayed(const Duration(seconds: 2));
-      final isPremium = await _subscriptionService.isPremiumActive();
-
-      setState(() {
-        _isPremium = isPremium;
-        _isLoading = false;
-      });
-
-      if (_isPremium && mounted) {
-        _showSuccess('Welcome to Premium! 🎉');
+    final product =
+        _selectedSubscriptionProduct ?? _subscriptionService.products.first;
+    _logFunnel('checkout_start', product: product);
+    try {
+      final success = await _subscriptionService.purchaseSubscription(product);
+      if (!success) {
+        _logFunnel('checkout_not_started', product: product);
+        _showError('The purchase could not be started. Please try again.');
+        return;
       }
-    } else {
-      setState(() => _isLoading = false);
+
+      final activated = await _waitForPremiumActivation();
+      if (!mounted) return;
+
+      if (activated) {
+        _logFunnel('activated', product: product);
+        final entitlement = await _subscriptionService.getPremiumEntitlement();
+        if (!mounted) return;
+        setState(() {
+          _isPremium = true;
+          _entitlement = entitlement;
+        });
+        _showSuccess('Welcome to Premium! 🎉');
+      } else {
+        _logFunnel('activation_pending', product: product);
+        _showSuccess(
+          'Purchase received and still processing. Premium will activate automatically.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPurchasing = false);
     }
+  }
+
+  Future<bool> _waitForPremiumActivation() async {
+    for (var attempt = 0; attempt < 12; attempt++) {
+      if (await _subscriptionService.isPremiumActive()) return true;
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    return false;
   }
 
   Future<void> _subscribeWithStripe() async {
@@ -202,6 +298,7 @@ class _PremiumSubscriptionScreenState
   @override
   Widget build(BuildContext context) {
     final plan = _subscriptionService.premiumPlan;
+    final selectedProduct = _selectedSubscriptionProduct;
 
     return Scaffold(
       backgroundColor: backgroundDark,
@@ -222,15 +319,28 @@ class _PremiumSubscriptionScreenState
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  if (_isPremium) _buildPremiumActiveCard(),
+                  if (_isPremium) ...[
+                    _buildPremiumActiveCard(),
+                    const SizedBox(height: 18),
+                    if (ref.read(currentUserIdProvider) case final userId?)
+                      PremiumActivationChecklist(userId: userId),
+                  ],
                   if (!_isPremium) ...[
                     _buildHeroSection(),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 18),
+                    _buildPersonalizedValue(),
+                    const SizedBox(height: 26),
                     _buildFeaturesGrid(plan.features),
-                    const SizedBox(height: 32),
-                    _buildPricingCard(plan),
+                    const SizedBox(height: 26),
+                    _buildComparisonCard(),
+                    const SizedBox(height: 26),
+                    if (!kIsWeb && _subscriptionChoices.length > 1) ...[
+                      _buildPlanSelector(),
+                      const SizedBox(height: 16),
+                    ],
+                    _buildPricingCard(plan, selectedProduct),
                     const SizedBox(height: 24),
-                    _buildSubscribeButton(plan),
+                    _buildSubscribeButton(plan, selectedProduct),
                     const SizedBox(height: 16),
                     _buildRestoreButton(),
                     const SizedBox(height: 32),
@@ -276,6 +386,14 @@ class _PremiumSubscriptionScreenState
             'Enjoying unlimited features',
             style: TextStyle(fontSize: 16, color: textSecondary),
           ),
+          if (_entitlement?.expiresAt != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Current access through ${DateFormat.yMMMd().format(_entitlement!.expiresAt!.toLocal())}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: textSecondary),
+            ),
+          ],
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: kIsWeb
@@ -324,7 +442,7 @@ class _PremiumSubscriptionScreenState
           ),
           const SizedBox(height: 16),
           const Text(
-            'Unlock Your Full Potential',
+            'Make Every Achievement Count',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 24,
@@ -334,7 +452,7 @@ class _PremiumSubscriptionScreenState
           ),
           const SizedBox(height: 8),
           const Text(
-            'Get unlimited AI guides and faster syncs',
+            'Know what to play next, finish more games, and understand your progress.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 16, color: textSecondary),
           ),
@@ -379,7 +497,205 @@ class _PremiumSubscriptionScreenState
     );
   }
 
-  Widget _buildPricingCard(SubscriptionPlan plan) {
+  Widget _buildPersonalizedValue() {
+    final stats = ref.watch(dashboardStatsProvider).value;
+    if (stats == null) return const SizedBox.shrink();
+    final games =
+        stats.psnStats.gamesCount +
+        stats.xboxStats.gamesCount +
+        stats.steamStats.gamesCount;
+    final unlocks =
+        stats.psnStats.achievementsUnlocked +
+        stats.xboxStats.achievementsUnlocked +
+        stats.steamStats.achievementsUnlocked;
+    if (games == 0 && unlocks == 0) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: accentPrimary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accentPrimary.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'BUILT AROUND YOUR HISTORY',
+            style: TextStyle(
+              color: accentPrimary,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$games games • $unlocks unlocks • ${stats.totalStatusXP.round()} StatusXP',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 5),
+          const Text(
+            'Premium turns this history into personalized goals, insights, and smarter next moves.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: textSecondary, height: 1.35),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComparisonCard() {
+    const rows = [
+      ('Daily syncs', '3', 'Up to 12'),
+      ('Sync cooldown', 'Up to 2 hours', 'As low as 15 min'),
+      ('AI achievement guides', 'Limited', 'Unlimited'),
+      ('Advanced player insights', '—', 'Included'),
+      ('Goals & achievement radar', '—', 'Included'),
+    ];
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: surfaceLight,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'FREE VS PREMIUM',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Row(
+            children: [
+              Expanded(flex: 5, child: SizedBox()),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  'FREE',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: textMuted,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Text(
+                  'PREMIUM',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: accentPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Divider(),
+          for (final row in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Text(
+                      row.$1,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      row.$2,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      row.$3,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: accentPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlanSelector() {
+    return SegmentedButton<ProductDetails>(
+      segments: _subscriptionChoices.map((product) {
+        final annual = _subscriptionService.isAnnualProduct(product);
+        return ButtonSegment<ProductDetails>(
+          value: product,
+          label: Text(annual ? 'Annual' : 'Monthly'),
+          icon: Icon(annual ? Icons.savings_outlined : Icons.calendar_month),
+        );
+      }).toList(),
+      selected: {_selectedSubscriptionProduct ?? _subscriptionChoices.first},
+      onSelectionChanged: _isPurchasing
+          ? null
+          : (selection) {
+              setState(() => _selectedSubscriptionProduct = selection.first);
+              _logFunnel('plan_selected', product: selection.first);
+            },
+      showSelectedIcon: false,
+      style: ButtonStyle(
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? backgroundDark
+              : Colors.white,
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? accentPrimary
+              : surfaceLight,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPricingCard(
+    SubscriptionPlan plan,
+    ProductDetails? selectedProduct,
+  ) {
+    final period = selectedProduct == null
+        ? 'month'
+        : _subscriptionService.subscriptionPeriod(selectedProduct);
+    final price = selectedProduct == null
+        ? plan.price
+        : _subscriptionService.recurringPrice(selectedProduct);
+    final introLabel = selectedProduct == null
+        ? null
+        : _subscriptionService.introductoryOfferLabel(selectedProduct);
+    final annual =
+        selectedProduct != null &&
+        _subscriptionService.isAnnualProduct(selectedProduct);
+    final savings = annual ? _annualSavingsPercent(selectedProduct) : null;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -395,6 +711,40 @@ class _PremiumSubscriptionScreenState
       ),
       child: Column(
         children: [
+          if (annual)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                color: accentSuccess,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                savings == null ? 'BEST VALUE' : 'BEST VALUE • SAVE $savings%',
+                style: const TextStyle(
+                  color: backgroundDark,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          if (annual) const SizedBox(height: 12),
+          if (introLabel != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+              decoration: BoxDecoration(
+                color: accentPrimary,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                introLabel.toUpperCase(),
+                style: const TextStyle(
+                  color: backgroundDark,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           Text(
             plan.title,
             style: const TextStyle(
@@ -404,9 +754,9 @@ class _PremiumSubscriptionScreenState
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Auto-Renewable Monthly Subscription',
-            style: TextStyle(fontSize: 12, color: textSecondary),
+          Text(
+            'Auto-Renewable ${period == 'year' ? 'Annual' : 'Monthly'} Subscription',
+            style: const TextStyle(fontSize: 12, color: textSecondary),
           ),
           const SizedBox(height: 12),
           Row(
@@ -414,7 +764,7 @@ class _PremiumSubscriptionScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                plan.price,
+                price,
                 style: const TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.w900,
@@ -423,27 +773,53 @@ class _PremiumSubscriptionScreenState
                 ),
               ),
               const SizedBox(width: 4),
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
                 child: Text(
-                  '/month',
-                  style: TextStyle(fontSize: 16, color: textSecondary),
+                  '/$period',
+                  style: const TextStyle(fontSize: 16, color: textSecondary),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Subscription automatically renews monthly.\nCancel anytime from your account settings.',
+          Text(
+            '${introLabel == null ? '' : 'Offer applies first, then $price/$period.\n'}'
+            'Subscription automatically renews every $period. Cancel anytime from your account settings.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: textSecondary, height: 1.4),
+            style: const TextStyle(
+              fontSize: 11,
+              color: textSecondary,
+              height: 1.4,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSubscribeButton(SubscriptionPlan plan) {
+  int? _annualSavingsPercent(ProductDetails annual) {
+    ProductDetails? monthly;
+    for (final product in _subscriptionChoices) {
+      if (!_subscriptionService.isAnnualProduct(product)) {
+        monthly = product;
+        break;
+      }
+    }
+    if (monthly == null ||
+        _subscriptionService.recurringRawPrice(monthly) <= 0) {
+      return null;
+    }
+    return annualSavingsPercent(
+      monthlyPrice: _subscriptionService.recurringRawPrice(monthly),
+      annualPrice: _subscriptionService.recurringRawPrice(annual),
+    );
+  }
+
+  Widget _buildSubscribeButton(
+    SubscriptionPlan plan,
+    ProductDetails? selectedProduct,
+  ) {
     // Web users get Stripe checkout button
     if (kIsWeb) {
       return SizedBox(
@@ -479,7 +855,7 @@ class _PremiumSubscriptionScreenState
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _subscriptionService.purchasePending
+        onPressed: _isPurchasing || _subscriptionService.purchasePending
             ? null
             : _subscribeToPremium,
         style: ElevatedButton.styleFrom(
@@ -490,18 +866,34 @@ class _PremiumSubscriptionScreenState
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: _subscriptionService.purchasePending
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: backgroundDark,
-                ),
+        child: _isPurchasing || _subscriptionService.purchasePending
+            ? const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: backgroundDark,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Finalizing Purchase…',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
               )
-            : const Text(
-                'Subscribe Now',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            : Text(
+                selectedProduct != null &&
+                        _subscriptionService.hasFreeTrial(selectedProduct)
+                    ? 'Start ${_subscriptionService.introductoryOfferLabel(selectedProduct)}'
+                    : 'Subscribe Now • ${selectedProduct == null ? plan.price : _subscriptionService.recurringPrice(selectedProduct)}/${selectedProduct == null ? 'month' : _subscriptionService.subscriptionPeriod(selectedProduct)}',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
       ),
     );
@@ -526,8 +918,8 @@ class _PremiumSubscriptionScreenState
     return Column(
       children: [
         const Text(
-          'Subscription renews automatically unless cancelled.\n'
-          'Managed through your Google Play or App Store account.',
+          '${kIsWeb ? 'Secure card checkout' : 'Secure checkout through Google Play'}. Cancel anytime in your account settings.\n'
+          'Your subscription renews automatically unless cancelled.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 11, color: textMuted),
         ),

@@ -30,6 +30,14 @@ import 'package:statusxp/ui/screens/premium_sync_intelligence_screen.dart';
 import 'package:statusxp/ui/screens/seasonal_leaderboard_screen.dart';
 import 'package:statusxp/ui/screens/hall_of_fame_screen.dart';
 import 'package:statusxp/ui/screens/engagement_hub_screen.dart';
+import 'package:statusxp/ui/screens/first_sync_onboarding_screen.dart';
+import 'package:statusxp/ui/screens/first_sync_results_screen.dart';
+import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
+import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
+import 'package:statusxp/ui/screens/weekly_recap_screen.dart';
+import 'package:statusxp/ui/screens/invite_friends_screen.dart';
+import 'package:statusxp/services/premium_activation_service.dart';
+import 'package:statusxp/ui/widgets/premium_activation_checklist.dart';
 
 /// StatusXP App Router Configuration
 ///
@@ -110,6 +118,40 @@ final GoRouter appRouter = GoRouter(
           path: '/',
           name: 'dashboard',
           builder: (context, state) => const NewDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/get-started',
+          name: 'get-started',
+          builder: (context, state) => const FirstSyncOnboardingScreen(),
+        ),
+        GoRoute(
+          path: '/sync-results',
+          name: 'sync-results',
+          builder: (context, state) => FirstSyncResultsScreen(
+            platform: state.uri.queryParameters['platform'] ?? 'gaming',
+          ),
+        ),
+        GoRoute(
+          path: '/weekly-recap',
+          name: 'weekly-recap',
+          builder: (context, state) => const WeeklyRecapScreen(),
+        ),
+        GoRoute(
+          path: '/invite',
+          name: 'invite',
+          builder: (context, state) => InviteFriendsScreen(
+            source: state.uri.queryParameters['source'] ?? 'direct',
+          ),
+        ),
+        GoRoute(
+          path: '/steam-connect',
+          name: 'steam-connect',
+          builder: (context, state) => const SteamConfigureScreen(),
+        ),
+        GoRoute(
+          path: '/steam-sync',
+          name: 'steam-sync',
+          builder: (context, state) => const SteamSyncScreen(),
         ),
 
         // Games List - View all tracked games
@@ -287,21 +329,30 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/analytics',
           name: 'analytics',
-          builder: (context, state) => const PremiumAnalyticsScreen(),
+          builder: (context, state) => const PremiumFeatureActivationMarker(
+            task: PremiumActivationTask.analytics,
+            child: PremiumAnalyticsScreen(),
+          ),
         ),
 
         // Premium Sync Intelligence - Diagnostics and sync recommendations
         GoRoute(
           path: '/sync-intelligence',
           name: 'sync-intelligence',
-          builder: (context, state) => const PremiumSyncIntelligenceScreen(),
+          builder: (context, state) => const PremiumFeatureActivationMarker(
+            task: PremiumActivationTask.premiumSync,
+            child: PremiumSyncIntelligenceScreen(),
+          ),
         ),
 
         // Premium Goals & Pace Coach
         GoRoute(
           path: '/goals-pace',
           name: 'goals-pace',
-          builder: (context, state) => const PremiumGoalsPaceScreen(),
+          builder: (context, state) => const PremiumFeatureActivationMarker(
+            task: PremiumActivationTask.goal,
+            child: PremiumGoalsPaceScreen(),
+          ),
         ),
 
         // Premium Rival Comparison
@@ -315,7 +366,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/achievement-radar',
           name: 'achievement-radar',
-          builder: (context, state) => const PremiumAchievementRadarScreen(),
+          builder: (context, state) => const PremiumFeatureActivationMarker(
+            task: PremiumActivationTask.radar,
+            child: PremiumAchievementRadarScreen(),
+          ),
         ),
 
         // Engagement Hub - social loop, challenges/streaks, and play-next recommendations
@@ -329,7 +383,9 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: '/premium-subscription',
           name: 'premium-subscription',
-          builder: (context, state) => const PremiumSubscriptionScreen(),
+          builder: (context, state) => PremiumSubscriptionScreen(
+            source: state.uri.queryParameters['source'] ?? 'direct',
+          ),
         ),
       ],
     ),
@@ -366,4 +422,3 @@ final GoRouter appRouter = GoRouter(
     ),
   ),
 );
-

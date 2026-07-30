@@ -1,11 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from './supabase-client.js';
 import { uploadGameCover, uploadExternalIcon } from './icon-proxy-utils.js';
 import { createPreSyncSnapshot, detectChangesAndGenerateStories } from './activity-feed-snapshots.js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createServiceClient();
 
 const ENV_BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '5', 10);
 const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '1', 10);

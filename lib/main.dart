@@ -15,7 +15,9 @@ import 'package:statusxp/config/supabase_config.dart';
 import 'package:statusxp/data/auth/biometric_auth_service.dart';
 import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/services/auth_refresh_service.dart';
+import 'package:statusxp/services/crash_reporting_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/services/local_reminder_service.dart';
 import 'package:statusxp/services/sync_resume_service.dart';
 import 'package:statusxp/theme/theme.dart';
 import 'package:statusxp/ui/navigation/app_router.dart';
@@ -48,6 +50,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FlutterError.onError = (details) {
+    unawaited(CrashReportingService.instance.recordFlutterFatalError(details));
     _safeLog('FlutterError caught: ${_safeStr(details.exception)}');
     _safeLog('Stack: ${_safeStr(details.stack)}');
 
@@ -68,6 +71,12 @@ void main() async {
   };
 
   runZonedGuarded(() async => _initializeApp(), (error, stack) async {
+    await CrashReportingService.instance.recordError(
+      error,
+      stack,
+      fatal: true,
+      reason: 'Uncaught application error',
+    );
     // IMPORTANT: never let logging crash the error handler
     final errStr = _safeStr(error);
 
@@ -127,6 +136,7 @@ Future<void> _initializeApp() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    await CrashReportingService.instance.initialize();
     await AnalyticsService().initialize();
     _safeLog('🔥 Firebase Analytics initialized');
   } catch (e) {
@@ -140,7 +150,7 @@ Future<void> _initializeApp() async {
   try {
     await Supabase.initialize(
       url: SupabaseConfig.supabaseUrl,
-      anonKey: SupabaseConfig.supabaseAnonKey,
+      publishableKey: SupabaseConfig.supabaseAnonKey,
       authOptions: const FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
         autoRefreshToken: true,
@@ -222,6 +232,9 @@ Future<void> _initializeApp() async {
 
   if (!kIsWeb) {
     await SubscriptionService().initialize();
+    await LocalReminderService.instance.initialize(
+      onTap: (route) => appRouter.go(route),
+    );
   }
 
   WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
@@ -246,6 +259,13 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final route = await LocalReminderService.instance.launchPayload();
+        if (route != null && route.startsWith('/')) appRouter.go(route);
+      });
+    }
 
     if (kIsWeb) {
       _handleWebAuthCallback();

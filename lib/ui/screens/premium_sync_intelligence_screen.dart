@@ -93,7 +93,7 @@ class _PremiumSyncIntelligenceScreenState
           FilledButton(
             onPressed: () {
               context.pop();
-              context.push('/premium-subscription');
+              context.push('/premium-subscription?source=sync_intelligence');
             },
             child: const Text('Upgrade'),
           ),

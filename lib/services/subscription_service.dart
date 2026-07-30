@@ -1,12 +1,35 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/services/analytics_service.dart';
+import 'package:statusxp/services/crash_reporting_service.dart';
 import 'package:statusxp/utils/supabase_guard.dart';
 import 'package:statusxp/utils/statusxp_logger.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+@visibleForTesting
+bool shouldCompleteStorePurchase({
+  required PurchaseStatus status,
+  required bool pendingCompletePurchase,
+  required bool entitlementDelivered,
+}) {
+  return pendingCompletePurchase &&
+      (status == PurchaseStatus.purchased ||
+          status == PurchaseStatus.restored) &&
+      entitlementDelivered;
+}
+
+@visibleForTesting
+bool storeEntitlementWasDelivered(Object? responseData) {
+  return responseData is Map && responseData['success'] == true;
+}
 
 /// Subscription plans available
 class SubscriptionPlan {
@@ -23,6 +46,34 @@ class SubscriptionPlan {
     required this.price,
     required this.features,
   });
+}
+
+class PremiumEntitlement {
+  const PremiumEntitlement({
+    required this.active,
+    required this.startedAt,
+    required this.expiresAt,
+    required this.source,
+  });
+  final bool active;
+  final DateTime? startedAt;
+  final DateTime? expiresAt;
+  final String? source;
+}
+
+@visibleForTesting
+String humanizeBillingPeriod(String period, {int cycles = 1}) {
+  final match = RegExp(r'^P(\d+)([DWMY])$').firstMatch(period);
+  if (match == null) return 'introductory period';
+  final amount = (int.tryParse(match.group(1)!) ?? 1) * cycles;
+  final unit = switch (match.group(2)) {
+    'D' => 'day',
+    'W' => 'week',
+    'M' => 'month',
+    'Y' => 'year',
+    _ => 'period',
+  };
+  return '$amount $unit${amount == 1 ? '' : 's'}';
 }
 
 /// Subscription Service for managing premium subscriptions
@@ -140,26 +191,37 @@ class SubscriptionService {
     for (final purchase in purchases) {
       if (purchase.status == PurchaseStatus.pending) {
         _purchasePending = true;
+        unawaited(_logPurchaseStage(purchase.productID, 'pending'));
       } else {
         _purchasePending = false;
 
+        var entitlementDelivered = false;
+
         if (purchase.status == PurchaseStatus.purchased ||
             purchase.status == PurchaseStatus.restored) {
-          // Check if it's subscription or AI pack
-          if (purchase.productID == monthlySubscriptionId) {
-            await _verifyAndActivateSubscription(purchase);
-          } else if (_isAIPackProduct(purchase.productID)) {
-            await _verifyAndGrantAICredits(purchase);
+          if (purchase.productID == monthlySubscriptionId ||
+              _isAIPackProduct(purchase.productID)) {
+            entitlementDelivered = await _verifyAndDeliverPurchase(purchase);
           }
         }
 
         if (purchase.status == PurchaseStatus.error) {
+          unawaited(_logPurchaseStage(purchase.productID, 'store_failed'));
           statusxpLog('Purchase failed: ${purchase.error}');
         }
 
-        // Mark purchase as complete
-        if (purchase.pendingCompletePurchase) {
+        // Acknowledge/finish only after the trusted backend has verified the
+        // store transaction and delivered the entitlement. Failed deliveries
+        // remain pending so the store can retry them.
+        if (shouldCompleteStorePurchase(
+          status: purchase.status,
+          pendingCompletePurchase: purchase.pendingCompletePurchase,
+          entitlementDelivered: entitlementDelivered,
+        )) {
           await _iap.completePurchase(purchase);
+          unawaited(
+            _logPurchaseStage(purchase.productID, 'entitlement_delivered'),
+          );
         }
       }
     }
@@ -172,128 +234,145 @@ class SubscriptionService {
         productId == aiPackLargeId;
   }
 
-  /// Verify AI pack purchase and grant credits
-  Future<bool> _verifyAndGrantAICredits(PurchaseDetails purchase) async {
-    try {
-      final supabase = _supabase;
-      if (supabase == null) {
-        return false;
+  Future<void> _logPurchaseStage(String productId, String stage) async {
+    ProductDetails? product;
+    for (final candidate in [..._products, ..._aiPackProducts]) {
+      if (candidate.id == productId) {
+        product = candidate;
+        break;
       }
-
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) {
-        return false;
-      }
-
-      final packDetails = getAIPackDetails(purchase.productID);
-      if (packDetails == null) {
-        return false;
-      }
-
-      // Web doesn't support in-app purchases
-      if (kIsWeb) return false;
-
-      String? platform;
-      if (Platform.isAndroid) {
-        platform = 'google_play';
-      } else if (Platform.isIOS) {
-        platform = 'app_store';
-      }
-
-      // Grant AI credits via RPC function
-      final response = await supabase.rpc(
-        'add_ai_pack_credits',
-        params: {
-          'p_user_id': userId,
-          'p_pack_type': packDetails['type'],
-          'p_credits': packDetails['credits'],
-          'p_price': packDetails['price'],
-          'p_platform': platform ?? 'unknown',
-        },
-      );
-
-      final result = response as Map<String, dynamic>;
-      final success = result['success'] ?? false;
-
-      if (success) {
-      } else {}
-
-      return success;
-    } catch (e) {
-      return false;
     }
+
+    await AnalyticsService().logPurchaseFunnel(
+      stage: stage,
+      productId: productId,
+      productType: _isAIPackProduct(productId) ? 'ai_credits' : 'subscription',
+      value: product?.rawPrice,
+      currency: product?.currencyCode,
+    );
   }
 
-  /// Verify purchase with backend and activate premium status
-  Future<bool> _verifyAndActivateSubscription(PurchaseDetails purchase) async {
+  PurchaseParam _purchaseParam(ProductDetails product, String userId) {
+    final accountHash = Platform.isAndroid
+        ? sha256.convert(utf8.encode(userId)).toString()
+        : null;
+    if (Platform.isAndroid && product is GooglePlayProductDetails) {
+      return GooglePlayPurchaseParam(
+        productDetails: product,
+        applicationUserName: accountHash,
+        offerToken: product.offerToken,
+      );
+    }
+    return PurchaseParam(
+      productDetails: product,
+      // Flutter maps applicationUserName to Play's obfuscated account ID.
+      // This lets the backend bind new Play purchases to the signed-in user.
+      applicationUserName: accountHash,
+    );
+  }
+
+  String subscriptionPeriod(ProductDetails product) {
+    if (product is! GooglePlayProductDetails ||
+        product.subscriptionIndex == null) {
+      return 'month';
+    }
+    final offer = product
+        .productDetails
+        .subscriptionOfferDetails![product.subscriptionIndex!];
+    final recurringPhase = offer.pricingPhases.last;
+    return recurringPhase.billingPeriod == 'P1Y' ? 'year' : 'month';
+  }
+
+  bool isAnnualProduct(ProductDetails product) =>
+      subscriptionPeriod(product) == 'year';
+
+  List<PricingPhaseWrapper> _pricingPhases(ProductDetails product) {
+    if (product is! GooglePlayProductDetails ||
+        product.subscriptionIndex == null) {
+      return const [];
+    }
+    return product
+        .productDetails
+        .subscriptionOfferDetails![product.subscriptionIndex!]
+        .pricingPhases;
+  }
+
+  bool hasFreeTrial(ProductDetails product) {
+    final phases = _pricingPhases(product);
+    return phases.length > 1 && phases.first.priceAmountMicros == 0;
+  }
+
+  bool hasIntroductoryOffer(ProductDetails product) {
+    final phases = _pricingPhases(product);
+    return phases.length > 1 &&
+        phases.first.priceAmountMicros < phases.last.priceAmountMicros;
+  }
+
+  String? introductoryOfferLabel(ProductDetails product) {
+    final phases = _pricingPhases(product);
+    if (phases.length <= 1) return null;
+    final first = phases.first;
+    final duration = humanizeBillingPeriod(
+      first.billingPeriod,
+      cycles: first.billingCycleCount.clamp(1, 1000),
+    );
+    if (first.priceAmountMicros == 0) return '$duration free';
+    if (first.priceAmountMicros < phases.last.priceAmountMicros) {
+      return '${first.formattedPrice} for $duration';
+    }
+    return null;
+  }
+
+  String recurringPrice(ProductDetails product) {
+    final phases = _pricingPhases(product);
+    return phases.isEmpty ? product.price : phases.last.formattedPrice;
+  }
+
+  double recurringRawPrice(ProductDetails product) {
+    final phases = _pricingPhases(product);
+    return phases.isEmpty
+        ? product.rawPrice
+        : phases.last.priceAmountMicros / 1000000.0;
+  }
+
+  /// Verify the receipt with the store on the backend and atomically deliver
+  /// the corresponding entitlement. The client never writes premium status or
+  /// credit balances directly.
+  Future<bool> _verifyAndDeliverPurchase(PurchaseDetails purchase) async {
     try {
       final supabase = _supabase;
-      if (supabase == null) {
+      if (supabase == null || supabase.auth.currentUser == null || kIsWeb) {
         return false;
       }
 
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) {
-        return false;
+      final platform = Platform.isAndroid
+          ? 'google_play'
+          : Platform.isIOS
+          ? 'app_store'
+          : null;
+      if (platform == null) return false;
+
+      final response = await supabase.functions.invoke(
+        'verify-store-purchase',
+        body: {
+          'platform': platform,
+          'productId': purchase.productID,
+          'purchaseId': purchase.purchaseID,
+          'verificationData': purchase.verificationData.serverVerificationData,
+        },
+      );
+      final success = storeEntitlementWasDelivered(response.data);
+      if (!success) {
+        statusxpLog('Store purchase verification did not deliver entitlement');
       }
-
-      String premiumSource;
-
-      // Web doesn't support purchase completion
-      if (kIsWeb) return false;
-
-      if (Platform.isAndroid) {
-        premiumSource = 'google';
-      } else if (Platform.isIOS) {
-        premiumSource = 'apple';
-      } else {
-        return false;
-      }
-
-      // Check for existing premium from Stripe or Twitch
-      final existingPremiumResponse = await supabase
-          .from('user_premium_status')
-          .select('premium_source, is_premium')
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      final hasOtherSubscription =
-          existingPremiumResponse?['is_premium'] == true &&
-          existingPremiumResponse?['premium_source'] != null &&
-          existingPremiumResponse!['premium_source'] != premiumSource;
-
-      // Apple/Google IAP overwrites Stripe and Twitch (stores take precedence)
-      debugPrint('Activating $premiumSource premium for user $userId');
-
-      await supabase.from('user_premium_status').upsert({
-        'user_id': userId,
-        'is_premium': true,
-        'premium_source': premiumSource,
-        'premium_since':
-            purchase.transactionDate ?? DateTime.now().toIso8601String(),
-        'premium_expires_at':
-            null, // IAP subscriptions don't have a fixed expiry (managed by stores)
-        'updated_at': DateTime.now().toIso8601String(),
-      });
-
-      // Create notification if they had another subscription (generic message)
-      if (hasOtherSubscription) {
-        try {
-          await supabase.from('notifications').insert({
-            'user_id': userId,
-            'type': 'subscription_changed',
-            'title': 'Premium Source Updated',
-            'message':
-                'Your premium subscription source has been updated. Please cancel your previous subscription to avoid double charges.',
-            'created_at': DateTime.now().toIso8601String(),
-          });
-        } catch (_) {
-          // Best-effort only: premium activation should succeed even if notifications are unavailable.
-        }
-      }
-
-      return true;
-    } catch (e) {
+      return success;
+    } catch (e, stack) {
+      await CrashReportingService.instance.recordError(
+        e,
+        stack,
+        reason: 'Store purchase verification failed',
+      );
+      statusxpLog('Store purchase verification failed');
       return false;
     }
   }
@@ -315,15 +394,21 @@ class SubscriptionService {
         return false;
       }
 
-      final PurchaseParam purchaseParam = PurchaseParam(
-        productDetails: product,
-      );
+      final purchaseParam = _purchaseParam(product, userId);
 
       _purchasePending = true;
+      unawaited(_logPurchaseStage(product.id, 'checkout_started'));
 
       // Subscriptions use buyNonConsumable (auto-renewing)
       final bool success = await _iap.buyNonConsumable(
         purchaseParam: purchaseParam,
+      );
+
+      unawaited(
+        _logPurchaseStage(
+          product.id,
+          success ? 'store_flow_started' : 'store_flow_rejected',
+        ),
       );
 
       return success;
@@ -375,6 +460,34 @@ class SubscriptionService {
       return response?['is_premium'] == true;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<PremiumEntitlement?> getPremiumEntitlement() async {
+    try {
+      final supabase = _supabase;
+      final userId = supabase?.auth.currentUser?.id;
+      if (supabase == null || userId == null) return null;
+      final response = await supabase
+          .from('user_premium_status')
+          .select(
+            'is_premium, premium_since, premium_expires_at, premium_source',
+          )
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (response == null) return null;
+      return PremiumEntitlement(
+        active: response['is_premium'] == true,
+        startedAt: DateTime.tryParse(
+          response['premium_since']?.toString() ?? '',
+        ),
+        expiresAt: DateTime.tryParse(
+          response['premium_expires_at']?.toString() ?? '',
+        ),
+        source: response['premium_source']?.toString(),
+      );
+    } catch (_) {
+      return null;
     }
   }
 
@@ -447,15 +560,21 @@ class SubscriptionService {
         return false;
       }
 
-      final PurchaseParam purchaseParam = PurchaseParam(
-        productDetails: product,
-      );
+      final purchaseParam = _purchaseParam(product, userId);
 
       _purchasePending = true;
+      unawaited(_logPurchaseStage(product.id, 'checkout_started'));
 
       // Consumable purchase
       final bool success = await _iap.buyConsumable(
         purchaseParam: purchaseParam,
+      );
+
+      unawaited(
+        _logPurchaseStage(
+          product.id,
+          success ? 'store_flow_started' : 'store_flow_rejected',
+        ),
       );
 
       return success;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:statusxp/domain/engagement_hub_data.dart';
+import 'package:statusxp/services/local_reminder_service.dart';
 import 'package:statusxp/state/engagement_providers.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
@@ -17,7 +18,16 @@ class EngagementHubScreen extends ConsumerStatefulWidget {
 
 class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
   bool _updatingPreferences = false;
+  bool _weeklyRecapReminder = false;
   final Set<String> _claimingChallengeIds = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    LocalReminderService.instance.weeklyRecapReminderEnabled().then((enabled) {
+      if (mounted) setState(() => _weeklyRecapReminder = enabled);
+    });
+  }
 
   Future<void> _refreshAll() async {
     ref.invalidate(engagementSnapshotProvider);
@@ -68,15 +78,63 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
 
     setState(() => _updatingPreferences = true);
     try {
+      var effectivePreferences = preferences;
+      final current = ref.read(engagementSnapshotProvider).valueOrNull;
+      final wasPushEnabled =
+          current?.notificationPreferences.pushEnabled ?? false;
+      if (preferences.pushEnabled && !wasPushEnabled) {
+        final allowed = await LocalReminderService.instance.requestPermission();
+        if (!allowed) {
+          effectivePreferences = preferences.copyWith(pushEnabled: false);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Notification permission was not enabled.'),
+              ),
+            );
+          }
+        }
+      }
+
       final repository = ref.read(engagementRepositoryProvider);
       await repository.updateNotificationPreferences(
         userId: userId,
-        preferences: preferences,
+        preferences: effectivePreferences,
+      );
+      await LocalReminderService.instance.updateStreakReminder(
+        enabled:
+            effectivePreferences.pushEnabled &&
+            effectivePreferences.notifyStreakRisk,
+        currentStreak: current?.currentStreak ?? 0,
+        reminderHour: effectivePreferences.dailyDigestHour,
+      );
+      await LocalReminderService.instance.updateWeeklyRecapReminder(
+        enabled: _weeklyRecapReminder && effectivePreferences.pushEnabled,
+        hasWeeklyActivity: (current?.weeklyUnlocks ?? 0) > 0,
+        reminderHour: effectivePreferences.dailyDigestHour,
       );
       ref.invalidate(engagementSnapshotProvider);
     } finally {
       if (mounted) setState(() => _updatingPreferences = false);
     }
+  }
+
+  Future<void> _toggleWeeklyRecap(
+    bool enabled,
+    EngagementSnapshot snapshot,
+  ) async {
+    if (enabled && !snapshot.notificationPreferences.pushEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enable notifications first.')),
+      );
+      return;
+    }
+    setState(() => _weeklyRecapReminder = enabled);
+    await LocalReminderService.instance.setWeeklyRecapReminder(
+      enabled: enabled,
+      hasWeeklyActivity: snapshot.weeklyUnlocks > 0,
+      reminderHour: snapshot.notificationPreferences.dailyDigestHour,
+    );
   }
 
   Future<void> _claimChallenge(ChallengeProgress challenge) async {
@@ -565,7 +623,7 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
           ),
           const SizedBox(height: 6),
           const Text(
-            'Push-ready preferences are saved now and can drive FCM/APNS delivery.',
+            'Optional reminders can help protect your StatusXP streak.',
             style: TextStyle(color: textMuted, fontSize: 11),
           ),
           const SizedBox(height: 8),
@@ -602,6 +660,11 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
             onChanged: (value) => _updatePreferences(
               preferences.copyWith(notifyActivityHighlights: value),
             ),
+          ),
+          _prefSwitch(
+            title: 'Weekly Recap Reminder',
+            value: _weeklyRecapReminder,
+            onChanged: (value) => _toggleWeeklyRecap(value, snapshot),
           ),
           if (_updatingPreferences)
             const Padding(

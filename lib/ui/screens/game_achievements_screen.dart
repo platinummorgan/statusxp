@@ -8,7 +8,7 @@ import 'package:statusxp/services/achievement_guide_service.dart';
 import 'package:statusxp/services/youtube_search_service.dart';
 import 'package:statusxp/services/ai_credit_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
-import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
+import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/ui/widgets/create_trophy_request_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -1087,6 +1087,10 @@ class _GameAchievementsScreenState
 
     if (!creditStatus.canUse) {
       // Show purchase dialog
+      AnalyticsService().logCustomEvent(
+        eventName: 'premium_trigger_impression',
+        parameters: {'source': 'ai_limit'},
+      );
       _showAIPurchaseDialog(context, creditStatus);
       return;
     }
@@ -1457,14 +1461,12 @@ class _GameAchievementsScreenState
                       ),
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context).pop();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const PremiumSubscriptionScreen(),
-                            ),
+                          AnalyticsService().logCustomEvent(
+                            eventName: 'premium_offer_accepted',
+                            parameters: {'source': 'ai_limit'},
                           );
+                          Navigator.of(context).pop();
+                          context.push('/premium-subscription?source=ai_limit');
                         },
                         child: const Text(
                           'LEARN MORE',
@@ -1520,10 +1522,19 @@ class _GameAchievementsScreenState
 
     // Handle mobile IAP purchases
     final productId = _getProductIdForPack(pack.type);
-    final product = subscriptionService.aiPackProducts.firstWhere(
-      (p) => p.id == productId,
-      orElse: () => throw Exception('Product not found'),
+    final matchingProducts = subscriptionService.aiPackProducts.where(
+      (product) => product.id == productId,
     );
+    if (matchingProducts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This credit pack is temporarily unavailable.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    final product = matchingProducts.first;
 
     if (!context.mounted) return;
 
@@ -1553,15 +1564,26 @@ class _GameAchievementsScreenState
 
     // Attempt purchase
     try {
+      final creditService = AICreditService();
+      final startingCredits = (await creditService.checkCredits()).packCredits;
       final success = await subscriptionService.purchaseAIPack(product);
 
       if (!context.mounted) return;
 
       if (success) {
+        final delivered = await _waitForAICreditDelivery(
+          creditService: creditService,
+          minimumCredits: startingCredits + pack.credits,
+        );
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('✅ ${pack.credits} AI credits added!'),
-            backgroundColor: Colors.green,
+            content: Text(
+              delivered
+                  ? '✅ ${pack.credits} AI credits added!'
+                  : 'Purchase received and still processing. Your credits will appear automatically.',
+            ),
+            backgroundColor: delivered ? Colors.green : Colors.blueGrey,
           ),
         );
       } else {
@@ -1578,6 +1600,18 @@ class _GameAchievementsScreenState
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
+  }
+
+  Future<bool> _waitForAICreditDelivery({
+    required AICreditService creditService,
+    required int minimumCredits,
+  }) async {
+    for (var attempt = 0; attempt < 12; attempt++) {
+      final status = await creditService.checkCredits();
+      if (status.packCredits >= minimumCredits) return true;
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    return false;
   }
 
   Future<void> _purchaseAIPackWeb(BuildContext context, AIPack pack) async {
