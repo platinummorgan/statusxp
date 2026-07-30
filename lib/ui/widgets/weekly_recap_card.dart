@@ -6,12 +6,14 @@ class WeeklyRecapCard extends StatelessWidget {
     required this.weeklyUnlocks,
     required this.currentStreak,
     required this.onTap,
+    required this.onDismiss,
     super.key,
   });
 
   final int weeklyUnlocks;
   final int currentStreak;
   final VoidCallback onTap;
+  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +69,12 @@ class WeeklyRecapCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white54),
+              IconButton(
+                tooltip: 'Hide until next week',
+                visualDensity: VisualDensity.compact,
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close, color: Colors.white60, size: 20),
+              ),
             ],
           ),
         ),

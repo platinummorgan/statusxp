@@ -64,6 +64,9 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   late final Future<bool> _premiumStatusFuture;
   final Set<String> _trackedNextActions = {};
   String? _lastReminderFingerprint;
+  bool _dashboardPromptsLoaded = false;
+  String? _dismissedNextActionDay;
+  String? _dismissedWeeklyRecapWeek;
 
   // Scroll controller for parallax effect
   final ScrollController _scrollController = ScrollController();
@@ -153,6 +156,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
 
     _checkIfShouldShowHint();
     _loadBackgroundMode();
+    _loadDashboardPromptDismissals();
     // Generate shuffle seed once on load
     _shuffleSeed = DateTime.now().millisecondsSinceEpoch;
     // Refresh data when screen loads
@@ -208,6 +212,44 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         _showStatusXPHint = false;
       });
     }
+  }
+
+  String _localDayKey(DateTime now) =>
+      '${now.year.toString().padLeft(4, '0')}-'
+      '${now.month.toString().padLeft(2, '0')}-'
+      '${now.day.toString().padLeft(2, '0')}';
+
+  String _localWeekKey(DateTime now) {
+    final day = DateTime(now.year, now.month, now.day);
+    return _localDayKey(day.subtract(Duration(days: day.weekday - 1)));
+  }
+
+  Future<void> _loadDashboardPromptDismissals() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _dismissedNextActionDay = prefs.getString(
+        'dashboard_next_action_dismissed_day',
+      );
+      _dismissedWeeklyRecapWeek = prefs.getString(
+        'dashboard_weekly_recap_dismissed_week',
+      );
+      _dashboardPromptsLoaded = true;
+    });
+  }
+
+  Future<void> _dismissNextActionForToday() async {
+    final key = _localDayKey(DateTime.now());
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('dashboard_next_action_dismissed_day', key);
+    if (mounted) setState(() => _dismissedNextActionDay = key);
+  }
+
+  Future<void> _dismissWeeklyRecapForWeek() async {
+    final key = _localWeekKey(DateTime.now());
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('dashboard_weekly_recap_dismissed_week', key);
+    if (mounted) setState(() => _dismissedWeeklyRecapWeek = key);
   }
 
   // ignore: unused_element
@@ -713,42 +755,54 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                     children: [
                       const SizedBox(height: 20),
 
-                      gamesAsync.maybeWhen(
-                        data: (games) => FutureBuilder<bool>(
-                          future: _premiumStatusFuture,
-                          builder: (context, premiumSnapshot) {
-                            final action = chooseNextBestAction(
-                              games: games,
-                              isPremium: premiumSnapshot.data ?? false,
-                              availableRewardXp: availableRewardXp,
-                              currentStreak: currentStreak,
-                              todayUnlocks: todayUnlocks,
+                      if (_dashboardPromptsLoaded &&
+                          _dismissedNextActionDay !=
+                              _localDayKey(DateTime.now())) ...[
+                        gamesAsync.maybeWhen(
+                          data: (games) => FutureBuilder<bool>(
+                            future: _premiumStatusFuture,
+                            builder: (context, premiumSnapshot) {
+                              final action = chooseNextBestAction(
+                                games: games,
+                                isPremium: premiumSnapshot.data ?? false,
+                                availableRewardXp: availableRewardXp,
+                                currentStreak: currentStreak,
+                                todayUnlocks: todayUnlocks,
+                              );
+                              _trackNextActionImpression(action);
+                              return NextBestActionCard(
+                                action: action,
+                                onDismiss: _dismissNextActionForToday,
+                                onTap: () async {
+                                  await _dismissNextActionForToday();
+                                  if (mounted) _handleNextBestAction(action);
+                                },
+                              );
+                            },
+                          ),
+                          orElse: () => const SizedBox.shrink(),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      if (_dashboardPromptsLoaded &&
+                          _dismissedWeeklyRecapWeek !=
+                              _localWeekKey(DateTime.now())) ...[
+                        WeeklyRecapCard(
+                          weeklyUnlocks: weeklyUnlocks,
+                          currentStreak: currentStreak,
+                          onDismiss: _dismissWeeklyRecapForWeek,
+                          onTap: () async {
+                            await _dismissWeeklyRecapForWeek();
+                            AnalyticsService().logCustomEvent(
+                              eventName: 'weekly_recap_opened',
+                              parameters: {'source': 'dashboard'},
                             );
-                            _trackNextActionImpression(action);
-                            return NextBestActionCard(
-                              action: action,
-                              onTap: () => _handleNextBestAction(action),
-                            );
+                            if (context.mounted) context.push('/weekly-recap');
                           },
                         ),
-                        orElse: () => const SizedBox.shrink(),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      WeeklyRecapCard(
-                        weeklyUnlocks: weeklyUnlocks,
-                        currentStreak: currentStreak,
-                        onTap: () {
-                          AnalyticsService().logCustomEvent(
-                            eventName: 'weekly_recap_opened',
-                            parameters: {'source': 'dashboard'},
-                          );
-                          context.push('/weekly-recap');
-                        },
-                      ),
-
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
+                      ],
 
                       // StatusXP large circle (center top) - animated entrance
                       SlideTransition(

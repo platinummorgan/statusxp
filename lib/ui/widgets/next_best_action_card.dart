@@ -6,11 +6,13 @@ class NextBestActionCard extends StatelessWidget {
   const NextBestActionCard({
     required this.action,
     required this.onTap,
+    required this.onDismiss,
     super.key,
   });
 
   final NextBestAction action;
   final VoidCallback onTap;
+  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -33,11 +35,11 @@ class NextBestActionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.bolt, color: CyberpunkTheme.neonGreen, size: 18),
-              SizedBox(width: 8),
-              Text(
+              const Icon(Icons.bolt, color: CyberpunkTheme.neonGreen, size: 18),
+              const SizedBox(width: 8),
+              const Text(
                 'YOUR NEXT MOVE',
                 style: TextStyle(
                   color: CyberpunkTheme.neonGreen,
@@ -45,6 +47,13 @@ class NextBestActionCard extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
                 ),
+              ),
+              const Spacer(),
+              IconButton(
+                tooltip: 'Hide until tomorrow',
+                visualDensity: VisualDensity.compact,
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close, color: Colors.white60, size: 20),
               ),
             ],
           ),
