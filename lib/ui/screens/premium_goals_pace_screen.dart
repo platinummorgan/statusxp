@@ -127,7 +127,7 @@ class _PremiumGoalsPaceScreenState
           FilledButton(
             onPressed: () {
               context.pop();
-              context.push('/premium-subscription');
+              context.push('/premium-subscription?source=goals_pace');
             },
             child: const Text('Upgrade'),
           ),

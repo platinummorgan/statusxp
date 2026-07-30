@@ -26,7 +26,7 @@ class EngagementRepository {
         availableRewardXp: 0,
         challenges: [],
         notificationPreferences: NotificationPreferences(
-          pushEnabled: true,
+          pushEnabled: false,
           notifyRivalActivity: true,
           notifyStreakRisk: true,
           notifyDailyChallenges: true,
@@ -56,7 +56,7 @@ class EngagementRepository {
           .map((entry) => _toChallenge(Map<String, dynamic>.from(entry)))
           .toList(),
       notificationPreferences: NotificationPreferences(
-        pushEnabled: preferencesRaw['push_enabled'] as bool? ?? true,
+        pushEnabled: preferencesRaw['push_enabled'] as bool? ?? false,
         notifyRivalActivity:
             preferencesRaw['notify_rival_activity'] as bool? ?? true,
         notifyStreakRisk: preferencesRaw['notify_streak_risk'] as bool? ?? true,

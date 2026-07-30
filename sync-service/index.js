@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import { createServiceClient } from './supabase-client.js';
 // Lazy-load sync handlers on-demand to avoid boot-time module errors
 // (psn-api & other ESM/CJS modules can crash startup when required at top-level)
 
@@ -96,11 +97,7 @@ async function resumeStuckSyncs() {
   recoveryRunning = true;
 
   try {
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabase = createServiceClient();
 
     const cutoffIso = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
@@ -189,11 +186,10 @@ async function resumeStuckSyncs() {
     // Steam
     const { data: steamUsers } = await supabase
       .from('profiles')
-      .select('id, steam_id, steam_api_key, steam_sync_status, updated_at')
+      .select('id, steam_id, steam_sync_status, updated_at')
       .eq('steam_sync_status', 'syncing')
       .lt('updated_at', cutoffIso)
-      .not('steam_id', 'is', null)
-      .not('steam_api_key', 'is', null);
+      .not('steam_id', 'is', null);
 
     if (steamUsers?.length) {
       const mod = await import('./steam-sync.js');
@@ -216,7 +212,7 @@ async function resumeStuckSyncs() {
         syncSteamAchievements(
           user.id,
           user.steam_id,
-          user.steam_api_key,
+          undefined,
           logRow.id,
           { batchSize: process.env.BATCH_SIZE, maxConcurrent: process.env.MAX_CONCURRENT }
         ).catch((err) => {
@@ -345,11 +341,7 @@ app.post('/sync/xbox', checkAuth, async (req, res) => {
       console.error('Xbox sync error (lazy import):', err);
       // Report error to sync log
       try {
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.SUPABASE_URL,
-          process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        const supabase = createServiceClient();
         await supabase
           .from('xbox_sync_logs')
           .update({
@@ -408,11 +400,7 @@ app.post('/sync/psn', checkAuth, async (req, res) => {
       const normalizedError = normalizePsnSyncError(err);
       // Report error to sync log
       try {
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.SUPABASE_URL,
-          process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        const supabase = createServiceClient();
         await supabase
           .from('psn_sync_logs')
           .update({
@@ -437,7 +425,7 @@ app.post('/sync/steam', checkAuth, async (req, res) => {
   const { userId, steamId, apiKey, syncLogId, batchSize, maxConcurrent } = req.body;
 
   // Validate required fields
-  const missing = validateRequired(['userId', 'steamId', 'apiKey', 'syncLogId'], req.body);
+  const missing = validateRequired(['userId', 'steamId', 'syncLogId'], req.body);
   if (missing.length > 0) {
     console.error('❌ Steam sync validation failed - missing fields:', missing);
     return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
@@ -458,11 +446,7 @@ app.post('/sync/steam', checkAuth, async (req, res) => {
       console.error('Steam sync error (lazy import):', err);
       // Report error to sync log
       try {
-        const { createClient } = await import('@supabase/supabase-js');
-        const supabase = createClient(
-          process.env.SUPABASE_URL,
-          process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
+        const supabase = createServiceClient();
         await supabase
           .from('steam_sync_logs')
           .update({
@@ -491,11 +475,7 @@ app.post('/sync/xbox/stop', checkAuth, async (req, res) => {
   }
 
   try {
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabase = createServiceClient();
 
     await supabase
       .from('profiles')
@@ -517,11 +497,7 @@ app.post('/sync/psn/stop', checkAuth, async (req, res) => {
   }
 
   try {
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabase = createServiceClient();
 
     await supabase
       .from('profiles')
@@ -543,11 +519,7 @@ app.post('/sync/steam/stop', checkAuth, async (req, res) => {
   }
 
   try {
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(
-      process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    );
+    const supabase = createServiceClient();
 
     await supabase
       .from('profiles')

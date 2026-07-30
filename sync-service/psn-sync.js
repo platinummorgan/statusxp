@@ -5,15 +5,12 @@
 // - Earned counts derived from per-trophy earned flags (source of truth)
 // - user_progress updated ONLY after trophies successfully fetched
 
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from './supabase-client.js';
 import { uploadExternalIcon, uploadGameCover } from './icon-proxy-utils.js';
 import { initIGDBValidator } from './igdb-validator.js';
 import { createPreSyncSnapshot, detectChangesAndGenerateStories } from './activity-feed-snapshots.js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createServiceClient();
 
 const ENV_BATCH_SIZE = parseInt(process.env.BATCH_SIZE || '20', 10);
 const ENV_MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT || '3', 10);
@@ -394,6 +391,27 @@ async function updateSyncStatus(userId, updates, retries = 3) {
   }
   console.error('🚨 CRITICAL: Failed to update sync status after all retries');
   return false;
+}
+
+async function refreshLeaderboardCachesAfterPsnSync(userId) {
+  // Keep cache-backed dashboard and leaderboard numbers aligned with the rows
+  // written during this sync. Activity feed snapshots read live trophy counts,
+  // so without this the feed can show a new platinum before the app totals do.
+  console.log('Running refresh_statusxp_leaderboard_for_user...');
+  try {
+    await supabase.rpc('refresh_statusxp_leaderboard_for_user', { p_user_id: userId });
+    console.log('✅ refresh_statusxp_leaderboard_for_user complete');
+  } catch (e) {
+    console.warn('⚠️ refresh_statusxp_leaderboard_for_user failed:', e.message);
+  }
+
+  console.log('Running refresh_psn_leaderboard_cache...');
+  try {
+    await supabase.rpc('refresh_psn_leaderboard_cache');
+    console.log('✅ refresh_psn_leaderboard_cache complete');
+  } catch (e) {
+    console.warn('⚠️ refresh_psn_leaderboard_cache failed:', e.message);
+  }
 }
 
 async function isCancelled(userId) {
@@ -1377,14 +1395,7 @@ export async function syncPSNAchievements(
       logMemory(`After PSN batch ${i / BATCH_SIZE + 1}`);
     }
 
-    // Refresh StatusXP leaderboard for this user only
-    console.log('Running refresh_statusxp_leaderboard_for_user...');
-    try {
-      await supabase.rpc('refresh_statusxp_leaderboard_for_user', { p_user_id: userId });
-      console.log('✅ refresh_statusxp_leaderboard_for_user complete');
-    } catch (e) {
-      console.warn('⚠️ refresh_statusxp_leaderboard_for_user failed:', e.message);
-    }
+    await refreshLeaderboardCachesAfterPsnSync(userId);
 
     await updateSyncStatus(userId, {
       psn_sync_status: 'success',
@@ -1420,6 +1431,11 @@ export async function syncPSNAchievements(
   } catch (error) {
     console.error('🚨 PSN sync failed:', error);
     const normalizedError = normalizePsnSyncError(error);
+
+    if (processedGames > 0) {
+      console.log('📊 Sync failed after writing data; refreshing leaderboard caches from partial progress...');
+      await refreshLeaderboardCachesAfterPsnSync(userId);
+    }
 
     // If this sync partially wrote trophy data before failing, still try to emit stories.
     if (preSnapshot && !activityFeedGenerated) {

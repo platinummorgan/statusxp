@@ -133,7 +133,7 @@ class _PremiumAchievementRadarScreenState
           FilledButton(
             onPressed: () {
               context.pop();
-              context.push('/premium-subscription');
+              context.push('/premium-subscription?source=achievement_radar');
             },
             child: const Text('Upgrade'),
           ),

@@ -1,14 +1,13 @@
 /// App store and external links configuration
 class AppLinks {
-  // App Store Links (TODO: Update with actual URLs when published)
-  static const String appStoreUrl =
-      'https://apps.apple.com/app/statusxp'; // Placeholder
+  // Store links
+  static const String appStoreUrl = 'https://apps.apple.com/app/statusxp';
   static const String playStoreUrl =
-      'https://play.google.com/store/apps/details?id=com.statusxp.statusxp'; // Placeholder
+      'https://play.google.com/store/apps/details?id=com.statusxp.statusxp';
 
-  // Social Media Links (TODO: Add your social media)
-  static const String twitter = 'https://twitter.com/statusxp';
-  static const String discord = 'https://discord.gg/statusxp';
+  // Social links remain empty until official accounts are configured.
+  static const String twitter = '';
+  static const String discord = '';
 
   // Support Links
   static const String supportEmail = 'support@statusxp.com';

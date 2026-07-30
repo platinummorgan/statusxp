@@ -4,13 +4,10 @@
  * Creates before/after snapshots and detects changes for activity feed
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createServiceClient } from './supabase-client.js';
 import { generateActivityStory } from './activity-feed-generator.js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createServiceClient();
 
 const SOURCE_PLATFORM_IDS = Object.freeze({
   psn: [1, 2, 5, 9],

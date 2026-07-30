@@ -13,6 +13,11 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  let supabaseClient: ReturnType<typeof createClient> | null = null;
+  let currentUserId: string | null = null;
+  let createdSyncLogId: number | null = null;
+  let profileMarkedSyncing = false;
+
   try {
     const authHeader = req.headers.get('Authorization')!;
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -21,6 +26,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     });
+    supabaseClient = supabase;
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
@@ -29,15 +35,16 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    currentUserId = user.id;
 
     // Get profile
     const { data: profile } = await supabase
       .from('profiles')
-      .select('steam_id, steam_api_key, steam_sync_status')
+      .select('steam_id, steam_sync_status')
       .eq('id', user.id)
       .single();
 
-    if (!profile?.steam_id || !profile?.steam_api_key) {
+    if (!profile?.steam_id) {
       return new Response(JSON.stringify({ error: 'Steam account not linked' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -77,9 +84,10 @@ serve(async (req) => {
     if (!syncLog) {
       throw new Error('Failed to create sync log');
     }
+    createdSyncLogId = syncLog.id;
 
     // Set profile to syncing
-    await supabase
+    const { error: profileSyncingError } = await supabase
       .from('profiles')
       .update({
         steam_sync_status: 'syncing',
@@ -87,12 +95,15 @@ serve(async (req) => {
         steam_sync_error: null,
       })
       .eq('id', user.id);
+    if (profileSyncingError) {
+      throw new Error(`Failed to mark Steam sync as syncing: ${profileSyncingError.message}`);
+    }
+    profileMarkedSyncing = true;
 
     // Call Railway service
     const railwayPayload = {
       userId: user.id,
       steamId: profile.steam_id,
-      apiKey: profile.steam_api_key,
       syncLogId: syncLog.id,
       batchSize: 5,
       maxConcurrent: 1,
@@ -140,9 +151,38 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Steam sync start error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    if (supabaseClient && currentUserId) {
+      const safeErrorMessage = errorMessage.substring(0, 500);
+      if (createdSyncLogId !== null) {
+        await supabaseClient
+          .from('steam_sync_logs')
+          .update({
+            status: 'failed',
+            completed_at: new Date().toISOString(),
+            error_message: safeErrorMessage,
+          })
+          .eq('id', createdSyncLogId)
+          .eq('status', 'pending');
+      }
+
+      if (profileMarkedSyncing) {
+        await supabaseClient
+          .from('profiles')
+          .update({
+            steam_sync_status: 'error',
+            steam_sync_progress: 0,
+            steam_sync_error: safeErrorMessage,
+          })
+          .eq('id', currentUserId)
+          .eq('steam_sync_status', 'syncing');
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: errorMessage,
       }),
       { 
         status: 500,

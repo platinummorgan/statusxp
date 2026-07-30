@@ -14,12 +14,14 @@ Background sync service for Xbox, Steam, and PSN achievement data.
    - Add environment variables:
      - `SUPABASE_URL`
      - `SUPABASE_SERVICE_ROLE_KEY`
+     - `STEAM_WEB_API_KEY` (shared Steam Web API key for all Steam syncs)
 3. Deploy!
 
 ## Environment Variables
 
 - `SUPABASE_URL` - Your Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY` - Your Supabase service role key
+- `STEAM_WEB_API_KEY` - Shared Steam Web API key used by Steam sync
 - `PORT` - Automatically set by Railway
 
 ## Endpoints

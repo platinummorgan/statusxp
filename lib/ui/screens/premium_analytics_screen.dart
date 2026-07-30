@@ -106,7 +106,7 @@ class _PremiumAnalyticsScreenState
             onPressed: () {
               context.pop(); // Close dialog
               context.pop(); // Return to dashboard
-              context.push('/premium-subscription');
+              context.push('/premium-subscription?source=analytics_gate');
             },
             style: FilledButton.styleFrom(backgroundColor: accentPrimary),
             child: const Text('Upgrade to Premium'),

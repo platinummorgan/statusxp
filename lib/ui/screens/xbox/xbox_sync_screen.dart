@@ -9,6 +9,8 @@ import 'package:statusxp/data/xbox_service.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:statusxp/services/sync_reconcile_service.dart';
 import 'package:statusxp/services/analytics_service.dart';
+import 'package:statusxp/services/premium_trigger_service.dart';
+import 'package:statusxp/services/referral_service.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
 import 'package:statusxp/ui/widgets/platform_sync_widget.dart';
 import 'package:statusxp/services/sync_limit_service.dart';
@@ -68,6 +70,7 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
     // Check rate limit first
     final limitStatus = await _syncLimitService.canUserSync('xbox');
     if (!limitStatus.canSync) {
+      if (!mounted) return;
       _logSyncIssue(
         category: 'rate_limited',
         status: 'error',
@@ -76,6 +79,10 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
       setState(() {
         _errorMessage = limitStatus.reason;
       });
+      await PremiumTriggerService().showIfEligible(
+        context,
+        offer: premiumOfferFor(PremiumTrigger.syncCooldown, platform: 'Xbox'),
+      );
       return;
     }
     setState(() {
@@ -232,6 +239,13 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
               ref.invalidate(leaderboardRanksProvider);
               ref.invalidate(lb.latestPeriodWinnersProvider);
               _schedulePostSyncReconciles();
+              try {
+                await ReferralService(
+                  ref.read(supabaseClientProvider),
+                ).finalizeAfterFirstSync();
+              } catch (_) {
+                // Referral rewards retry on a later successful sync.
+              }
 
               // Check for newly unlocked achievements
               final userId = ref.read(currentUserIdProvider);
@@ -259,6 +273,13 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
                 statusxpLog(
                   'Failed checking post-sync achievements (Xbox): $e',
                 );
+              }
+
+              if (_lastSyncAtBeforeSync == null &&
+                  !status.isAutoSync &&
+                  !suspectNoFreshWrite &&
+                  mounted) {
+                context.go('/sync-results?platform=xbox');
               }
             }
             return;

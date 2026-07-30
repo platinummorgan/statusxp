@@ -8,14 +8,28 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
+import 'package:statusxp/domain/engagement_hub_data.dart';
+import 'package:statusxp/domain/next_best_action.dart';
 import 'package:statusxp/domain/unified_game.dart';
+import 'package:statusxp/services/analytics_service.dart';
+import 'package:statusxp/services/local_reminder_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/services/premium_trigger_service.dart';
 import 'package:statusxp/state/engagement_providers.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/ui/widgets/activity_feed_widget.dart';
+import 'package:statusxp/ui/widgets/dashboard_background_controls.dart';
+import 'package:statusxp/ui/widgets/dashboard_background_game_grid.dart';
+import 'package:statusxp/ui/widgets/dashboard_game_card.dart';
+import 'package:statusxp/ui/widgets/dashboard_games_list.dart';
+import 'package:statusxp/ui/widgets/dashboard_image_source_sheet.dart';
+import 'package:statusxp/ui/widgets/dashboard_platform_summary.dart';
+import 'package:statusxp/ui/widgets/premium_upgrade_dialog.dart';
+import 'package:statusxp/ui/widgets/next_best_action_card.dart';
+import 'package:statusxp/ui/widgets/weekly_recap_card.dart';
 import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:statusxp/utils/supabase_guard.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -47,6 +61,9 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   int? _shuffleSeed; // Store shuffle seed to prevent changing on scroll
 
   final SubscriptionService _subscriptionService = SubscriptionService();
+  late final Future<bool> _premiumStatusFuture;
+  final Set<String> _trackedNextActions = {};
+  String? _lastReminderFingerprint;
 
   // Scroll controller for parallax effect
   final ScrollController _scrollController = ScrollController();
@@ -68,6 +85,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   @override
   void initState() {
     super.initState();
+    _premiumStatusFuture = _subscriptionService.isPremiumActive();
 
     // Initialize animation controllers
     _statusXPController = AnimationController(
@@ -421,6 +439,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       orElse: () => 0,
     );
     final challengesLoading = engagementSnapshotAsync.isLoading;
+    final engagementSnapshot = engagementSnapshotAsync.valueOrNull;
+    if (engagementSnapshot != null) {
+      _refreshStreakReminder(engagementSnapshot);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -620,6 +642,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                 stats,
                 claimablePoints: claimableChallengePoints,
                 challengesLoading: challengesLoading,
+                availableRewardXp: engagementSnapshot?.availableRewardXp ?? 0,
+                currentStreak: engagementSnapshot?.currentStreak ?? 0,
+                todayUnlocks: engagementSnapshot?.todayUnlocks ?? 0,
+                weeklyUnlocks: engagementSnapshot?.weeklyUnlocks ?? 0,
               ),
       ),
     );
@@ -631,6 +657,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     DashboardStats stats, {
     required int claimablePoints,
     required bool challengesLoading,
+    required int availableRewardXp,
+    required int currentStreak,
+    required int todayUnlocks,
+    required int weeklyUnlocks,
   }) {
     final gamesAsync = ref.watch(unifiedGamesProvider);
 
@@ -682,6 +712,43 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const SizedBox(height: 20),
+
+                      gamesAsync.maybeWhen(
+                        data: (games) => FutureBuilder<bool>(
+                          future: _premiumStatusFuture,
+                          builder: (context, premiumSnapshot) {
+                            final action = chooseNextBestAction(
+                              games: games,
+                              isPremium: premiumSnapshot.data ?? false,
+                              availableRewardXp: availableRewardXp,
+                              currentStreak: currentStreak,
+                              todayUnlocks: todayUnlocks,
+                            );
+                            _trackNextActionImpression(action);
+                            return NextBestActionCard(
+                              action: action,
+                              onTap: () => _handleNextBestAction(action),
+                            );
+                          },
+                        ),
+                        orElse: () => const SizedBox.shrink(),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      WeeklyRecapCard(
+                        weeklyUnlocks: weeklyUnlocks,
+                        currentStreak: currentStreak,
+                        onTap: () {
+                          AnalyticsService().logCustomEvent(
+                            eventName: 'weekly_recap_opened',
+                            parameters: {'source': 'dashboard'},
+                          );
+                          context.push('/weekly-recap');
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
 
                       // StatusXP large circle (center top) - animated entrance
                       SlideTransition(
@@ -1409,39 +1476,9 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   }
 
   Widget _buildPlatformCircles(DashboardStats stats) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        // PSN Circle
-        _buildPlatformCircle(
-          label: 'Platinums',
-          value: stats.psnStats.platinums.toString(),
-          subtitle: '${stats.psnStats.gamesCount} Games',
-          bottomLabel:
-              '${stats.psnStats.averagePerGame.toStringAsFixed(0)} AVG/GAME',
-          color: const Color(0xFF00A8E1), // PlayStation Blue
-        ),
-
-        // Xbox Circle
-        _buildPlatformCircle(
-          label: 'Xbox Gamerscore',
-          value: stats.xboxStats.gamerscore.toString(),
-          subtitle: '${stats.xboxStats.gamesCount} Games',
-          bottomLabel:
-              '${stats.xboxStats.averagePerGame.toStringAsFixed(0)} AVG/GAME',
-          color: const Color(0xFF107C10), // Xbox Green
-        ),
-
-        // Steam Circle
-        _buildPlatformCircle(
-          label: 'Steam Achievs',
-          value: stats.steamStats.achievementsUnlocked.toString(),
-          subtitle: '${stats.steamStats.gamesCount} Games',
-          bottomLabel:
-              '${stats.steamStats.averagePerGame.toStringAsFixed(0)} AVG/GAME',
-          color: const Color(0xFF66C0F4), // Steam Blue
-        ),
-      ],
+    return DashboardPlatformSummary(
+      stats: stats,
+      circleBuilder: _buildPlatformCircle,
     );
   }
 
@@ -1911,6 +1948,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         ),
       ),
       const PopupMenuItem<String>(
+        value: '/invite',
+        child: Row(
+          children: [
+            Icon(Icons.group_add, color: CyberpunkTheme.neonGreen, size: 20),
+            SizedBox(width: 12),
+            Text('Invite & Earn', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      ),
+      const PopupMenuItem<String>(
         value: '/leaderboards',
         child: Row(
           children: [
@@ -2020,138 +2067,21 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   }
 
   Widget _buildEmbeddedGamesList(BuildContext context) {
-    final gamesAsync = ref.watch(unifiedGamesProvider);
-
-    return gamesAsync.when(
-      loading: () => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32.0),
-          child: CircularProgressIndicator(),
-        ),
-      ),
-      error: (error, stack) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(
-                'Error loading games: $error',
-                style: const TextStyle(color: Colors.white70),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-      data: (games) {
-        if (games.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: Text(
-                'No games yet. Sync your platforms to get started!',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        }
-
-        final displayGames = games.take(20).toList();
-
-        return Column(
-          children: [
-            ...displayGames.map((game) => _buildGameCard(context, game)),
-            if (games.length > 20)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: TextButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    context.push('/unified-games');
-                  },
-                  child: Text(
-                    'View All ${games.length} Games →',
-                    style: const TextStyle(
-                      color: CyberpunkTheme.neonCyan,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
+    return DashboardGamesList(
+      games: ref.watch(unifiedGamesProvider),
+      gameBuilder: (game) => _buildGameCard(context, game),
+      onViewAll: () {
+        HapticFeedback.lightImpact();
+        context.push('/unified-games');
       },
     );
   }
 
   Widget _buildGameCard(BuildContext context, UnifiedGame game) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: const Color(0xFF0A0E27).withValues(alpha: 0.8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: () => _handleGameTap(context, game),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: game.coverUrl != null
-                    ? Image.network(
-                        game.coverUrl!,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholderCover(),
-                      )
-                    : _buildPlaceholderCover(),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      game.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildPlatformPills(game),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholderCover() {
-    return Container(
-      width: 80,
-      height: 80,
-      color: Colors.black38,
-      child: const Icon(Icons.videogame_asset, color: Colors.white24, size: 40),
+    return DashboardGameCard(
+      game: game,
+      platformPills: _buildPlatformPills(game),
+      onTap: () => _handleGameTap(context, game),
     );
   }
 
@@ -2267,10 +2197,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     );
   }
 
-  void _handleGameTap(BuildContext context, UnifiedGame game) {
+  Future<void> _handleGameTap(BuildContext context, UnifiedGame game) async {
     if (game.platforms.length == 1) {
       final platform = game.platforms.first;
-      Navigator.of(context).push(
+      await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => GameAchievementsScreen(
             platformId: platform.platformId,
@@ -2279,6 +2209,16 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             platform: platform.platform,
             coverUrl: game.coverUrl,
           ),
+        ),
+      );
+      if (!mounted || game.overallCompletion < 80) return;
+      final isPremium = await _subscriptionService.isPremiumActive();
+      if (!mounted || isPremium) return;
+      await PremiumTriggerService().showIfEligible(
+        this.context,
+        offer: premiumOfferFor(
+          PremiumTrigger.nearCompletion,
+          gameName: game.title,
         ),
       );
     } else {
@@ -2601,33 +2541,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
 
   /// Shimmer effect overlay for circles
   Widget _buildShimmer({required double size}) {
-    return AnimatedBuilder(
-      animation: _shimmerAnimation,
-      builder: (context, child) {
-        return ClipOval(
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                stops: [
-                  _shimmerAnimation.value - 0.3,
-                  _shimmerAnimation.value,
-                  _shimmerAnimation.value + 0.3,
-                ],
-                colors: [
-                  Colors.transparent,
-                  Colors.white.withValues(alpha: 0.15),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    return DashboardCircleShimmer(animation: _shimmerAnimation, size: size);
   }
 
   Widget _buildModeButton({
@@ -2637,58 +2551,84 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    return DashboardBackgroundModeButton(
+      icon: icon,
+      label: label,
+      description: description,
+      isSelected: isSelected,
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? CyberpunkTheme.neonPurple.withValues(alpha: 0.2)
-              : Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? CyberpunkTheme.neonPurple
-                : Colors.white.withValues(alpha: 0.2),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: CyberpunkTheme.neonPurple.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? CyberpunkTheme.neonPurple : Colors.white70,
-              size: 28,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? CyberpunkTheme.neonPurple : Colors.white,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              description,
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
+  }
+
+  void _trackNextActionImpression(NextBestAction action) {
+    if (!_trackedNextActions.add(action.analyticsId)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AnalyticsService().logCustomEvent(
+        eventName: 'next_best_action_viewed',
+        parameters: {'action': action.analyticsId},
+      );
+    });
+  }
+
+  void _refreshStreakReminder(EngagementSnapshot snapshot) {
+    final preferences = snapshot.notificationPreferences;
+    final fingerprint = [
+      preferences.pushEnabled,
+      preferences.notifyStreakRisk,
+      preferences.dailyDigestHour,
+      snapshot.currentStreak,
+      snapshot.todayUnlocks,
+      snapshot.weeklyUnlocks,
+    ].join(':');
+    if (_lastReminderFingerprint == fingerprint) return;
+    _lastReminderFingerprint = fingerprint;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      LocalReminderService.instance.updateStreakReminder(
+        enabled:
+            preferences.pushEnabled &&
+            preferences.notifyStreakRisk &&
+            snapshot.todayUnlocks == 0,
+        currentStreak: snapshot.currentStreak,
+        reminderHour: preferences.dailyDigestHour,
+      );
+      LocalReminderService.instance.weeklyRecapReminderEnabled().then((
+        enabled,
+      ) {
+        LocalReminderService.instance.updateWeeklyRecapReminder(
+          enabled: enabled && preferences.pushEnabled,
+          hasWeeklyActivity: snapshot.weeklyUnlocks > 0,
+          reminderHour: preferences.dailyDigestHour,
+        );
+      });
+    });
+  }
+
+  void _handleNextBestAction(NextBestAction action) {
+    AnalyticsService().logCustomEvent(
+      eventName: 'next_best_action_tapped',
+      parameters: {'action': action.analyticsId},
+    );
+
+    switch (action.type) {
+      case NextBestActionType.connectPlatform:
+        context.push('/get-started');
+        return;
+      case NextBestActionType.claimReward:
+      case NextBestActionType.protectStreak:
+        context.push('/engagement-hub');
+        return;
+      case NextBestActionType.finishGame:
+        final game = action.game;
+        if (game != null) _handleGameTap(context, game);
+        return;
+      case NextBestActionType.previewPremium:
+        context.push('/analytics');
+        return;
+      case NextBestActionType.browse:
+        context.push('/games/browse');
+        return;
+    }
   }
 
   Future<void> _handleMenuSelection(String route) async {
@@ -2726,38 +2666,10 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   }
 
   void _showPremiumUpgradeDialog(String featureName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1F3A),
-        title: const Row(
-          children: [
-            Icon(Icons.star, color: CyberpunkTheme.goldNeon),
-            SizedBox(width: 8),
-            Text('Premium Required', style: TextStyle(color: Colors.white)),
-          ],
-        ),
-        content: Text(
-          '$featureName is a Premium feature. Do you want to upgrade now?',
-          style: const TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Not Now'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.push('/premium-subscription');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: CyberpunkTheme.neonPurple,
-            ),
-            child: const Text('Upgrade'),
-          ),
-        ],
-      ),
+    showPremiumUpgradeDialog(
+      context,
+      source: 'feature_gate_${featureName.toLowerCase().replaceAll(' ', '_')}',
+      message: '$featureName is a Premium feature. Do you want to upgrade now?',
     );
   }
 
@@ -2766,41 +2678,15 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     final isPremium = await _subscriptionService.isPremiumActive();
 
     if (!isPremium) {
-      // Show premium required dialog
       if (!context.mounted) return;
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1F3A),
-          title: const Row(
-            children: [
-              Icon(Icons.star, color: CyberpunkTheme.goldNeon),
-              SizedBox(width: 8),
-              Text('Premium Feature', style: TextStyle(color: Colors.white)),
-            ],
-          ),
-          content: const Text(
+      await showPremiumUpgradeDialog(
+        context,
+        source: 'custom_background',
+        title: 'Premium Feature',
+        message:
             'Custom background uploads are a Premium feature. Upgrade to Premium to use your own photos and screenshots as your dashboard background!',
-            style: TextStyle(color: Colors.white70),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Maybe Later'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                context.push('/premium-subscription');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: CyberpunkTheme.neonPurple,
-              ),
-              child: const Text('Upgrade to Premium'),
-            ),
-          ],
-        ),
+        dismissLabel: 'Maybe Later',
+        upgradeLabel: 'Upgrade to Premium',
       );
       return;
     }
@@ -2812,61 +2698,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       // Show bottom sheet for gallery vs camera
       if (!context.mounted) return;
 
-      final ImageSource? source = await showModalBottomSheet<ImageSource>(
-        context: context,
-        backgroundColor: const Color(0xFF0A0E27),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (context) => Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Choose Image Source',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Optimal: 1080x1920 (9:16 portrait)',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.6),
-                ),
-              ),
-              const SizedBox(height: 24),
-              ListTile(
-                leading: const Icon(
-                  Icons.photo_library,
-                  color: CyberpunkTheme.neonPurple,
-                ),
-                title: const Text(
-                  'Gallery',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-              if (!kIsWeb) // Camera only available on mobile
-                ListTile(
-                  leading: const Icon(
-                    Icons.camera_alt,
-                    color: CyberpunkTheme.neonCyan,
-                  ),
-                  title: const Text(
-                    'Camera',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onTap: () => Navigator.pop(context, ImageSource.camera),
-                ),
-            ],
-          ),
-        ),
-      );
+      final source = await chooseDashboardImageSource(context);
 
       if (source == null) {
         return;
@@ -3034,94 +2866,13 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Calculate grid height based on number of games
-                    // Each row is approximately 170px (120 / 0.7 aspect ratio + 12 spacing)
-                    // Add 20px padding for safety
-                    SizedBox(
-                      height: ((games.length / 3).ceil() * 182.0) + 20,
-                      child: GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 0.7,
-                            ),
-                        itemCount: games.length,
-                        itemBuilder: (context, index) {
-                          final game = games[index];
-                          final isSelected = game.title == _backgroundMode;
-
-                          return GestureDetector(
-                            onTap: () {
-                              _setBackgroundMode(game.title);
-                              Navigator.pop(context);
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? CyberpunkTheme.neonPurple
-                                      : Colors.white.withValues(alpha: 0.2),
-                                  width: isSelected ? 3 : 1,
-                                ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: CyberpunkTheme.neonPurple
-                                              .withValues(alpha: 0.5),
-                                          blurRadius: 12,
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(11),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    if (game.coverUrl != null)
-                                      Image.network(
-                                        game.coverUrl!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) => Container(
-                                          color: Colors.grey.shade900,
-                                          child: const Icon(
-                                            Icons.broken_image,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      Container(
-                                        color: Colors.grey.shade900,
-                                        child: const Icon(
-                                          Icons.videogame_asset,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    if (isSelected)
-                                      Container(
-                                        color: CyberpunkTheme.neonPurple
-                                            .withValues(alpha: 0.3),
-                                        child: const Center(
-                                          child: Icon(
-                                            Icons.check_circle,
-                                            color: Colors.white,
-                                            size: 40,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                    DashboardBackgroundGameGrid(
+                      games: games,
+                      selectedTitle: _backgroundMode,
+                      onSelected: (game) {
+                        _setBackgroundMode(game.title);
+                        Navigator.pop(context);
+                      },
                     ),
                   ],
                 ),

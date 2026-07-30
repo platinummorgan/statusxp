@@ -11,6 +11,8 @@ import 'package:statusxp/services/auto_sync_service.dart';
 import 'package:statusxp/services/sync_reconcile_service.dart';
 import 'package:statusxp/ui/screens/psn/psn_connect_screen.dart';
 import 'package:statusxp/services/analytics_service.dart';
+import 'package:statusxp/services/premium_trigger_service.dart';
+import 'package:statusxp/services/referral_service.dart';
 import 'package:statusxp/utils/statusxp_logger.dart';
 import 'package:statusxp/utils/sync_issue_classifier.dart';
 
@@ -68,6 +70,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
     // Check rate limit first
     final limitStatus = await _syncLimitService.canUserSync('psn');
     if (!limitStatus.canSync) {
+      if (!mounted) return;
       _logSyncIssue(
         category: 'rate_limited',
         status: 'error',
@@ -76,6 +79,13 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
       setState(() {
         _errorMessage = limitStatus.reason;
       });
+      await PremiumTriggerService().showIfEligible(
+        context,
+        offer: premiumOfferFor(
+          PremiumTrigger.syncCooldown,
+          platform: 'PlayStation',
+        ),
+      );
       return;
     }
     setState(() {
@@ -238,6 +248,13 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
               ref.invalidate(leaderboardRanksProvider);
               ref.invalidate(lb.latestPeriodWinnersProvider);
               _schedulePostSyncReconciles();
+              try {
+                await ReferralService(
+                  ref.read(supabaseClientProvider),
+                ).finalizeAfterFirstSync();
+              } catch (_) {
+                // Referral rewards retry on a later successful sync.
+              }
 
               // Check for newly unlocked achievements
               final userId = ref.read(currentUserIdProvider);
@@ -263,6 +280,13 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                 }
               } catch (e) {
                 statusxpLog('Failed checking post-sync achievements (PSN): $e');
+              }
+
+              if (_lastSyncAtBeforeSync == null &&
+                  !status.isAutoSync &&
+                  !suspectNoFreshWrite &&
+                  mounted) {
+                context.go('/sync-results?platform=psn');
               }
             }
             return;
