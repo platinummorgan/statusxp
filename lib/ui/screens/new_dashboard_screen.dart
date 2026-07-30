@@ -27,6 +27,7 @@ import 'package:statusxp/ui/widgets/dashboard_game_card.dart';
 import 'package:statusxp/ui/widgets/dashboard_games_list.dart';
 import 'package:statusxp/ui/widgets/dashboard_image_source_sheet.dart';
 import 'package:statusxp/ui/widgets/dashboard_platform_summary.dart';
+import 'package:statusxp/ui/widgets/daily_momentum_card.dart';
 import 'package:statusxp/ui/widgets/premium_upgrade_dialog.dart';
 import 'package:statusxp/ui/widgets/next_best_action_card.dart';
 import 'package:statusxp/ui/widgets/weekly_recap_card.dart';
@@ -688,6 +689,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                 currentStreak: engagementSnapshot?.currentStreak ?? 0,
                 todayUnlocks: engagementSnapshot?.todayUnlocks ?? 0,
                 weeklyUnlocks: engagementSnapshot?.weeklyUnlocks ?? 0,
+                engagementSnapshot: engagementSnapshot,
               ),
       ),
     );
@@ -703,6 +705,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     required int currentStreak,
     required int todayUnlocks,
     required int weeklyUnlocks,
+    required EngagementSnapshot? engagementSnapshot,
   }) {
     final gamesAsync = ref.watch(unifiedGamesProvider);
 
@@ -818,6 +821,19 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                       ),
 
                       const SizedBox(height: 32),
+
+                      if (engagementSnapshot != null) ...[
+                        DailyMomentumCard(
+                          snapshot: engagementSnapshot,
+                          onTap: () {
+                            AnalyticsService().logCustomEvent(
+                              eventName: 'daily_momentum_opened',
+                            );
+                            context.push('/engagement-hub');
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                      ],
 
                       // Platform circles row - animated entrance
                       SlideTransition(
@@ -2629,6 +2645,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     final fingerprint = [
       preferences.pushEnabled,
       preferences.notifyStreakRisk,
+      preferences.notifyDailyChallenges,
       preferences.dailyDigestHour,
       snapshot.currentStreak,
       snapshot.todayUnlocks,
@@ -2644,6 +2661,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
             preferences.notifyStreakRisk &&
             snapshot.todayUnlocks == 0,
         currentStreak: snapshot.currentStreak,
+        reminderHour: preferences.dailyDigestHour,
+      );
+      LocalReminderService.instance.refreshGrowthReminders(
+        enabled: preferences.pushEnabled,
+        notifyDailyChallenges: preferences.notifyDailyChallenges,
         reminderHour: preferences.dailyDigestHour,
       );
       LocalReminderService.instance.weeklyRecapReminderEnabled().then((

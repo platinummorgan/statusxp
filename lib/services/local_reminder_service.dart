@@ -12,6 +12,8 @@ class LocalReminderService {
   static final LocalReminderService instance = LocalReminderService._();
   static const int _streakReminderId = 4101;
   static const int _weeklyRecapReminderId = 4102;
+  static const int _firstWeekReminderId = 4103;
+  static const int _winBackReminderId = 4104;
   static const String _weeklyRecapEnabledKey = 'weekly_recap_reminder_enabled';
 
   final FlutterLocalNotificationsPlugin _notifications =
@@ -170,6 +172,83 @@ class LocalReminderService {
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: '/weekly-recap',
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+    );
+  }
+
+  /// Re-arms lifecycle notifications whenever the app is opened. The win-back
+  /// message therefore fires only after three genuinely inactive days.
+  Future<void> refreshGrowthReminders({
+    required bool enabled,
+    required bool notifyDailyChallenges,
+    int reminderHour = 19,
+  }) async {
+    if (kIsWeb) return;
+    await initialize();
+    await _notifications.cancel(id: _firstWeekReminderId);
+    await _notifications.cancel(id: _winBackReminderId);
+    if (!enabled) return;
+
+    final preferences = await SharedPreferences.getInstance();
+    final now = tz.TZDateTime.now(tz.local);
+    final firstOpen = DateTime.tryParse(
+      preferences.getString('growth_first_open_at') ?? '',
+    );
+    if (firstOpen == null) {
+      await preferences.setString(
+        'growth_first_open_at',
+        DateTime.now().toIso8601String(),
+      );
+    }
+    final age = DateTime.now().difference(firstOpen ?? DateTime.now()).inDays;
+
+    if (notifyDailyChallenges && age < 7) {
+      var firstWeekAt = tz.TZDateTime(
+        tz.local,
+        now.year,
+        now.month,
+        now.day,
+        reminderHour.clamp(0, 23),
+      );
+      if (!firstWeekAt.isAfter(now)) {
+        firstWeekAt = firstWeekAt.add(const Duration(days: 1));
+      }
+      await _notifications.zonedSchedule(
+        id: _firstWeekReminderId,
+        title: 'Your daily StatusXP move is ready',
+        body: 'Make one small move today and keep building your gaming legacy.',
+        scheduledDate: firstWeekAt,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'statusxp_first_week',
+            'First-week progress',
+            channelDescription: 'Helpful first-week StatusXP reminders',
+            importance: Importance.defaultImportance,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: '/engagement-hub',
+      );
+    }
+
+    await _notifications.zonedSchedule(
+      id: _winBackReminderId,
+      title: 'Your StatusXP profile misses you',
+      body: 'See what changed and choose your quickest next achievement.',
+      scheduledDate: now.add(const Duration(days: 3)),
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'statusxp_win_back',
+          'Comeback reminders',
+          channelDescription: 'Occasional reminders after inactivity',
+          importance: Importance.defaultImportance,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      payload: '/',
+    );
+    AnalyticsService().logCustomEvent(
+      eventName: 'growth_reminders_refreshed',
+      parameters: {'first_week': age < 7},
     );
   }
 }

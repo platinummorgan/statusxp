@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:statusxp/domain/engagement_hub_data.dart';
+import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/services/local_reminder_service.dart';
+import 'package:statusxp/services/premium_trigger_service.dart';
+import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/state/engagement_providers.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
@@ -141,6 +145,8 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
     final userId = ref.read(currentUserIdProvider);
     if (userId == null || _claimingChallengeIds.contains(challenge.id)) return;
     if (!challenge.claimable) return;
+    final currentStreak =
+        ref.read(engagementSnapshotProvider).valueOrNull?.currentStreak ?? 0;
 
     setState(() => _claimingChallengeIds.add(challenge.id));
     try {
@@ -152,13 +158,23 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
 
       ref.invalidate(engagementSnapshotProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Claimed +${claim.rewardXp} engagement points. Lifetime points: ${claim.totalRewardXp}.',
-          ),
-        ),
+      AnalyticsService().logCustomEvent(
+        eventName: 'challenge_reward_claimed',
+        parameters: {
+          'challenge': challenge.id,
+          'reward_xp': claim.rewardXp,
+          'period': claim.periodType,
+        },
       );
+      await _showRewardCelebration(challenge, claim);
+
+      final isPremium = await SubscriptionService().isPremiumActive();
+      if (mounted && !isPremium && currentStreak >= 3) {
+        await PremiumTriggerService().showIfEligible(
+          context,
+          offer: premiumOfferFor(PremiumTrigger.streak),
+        );
+      }
     } catch (error) {
       // Sync snapshot even on errors in case reward was claimed server-side.
       ref.invalidate(engagementSnapshotProvider);
@@ -171,6 +187,42 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
         setState(() => _claimingChallengeIds.remove(challenge.id));
       }
     }
+  }
+
+  Future<void> _showRewardCelebration(
+    ChallengeProgress challenge,
+    ChallengeClaimResult claim,
+  ) async {
+    final share = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.emoji_events, color: accentWarning, size: 42),
+        title: const Text('DAILY WIN SECURED'),
+        content: Text(
+          '+${claim.rewardXp} StatusXP claimed\n${challenge.title}\n\nLifetime challenge rewards: ${claim.totalRewardXp}',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep Going'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            icon: const Icon(Icons.share, size: 18),
+            label: const Text('Share Win'),
+          ),
+        ],
+      ),
+    );
+    if (share != true) return;
+    AnalyticsService().logCustomEvent(
+      eventName: 'challenge_reward_shared',
+      parameters: {'challenge': challenge.id},
+    );
+    await Share.share(
+      'Daily win secured on StatusXP: ${challenge.title} (+${claim.rewardXp} StatusXP). 🎮⚡\nhttps://play.google.com/store/apps/details?id=com.statusxp.statusxp',
+    );
   }
 
   @override
