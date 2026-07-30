@@ -263,7 +263,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
     // Fetch owned games
     const gamesResponse = await fetch(
-      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${effectiveApiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1&skip_unvetted_apps=false`
+      `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${effectiveApiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1&skip_unvetted_apps=false&language=english`
     );
     const gamesData = await ensureSteamJsonResponse(gamesResponse, 'owned games');
     const ownedGames = gamesData.response?.games || [];
@@ -475,7 +475,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               let appDetailsData;
               try {
                 const appDetailsResponse = await fetch(
-                  `https://store.steampowered.com/api/appdetails?appids=${game.appid}`
+                  `https://store.steampowered.com/api/appdetails?appids=${game.appid}&l=english&cc=us`
                 );
                 const appDetailsContentType = appDetailsResponse.headers.get('content-type');
                 if (appDetailsResponse.ok && appDetailsContentType?.includes('application/json')) {
@@ -497,7 +497,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             
             // Get game schema (achievements list)
             const schemaResponse = await fetch(
-              `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${effectiveApiKey}&appid=${game.appid}`
+              `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${effectiveApiKey}&appid=${game.appid}&l=english`
             );
             console.log('Schema fetch status:', schemaResponse.status);
             
@@ -520,7 +520,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
 
             // Get player achievements to check counts
             const playerAchievementsResponse = await fetch(
-              `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${effectiveApiKey}&steamid=${steamId}&appid=${game.appid}`
+              `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${effectiveApiKey}&steamid=${steamId}&appid=${game.appid}&l=english`
             );
             console.log('Player achievements fetch status:', playerAchievementsResponse.status);
             
@@ -546,21 +546,29 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             const existingGame = existingSteamGamesMap.get(game.appid.toString()) || null;
             
             if (existingGame) {
-              // Update cover if we don't have one
+              // Refresh localized names as well as missing covers. Older syncs
+              // may have persisted the account's preferred Steam language.
+              const gameUpdates = {};
+              if (existingGame.name !== trimmedName) {
+                gameUpdates.name = trimmedName;
+              }
               if (!existingGame.cover_url) {
                 const externalCoverUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/library_600x900.jpg`;
                 const proxiedCoverUrl = await uploadGameCover(externalCoverUrl, platformId, game.appid.toString(), supabase);
-                
+                gameUpdates.cover_url = proxiedCoverUrl || externalCoverUrl;
+              }
+
+              if (Object.keys(gameUpdates).length > 0) {
                 const { error: updateError } = await supabase
                   .from('games')
-                  .update({ 
-                    cover_url: proxiedCoverUrl || externalCoverUrl
-                  })
+                  .update(gameUpdates)
                   .eq('platform_id', platformId)
                   .eq('platform_game_id', existingGame.platform_game_id);
                 
                 if (updateError) {
-                  console.error('❌ Failed to update game cover:', game.name, 'Error:', updateError);
+                  console.error('❌ Failed to refresh game metadata:', game.name, 'Error:', updateError);
+                } else {
+                  Object.assign(existingGame, gameUpdates);
                 }
               }
               gameTitle = existingGame;

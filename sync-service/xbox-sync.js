@@ -1069,6 +1069,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             
             if (existingGameById) {
               // Found by composite key - this is the exact game
+              const gameUpdates = {};
+              if (existingGameById.name !== trimmedName) {
+                gameUpdates.name = trimmedName;
+              }
               if (!existingGameById.cover_url && title.displayImage) {
                 console.log('Attempting to update Xbox game:', { 
                   name: title.name, 
@@ -1077,16 +1081,21 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 });
                 
                 const proxiedCoverUrl = await uploadGameCover(title.displayImage, platformId, title.titleId, supabase);
-                
+                gameUpdates.cover_url = proxiedCoverUrl || title.displayImage;
+              }
+
+              if (Object.keys(gameUpdates).length > 0) {
                 const { error: updateError } = await supabase
                   .from('games')
-                  .update({ cover_url: proxiedCoverUrl || title.displayImage })
+                  .update(gameUpdates)
                   .eq('platform_id', platformId)
                   .eq('platform_game_id', existingGameById.platform_game_id);
                 
                 if (updateError) {
                   console.error('❌ Failed to update game cover:', title.name, 'Error:', updateError);
                   console.error('  - Platform Game ID was:', existingGameById.platform_game_id);
+                } else {
+                  Object.assign(existingGameById, gameUpdates);
                 }
               }
               gameTitle = existingGameById;

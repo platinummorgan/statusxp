@@ -360,6 +360,13 @@ function validatePlatformMapping(trophyTitlePlatform, platformId, gameName, npCo
   return true;
 }
 
+// Sony localizes trophy titles and metadata from the request headers. Always
+// request English here so an account/console language cannot leak Japanese (or
+// another locale) into shared game records and every dashboard card using them.
+const PSN_ENGLISH_HEADERS = Object.freeze({
+  'Accept-Language': 'en-US',
+});
+
 function getNumericProgressPercent(title) {
   const raw = title?.progress;
   if (raw == null) return 0;
@@ -839,7 +846,11 @@ export async function syncPSNAchievements(
     const limit = 800;
 
     while (true) {
-      const res = await getUserTitles({ accessToken: currentAccessToken }, accountId, { limit, offset });
+      const res = await getUserTitles(
+        { accessToken: currentAccessToken },
+        accountId,
+        { limit, offset, headerOverrides: PSN_ENGLISH_HEADERS }
+      );
       const batch = res?.trophyTitles ?? [];
       if (!batch.length) break;
       allTitles = allTitles.concat(batch);
@@ -1248,7 +1259,10 @@ export async function syncPSNAchievements(
           const groupsData = await getTitleTrophyGroups(
             { accessToken: currentAccessToken },
             title.npCommunicationId,
-            { npServiceName: title.npServiceName }
+            {
+              npServiceName: title.npServiceName,
+              headerOverrides: PSN_ENGLISH_HEADERS,
+            }
           );
           
           const groups = groupsData?.trophyGroups ?? [];
@@ -1275,7 +1289,10 @@ export async function syncPSNAchievements(
         { accessToken: currentAccessToken },
         title.npCommunicationId,
         'all',
-        { npServiceName: title.npServiceName }
+        {
+          npServiceName: title.npServiceName,
+          headerOverrides: PSN_ENGLISH_HEADERS,
+        }
       );
 
       const userTrophyData = await getUserTrophiesEarnedForTitle(
@@ -1283,7 +1300,10 @@ export async function syncPSNAchievements(
         accountId,
         title.npCommunicationId,
         'all',
-        { npServiceName: title.npServiceName }
+        {
+          npServiceName: title.npServiceName,
+          headerOverrides: PSN_ENGLISH_HEADERS,
+        }
       );
 
       const trophies = trophyMetadata?.trophies ?? [];
