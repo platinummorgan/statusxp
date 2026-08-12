@@ -82,6 +82,9 @@ Whenever roadmap work changes materially:
 - Added a forward migration that makes the deprecated integer comment ID optional, preserving old clients while enabling canonical composite-key comment reads and writes without fabricated numeric IDs.
 - Added the embedded, moderated comment composer to the canonical achievement page; applying and validating the migration remains a release prerequisite.
 - Validation evidence for PR #8: `flutter analyze` passed and all 8 canonical reference tests passed.
+- Release validation update: `flutter build web --release` completed successfully for the stacked implementation; the WebAssembly dry run reported only existing `dart:html`/`dart:js_util` compatibility warnings.
+- GitHub validation update: PRs #7 and #8 are both mergeable with clean merge states; GitGuardian, Vercel deployment, and Vercel preview checks passed for both.
+- Local Supabase migration lint remains pending because the Docker Desktop database engine is not running (`127.0.0.1:54322` unavailable). This is an environment blocker for local database validation, not a failed migration check.
 
 ## Executive decision
 
