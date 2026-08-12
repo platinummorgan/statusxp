@@ -2,8 +2,18 @@
 -- require potential_gamerscore, but the earlier Xbox cache view omitted it.
 -- A later migration replaces this view with authoritative profile scoring.
 
-DROP VIEW IF EXISTS public.xbox_leaderboard_cache CASCADE;
+DO $migration$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'xbox_leaderboard_cache'
+      AND column_name = 'potential_gamerscore'
+  ) THEN
+    DROP VIEW IF EXISTS public.xbox_leaderboard_cache CASCADE;
 
+    EXECUTE $view$
 CREATE VIEW public.xbox_leaderboard_cache AS
 WITH xbox_user_stats AS (
   SELECT
@@ -43,6 +53,10 @@ FROM xbox_user_stats xus
 JOIN public.profiles p ON p.id = xus.user_id
 LEFT JOIN xbox_potential xp ON xp.user_id = xus.user_id
 WHERE p.show_on_leaderboard = true
-  AND xus.achievement_count > 0;
+  AND xus.achievement_count > 0
+$view$;
+  END IF;
+END
+$migration$;
 
 GRANT SELECT ON public.xbox_leaderboard_cache TO authenticated, anon;

@@ -1,8 +1,18 @@
 -- Seasonal Steam leaderboard functions require potential_achievements before
 -- the later optimized Steam cache migration is applied.
 
-DROP VIEW IF EXISTS public.steam_leaderboard_cache CASCADE;
+DO $migration$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'steam_leaderboard_cache'
+      AND column_name = 'potential_achievements'
+  ) THEN
+    DROP VIEW IF EXISTS public.steam_leaderboard_cache CASCADE;
 
+    EXECUTE $view$
 CREATE VIEW public.steam_leaderboard_cache AS
 WITH earned AS (
   SELECT
@@ -33,6 +43,10 @@ FROM earned
 JOIN public.profiles p ON p.id = earned.user_id
 LEFT JOIN potential ON potential.user_id = earned.user_id
 WHERE p.show_on_leaderboard = true
-  AND earned.achievement_count > 0;
+  AND earned.achievement_count > 0
+$view$;
+  END IF;
+END
+$migration$;
 
 GRANT SELECT ON public.steam_leaderboard_cache TO authenticated, anon;
