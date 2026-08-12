@@ -37,7 +37,7 @@ Whenever roadmap work changes materially:
 | Phase | Status | Current outcome | Next checkpoint |
 |---|---|---|---|
 | Phase 0 — Inventory and measurement | `IN DISCOVERY` | Source-level inventory of all 37 routes completed in `docs/PHASE_0_ROUTE_FEATURE_INVENTORY.md`. | Validate routes at runtime and establish the baseline analytics list. |
-| Phase 1 — Connected core | `READY` | Unified library, composite identifiers, canonical URLs, and the first game-hub slice are approved in `docs/PHASE_1_ENTITY_ROUTING_DECISIONS.md`. | Implement the tested platform registry and canonical game overview shell. |
+| Phase 1 — Connected core | `IN PROGRESS` | Canonical library routing, the platform registry, typed `GameRef`, repository-backed game overview, deliberate states, analytics, and library/catalog navigation are implemented in draft PR #7. | Review and runtime-validate PR #7, then implement the canonical achievement-detail slice. |
 | Phase 2 — Scoring trust | `IN DISCOVERY` | Hybrid current/earned-at policy and leaderboard requirements proposed. | Audit the live scoring implementation and approve the formal specification. |
 | Phase 3 — Public identity | `NOT STARTED` | Target profile architecture defined. | Define privacy and RLS requirements. |
 | Phase 4 — Data-rich entities | `NOT STARTED` | Target game and achievement hubs defined. | Complete Phase 1 entity routes first. |
@@ -74,6 +74,9 @@ Whenever roadmap work changes materially:
 - Selected the unified cross-platform library as the canonical `/games` experience and documented legacy-route compatibility.
 - Approved platform-scoped V2 identifiers, readable platform URL codes, and a future privacy-safe `public_handle` contract.
 - Defined the first implementable canonical game-hub slice and its acceptance criteria in `docs/PHASE_1_ENTITY_ROUTING_DECISIONS.md`.
+- Implemented the first canonical game-hub slice in draft PR #7: `/games` now uses the unified library, `/unified-games` redirects for compatibility, and `/games/:platformCode/:platformGameId` loads canonical metadata and owner progress by composite key.
+- Added tested handling for all approved platform URL codes, encoded identifiers, invalid links, loading failures, missing games, owner/non-owner progress, and library/catalog navigation.
+- Validation evidence for PR #7: `flutter analyze` passed and all 6 focused `GameRef` tests passed.
 
 ## Executive decision
 
