@@ -71,7 +71,7 @@ class GameRef extends Equatable {
     late final String gameId;
     try {
       gameId = Uri.decodeComponent(encodedGameId).trim();
-    } on FormatException {
+    } on ArgumentError {
       return null;
     }
     if (gameId.isEmpty) return null;
