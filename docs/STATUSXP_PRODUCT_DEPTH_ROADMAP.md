@@ -88,6 +88,7 @@ Whenever roadmap work changes materially:
 - `supabase db reset --local` now applies the complete migration chain from an empty database, including the composite-comment migration.
 - Repaired four pre-existing clean-rebuild blockers in PR #8: a malformed SQL comment, missing leaderboard history tables, and transitional Xbox/Steam cache columns required by later migrations.
 - A rollback-only SQL smoke test inserted a comment with a null deprecated integer ID and valid composite achievement foreign key, verified it, rolled back, and confirmed zero test rows remained.
+- Added deployment guards to the historical Xbox/Steam cache compatibility migrations. Reapplying them against the final schema preserved both current view definitions byte-for-byte by normalized definition hash, preventing an out-of-order production backfill from downgrading newer views.
 - `supabase db lint --local` now runs against the rebuilt schema. It reports an existing backlog of V1 functions referencing removed legacy columns/tables; none of the findings target the canonical entity or comment migrations, so cleanup remains a separate schema-hardening slice.
 
 ## Executive decision
