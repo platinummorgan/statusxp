@@ -7,6 +7,7 @@ import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
 import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
 import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
 import 'package:statusxp/ui/screens/game_overview_screen.dart';
+import 'package:statusxp/ui/screens/achievement_overview_screen.dart';
 import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/screens/game_browser_screen.dart';
@@ -188,6 +189,23 @@ final GoRouter appRouter = GoRouter(
             return gameRef == null
                 ? const GameRouteNotFoundScreen()
                 : GameOverviewScreen(gameRef: gameRef);
+          },
+        ),
+
+        GoRoute(
+          path:
+              '/games/:platformCode/:platformGameId/achievements/:platformAchievementId',
+          name: 'canonical-achievement-overview',
+          builder: (context, state) {
+            final achievementRef = AchievementRef.fromRoute(
+              platformCode: state.pathParameters['platformCode']!,
+              encodedGameId: state.pathParameters['platformGameId']!,
+              encodedAchievementId:
+                  state.pathParameters['platformAchievementId']!,
+            );
+            return achievementRef == null
+                ? const GameRouteNotFoundScreen()
+                : AchievementOverviewScreen(achievementRef: achievementRef);
           },
         ),
 

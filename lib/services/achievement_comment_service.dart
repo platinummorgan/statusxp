@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/achievement_comment.dart';
 import 'package:statusxp/services/content_moderation_service.dart';
+import 'package:statusxp/domain/game_ref.dart';
 
 class AchievementCommentService {
   AchievementCommentService(this._supabase);
@@ -37,8 +38,33 @@ class AchievementCommentService {
         .eq('is_hidden', false)
         .order('created_at', ascending: false);
 
-    final List<dynamic> rows = response as List<dynamic>;
+    return _mapComments(response as List<dynamic>);
+  }
 
+  Future<List<AchievementComment>> getCommentsForComposite(
+    AchievementRef achievementRef,
+  ) async {
+    final response = await _supabase
+        .from('achievement_comments')
+        .select('''
+          id, achievement_id, user_id, comment_text, created_at, updated_at,
+          is_hidden, is_flagged, flag_count,
+          profiles!inner(
+            psn_online_id, psn_avatar_url, steam_display_name,
+            steam_avatar_url, xbox_gamertag, xbox_avatar_url,
+            preferred_display_platform
+          )
+        ''')
+        .eq('platform_id', achievementRef.gameRef.platformId)
+        .eq('platform_game_id', achievementRef.gameRef.platformGameId)
+        .eq('platform_achievement_id', achievementRef.platformAchievementId)
+        .eq('is_hidden', false)
+        .order('created_at', ascending: false);
+
+    return _mapComments(response as List<dynamic>);
+  }
+
+  List<AchievementComment> _mapComments(List<dynamic> rows) {
     return rows.map((row) {
       // Flatten the nested profile data
       final profiles = row['profiles'];
