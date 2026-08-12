@@ -90,6 +90,7 @@ Whenever roadmap work changes materially:
 - A rollback-only SQL smoke test inserted a comment with a null deprecated integer ID and valid composite achievement foreign key, verified it, rolled back, and confirmed zero test rows remained.
 - Added deployment guards to the historical Xbox/Steam cache compatibility migrations. Reapplying them against the final schema preserved both current view definitions byte-for-byte by normalized definition hash, preventing an out-of-order production backfill from downgrading newer views.
 - Authenticated local runtime validation passed through Supabase Auth, REST, RLS, and the composite achievement foreign key: the comment was inserted with a null legacy ID, read back through the API, then all isolated account/entity/comment rows were deleted and zero test rows remained.
+- Authorized Vercel CLI access and validated the protected PR #8 deployment: root, canonical game, and canonical achievement deep links all return the Flutter application shell, and the deployed 4.6 MB JavaScript bundle contains both canonical route names, both entity-view analytics events, and the invalid-link state.
 - `supabase db lint --local` now runs against the rebuilt schema. It reports an existing backlog of V1 functions referencing removed legacy columns/tables; none of the findings target the canonical entity or comment migrations, so cleanup remains a separate schema-hardening slice.
 
 ## Executive decision
