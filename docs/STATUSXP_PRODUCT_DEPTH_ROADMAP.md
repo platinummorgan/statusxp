@@ -37,7 +37,7 @@ Whenever roadmap work changes materially:
 | Phase | Status | Current outcome | Next checkpoint |
 |---|---|---|---|
 | Phase 0 — Inventory and measurement | `IN DISCOVERY` | Source-level inventory of all 37 routes completed in `docs/PHASE_0_ROUTE_FEATURE_INVENTORY.md`. | Validate routes at runtime and establish the baseline analytics list. |
-| Phase 1 — Connected core | `IN PROGRESS` | The canonical game hub is in draft PR #7; the stacked achievement-detail route, composite-key metadata/earned-state loading, and embedded comments are in draft PR #8. | Runtime-validate PRs #7–#8 and migrate the legacy integer comment-write contract before enabling the embedded composer. |
+| Phase 1 — Connected core | `VALIDATING` | Draft PRs #7–#8 implement the canonical library, game and achievement routes, repository-loaded entity data, analytics, contextual navigation, and composite-key comment reads/writes. | Apply the forward comment migration in a test environment and runtime-validate deep links, owner/non-owner states, navigation, and comment posting. |
 | Phase 2 — Scoring trust | `IN DISCOVERY` | Hybrid current/earned-at policy and leaderboard requirements proposed. | Audit the live scoring implementation and approve the formal specification. |
 | Phase 3 — Public identity | `NOT STARTED` | Target profile architecture defined. | Define privacy and RLS requirements. |
 | Phase 4 — Data-rich entities | `NOT STARTED` | Target game and achievement hubs defined. | Complete Phase 1 entity routes first. |
@@ -79,7 +79,8 @@ Whenever roadmap work changes materially:
 - Validation evidence for PR #7: `flutter analyze` passed and all 6 focused `GameRef` tests passed.
 - Implemented the stacked canonical achievement-detail slice in draft PR #8 with typed `AchievementRef` URLs, repository-loaded game/achievement data, rarity, StatusXP, earned state, composite-key comments, and contextual navigation.
 - Replaced achievement-list comment links with canonical achievement destinations and added achievement-view analytics.
-- Recorded a compatibility limitation instead of applying an unsafe conversion: existing comments can be read by composite key, but creating comments still requires the deprecated non-null integer `achievement_id`; the embedded composer remains pending a forward database migration.
+- Added a forward migration that makes the deprecated integer comment ID optional, preserving old clients while enabling canonical composite-key comment reads and writes without fabricated numeric IDs.
+- Added the embedded, moderated comment composer to the canonical achievement page; applying and validating the migration remains a release prerequisite.
 - Validation evidence for PR #8: `flutter analyze` passed and all 8 canonical reference tests passed.
 
 ## Executive decision
