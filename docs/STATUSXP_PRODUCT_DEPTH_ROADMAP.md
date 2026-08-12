@@ -37,7 +37,7 @@ Whenever roadmap work changes materially:
 | Phase | Status | Current outcome | Next checkpoint |
 |---|---|---|---|
 | Phase 0 — Inventory and measurement | `IN DISCOVERY` | Source-level inventory of all 37 routes completed in `docs/PHASE_0_ROUTE_FEATURE_INVENTORY.md`. | Validate routes at runtime and establish the baseline analytics list. |
-| Phase 1 — Connected core | `NOT STARTED` | Strategy and first vertical slice defined. | Approve canonical entity IDs and URL formats. |
+| Phase 1 — Connected core | `READY` | Unified library, composite identifiers, canonical URLs, and the first game-hub slice are approved in `docs/PHASE_1_ENTITY_ROUTING_DECISIONS.md`. | Implement the tested platform registry and canonical game overview shell. |
 | Phase 2 — Scoring trust | `IN DISCOVERY` | Hybrid current/earned-at policy and leaderboard requirements proposed. | Audit the live scoring implementation and approve the formal specification. |
 | Phase 3 — Public identity | `NOT STARTED` | Target profile architecture defined. | Define privacy and RLS requirements. |
 | Phase 4 — Data-rich entities | `NOT STARTED` | Target game and achievement hubs defined. | Complete Phase 1 entity routes first. |
@@ -54,6 +54,9 @@ Whenever roadmap work changes materially:
 | 2026-08-12 | Place scoring trust immediately after the connected core. | StatusXP scoring is the namesake foundation for rankings, comparisons, recaps, and competitive identity. |
 | 2026-08-12 | Prefer a hybrid score record: current value for ranking and earned-at value for history. | This preserves competitive fairness and historical context. |
 | 2026-08-12 | Add Gaming Pulse as a cross-platform, library-aware content layer. | StatusXP needs daily utility even when users earn no achievements. |
+| 2026-08-12 | Make the unified cross-platform library canonical at `/games`; retain `/unified-games` temporarily as a compatibility route. | One library eliminates overlapping navigation models while preserving a safe migration path. |
+| 2026-08-12 | Use platform-scoped V2 composite identifiers and centrally mapped platform URL codes for game and achievement routes. | Platform IDs prevent collisions and repository-loaded metadata makes deep links durable. |
+| 2026-08-12 | Add a dedicated privacy-safe `public_handle` later instead of exposing the existing username. | Existing usernames may be derived from email addresses and are not a safe public URL contract. |
 
 ### Progress changelog
 
@@ -68,6 +71,9 @@ Whenever roadmap work changes materially:
 - Established this document as the persistent roadmap execution record.
 - Completed the initial 37-route source inventory, access classification, connectivity audit, unrouted-screen list, and canonical URL proposal in `docs/PHASE_0_ROUTE_FEATURE_INVENTORY.md`.
 - Confirmed the Phase 1 blockers: no public profile route, game detail is only a redirect, no canonical achievement detail, and imperative navigation bypasses durable entity URLs.
+- Selected the unified cross-platform library as the canonical `/games` experience and documented legacy-route compatibility.
+- Approved platform-scoped V2 identifiers, readable platform URL codes, and a future privacy-safe `public_handle` contract.
+- Defined the first implementable canonical game-hub slice and its acceptance criteria in `docs/PHASE_1_ENTITY_ROUTING_DECISIONS.md`.
 
 ## Executive decision
 
