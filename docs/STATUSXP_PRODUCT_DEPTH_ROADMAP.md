@@ -93,7 +93,8 @@ Whenever roadmap work changes materially:
 - Authorized Vercel CLI access and validated the protected PR #8 deployment: root, canonical game, and canonical achievement deep links all return the Flutter application shell, and the deployed 4.6 MB JavaScript bundle contains both canonical route names, both entity-view analytics events, and the invalid-link state.
 - User preview testing found that dashboard **My Games** cards still opened the legacy achievement list directly. PR #8 now routes single-platform and platform-selected dashboard games through the canonical game overview while preserving routed back behavior and the existing near-completion premium trigger.
 - User preview testing then exposed a production `57014` statement timeout in the unified **My Games** RPC. The prior query aggregated the entire global achievement catalog for every library request; PR #8 now bounds achievement totals to the requesting user's platform/game keys. A rollback-only result-shape test passed and left zero test rows.
-- The timeout fix requires the pending hosted Supabase migrations before it can be retested in Vercel; production migration deployment remains explicitly unapproved.
+- With explicit user authorization, the five reviewed migrations were applied to the linked hosted Supabase project and the remote migration ledger now matches local through `20260812001000`.
+- Read-only production verification for the affected profile returned 398 unified game rows in 824 ms after optimization, resolving the observed statement-timeout path without modifying user data.
 - `supabase db lint --local` now runs against the rebuilt schema. It reports an existing backlog of V1 functions referencing removed legacy columns/tables; none of the findings target the canonical entity or comment migrations, so cleanup remains a separate schema-hardening slice.
 
 ## Executive decision
