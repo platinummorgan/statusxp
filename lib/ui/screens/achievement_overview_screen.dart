@@ -156,6 +156,8 @@ class _AchievementBody extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 12),
+              _CommentComposer(achievementRef: achievement.ref),
+              const SizedBox(height: 12),
               comments.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => _InlineMessage(
@@ -178,6 +180,81 @@ class _AchievementBody extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _CommentComposer extends ConsumerStatefulWidget {
+  final AchievementRef achievementRef;
+  const _CommentComposer({required this.achievementRef});
+
+  @override
+  ConsumerState<_CommentComposer> createState() => _CommentComposerState();
+}
+
+class _CommentComposerState extends ConsumerState<_CommentComposer> {
+  final _controller = TextEditingController();
+  bool _isPosting = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _post() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty || _isPosting) return;
+    setState(() => _isPosting = true);
+    try {
+      await ref
+          .read(achievementCommentServiceProvider)
+          .postCompositeComment(
+            achievementRef: widget.achievementRef,
+            commentText: text,
+          );
+      _controller.clear();
+      ref.invalidate(
+        compositeAchievementCommentsProvider(widget.achievementRef),
+      );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not post comment: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPosting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Expanded(
+        child: TextField(
+          controller: _controller,
+          minLines: 1,
+          maxLines: 4,
+          maxLength: 1000,
+          decoration: const InputDecoration(
+            hintText: 'Share a tip or ask the community…',
+          ),
+        ),
+      ),
+      const SizedBox(width: 10),
+      IconButton.filled(
+        onPressed: _isPosting ? null : _post,
+        tooltip: 'Post comment',
+        icon: _isPosting
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.send),
+      ),
+    ],
+  );
 }
 
 class _AchievementIcon extends StatelessWidget {

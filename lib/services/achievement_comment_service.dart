@@ -249,6 +249,47 @@ class AchievementCommentService {
     return AchievementComment.fromJson(flattenedRow);
   }
 
+  Future<AchievementComment> postCompositeComment({
+    required AchievementRef achievementRef,
+    required String commentText,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      throw Exception('User must be authenticated to post comments');
+    }
+
+    final moderationResult = await _moderationService.moderateContent(
+      commentText,
+    );
+    if (!moderationResult.isSafe) {
+      throw Exception(
+        moderationResult.reason ?? 'Comment contains inappropriate content',
+      );
+    }
+
+    final response = await _supabase
+        .from('achievement_comments')
+        .insert({
+          'user_id': userId,
+          'comment_text': commentText,
+          'platform_id': achievementRef.gameRef.platformId,
+          'platform_game_id': achievementRef.gameRef.platformGameId,
+          'platform_achievement_id': achievementRef.platformAchievementId,
+        })
+        .select('''
+          id, achievement_id, user_id, comment_text, created_at, updated_at,
+          is_hidden, is_flagged, flag_count,
+          profiles!inner(
+            psn_online_id, psn_avatar_url, steam_display_name,
+            steam_avatar_url, xbox_gamertag, xbox_avatar_url,
+            preferred_display_platform
+          )
+        ''')
+        .single();
+
+    return _mapComments([response]).single;
+  }
+
   /// Delete a comment
   /// Only the comment author can delete their own comment
   Future<void> deleteComment(String commentId) async {
