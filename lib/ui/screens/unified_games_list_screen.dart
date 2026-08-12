@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/unified_game.dart';
+import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
-import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 
 /// Sort options for games list
 enum GameSort { lastTrophy, nameAsc, nameDesc, rarityAsc, rarityDesc }
@@ -831,16 +831,14 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     UnifiedGame game,
     PlatformGameData platform,
   ) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => GameAchievementsScreen(
-          platformId: platform.platformId,
-          platformGameId: platform.platformGameId ?? platform.gameId,
-          gameName: game.title,
-          platform: platform.platform,
-          coverUrl: game.coverUrl,
-        ),
-      ),
+    final platformId = platform.platformId;
+    final platformGameId = platform.platformGameId ?? platform.gameId;
+    if (platformId == null || platformGameId.isEmpty) return;
+    final gameRef = GameRef(
+      platformId: platformId,
+      platformGameId: platformGameId,
     );
+    if (gameRef.platform == null) return;
+    context.go(gameRef.location);
   }
 }

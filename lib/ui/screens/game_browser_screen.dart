@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
-import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 
 /// Screen for browsing ALL games in the database
 /// Allows users to explore games they don't own
@@ -378,10 +378,6 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
     final platformNames = game['platform_names'] as List<dynamic>? ?? [];
     final platformIds = game['platform_ids'] as List<dynamic>? ?? [];
     final platformGameIds = game['platform_game_ids'] as List<dynamic>? ?? [];
-    final coverUrl = kIsWeb
-        ? (game['proxied_cover_url'] ?? game['cover_url']) as String?
-        : game['cover_url'] as String?;
-
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -451,17 +447,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                     child: InkWell(
                       onTap: () {
                         Navigator.pop(dialogContext);
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => GameAchievementsScreen(
-                              platformId: platformId,
-                              platformGameId: platformGameId?.toString(),
-                              gameName: name,
-                              platform: platformCode.toString(),
-                              coverUrl: coverUrl,
-                            ),
-                          ),
-                        );
+                        _openGame(context, platformId, platformGameId);
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -553,18 +539,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
           if (allPlatforms.length > 1) {
             _showPlatformSelectionDialog(context, game);
           } else {
-            // Navigate directly to achievements for single-platform games
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => GameAchievementsScreen(
-                  platformId: platformId,
-                  platformGameId: platformGameId?.toString(),
-                  gameName: name,
-                  platform: _platformFilter ?? platformCode,
-                  coverUrl: coverUrl,
-                ),
-              ),
-            );
+            _openGame(context, platformId, platformGameId);
           }
         }
       },
@@ -722,18 +697,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
             if (allPlatforms.length > 1) {
               _showPlatformSelectionDialog(context, game);
             } else {
-              // Navigate directly to achievements for single-platform games
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => GameAchievementsScreen(
-                    platformId: platformId,
-                    platformGameId: platformGameId?.toString(),
-                    gameName: name,
-                    platform: _platformFilter ?? platformCode,
-                    coverUrl: coverUrl,
-                  ),
-                ),
-              );
+              _openGame(context, platformId, platformGameId);
             }
           }
         },
@@ -889,6 +853,24 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
         ),
       ),
     );
+  }
+
+  void _openGame(
+    BuildContext context,
+    dynamic platformId,
+    dynamic platformGameId,
+  ) {
+    final parsedPlatformId = platformId is int
+        ? platformId
+        : int.tryParse(platformId?.toString() ?? '');
+    final parsedGameId = platformGameId?.toString() ?? '';
+    if (parsedPlatformId == null || parsedGameId.isEmpty) return;
+    final gameRef = GameRef(
+      platformId: parsedPlatformId,
+      platformGameId: parsedGameId,
+    );
+    if (gameRef.platform == null) return;
+    context.go(gameRef.location);
   }
 
   Color _getPlatformColor(String platform) {
