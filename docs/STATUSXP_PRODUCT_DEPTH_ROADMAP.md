@@ -37,7 +37,7 @@ Whenever roadmap work changes materially:
 | Phase | Status | Current outcome | Next checkpoint |
 |---|---|---|---|
 | Phase 0 — Inventory and measurement | `IN DISCOVERY` | Source-level inventory of all 37 routes completed in `docs/PHASE_0_ROUTE_FEATURE_INVENTORY.md`. | Validate routes at runtime and establish the baseline analytics list. |
-| Phase 1 — Connected core | `IN PROGRESS` | Canonical library routing, the platform registry, typed `GameRef`, repository-backed game overview, deliberate states, analytics, and library/catalog navigation are implemented in draft PR #7. | Review and runtime-validate PR #7, then implement the canonical achievement-detail slice. |
+| Phase 1 — Connected core | `IN PROGRESS` | The canonical game hub is in draft PR #7; the stacked achievement-detail route, composite-key metadata/earned-state loading, and embedded comments are in draft PR #8. | Runtime-validate PRs #7–#8 and migrate the legacy integer comment-write contract before enabling the embedded composer. |
 | Phase 2 — Scoring trust | `IN DISCOVERY` | Hybrid current/earned-at policy and leaderboard requirements proposed. | Audit the live scoring implementation and approve the formal specification. |
 | Phase 3 — Public identity | `NOT STARTED` | Target profile architecture defined. | Define privacy and RLS requirements. |
 | Phase 4 — Data-rich entities | `NOT STARTED` | Target game and achievement hubs defined. | Complete Phase 1 entity routes first. |
@@ -77,6 +77,10 @@ Whenever roadmap work changes materially:
 - Implemented the first canonical game-hub slice in draft PR #7: `/games` now uses the unified library, `/unified-games` redirects for compatibility, and `/games/:platformCode/:platformGameId` loads canonical metadata and owner progress by composite key.
 - Added tested handling for all approved platform URL codes, encoded identifiers, invalid links, loading failures, missing games, owner/non-owner progress, and library/catalog navigation.
 - Validation evidence for PR #7: `flutter analyze` passed and all 6 focused `GameRef` tests passed.
+- Implemented the stacked canonical achievement-detail slice in draft PR #8 with typed `AchievementRef` URLs, repository-loaded game/achievement data, rarity, StatusXP, earned state, composite-key comments, and contextual navigation.
+- Replaced achievement-list comment links with canonical achievement destinations and added achievement-view analytics.
+- Recorded a compatibility limitation instead of applying an unsafe conversion: existing comments can be read by composite key, but creating comments still requires the deprecated non-null integer `achievement_id`; the embedded composer remains pending a forward database migration.
+- Validation evidence for PR #8: `flutter analyze` passed and all 8 canonical reference tests passed.
 
 ## Executive decision
 
