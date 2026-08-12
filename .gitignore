@@ -33,6 +33,7 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+**/build/
 
 # Symbolication related
 app.*.symbols
@@ -66,3 +67,6 @@ key.properties
 node_modules/
 package-lock.json
 !sync-service/package-lock.json
+
+# Supabase CLI local state
+supabase/.temp/
