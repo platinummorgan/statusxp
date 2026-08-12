@@ -37,7 +37,7 @@ Whenever roadmap work changes materially:
 | Phase | Status | Current outcome | Next checkpoint |
 |---|---|---|---|
 | Phase 0 — Inventory and measurement | `IN DISCOVERY` | Source-level inventory of all 37 routes completed in `docs/PHASE_0_ROUTE_FEATURE_INVENTORY.md`. | Validate routes at runtime and establish the baseline analytics list. |
-| Phase 1 — Connected core | `VALIDATING` | Draft PRs #7–#8 implement the canonical library, game and achievement routes, repository-loaded entity data, analytics, contextual navigation, and composite-key comment reads/writes. | Apply the forward comment migration in a test environment and runtime-validate deep links, owner/non-owner states, navigation, and comment posting. |
+| Phase 1 — Connected core | `VALIDATING` | Draft PRs #7–#8 implement the canonical library, game and achievement routes, repository-loaded entity data, analytics, contextual navigation, and composite-key comments; the full local migration chain and comment contract now validate. | Runtime-validate authenticated deep links, owner/non-owner states, navigation, and comment posting in the hosted preview before merge. |
 | Phase 2 — Scoring trust | `IN DISCOVERY` | Hybrid current/earned-at policy and leaderboard requirements proposed. | Audit the live scoring implementation and approve the formal specification. |
 | Phase 3 — Public identity | `NOT STARTED` | Target profile architecture defined. | Define privacy and RLS requirements. |
 | Phase 4 — Data-rich entities | `NOT STARTED` | Target game and achievement hubs defined. | Complete Phase 1 entity routes first. |
@@ -84,7 +84,11 @@ Whenever roadmap work changes materially:
 - Validation evidence for PR #8: `flutter analyze` passed and all 8 canonical reference tests passed.
 - Release validation update: `flutter build web --release` completed successfully for the stacked implementation; the WebAssembly dry run reported only existing `dart:html`/`dart:js_util` compatibility warnings.
 - GitHub validation update: PRs #7 and #8 are both mergeable with clean merge states; GitGuardian, Vercel deployment, and Vercel preview checks passed for both.
-- Local Supabase migration lint remains pending because the Docker Desktop database engine is not running (`127.0.0.1:54322` unavailable). This is an environment blocker for local database validation, not a failed migration check.
+- Started and rebuilt the local Supabase environment after repairing corrupted local Docker image layers; no remote or production database was modified.
+- `supabase db reset --local` now applies the complete migration chain from an empty database, including the composite-comment migration.
+- Repaired four pre-existing clean-rebuild blockers in PR #8: a malformed SQL comment, missing leaderboard history tables, and transitional Xbox/Steam cache columns required by later migrations.
+- A rollback-only SQL smoke test inserted a comment with a null deprecated integer ID and valid composite achievement foreign key, verified it, rolled back, and confirmed zero test rows remained.
+- `supabase db lint --local` now runs against the rebuilt schema. It reports an existing backlog of V1 functions referencing removed legacy columns/tables; none of the findings target the canonical entity or comment migrations, so cleanup remains a separate schema-hardening slice.
 
 ## Executive decision
 
