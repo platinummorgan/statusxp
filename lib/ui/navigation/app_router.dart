@@ -5,8 +5,9 @@ import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/ui/screens/auth/auth_gate.dart';
 import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
 import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
-import 'package:statusxp/ui/screens/games_list_screen.dart';
 import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
+import 'package:statusxp/ui/screens/game_overview_screen.dart';
+import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/screens/game_browser_screen.dart';
 import 'package:statusxp/ui/screens/leaderboard_screen.dart';
@@ -154,18 +155,18 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const SteamSyncScreen(),
         ),
 
-        // Games List - View all tracked games
+        // Canonical cross-platform personal library
         GoRoute(
           path: '/games',
           name: 'games',
-          builder: (context, state) => const GamesListScreen(),
+          builder: (context, state) => const UnifiedGamesListScreen(),
         ),
 
-        // Unified Games List - Cross-platform game view with filters
+        // Temporary compatibility route for existing links.
         GoRoute(
           path: '/unified-games',
           name: 'unified-games',
-          builder: (context, state) => const UnifiedGamesListScreen(),
+          redirect: (context, state) => '/games',
         ),
 
         // Game Browser - Browse ALL games in database (catalog)
@@ -173,6 +174,21 @@ final GoRouter appRouter = GoRouter(
           path: '/games/browse',
           name: 'game-browser',
           builder: (context, state) => const GameBrowserScreen(),
+        ),
+
+        // Canonical platform-scoped game overview.
+        GoRoute(
+          path: '/games/:platformCode/:platformGameId',
+          name: 'canonical-game-overview',
+          builder: (context, state) {
+            final gameRef = GameRef.fromRoute(
+              platformCode: state.pathParameters['platformCode']!,
+              encodedGameId: state.pathParameters['platformGameId']!,
+            );
+            return gameRef == null
+                ? const GameRouteNotFoundScreen()
+                : GameOverviewScreen(gameRef: gameRef);
+          },
         ),
 
         // Game detail shortcut - redirects to achievements
