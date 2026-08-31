@@ -38,6 +38,7 @@ import 'package:statusxp/ui/screens/weekly_recap_screen.dart';
 import 'package:statusxp/ui/screens/invite_friends_screen.dart';
 import 'package:statusxp/services/premium_activation_service.dart';
 import 'package:statusxp/ui/widgets/premium_activation_checklist.dart';
+import 'package:statusxp/ui/screens/auth/web_sign_in_route.dart';
 
 /// StatusXP App Router Configuration
 ///
@@ -63,6 +64,15 @@ final GoRouter appRouter = GoRouter(
       path: '/reset-password',
       name: 'reset-password',
       builder: (context, state) => const ResetPasswordScreen(),
+    ),
+
+    GoRoute(
+      path: '/sign-in',
+      name: 'sign-in',
+      builder: (context, state) => WebSignInRoute(
+        initialSignUp: state.uri.queryParameters['mode'] == 'signup',
+        returnTo: state.uri.queryParameters['from'] ?? '/',
+      ),
     ),
 
     // Premium Success - Stripe payment success redirect
@@ -111,7 +121,8 @@ final GoRouter appRouter = GoRouter(
     ),
 
     ShellRoute(
-      builder: (context, state, child) => AuthGate(child: child),
+      builder: (context, state, child) =>
+          AuthGate(location: state.uri.path, child: child),
       routes: [
         // Dashboard - Home screen
         GoRoute(

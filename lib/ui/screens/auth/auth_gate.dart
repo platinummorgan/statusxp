@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:statusxp/utils/html.dart' as html;
 import 'package:statusxp/utils/runtime_mode.dart';
 import 'package:statusxp/utils/supabase_guard.dart';
+import 'package:statusxp/ui/widgets/web_app_shell.dart';
 
 /// Authentication gate that controls access to the main app.
 ///
@@ -22,8 +23,9 @@ import 'package:statusxp/utils/supabase_guard.dart';
 /// 5. Show appropriate screen based on auth state
 class AuthGate extends ConsumerStatefulWidget {
   final Widget child;
+  final String location;
 
-  const AuthGate({super.key, required this.child});
+  const AuthGate({super.key, required this.child, this.location = '/'});
 
   @override
   ConsumerState<AuthGate> createState() => _AuthGateState();
@@ -204,7 +206,11 @@ class _AuthGateState extends ConsumerState<AuthGate>
         }
 
         if (_isAuthenticated) {
-          return widget.child;
+          return WebAppShell(
+            location: widget.location,
+            isAuthenticated: true,
+            child: widget.child,
+          );
         }
 
         // Not authenticated - show sign-in (biometric sign-in handled there)
@@ -215,6 +221,16 @@ class _AuthGateState extends ConsumerState<AuthGate>
 
   @override
   Widget build(BuildContext context) {
+    // The website is intentionally browseable without an account. Native apps
+    // keep onboarding, biometric lock, and the existing sign-in-first flow.
+    if (kIsWeb && !_isAuthenticated) {
+      return WebAppShell(
+        location: widget.location,
+        isAuthenticated: false,
+        child: widget.child,
+      );
+    }
+
     // Still checking initial state
     if (_checkingOnboarding || _checkingBiometric) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
