@@ -16,8 +16,13 @@ import 'package:statusxp/utils/statusxp_logger.dart';
 /// - Continue with Login (email/password)
 class SignInScreen extends ConsumerStatefulWidget {
   final bool autoPromptBiometric;
+  final bool initialSignUp;
 
-  const SignInScreen({super.key, this.autoPromptBiometric = false});
+  const SignInScreen({
+    super.key,
+    this.autoPromptBiometric = false,
+    this.initialSignUp = false,
+  });
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -38,6 +43,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
     if (!kIsWeb) {
       _checkBiometricAvailability();
       _maybeAutoPromptBiometric();
+    }
+    if (widget.initialSignUp) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showEmailPasswordForm(initialSignUp: true);
+      });
     }
   }
 
@@ -1031,12 +1041,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
   }
 
   // Show email/password dialog
-  void _showEmailPasswordForm() {
+  void _showEmailPasswordForm({bool initialSignUp = false}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => _EmailPasswordSheet(
+        initialSignUp: initialSignUp,
         onSignIn: (email, password) async {
           Navigator.pop(context);
           await _signInWithPassword(email, password);
@@ -1127,8 +1138,13 @@ class _SignInScreenState extends ConsumerState<SignInScreen>
 class _EmailPasswordSheet extends StatefulWidget {
   final Function(String email, String password) onSignIn;
   final Function(String email, String password) onSignUp;
+  final bool initialSignUp;
 
-  const _EmailPasswordSheet({required this.onSignIn, required this.onSignUp});
+  const _EmailPasswordSheet({
+    required this.onSignIn,
+    required this.onSignUp,
+    this.initialSignUp = false,
+  });
 
   @override
   State<_EmailPasswordSheet> createState() => _EmailPasswordSheetState();
@@ -1172,7 +1188,13 @@ class _EmailPasswordSheetState extends State<_EmailPasswordSheet> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _isLoginMode = true;
+  late bool _isLoginMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _isLoginMode = !widget.initialSignUp;
+  }
 
   @override
   void dispose() {
