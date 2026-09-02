@@ -254,15 +254,16 @@ class SupabaseGameRepository {
       // regular view, so querying it can regroup the full catalog and count
       // every achievement before applying LIMIT, regularly hitting 57014.
       // The browser only needs game metadata; detail pages load achievements.
-      int? filterPlatformId;
-      if (platformFilter != null && platformFilter.isNotEmpty) {
-        final platform = await _client
-            .from('platforms')
-            .select('id')
-            .eq('code', platformFilter)
-            .maybeSingle();
-        filterPlatformId = (platform?['id'] as num?)?.toInt();
-      }
+      final platformRows = await _client
+          .from('platforms')
+          .select('id,code,name');
+      final platformList = (platformRows as List)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+      final filterPlatformIds = _platformIdsForFamily(
+        platformList,
+        platformFilter,
+      );
 
       var query = _client
           .from('games')
@@ -270,21 +271,19 @@ class SupabaseGameRepository {
       if (searchQuery != null && searchQuery.trim().isNotEmpty) {
         query = query.ilike('name', '%${searchQuery.trim()}%');
       }
-      if (filterPlatformId != null) {
-        query = query.eq('platform_id', filterPlatformId);
+      if (platformFilter != null && platformFilter.isNotEmpty) {
+        // An empty family must return no rows, never silently fall back to All.
+        if (filterPlatformIds.isEmpty) return [];
+        query = query.inFilter('platform_id', filterPlatformIds);
       }
 
       final response = await query
           .order('name', ascending: sortBy != 'name_desc')
           .range(offset, offset + limit - 1);
 
-      final platformRows = await _client
-          .from('platforms')
-          .select('id,code,name');
       final platformById = <int, Map<String, dynamic>>{
-        for (final row in (platformRows as List))
-          if (row['id'] is num)
-            (row['id'] as num).toInt(): Map<String, dynamic>.from(row as Map),
+        for (final row in platformList)
+          if (row['id'] is num) (row['id'] as num).toInt(): row,
       };
 
       final games = (response as List).map((game) {
@@ -334,15 +333,15 @@ class SupabaseGameRepository {
       }
 
       if (platformFilter != null && platformFilter.isNotEmpty) {
-        final platformResponse = await _client
-            .from('platforms')
-            .select('id')
-            .eq('code', platformFilter)
-            .maybeSingle();
-
-        if (platformResponse != null) {
-          query = query.eq('platform_id', platformResponse['id']);
-        }
+        final rows = await _client.from('platforms').select('id,code,name');
+        final platformIds = _platformIdsForFamily(
+          (rows as List)
+              .map((row) => Map<String, dynamic>.from(row as Map))
+              .toList(),
+          platformFilter,
+        );
+        if (platformIds.isEmpty) return 0;
+        query = query.inFilter('platform_id', platformIds);
       }
 
       final response = await query;
@@ -350,5 +349,30 @@ class SupabaseGameRepository {
     } catch (e) {
       return 0;
     }
+  }
+
+  List<int> _platformIdsForFamily(
+    List<Map<String, dynamic>> platforms,
+    String? family,
+  ) {
+    if (family == null || family.isEmpty) return const [];
+    final normalizedFamily = family.toLowerCase();
+
+    return platforms
+        .where((platform) {
+          final code = platform['code']?.toString().toLowerCase() ?? '';
+          final name = platform['name']?.toString().toLowerCase() ?? '';
+          return switch (normalizedFamily) {
+            'psn' =>
+              code.startsWith('ps') ||
+                  code.contains('playstation') ||
+                  name.contains('playstation'),
+            'xbox' => code.contains('xbox') || name.contains('xbox'),
+            'steam' => code.contains('steam') || name.contains('steam'),
+            _ => code == normalizedFamily,
+          };
+        })
+        .map((platform) => (platform['id'] as num).toInt())
+        .toList();
   }
 }
