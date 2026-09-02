@@ -81,3 +81,43 @@ class GameRef extends Equatable {
   @override
   List<Object> get props => [platformId, platformGameId];
 }
+
+@immutable
+class AchievementRef extends Equatable {
+  final GameRef gameRef;
+  final String platformAchievementId;
+
+  const AchievementRef({
+    required this.gameRef,
+    required this.platformAchievementId,
+  });
+
+  String get location =>
+      '${gameRef.location}/achievements/${Uri.encodeComponent(platformAchievementId)}';
+
+  static AchievementRef? fromRoute({
+    required String platformCode,
+    required String encodedGameId,
+    required String encodedAchievementId,
+  }) {
+    final gameRef = GameRef.fromRoute(
+      platformCode: platformCode,
+      encodedGameId: encodedGameId,
+    );
+    if (gameRef == null) return null;
+    late final String achievementId;
+    try {
+      achievementId = Uri.decodeComponent(encodedAchievementId).trim();
+    } on ArgumentError {
+      return null;
+    }
+    if (achievementId.isEmpty) return null;
+    return AchievementRef(
+      gameRef: gameRef,
+      platformAchievementId: achievementId,
+    );
+  }
+
+  @override
+  List<Object> get props => [gameRef, platformAchievementId];
+}

@@ -32,7 +32,7 @@ class AchievementComment {
   factory AchievementComment.fromJson(Map<String, dynamic> json) {
     return AchievementComment(
       id: json['id'] as String,
-      achievementId: json['achievement_id'] as int,
+      achievementId: json['achievement_id'] as int? ?? 0,
       userId: json['user_id'] as String,
       commentText: json['comment_text'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),

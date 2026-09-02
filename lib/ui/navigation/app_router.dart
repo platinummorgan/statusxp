@@ -7,6 +7,7 @@ import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
 import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
 import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
 import 'package:statusxp/ui/screens/game_overview_screen.dart';
+import 'package:statusxp/ui/screens/achievement_overview_screen.dart';
 import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/screens/game_browser_screen.dart';
@@ -39,6 +40,7 @@ import 'package:statusxp/ui/screens/weekly_recap_screen.dart';
 import 'package:statusxp/ui/screens/invite_friends_screen.dart';
 import 'package:statusxp/services/premium_activation_service.dart';
 import 'package:statusxp/ui/widgets/premium_activation_checklist.dart';
+import 'package:statusxp/ui/screens/auth/web_sign_in_route.dart';
 
 /// StatusXP App Router Configuration
 ///
@@ -64,6 +66,15 @@ final GoRouter appRouter = GoRouter(
       path: '/reset-password',
       name: 'reset-password',
       builder: (context, state) => const ResetPasswordScreen(),
+    ),
+
+    GoRoute(
+      path: '/sign-in',
+      name: 'sign-in',
+      builder: (context, state) => WebSignInRoute(
+        initialSignUp: state.uri.queryParameters['mode'] == 'signup',
+        returnTo: state.uri.queryParameters['from'] ?? '/',
+      ),
     ),
 
     // Premium Success - Stripe payment success redirect
@@ -112,7 +123,8 @@ final GoRouter appRouter = GoRouter(
     ),
 
     ShellRoute(
-      builder: (context, state, child) => AuthGate(child: child),
+      builder: (context, state, child) =>
+          AuthGate(location: state.uri.path, child: child),
       routes: [
         // Dashboard - Home screen
         GoRoute(
@@ -188,6 +200,23 @@ final GoRouter appRouter = GoRouter(
             return gameRef == null
                 ? const GameRouteNotFoundScreen()
                 : GameOverviewScreen(gameRef: gameRef);
+          },
+        ),
+
+        GoRoute(
+          path:
+              '/games/:platformCode/:platformGameId/achievements/:platformAchievementId',
+          name: 'canonical-achievement-overview',
+          builder: (context, state) {
+            final achievementRef = AchievementRef.fromRoute(
+              platformCode: state.pathParameters['platformCode']!,
+              encodedGameId: state.pathParameters['platformGameId']!,
+              encodedAchievementId:
+                  state.pathParameters['platformAchievementId']!,
+            );
+            return achievementRef == null
+                ? const GameRouteNotFoundScreen()
+                : AchievementOverviewScreen(achievementRef: achievementRef);
           },
         ),
 
