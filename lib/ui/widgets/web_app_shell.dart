@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/theme/colors.dart';
+import 'package:statusxp/ui/screens/web_desktop_dashboard.dart';
 
 const _premiumPaths = <String>{
   '/analytics',
@@ -62,6 +63,10 @@ class WebAppShell extends StatelessWidget {
           );
         }
 
+        final desktopPage = isAuthenticated && location == '/'
+            ? const WebDesktopDashboard()
+            : page;
+
         return Scaffold(
           backgroundColor: backgroundDark,
           body: Column(
@@ -70,19 +75,11 @@ class WebAppShell extends StatelessWidget {
                 location: location,
                 isAuthenticated: isAuthenticated,
               ),
+              _WebsiteNavBar(location: location),
               Expanded(
-                child: Row(
-                  children: [
-                    _WebsiteNavigation(location: location),
-                    Expanded(
-                      child: DecoratedBox(
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF090D1D),
-                        ),
-                        child: ClipRect(child: page),
-                      ),
-                    ),
-                  ],
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(color: Color(0xFF090D1D)),
+                  child: ClipRect(child: desktopPage),
                 ),
               ),
             ],
@@ -118,15 +115,19 @@ class _WebsiteHeader extends StatelessWidget {
       children: [
         InkWell(
           onTap: () => context.go('/'),
-          child: const Row(
+          child: Row(
             children: [
-              Icon(
-                Icons.sports_esports_rounded,
-                color: accentPrimary,
-                size: 30,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(9),
+                child: Image.asset(
+                  'assets/images/app_icon.png',
+                  width: 44,
+                  height: 44,
+                  fit: BoxFit.cover,
+                ),
               ),
-              SizedBox(width: 11),
-              Text(
+              const SizedBox(width: 11),
+              const Text(
                 'STATUS',
                 style: TextStyle(
                   color: Colors.white,
@@ -135,7 +136,7 @@ class _WebsiteHeader extends StatelessWidget {
                   letterSpacing: 1.3,
                 ),
               ),
-              Text(
+              const Text(
                 'XP',
                 style: TextStyle(
                   color: accentPrimary,
@@ -148,14 +149,26 @@ class _WebsiteHeader extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        TextButton(
-          onPressed: () => context.go('/games/browse'),
-          child: const Text('Explore Games'),
-        ),
-        const SizedBox(width: 8),
-        TextButton(
-          onPressed: () => context.go('/leaderboards'),
-          child: const Text('Leaderboards'),
+        SizedBox(
+          width: 320,
+          height: 40,
+          child: TextField(
+            readOnly: true,
+            onTap: () => context.go('/games/browse'),
+            decoration: InputDecoration(
+              hintText: 'Search games and achievements',
+              prefixIcon: const Icon(Icons.search, size: 19),
+              filled: true,
+              fillColor: Colors.white.withValues(alpha: .055),
+              contentPadding: EdgeInsets.zero,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(6),
+                borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: .12),
+                ),
+              ),
+            ),
+          ),
         ),
         const SizedBox(width: 18),
         if (isAuthenticated)
@@ -169,6 +182,81 @@ class _WebsiteHeader extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _WebsiteNavBar extends StatelessWidget {
+  const _WebsiteNavBar({required this.location});
+  final String location;
+
+  @override
+  Widget build(BuildContext context) {
+    const items = <(String, String)>[
+      ('Dashboard', '/'),
+      ('Games', '/games/browse'),
+      ('Leaderboards', '/leaderboards'),
+      ('Community', '/coop-partners'),
+      ('Analytics', '/analytics'),
+      ('Goals', '/goals-pace'),
+    ];
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 28),
+      decoration: BoxDecoration(
+        color: const Color(0xFF11162B),
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withValues(alpha: .08)),
+        ),
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            for (final item in items)
+              InkWell(
+                onTap: () => context.go(item.$2),
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: location == item.$2
+                            ? accentPrimary
+                            : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    children: [
+                      Text(
+                        item.$1,
+                        style: TextStyle(
+                          color: location == item.$2
+                              ? Colors.white
+                              : textSecondary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (_premiumPaths.contains(item.$2)) ...[
+                        const SizedBox(width: 5),
+                        const Icon(
+                          Icons.workspace_premium,
+                          size: 13,
+                          color: accentWarning,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _AuthButtons extends StatelessWidget {
@@ -195,73 +283,6 @@ class _AuthButtons extends StatelessWidget {
       ),
     ],
   );
-}
-
-class _WebsiteNavigation extends StatelessWidget {
-  const _WebsiteNavigation({required this.location});
-  final String location;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = <(IconData, String, String)>[
-      (Icons.home_rounded, 'Home', '/'),
-      (Icons.travel_explore_rounded, 'Game catalog', '/games/browse'),
-      (Icons.leaderboard_rounded, 'Leaderboards', '/leaderboards'),
-      (Icons.auto_graph_rounded, 'Analytics', '/analytics'),
-      (Icons.radar_rounded, 'Achievement radar', '/achievement-radar'),
-      (Icons.flag_rounded, 'Goals & pace', '/goals-pace'),
-    ];
-    return Container(
-      width: 238,
-      color: const Color(0xFF0D1126),
-      padding: const EdgeInsets.fromLTRB(14, 22, 14, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final item in items)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: ListTile(
-                selected: location == item.$3,
-                selectedTileColor: accentPrimary.withValues(alpha: .12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                leading: Icon(
-                  item.$1,
-                  size: 21,
-                  color: location == item.$3 ? accentPrimary : textSecondary,
-                ),
-                title: Text(
-                  item.$2,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: location == item.$3 ? Colors.white : textSecondary,
-                  ),
-                ),
-                trailing: _premiumPaths.contains(item.$3)
-                    ? const Icon(
-                        Icons.workspace_premium_rounded,
-                        size: 15,
-                        color: accentWarning,
-                      )
-                    : null,
-                onTap: () => context.go(item.$3),
-              ),
-            ),
-          const Spacer(),
-          const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text(
-              'Track PlayStation, Xbox, and Steam in one place.',
-              style: TextStyle(color: textMuted, fontSize: 12, height: 1.45),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _GuestHome extends StatelessWidget {
