@@ -186,6 +186,50 @@ class _WebsiteHeader extends StatelessWidget {
         ),
         const SizedBox(width: 18),
         if (isAuthenticated)
+          PopupMenuButton<String>(
+            tooltip: 'Menu',
+            icon: const Icon(Icons.menu, color: Colors.white),
+            onSelected: (route) => context.go(route),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: '/games', child: Text('My games')),
+              PopupMenuItem(value: '/flex-room', child: Text('Flex Room')),
+              PopupMenuItem(
+                value: '/engagement-hub',
+                child: Text('Challenges'),
+              ),
+              PopupMenuItem(
+                value: '/weekly-recap',
+                child: Text('Weekly recap'),
+              ),
+              PopupMenuItem(
+                value: '/coop-partners',
+                child: Text('Co-op partners'),
+              ),
+              PopupMenuItem(
+                value: '/analytics',
+                child: Text('Premium analytics'),
+              ),
+              PopupMenuItem(
+                value: '/achievement-radar',
+                child: Text('Achievement radar'),
+              ),
+              PopupMenuItem(
+                value: '/sync-intelligence',
+                child: Text('Sync intelligence'),
+              ),
+              PopupMenuItem(value: '/goals-pace', child: Text('Goals & pace')),
+              PopupMenuItem(
+                value: '/rival-compare',
+                child: Text('Rival comparison'),
+              ),
+              PopupMenuItem(
+                value: '/premium-subscription',
+                child: Text('Subscription'),
+              ),
+              PopupMenuItem(value: '/settings', child: Text('Settings')),
+            ],
+          ),
+        if (isAuthenticated)
           OutlinedButton.icon(
             onPressed: () => context.go('/settings'),
             icon: const Icon(Icons.account_circle_outlined, size: 18),

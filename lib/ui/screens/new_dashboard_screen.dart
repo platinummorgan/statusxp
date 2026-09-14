@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:statusxp/domain/recommendation_goal.dart';
+import 'package:statusxp/ui/widgets/recommendation_goal_controls.dart';
 import 'package:statusxp/state/recommendation_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -245,6 +247,24 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('dashboard_next_action_dismissed_day', key);
     if (mounted) setState(() => _dismissedNextActionDay = key);
+  }
+
+  Future<void> _restoreNextAction() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!await prefs.remove('dashboard_next_action_dismissed_day')) {
+        throw StateError('Save failed');
+      }
+      if (mounted) setState(() => _dismissedNextActionDay = null);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not restore recommendations. Please retry.'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _dismissWeeklyRecapForWeek() async {
@@ -760,6 +780,14 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                       const SizedBox(height: 20),
 
                       if (_dashboardPromptsLoaded &&
+                          _dismissedNextActionDay ==
+                              _localDayKey(DateTime.now()))
+                        TextButton.icon(
+                          onPressed: _restoreNextAction,
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: const Text('Show recommendations'),
+                        ),
+                      if (_dashboardPromptsLoaded &&
                           _dismissedNextActionDay !=
                               _localDayKey(DateTime.now())) ...[
                         gamesAsync.maybeWhen(
@@ -772,9 +800,15 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                                     userId ?? 'guest',
                                   );
                               final skipped = ref.watch(skippedProvider);
+                              final goals = ref.watch(
+                                recommendationGoalsProvider(userId ?? 'guest'),
+                              );
                               final action = chooseNextBestAction(
                                 games: games,
                                 skippedGameKeys: skipped,
+                                goals:
+                                    goals.asData?.value ??
+                                    const RecommendationGoals(),
                                 isPremium: premiumSnapshot.data ?? false,
                                 availableRewardXp: availableRewardXp,
                                 currentStreak: currentStreak,
@@ -783,6 +817,13 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                               _trackNextActionImpression(action);
                               return NextBestActionCard(
                                 action: action,
+                                goalControls: userId == null
+                                    ? null
+                                    : RecommendationGoalControls(
+                                        userId: userId,
+                                        games: games,
+                                        selectedGame: action.game,
+                                      ),
                                 onAnother: userId == null || action.game == null
                                     ? null
                                     : () {

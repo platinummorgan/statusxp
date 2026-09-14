@@ -125,6 +125,11 @@ class _DashboardBody extends ConsumerWidget {
                   child: Column(
                     children: [
                       _QuickLink(
+                        icon: Icons.military_tech_outlined,
+                        label: 'Flex Room',
+                        onTap: () => context.go('/flex-room'),
+                      ),
+                      _QuickLink(
                         icon: Icons.leaderboard,
                         label: 'Global leaderboards',
                         onTap: () => context.go('/leaderboards'),

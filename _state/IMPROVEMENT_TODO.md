@@ -172,3 +172,25 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 | 2026-09-13 | Release readiness / SX-021 | In progress | Codex / working tree | Guest catalog renders in local Chrome; deep-link/assets HTTP smoke checks pass. Removed Vercel blanket JSON MIME override. Co-op migration order, older-client compatibility, signed-in checks and exact release diff tracked in [release readiness](../docs/reviews/2026-09-13/RELEASE_READINESS.md). Local tab signed out; nothing pushed or deployed. |
 
 | 2026-09-14 | All implementation batches | Pushed to GitHub | Codex / release/app-improvements-2026-09-14 | User authorized pushing all project changes; implementation commit e0c183c verified on origin/release/app-improvements-2026-09-14. Source, migrations, tests, dependency lockfiles and review evidence included; local dependency folders, tool temp state and generated registrant churn excluded. Latest Flutter checks: 136 passed/9 skips, clean analysis, release build passed; sync-service tests rerun: 21 passed. Production migrations/deployment remain pending. |
+
+| 2026-09-14 | User testing corrections | Implemented locally | Codex / release/app-improvements-2026-09-14 | Missing deployed premium RPC confirmed (404/PGRST202); added narrow legacy-entitlement compatibility with expiry/account checks. Desktop Menu/Flex Room quick link and independent game-detail catalog totals added. User reports dashboard/co-op success; unmarked Flex/layout tests and staging environment verification remain open. See [test notes](../docs/reviews/2026-09-14/USER_TEST_FIXES.md). |
+
+| 2026-09-14 | SX-034 recommendation goals | Implemented locally / partial | Codex / release/app-improvements-2026-09-14 | User-approved account default and per-game Platinum/100% controls added to desktop/mobile. Device-local account preferences; earned platinums excluded in Platinum mode, recent trophy activity used without inferring DLC-based platinum proximity. Required-group availability remains unverified. See [goal notes](../docs/reviews/2026-09-14/RECOMMENDATION_GOALS.md). |
+
+| 2026-09-14 | SX-034 recommendation controls | Implemented locally | Codex / release/app-improvements-2026-09-14 | Added None to deselect the game override editor, and Show recommendations to restore hidden cards immediately on desktop/mobile. Saved goals and skipped suggestions remain unchanged. Focused goal/dashboard tests pass; preview rebuild prepared. |
+
+### Inline game achievements — September 14
+- [x] Replace the game overview's extra navigation button with an expanded, collapsible achievements section.
+- [x] Load the catalog and signed-in earned IDs independently of the overview, with stable 500-row fetch batches (including catalogs beyond the API row limit).
+- [x] Add search, earned/unearned filters, 20-item display pages, hidden-achievement reveal, and retry.
+- [x] Preserve search and page state through collapse and achievement-detail Back navigation using pushed canonical detail routes.
+- [x] Widget test covers paging, hidden text, search, collapse, detail Back and earned filtering.
+- Local implementation; publication remains pending. Existing standalone achievement routes remain available.
+
+### My Games timeout recovery — September 14
+- [x] Recognize PostgreSQL 57014 on the private My Games screen and load a lightweight library from user_progress plus game names, in stable 500-row batches.
+- [x] Show synced achievement counts, search, canonical game navigation, and a Retry detailed stats action. Do not fabricate StatusXP, rarity, or trophy breakdowns when aggregates are unavailable.
+- [x] Replace raw database errors with a readable message and retry. Public-profile errors do not use the private-library fallback.
+- [x] HTTP test verifies user binding, composite ordering and later pages; widget test verifies timeout recovery, search and retry. Focused analysis clean.
+- [ ] Verify live get_user_grouped_games definition/query plan and whether 20260812001000_bound_my_games_achievement_aggregation.sql is applied. Existing earlier SQL aggregates the entire catalog; local source alone does not establish which definition is deployed. No production SQL changed.
+- [ ] Signed-in browser check: refresh My Games; if detailed stats time out, confirm basic library and game navigation load. This recovery still waits for the original database timeout before starting.

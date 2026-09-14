@@ -9,6 +9,7 @@ class NextBestActionCard extends StatelessWidget {
     required this.onDismiss,
     this.onAnother,
     this.onReset,
+    this.goalControls,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class NextBestActionCard extends StatelessWidget {
   final VoidCallback onDismiss;
   final VoidCallback? onAnother;
   final VoidCallback? onReset;
+  final Widget? goalControls;
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +78,7 @@ class NextBestActionCard extends StatelessWidget {
             style: const TextStyle(color: Colors.white70, height: 1.35),
           ),
           const SizedBox(height: 14),
+          if (goalControls != null) goalControls!,
           FilledButton.icon(
             onPressed: onTap,
             icon: const Icon(Icons.arrow_forward, size: 17),

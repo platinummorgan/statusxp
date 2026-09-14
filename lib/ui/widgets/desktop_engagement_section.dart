@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:statusxp/domain/recommendation_goal.dart';
+import 'package:statusxp/ui/widgets/recommendation_goal_controls.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -127,6 +129,7 @@ class _DesktopEngagementSectionState
     final snapshot = ref.watch(engagementSnapshotProvider);
     final skippedProvider = skippedRecommendationGamesProvider(widget.userId);
     final skipped = ref.watch(skippedProvider);
+    final goals = ref.watch(recommendationGoalsProvider(widget.userId));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -149,6 +152,34 @@ class _DesktopEngagementSectionState
               onPressed: () => context.push('/weekly-recap'),
               child: const Text('Weekly recap'),
             ),
+            RecommendationGoalControls(
+              userId: widget.userId,
+              games: widget.games.asData?.value ?? const [],
+            ),
+            if (_loaded && _hiddenDay == _today)
+              TextButton.icon(
+                icon: const Icon(Icons.visibility_outlined, size: 18),
+                label: const Text('Show recommendations'),
+                onPressed: () async {
+                  try {
+                    final prefs = await SharedPreferences.getInstance();
+                    if (!await prefs.remove(_key('day'))) {
+                      throw StateError('Save failed');
+                    }
+                    if (mounted) setState(() => _hiddenDay = null);
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Could not restore recommendations. Please retry.',
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
           ],
         ),
         snapshot.when(
@@ -177,6 +208,7 @@ class _DesktopEngagementSectionState
                 : chooseNextBestAction(
                     games: games,
                     skippedGameKeys: skipped,
+                    goals: goals.asData?.value ?? const RecommendationGoals(),
                     isPremium: false,
                     allowPremiumPreview: false,
                     availableRewardXp: value.availableRewardXp,

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:statusxp/domain/unified_game.dart';
+import 'package:statusxp/domain/recommendation_goal.dart';
 
 String recommendationGameKey(UnifiedGame game) {
   final identities =
@@ -51,6 +52,7 @@ NextBestAction chooseNextBestAction({
   int todayUnlocks = 0,
   DateTime? now,
   Set<String> skippedGameKeys = const {},
+  RecommendationGoals goals = const RecommendationGoals(),
 }) {
   if (games.isEmpty) {
     return const NextBestAction(
@@ -85,17 +87,34 @@ NextBestAction chooseNextBestAction({
   UnifiedGame? closestFinish;
   double bestScore = -1;
   int? selectedActivityDays;
+  bool selectedPlatinum = false;
   for (final game in games) {
     if (skippedGameKeys.contains(recommendationGameKey(game))) continue;
+    final playstation = game.platforms
+        .where(
+          (p) =>
+              [1, 2, 5, 9].contains(p.platformId) ||
+              p.platform.toLowerCase().startsWith('ps') ||
+              p.platform.toLowerCase() == 'playstation',
+        )
+        .toList();
+    final platinumGoal =
+        goals.forGame(recommendationGameKey(game)) ==
+            RecommendationGoal.platinum &&
+        playstation.isNotEmpty;
+    if (platinumGoal && playstation.every((p) => p.hasPlatinum)) continue;
     if (!game.overallCompletion.isFinite ||
-        game.overallCompletion < 20 ||
+        (!platinumGoal && game.overallCompletion < 20) ||
         game.overallCompletion >= 100) {
       continue;
     }
     // Last-played can be a sync timestamp. Only earned achievement dates
     // provide evidence of recent progress; ignore future timestamps.
     DateTime? latestUnlock;
-    for (final platform in game.platforms) {
+    for (final platform
+        in platinumGoal
+            ? playstation.where((p) => !p.hasPlatinum)
+            : game.platforms) {
       final earned = platform.lastTrophyEarnedAt;
       if (earned != null &&
           !earned.isAfter(clock) &&
@@ -111,27 +130,32 @@ NextBestAction chooseNextBestAction({
         : age != null && age < 30
         ? 15
         : 0;
-    final score = game.overallCompletion + bonus;
+    // Overall completion may include DLC. Never use it as platinum proximity.
+    final score = platinumGoal ? 50.0 + bonus : game.overallCompletion + bonus;
     if (closestFinish == null ||
         score > bestScore ||
         (score == bestScore && game.title.compareTo(closestFinish.title) < 0)) {
       closestFinish = game;
       bestScore = score;
       selectedActivityDays = age;
+      selectedPlatinum = platinumGoal;
     }
   }
 
   if (closestFinish != null) {
     return NextBestAction(
       type: NextBestActionType.finishGame,
-      title: 'Continue ${closestFinish.title}',
-      description:
-          '${closestFinish.overallCompletion.toStringAsFixed(0)}% complete. '
-          '${selectedActivityDays != null && selectedActivityDays < 7
-              ? 'You earned an achievement here in the last 7 days.'
-              : selectedActivityDays != null && selectedActivityDays < 30
-              ? 'You earned an achievement here in the last 30 days.'
-              : 'One of your closest unfinished games.'}',
+      title: selectedPlatinum
+          ? 'Platinum goal: ${closestFinish.title}'
+          : 'Continue ${closestFinish.title}',
+      description: selectedPlatinum
+          ? 'No platinum is recorded on at least one PlayStation version. Review its trophies first: platinum availability and required groups are not verified. Ranked by recent trophy activity, not DLC completion.'
+          : '${closestFinish.overallCompletion.toStringAsFixed(0)}% complete. '
+                '${selectedActivityDays != null && selectedActivityDays < 7
+                    ? 'You earned an achievement here in the last 7 days.'
+                    : selectedActivityDays != null && selectedActivityDays < 30
+                    ? 'You earned an achievement here in the last 30 days.'
+                    : 'One of your closest unfinished games.'}',
       buttonLabel: 'View Achievements',
       game: closestFinish,
     );

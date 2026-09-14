@@ -90,7 +90,7 @@ class SubscriptionService {
   SubscriptionService._internal();
 
   final InAppPurchase _iap = InAppPurchase.instance;
-  final SupabaseClient? _supabase = tryGetSupabaseClient();
+  SupabaseClient? get _supabase => tryGetSupabaseClient();
 
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
@@ -452,7 +452,7 @@ class SubscriptionService {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) return false;
 
-      final response = await supabase.rpc('get_my_premium_entitlement');
+      final response = await readPremiumEntitlement(supabase);
 
       return supabase.auth.currentUser?.id == userId &&
           hasActivePremium(response);
@@ -466,7 +466,7 @@ class SubscriptionService {
       final supabase = _supabase;
       final userId = supabase?.auth.currentUser?.id;
       if (supabase == null || userId == null) return null;
-      final response = await supabase.rpc('get_my_premium_entitlement');
+      final response = await readPremiumEntitlement(supabase);
       if (response == null || supabase.auth.currentUser?.id != userId) {
         return null;
       }

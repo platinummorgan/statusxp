@@ -1,4 +1,6 @@
+import 'package:statusxp/ui/widgets/game_achievement_section.dart';
 import 'package:flutter/material.dart';
+import 'package:statusxp/ui/widgets/game_catalog_summary.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/game_overview.dart';
@@ -113,29 +115,14 @@ class _GameOverviewBody extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 24),
+              GameCatalogSummary(game: game.ref),
+              const SizedBox(height: 12),
               if (game.isOwned)
                 _ProgressPanel(game: game)
               else
                 const _LibraryNotice(),
               const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: () {
-                  final query = Uri(
-                    queryParameters: {
-                      'platform_id': game.ref.platformId.toString(),
-                      'platform_game_id': game.ref.platformGameId,
-                      'name': game.name,
-                      'platform': game.ref.platform!.code,
-                      if (game.coverUrl != null) 'cover': game.coverUrl!,
-                    },
-                  ).query;
-                  context.go(
-                    '/game/${Uri.encodeComponent(game.ref.platformGameId)}/achievements?$query',
-                  );
-                },
-                icon: const Icon(Icons.emoji_events_outlined),
-                label: const Text('View achievements'),
-              ),
+              GameAchievementSection(key: ValueKey(game.ref), game: game.ref),
             ],
           ),
         ),

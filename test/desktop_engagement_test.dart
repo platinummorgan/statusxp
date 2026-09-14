@@ -176,6 +176,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Claim Reward'), findsNothing);
     expect(find.text('All challenges'), findsOneWidget);
+    await tester.tap(find.text('Show recommendations'));
+    await tester.pumpAndSettle();
+    expect(find.text('Claim Reward'), findsOneWidget);
+    expect(find.text('Show recommendations'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    await showSection(tester, () async => snapshot);
+    await tester.pumpAndSettle();
+    expect(find.text('Claim Reward'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
     await showSection(tester, () async => snapshot, user: 'b');
     await tester.pumpAndSettle();
