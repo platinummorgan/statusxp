@@ -1,6 +1,8 @@
 ## Source of Truth
 Operational state for this project lives in `_state/*.md`.
 
+Track the app review work in the [improvement checklist](_state/IMPROVEMENT_TODO.md).
+
 # StatusXP
 
 **Gaming Achievement Tracker & Identity Platform**

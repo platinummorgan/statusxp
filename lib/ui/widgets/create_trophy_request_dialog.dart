@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:statusxp/services/trophy_help_service.dart';
+import 'package:statusxp/ui/widgets/coop_session_summary.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 
@@ -32,6 +32,45 @@ class _CreateTrophyRequestDialogState
   final _availabilityController = TextEditingController();
   final _platformUsernameController = TextEditingController();
   bool _isSubmitting = false;
+  DateTime? _scheduledAt;
+  int _helpersNeeded = 1;
+
+  Future<void> _chooseTime() async {
+    final now = DateTime.now();
+    final initial = _scheduledAt != null && _scheduledAt!.isAfter(now)
+        ? _scheduledAt!
+        : now.add(const Duration(hours: 1));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null || !mounted) return;
+    final selected = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    if (!selected.isAfter(DateTime.now()) ||
+        selected.hour != time.hour ||
+        selected.minute != time.minute) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Choose a valid future time in your device time zone.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _scheduledAt = selected);
+  }
 
   @override
   void dispose() {
@@ -42,12 +81,23 @@ class _CreateTrophyRequestDialogState
   }
 
   Future<void> _submitRequest() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
+    if (_scheduledAt != null && !_scheduledAt!.isAfter(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The selected time has passed. Choose a new time or leave it flexible.',
+          ),
+        ),
+      );
+      return;
+    }
 
     setState(() => _isSubmitting = true);
 
     try {
-      final service = TrophyHelpService(ref.read(supabaseClientProvider));
+      final service = ref.read(trophyHelpServiceProvider);
 
       await service.createRequest(
         gameId: widget.gameId,
@@ -55,6 +105,8 @@ class _CreateTrophyRequestDialogState
         achievementId: widget.achievementId,
         achievementName: widget.achievementName,
         platform: widget.platform,
+        scheduledAt: _scheduledAt,
+        helpersNeeded: _helpersNeeded,
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
@@ -249,6 +301,64 @@ class _CreateTrophyRequestDialogState
 
                 const SizedBox(height: 16),
 
+                Text(
+                  'Plan your session',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  initialValue: _helpersNeeded,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Additional players needed',
+                  ),
+                  items: [
+                    for (var count = 1; count <= 7; count++)
+                      DropdownMenuItem(
+                        value: count,
+                        child: Text(
+                          '$count ${count == 1 ? 'player' : 'players'} besides you',
+                        ),
+                      ),
+                  ],
+                  onChanged: _isSubmitting
+                      ? null
+                      : (value) => setState(() => _helpersNeeded = value!),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _scheduledAt == null
+                      ? 'Keep the time flexible, or pick a start time.'
+                      : coopLocalStart(_scheduledAt!),
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Choose in your device time zone. Other players see their local time.',
+                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                ),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _isSubmitting ? null : _chooseTime,
+                      icon: const Icon(Icons.event),
+                      label: Text(
+                        _scheduledAt == null ? 'Set start time' : 'Change time',
+                      ),
+                    ),
+                    if (_scheduledAt != null)
+                      TextButton(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => setState(() => _scheduledAt = null),
+                        child: const Text('Keep flexible'),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 // Availability (Optional)
                 Text(
                   'When Are You Available? (Optional)',

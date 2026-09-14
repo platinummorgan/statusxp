@@ -1,87 +1,56 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  limitedProviderHandler,
+  providerHeaders,
+} from "../_shared/limited-provider-handler.ts";
+import { quotaResponse } from "../_shared/provider-quota.ts";
+const client = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_ANON_KEY")!,
+  { auth: { persistSession: false, autoRefreshToken: false } },
+);
+const getUser = async (token: string) => {
+  const { data, error } = await client.auth.getUser(token);
+  return error ? null : data.user?.id ?? null;
+};
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY')
-
-Deno.serve(async (req) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', {
+Deno.serve(limitedProviderHandler({
+  getUser,
+  admit: (user) => quotaResponse(user, "moderation", providerHeaders),
+  validate: (body) =>
+    typeof body.text === "string" && body.text.trim().length > 0 &&
+    body.text.length <= 5000,
+  execute: async (body) => {
+    const key = Deno.env.get("OPENAI_API_KEY");
+    if (!key) throw new Error("Unavailable");
+    const response = await fetch("https://api.openai.com/v1/moderations", {
+      method: "POST",
+      signal: AbortSignal.timeout(15000),
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
       },
-    })
-  }
-
-  try {
-    const { text } = await req.json()
-
-    if (!text || typeof text !== 'string') {
-      return new Response(
-        JSON.stringify({ error: 'Text is required' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      )
+      body: JSON.stringify({ input: body.text }),
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new Error("Provider failure");
     }
-
-    // Call OpenAI Moderation API
-    const moderationResponse = await fetch('https://api.openai.com/v1/moderations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        input: text,
-      }),
-    })
-
-    if (!moderationResponse.ok) {
-      throw new Error(`OpenAI API error: ${moderationResponse.statusText}`)
-    }
-
-    const moderationData = await moderationResponse.json()
-    const result = moderationData.results[0]
-
-    // Check if content is flagged
-    const isSafe = !result.flagged
-    
-    // Get flagged categories
-    const flaggedCategories: string[] = []
-    if (result.flagged) {
-      for (const [category, flagged] of Object.entries(result.categories)) {
-        if (flagged) {
-          flaggedCategories.push(category)
-        }
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        is_safe: isSafe,
-        reason: flaggedCategories.length > 0 
-          ? `Content flagged for: ${flaggedCategories.join(', ')}`
-          : null,
-        categories: result.categories,
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      }
-    )
-  } catch (error) {
-    console.error('Moderation error:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
-      }
-    )
-  }
-})
+    const data = await response.json();
+    const result = data.results?.[0];
+    if (
+      typeof result?.flagged !== "boolean" || !result.categories ||
+      typeof result.categories !== "object"
+    ) throw new Error("Invalid moderation result");
+    const categories = Object.entries(result.categories).filter(([, flagged]) =>
+      flagged === true
+    ).map(([category]) => category);
+    return {
+      is_safe: !result.flagged,
+      reason: categories.length
+        ? `Content flagged for: ${categories.join(", ")}`
+        : null,
+      categories: result.categories,
+    };
+  },
+}));

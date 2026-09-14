@@ -12,6 +12,7 @@ import 'package:timeago/timeago.dart' as timeago;
 
 final compositeAchievementCommentsProvider = FutureProvider.autoDispose
     .family<List<AchievementComment>, AchievementRef>((ref, achievementRef) {
+      ref.watch(currentUserIdProvider);
       return ref
           .watch(achievementCommentServiceProvider)
           .getCommentsForComposite(achievementRef);

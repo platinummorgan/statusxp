@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/services/twitch_oauth_state.dart';
 // Conditional import for web-only features
 import 'package:statusxp/utils/web_utils.dart'
     if (dart.library.io) 'package:statusxp/utils/web_utils_stub.dart';
@@ -36,52 +38,77 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
     }
   }
 
+  static const _redirectUri = 'https://statusxp.com/twitch-callback';
+  final _oauthState = TwitchOAuthState(
+    read: WebUtils.readSessionValue,
+    write: WebUtils.writeSessionValue,
+    remove: WebUtils.removeSessionValue,
+  );
+
+  String? get _sessionBinding {
+    final session = ref.read(supabaseClientProvider).auth.currentSession;
+    return TwitchOAuthState.sessionBinding(
+      session?.user.id,
+      session?.accessToken,
+    );
+  }
+
   Future<void> _checkForOAuthCallback() async {
-    if (!kIsWeb) return;
-
     final uri = Uri.parse(WebUtils.getCurrentUrl());
-    final code = uri.queryParameters['code'];
-    final error = uri.queryParameters['error'];
-
-    if (error != null) {
-      setState(() {
-        _error = 'OAuth error: $error';
-      });
-      // Clean URL
-      WebUtils.replaceUrl('/settings');
+    if (uri.path != '/twitch-callback' &&
+        !uri.queryParameters.containsKey('code') &&
+        !uri.queryParameters.containsKey('error')) {
       return;
     }
 
-    if (code != null) {
-      // Clean URL immediately
-      WebUtils.replaceUrl('/settings');
-
-      // Process the OAuth code
+    // Remove provider values from history before any asynchronous work.
+    WebUtils.replaceUrl('/settings');
+    try {
+      final code = _oauthState.consumeCallback(uri, _sessionBinding);
       await _linkAccount(code);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error is StateError
+              ? error.message.toString()
+              : 'Unable to verify Twitch authorization. Enable browser storage and try again.';
+        });
+      }
     }
   }
 
   Future<void> _startOAuthFlow() async {
-    if (!kIsWeb) {
-      setState(() {
-        _error = 'Twitch linking is only available on web';
-      });
-      return;
-    }
-
-    const redirectUri = 'https://statusxp.com/twitch-callback';
-    const scope = 'user:read:subscriptions';
-
-    final authUrl = Uri.https('id.twitch.tv', '/oauth2/authorize', {
-      'client_id': _clientId,
-      'redirect_uri': redirectUri,
-      'response_type': 'code',
-      'scope': scope,
-      'state': 'statusxp_twitch_auth',
+    if (!kIsWeb || _isLoading) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
     });
-
-    // Redirect to Twitch OAuth page
-    WebUtils.redirectTo(authUrl.toString());
+    try {
+      if (Uri.parse(WebUtils.getCurrentUrl()).origin !=
+          Uri.parse(_redirectUri).origin) {
+        throw StateError(
+          'Open statusxp.com and sign in there to connect Twitch.',
+        );
+      }
+      final state = _oauthState.begin(_sessionBinding);
+      final authUrl = Uri.https('id.twitch.tv', '/oauth2/authorize', {
+        'client_id': _clientId,
+        'redirect_uri': _redirectUri,
+        'response_type': 'code',
+        'scope': 'user:read:subscriptions',
+        'state': state,
+      });
+      WebUtils.redirectTo(authUrl.toString());
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = error is StateError
+              ? error.message.toString()
+              : 'Unable to start Twitch authorization. Enable browser storage and try again.';
+        });
+      }
+    }
   }
 
   Future<void> _linkAccount(String code) async {
@@ -95,14 +122,16 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
 
     try {
       final twitchService = ref.read(twitchServiceProvider);
-      const redirectUri = 'https://statusxp.com/twitch-callback';
-
-      final result = await twitchService.linkAccount(code, redirectUri);
+      final result = await twitchService.linkAccount(code, _redirectUri);
 
       if (mounted) {
         setState(() {
           _isLoading = false;
-          if (result.isSubscribed) {
+          if (result.subscriptionCheckPending) {
+            _successMessage =
+                'Twitch account linked. Subscription verification is temporarily unavailable. '
+                'Check your subscription again from Settings.';
+          } else if (result.isSubscribed) {
             _successMessage =
                 'Successfully linked Twitch account!\n'
                 'Twitch subscription detected! 🎉\n\n'
@@ -114,10 +143,10 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
           }
         });
 
-        // Auto-close after delay
+        // Return to Settings after the callback route finishes linking.
         Future.delayed(const Duration(seconds: 3), () {
           if (mounted) {
-            Navigator.of(context).pop(true);
+            context.go('/settings');
           }
         });
       }
@@ -141,7 +170,7 @@ class _TwitchConnectScreenState extends ConsumerState<TwitchConnectScreen> {
             padding: EdgeInsets.all(24),
             child: Text(
               'Twitch linking is only available on the web version.\n\n'
-              'Please visit statusxp.app on your browser to link your Twitch account.',
+              'Please visit statusxp.com on your browser to link your Twitch account.',
               textAlign: TextAlign.center,
             ),
           ),

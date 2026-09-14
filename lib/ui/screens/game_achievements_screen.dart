@@ -1082,21 +1082,6 @@ class _GameAchievementsScreenState
         achievement['name'] as String? ?? 'Unknown Achievement';
     final achievementDescription = achievement['description'] as String? ?? '';
 
-    // Check AI credits first
-    final creditService = AICreditService();
-    final creditStatus = await creditService.checkCredits();
-    if (!context.mounted) return;
-
-    if (!creditStatus.canUse) {
-      // Show purchase dialog
-      AnalyticsService().logCustomEvent(
-        eventName: 'premium_trigger_impression',
-        parameters: {'source': 'ai_limit'},
-      );
-      _showAIPurchaseDialog(context, creditStatus);
-      return;
-    }
-
     await showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1181,6 +1166,15 @@ class _GameAchievementsScreenState
                   platformAchievementId: achievement['platform_achievement_id']
                       ?.toString(),
                   onCreditConsumed: _refreshAICreditBadge,
+                  onNoCredits: () async {
+                    final status = await AICreditService().checkCredits();
+                    if (!context.mounted) return;
+                    AnalyticsService().logCustomEvent(
+                      eventName: 'premium_trigger_impression',
+                      parameters: {'source': 'ai_limit'},
+                    );
+                    _showAIPurchaseDialog(context, status);
+                  },
                 ),
               ),
             ],
@@ -1452,7 +1446,7 @@ class _GameAchievementsScreenState
                               ),
                             ),
                             Text(
-                              'Unlimited syncs, AI guides & ad-free · \$4.99/mo',
+                              'Faster syncs, AI guides & ad-free · \$4.99/mo',
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -1502,8 +1496,8 @@ class _GameAchievementsScreenState
         builder: (context) => AlertDialog(
           title: const Text('Already Premium'),
           content: const Text(
-            'You already have unlimited AI guides with your Premium subscription!\n\n'
-            'No need to purchase AI packs. Enjoy unlimited access! 🎉',
+            'AI guides are included with your Premium subscription.\n\n'
+            'No need to purchase AI packs. Daily usage limits apply.',
           ),
           actions: [
             TextButton(
@@ -1710,6 +1704,7 @@ class _AIGuideContent extends StatefulWidget {
   final String? platformGameId;
   final String? platformAchievementId;
   final VoidCallback? onCreditConsumed;
+  final VoidCallback? onNoCredits;
 
   const _AIGuideContent({
     required this.gameTitle,
@@ -1720,6 +1715,7 @@ class _AIGuideContent extends StatefulWidget {
     this.platformGameId,
     this.platformAchievementId,
     this.onCreditConsumed,
+    this.onNoCredits,
   });
 
   @override
@@ -1744,22 +1740,15 @@ class _AIGuideContentState extends State<_AIGuideContent> {
   }
 
   Future<void> _loadGuide() async {
-    // Always consume AI credit (even for cached guides)
-    final creditService = AICreditService();
-    try {
-      await creditService.consumeCredit();
-      // Immediately refresh the credit badge on the parent screen
-      widget.onCreditConsumed?.call();
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to use AI credit: $e';
-        _isLoading = false;
-      });
-      return;
-    }
-
+    if (_isLoading) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    // Reusing a saved guide does not make a paid generation request.
     // Check if we already have a cached guide in the database
     final cached = await _checkCachedGuide();
+    if (!mounted) return;
     if (cached != null) {
       statusxpLog('✅ Loaded guide from cache (${cached.length} chars)');
       setState(() {
@@ -1778,6 +1767,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         statusxpLog('✅ Cached guide already has YouTube link');
       }
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -1801,6 +1791,8 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       );
 
       await for (final chunk in stream) {
+        if (!mounted) return;
+        widget.onCreditConsumed?.call();
         setState(() {
           _guideText += chunk;
         });
@@ -1818,11 +1810,15 @@ class _AIGuideContentState extends State<_AIGuideContent> {
       // Save to database
       await _saveGuideToDatabase(_guideText);
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
       statusxpLog('❌ Error in guide generation flow: $e');
+      if (!mounted) return;
+      if (e is GuideCreditsUnavailable) widget.onNoCredits?.call();
+      widget.onCreditConsumed?.call();
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -1841,6 +1837,7 @@ class _AIGuideContentState extends State<_AIGuideContent> {
         achievementName: widget.achievementName,
       );
 
+      if (!mounted) return;
       if (videoUrl != null) {
         statusxpLog('✅ YouTube video found: $videoUrl');
         // Replace "No specific video guide found" with actual link

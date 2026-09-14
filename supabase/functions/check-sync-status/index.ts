@@ -1,3 +1,4 @@
+import { withAdminAccess } from '../_shared/admin-runtime.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const supabase = createClient(
@@ -5,7 +6,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 )
 
-Deno.serve(async (req) => {
+Deno.serve(withAdminAccess('GET', async (req) => {
   try {
     // Check sync status for your specific user
     const { data: profile, error } = await supabase
@@ -16,7 +17,7 @@ Deno.serve(async (req) => {
 
     if (error) {
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: error instanceof Error ? error.message : 'Operation failed' }),
         { headers: { 'Content-Type': 'application/json' }, status: 400 }
       )
     }
@@ -35,8 +36,8 @@ Deno.serve(async (req) => {
     )
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Operation failed' }),
       { headers: { 'Content-Type': 'application/json' }, status: 500 }
     )
   }
-})
+}));

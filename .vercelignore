@@ -1,5 +1,6 @@
 # Vercel ignore file - we need source files to build Flutter
 .dart_tool/
+.codex/
 .git/
 .gitignore
 .idea/
@@ -10,6 +11,10 @@ linux/
 macos/
 windows/
 test/
+build/
+node_modules/
+sync-service/node_modules/
+supabase/.temp/
 *.sql
 *.iml
 *.log

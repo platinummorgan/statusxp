@@ -1,35 +1,16 @@
+import { startEntitlementReconciliationWorker } from './entitlement-reconciliation.js';
+import { admitRecoverySync } from './provider-quota.js';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { createServiceClient } from './supabase-client.js';
+import { createSyncAuth } from './auth.js';
+import { startLeaderboardRefreshWorker } from './leaderboard-refresh.js';
 // Lazy-load sync handlers on-demand to avoid boot-time module errors
 // (psn-api & other ESM/CJS modules can crash startup when required at top-level)
 
+const checkAuth = createSyncAuth(process.env.SYNC_SERVICE_SECRET);
 const app = express();
-
-// Auth middleware - check for SYNC_SERVICE_SECRET
-function checkAuth(req, res, next) {
-  const authHeader = req.headers.authorization;
-  const expectedSecret = process.env.SYNC_SERVICE_SECRET;
-  
-  console.log('🔐 Auth check - Header received:', authHeader ? 'Bearer [REDACTED]' : '[MISSING]');
-  console.log('🔐 Auth check - Expected secret present:', !!expectedSecret);
-  
-  if (!expectedSecret) {
-    console.warn('⚠️ SYNC_SERVICE_SECRET not configured - endpoints are unsecured!');
-    return next(); // Allow request if secret not configured (for backwards compatibility)
-  }
-  
-  if (!authHeader || authHeader !== `Bearer ${expectedSecret}`) {
-    console.error('❌ Unauthorized request to sync endpoint');
-    console.error('❌ Expected:', expectedSecret ? 'Bearer [REDACTED]' : '[NOT SET]');
-    console.error('❌ Received:', authHeader || '[MISSING]');
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  
-  console.log('✅ Auth check passed');
-  next();
-}
 
 // Validation helper
 function validateRequired(fields, body) {
@@ -115,6 +96,7 @@ async function resumeStuckSyncs() {
       const { syncPSNAchievements } = mod;
 
       for (const user of psnUsers) {
+        if (!await admitRecoverySync(supabase, user.id, 'psn')) continue;
         const { data: logRow } = await supabase
           .from('psn_sync_logs')
           .insert({
@@ -156,6 +138,7 @@ async function resumeStuckSyncs() {
       const { syncXboxAchievements } = mod;
 
       for (const user of xboxUsers) {
+        if (!await admitRecoverySync(supabase, user.id, 'xbox')) continue;
         const { data: logRow } = await supabase
           .from('xbox_sync_logs')
           .insert({
@@ -196,6 +179,7 @@ async function resumeStuckSyncs() {
       const { syncSteamAchievements } = mod;
 
       for (const user of steamUsers) {
+        if (!await admitRecoverySync(supabase, user.id, 'steam')) continue;
         const { data: logRow } = await supabase
           .from('steam_sync_logs')
           .insert({
@@ -535,4 +519,10 @@ app.post('/sync/steam/stop', checkAuth, async (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Sync service running on port ${PORT}`);
+  startLeaderboardRefreshWorker(createServiceClient);
+  startEntitlementReconciliationWorker({
+    enabled: process.env.ENTITLEMENT_RECONCILIATION_ENABLED === 'true',
+    supabaseUrl: process.env.SUPABASE_URL,
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  });
 });

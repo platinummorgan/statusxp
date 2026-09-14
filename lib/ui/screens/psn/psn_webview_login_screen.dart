@@ -15,7 +15,9 @@ class PSNWebViewLoginScreen extends StatefulWidget {
 
 class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
   late final WebViewController _controller;
+  final WebViewCookieManager _cookieManager = WebViewCookieManager();
   bool _isLoading = true;
+  bool _isExtracting = false;
   String? _error;
 
   @override
@@ -24,7 +26,7 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
     _initializeWebView();
   }
 
-  void _initializeWebView() {
+  Future<void> _initializeWebView() async {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -52,11 +54,30 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
             });
           },
         ),
-      )
-      ..loadRequest(Uri.parse('https://www.playstation.com/'));
+      );
+
+    // Android WebView state is shared between visits. Clear it before a new
+    // link attempt so an expired NPSSO response cannot be submitted again.
+    await _cookieManager.clearCookies();
+    await _controller.clearCache();
+    await _controller.clearLocalStorage();
+
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _isExtracting = false;
+      _error = null;
+    });
+    await _controller.loadRequest(Uri.parse('https://www.playstation.com/'));
   }
 
   Future<void> _extractNPSSO() async {
+    if (_isExtracting) return;
+    setState(() {
+      _isExtracting = true;
+      _error = null;
+    });
+
     try {
       // Get the page content (which should be JSON with the NPSSO)
       final content =
@@ -112,14 +133,29 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
           _error = 'Failed to extract authentication token: ${e.toString()}';
         });
       }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExtracting = false;
+        });
+      }
     }
   }
 
-  void _navigateToNPSSOPage() {
+  Future<void> _navigateToNPSSOPage() async {
+    if (_isExtracting) return;
+
     // Always use Canada endpoint - works globally and accepts tokens from any regional login
     // User logs in on their regional Sony site, but NPSSO extraction works from any endpoint
-    _controller.loadRequest(
-      Uri.parse('https://ca.account.sony.com/api/v1/ssocookie'),
+    final cacheBuster = DateTime.now().millisecondsSinceEpoch;
+    await _controller.loadRequest(
+      Uri.parse(
+        'https://ca.account.sony.com/api/v1/ssocookie?statusxp=$cacheBuster',
+      ),
+      headers: const {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
     );
   }
 
@@ -129,7 +165,7 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
       appBar: AppBar(
         title: const Text('Sign in with PlayStation'),
         actions: [
-          if (!_isLoading)
+          if (!_isLoading && !_isExtracting)
             TextButton(
               onPressed: _navigateToNPSSOPage,
               child: const Text('Complete Sign In'),
@@ -139,7 +175,8 @@ class _PSNWebViewLoginScreenState extends State<PSNWebViewLoginScreen> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          if (_isLoading || _isExtracting)
+            const Center(child: CircularProgressIndicator()),
           if (_error != null)
             Center(
               child: Column(

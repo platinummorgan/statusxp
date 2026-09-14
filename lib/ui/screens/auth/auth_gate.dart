@@ -78,6 +78,7 @@ class _AuthGateState extends ConsumerState<AuthGate>
       // Record when app went to background
       _lastPausedTime = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
+      _biometricEnabledFuture = null;
       // When returning to app, only lock if it's been in background for more than 1 minute
       if (_lastPausedTime != null) {
         final duration = DateTime.now().difference(_lastPausedTime!);
@@ -123,6 +124,13 @@ class _AuthGateState extends ConsumerState<AuthGate>
       _isAuthenticated = user != null;
     });
   }
+
+  String? _activeUserId;
+  Future<bool>? _biometricEnabledFuture;
+
+  // Discard screen-local progress and pending UI state on identity changes.
+  Widget get _accountChild =>
+      KeyedSubtree(key: ValueKey(_activeUserId), child: widget.child);
 
   Widget _buildSupabaseUnavailableScreen() {
     return Scaffold(
@@ -187,7 +195,8 @@ class _AuthGateState extends ConsumerState<AuthGate>
     }
 
     return FutureBuilder<bool>(
-      future: _biometricService.isBiometricEnabled(),
+      future: _biometricEnabledFuture ??= _biometricService
+          .isBiometricEnabled(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
@@ -207,9 +216,10 @@ class _AuthGateState extends ConsumerState<AuthGate>
 
         if (_isAuthenticated) {
           return WebAppShell(
+            key: ValueKey(_activeUserId),
             location: widget.location,
             isAuthenticated: true,
-            child: widget.child,
+            child: _accountChild,
           );
         }
 
@@ -221,13 +231,24 @@ class _AuthGateState extends ConsumerState<AuthGate>
 
   @override
   Widget build(BuildContext context) {
+    // Subscribe before the web guest branch so an existing route follows login.
+    if (tryGetSupabaseClient() != null) {
+      final userId = ref.watch(currentUserIdProvider);
+      if (_activeUserId != userId) {
+        _isBiometricUnlocked = false;
+        _biometricEnabledFuture = null;
+        _activeUserId = userId;
+      }
+      _isAuthenticated = userId != null;
+    }
     // The website is intentionally browseable without an account. Native apps
     // keep onboarding, biometric lock, and the existing sign-in-first flow.
     if (kIsWeb && !_isAuthenticated) {
       return WebAppShell(
+        key: ValueKey(_activeUserId),
         location: widget.location,
         isAuthenticated: false,
-        child: widget.child,
+        child: _accountChild,
       );
     }
 
@@ -255,7 +276,7 @@ class _AuthGateState extends ConsumerState<AuthGate>
     final client = tryGetSupabaseClient();
     if (client == null) {
       if (isFlutterTestMode) {
-        return widget.child;
+        return _accountChild;
       }
       return _buildSupabaseUnavailableScreen();
     }

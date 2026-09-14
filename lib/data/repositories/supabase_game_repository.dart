@@ -279,6 +279,8 @@ class SupabaseGameRepository {
 
       final response = await query
           .order('name', ascending: sortBy != 'name_desc')
+          .order('platform_id')
+          .order('platform_game_id')
           .range(offset, offset + limit - 1);
 
       final platformById = <int, Map<String, dynamic>>{

@@ -47,7 +47,7 @@ class PremiumSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Your subscription is now active.\nEnjoy unlimited AI guides and all premium features!',
+                'Your subscription is now active.\nEnjoy included AI guides and all premium features!',
                 style: TextStyle(
                   fontSize: 16,
                   color: textSecondary,

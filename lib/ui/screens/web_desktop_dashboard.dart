@@ -6,6 +6,8 @@ import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
+import 'package:statusxp/state/engagement_providers.dart';
+import 'package:statusxp/ui/widgets/desktop_engagement_section.dart';
 
 /// Content-dense dashboard designed specifically for a desktop browser.
 class WebDesktopDashboard extends ConsumerWidget {
@@ -24,6 +26,7 @@ class WebDesktopDashboard extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(dashboardStatsProvider);
           ref.invalidate(unifiedGamesProvider);
+          ref.invalidate(engagementSnapshotProvider);
           await Future.wait([
             ref.read(dashboardStatsProvider.future),
             ref.read(unifiedGamesProvider.future),
@@ -55,19 +58,25 @@ class WebDesktopDashboard extends ConsumerWidget {
   }
 }
 
-class _DashboardBody extends StatelessWidget {
+class _DashboardBody extends ConsumerWidget {
   const _DashboardBody({required this.stats, required this.games});
   final DashboardStats stats;
   final AsyncValue<List<UnifiedGame>> games;
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context, WidgetRef ref) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _ProfileHeader(stats: stats),
       const SizedBox(height: 18),
       _SummaryStrip(stats: stats),
       const SizedBox(height: 24),
+      if (ref.watch(currentUserIdProvider) case final String userId)
+        DesktopEngagementSection(
+          key: ValueKey(userId),
+          userId: userId,
+          games: games,
+        ),
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -143,7 +152,7 @@ class _DashboardBody extends StatelessWidget {
                 const SizedBox(height: 20),
                 _Panel(
                   title: 'Your library',
-                  child: _LibraryFacts(games: games.valueOrNull ?? const []),
+                  child: _LibraryFacts(games: games.asData?.value ?? const []),
                 ),
               ],
             ),

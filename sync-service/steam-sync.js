@@ -1,3 +1,4 @@
+import { refreshLeaderboardsAfterSync } from './leaderboard-refresh.js';
 import { createServiceClient } from './supabase-client.js';
 import { uploadExternalIcon, uploadGameCover } from './icon-proxy-utils.js';
 import { createPreSyncSnapshot, detectChangesAndGenerateStories } from './activity-feed-snapshots.js';
@@ -1051,14 +1052,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       `progress_counter=${processedGames}/${ownedGames.length}`
     );
 
-    // Refresh StatusXP leaderboard for this user only
-    console.log('Running refresh_statusxp_leaderboard_for_user...');
-    try {
-      await supabase.rpc('refresh_statusxp_leaderboard_for_user', { p_user_id: userId });
-      console.log('✅ refresh_statusxp_leaderboard_for_user complete');
-    } catch (calcError) {
-      console.error('⚠️ refresh_statusxp_leaderboard_for_user failed:', calcError);
-    }
+    await refreshLeaderboardsAfterSync(supabase, userId, 'steam');
 
     // Mark as completed
     await supabase

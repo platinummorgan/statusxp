@@ -12,6 +12,7 @@ import {
   extractAccountIdFromAccessToken,
   getUserTrophyProfileSummary,
   getUserProfile,
+  type AuthorizationPayload,
   type PSNUserProfile,
   type UserTrophyProfileSummary,
 } from '../_shared/psn-api.ts';
@@ -58,6 +59,11 @@ function getTotalTrophies(profile: UserTrophyProfileSummary | null): number {
   );
 }
 
+function isInvalidSonyGrant(error: unknown): boolean {
+  const message = extractErrorMessage(error).toLowerCase();
+  return message.includes('invalid_grant') || message.includes('invalid login');
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -99,10 +105,22 @@ serve(async (req) => {
     }
 
     console.log('Exchanging NPSSO for access code...');
-    const accessCode = await exchangeNpssoForAccessCode(npssoToken);
+    let accessCode = await exchangeNpssoForAccessCode(npssoToken);
 
     console.log('Exchanging access code for auth tokens...');
-    const authorization = await exchangeAccessCodeForAuthTokens(accessCode);
+    let authorization: AuthorizationPayload;
+    try {
+      authorization = await exchangeAccessCodeForAuthTokens(accessCode);
+    } catch (tokenError) {
+      if (!isInvalidSonyGrant(tokenError)) throw tokenError;
+
+      // Authorization codes are short-lived and single-use. Request one new
+      // code from the same NPSSO and retry exactly once; never reuse a code
+      // Sony has already rejected.
+      console.warn('Sony rejected the first access code; requesting one fresh code and retrying once.');
+      accessCode = await exchangeNpssoForAccessCode(npssoToken);
+      authorization = await exchangeAccessCodeForAuthTokens(accessCode);
+    }
 
     console.log('Fetching PSN user profile (onlineId, avatar, Plus status)...');
     let userProfile: PSNUserProfile | null = null;
@@ -277,9 +295,12 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error linking PSN account:', error);
+    const errorMessage = isInvalidSonyGrant(error)
+      ? 'PlayStation rejected this sign-in session. Return to PlayStation sign-in and try again with a fresh session.'
+      : extractErrorMessage(error) || 'Failed to link PSN account';
     return new Response(
       JSON.stringify({
-        error: (error as Error).message || 'Failed to link PSN account',
+        error: errorMessage,
       }),
       {
         status: 500,

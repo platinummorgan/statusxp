@@ -36,6 +36,7 @@ import 'package:statusxp/ui/screens/first_sync_onboarding_screen.dart';
 import 'package:statusxp/ui/screens/first_sync_results_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
+import 'package:statusxp/ui/screens/twitch/twitch_connect_screen.dart';
 import 'package:statusxp/ui/screens/weekly_recap_screen.dart';
 import 'package:statusxp/ui/screens/invite_friends_screen.dart';
 import 'package:statusxp/services/premium_activation_service.dart';
@@ -84,24 +85,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PremiumSuccessScreen(),
     ),
 
-    // Twitch OAuth Callback - Redirect to settings with OAuth params
+    // Twitch OAuth uses its own code exchange, separate from Supabase Auth.
     GoRoute(
       path: '/twitch-callback',
       name: 'twitch-callback',
-      redirect: (context, state) {
-        // Preserve OAuth code and state parameters when redirecting to settings
-        final code = state.uri.queryParameters['code'];
-        final error = state.uri.queryParameters['error'];
-        final errorDescription = state.uri.queryParameters['error_description'];
-
-        if (error != null) {
-          return '/settings?error=$error${errorDescription != null ? '&error_description=$errorDescription' : ''}';
-        }
-        if (code != null) {
-          return '/settings?code=$code&state=${state.uri.queryParameters['state'] ?? ''}';
-        }
-        return '/settings';
-      },
+      builder: (context, state) => const TwitchConnectScreen(),
     ),
 
     // Apple/Google OAuth Callback - Redirect to dashboard after authentication

@@ -49,17 +49,29 @@ class WebAppShell extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth < 900) {
-          return Stack(
-            children: [
-              page,
-              if (!isAuthenticated)
-                const Positioned(
-                  right: 14,
-                  top: 10,
-                  child: SafeArea(child: _AuthButtons(compact: true)),
-                ),
-            ],
+        final textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
+        if (constraints.maxWidth / textScale < 900) {
+          return ColoredBox(
+            color: backgroundDark,
+            child: Column(
+              children: [
+                if (!isAuthenticated)
+                  const SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _AuthButtons(compact: true),
+                      ),
+                    ),
+                  ),
+                Expanded(child: page),
+              ],
+            ),
           );
         }
 
@@ -149,22 +161,24 @@ class _WebsiteHeader extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        SizedBox(
-          width: 320,
-          height: 40,
-          child: TextField(
-            readOnly: true,
-            onTap: () => context.go('/games/browse'),
-            decoration: InputDecoration(
-              hintText: 'Search games and achievements',
-              prefixIcon: const Icon(Icons.search, size: 19),
-              filled: true,
-              fillColor: Colors.white.withValues(alpha: .055),
-              contentPadding: EdgeInsets.zero,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-                borderSide: BorderSide(
-                  color: Colors.white.withValues(alpha: .12),
+        Flexible(
+          child: SizedBox(
+            width: 320,
+            height: 40,
+            child: TextField(
+              readOnly: true,
+              onTap: () => context.go('/games/browse'),
+              decoration: InputDecoration(
+                hintText: 'Search games and achievements',
+                prefixIcon: const Icon(Icons.search, size: 19),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: .055),
+                contentPadding: EdgeInsets.zero,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  borderSide: BorderSide(
+                    color: Colors.white.withValues(alpha: .12),
+                  ),
                 ),
               ),
             ),
@@ -209,50 +223,53 @@ class _WebsiteNavBar extends StatelessWidget {
       ),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Row(
-          children: [
-            for (final item in items)
-              InkWell(
-                onTap: () => context.go(item.$2),
-                child: Container(
-                  height: 44,
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: location == item.$2
-                            ? accentPrimary
-                            : Colors.transparent,
-                        width: 2,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final item in items)
+                InkWell(
+                  onTap: () => context.go(item.$2),
+                  child: Container(
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: location == item.$2
+                              ? accentPrimary
+                              : Colors.transparent,
+                          width: 2,
+                        ),
                       ),
                     ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Row(
-                    children: [
-                      Text(
-                        item.$1,
-                        style: TextStyle(
-                          color: location == item.$2
-                              ? Colors.white
-                              : textSecondary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+                    alignment: Alignment.center,
+                    child: Row(
+                      children: [
+                        Text(
+                          item.$1,
+                          style: TextStyle(
+                            color: location == item.$2
+                                ? Colors.white
+                                : textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      if (_premiumPaths.contains(item.$2)) ...[
-                        const SizedBox(width: 5),
-                        const Icon(
-                          Icons.workspace_premium,
-                          size: 13,
-                          color: accentWarning,
-                        ),
+                        if (_premiumPaths.contains(item.$2)) ...[
+                          const SizedBox(width: 5),
+                          const Icon(
+                            Icons.workspace_premium,
+                            size: 13,
+                            color: accentWarning,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -264,15 +281,16 @@ class _AuthButtons extends StatelessWidget {
   final bool compact;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
+  Widget build(BuildContext context) => Wrap(
+    alignment: WrapAlignment.end,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: 8,
+    runSpacing: 8,
     children: [
-      if (!compact)
-        TextButton(
-          onPressed: () => context.go('/sign-in'),
-          child: const Text('Sign in'),
-        ),
-      if (!compact) const SizedBox(width: 8),
+      TextButton(
+        onPressed: () => context.go('/sign-in'),
+        child: const Text('Sign in'),
+      ),
       FilledButton(
         onPressed: () => context.go('/sign-in?mode=signup'),
         style: FilledButton.styleFrom(
@@ -289,110 +307,118 @@ class _GuestHome extends StatelessWidget {
   const _GuestHome();
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.transparent,
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 54, vertical: 56),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'YOUR GAMING LIFE,\nALL IN ONE PLACE.',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 48,
-                  height: 1.05,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1.2,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const SizedBox(
-                width: 680,
-                child: Text(
-                  'Explore games and global rankings now. Create a free account when you are ready to sync your profiles, track achievements, and build your StatusXP identity.',
+  Widget build(BuildContext context) {
+    final isNarrow = MediaQuery.sizeOf(context).width < 600;
+    return Scaffold(
+      backgroundColor: backgroundDark,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: isNarrow ? 20 : 54,
+          vertical: isNarrow ? 24 : 56,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'YOUR GAMING LIFE,\nALL IN ONE PLACE.',
                   style: TextStyle(
-                    color: textSecondary,
-                    fontSize: 18,
-                    height: 1.55,
+                    color: Colors.white,
+                    fontSize: isNarrow ? 34 : 48,
+                    height: 1.05,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1.2,
                   ),
                 ),
-              ),
-              const SizedBox(height: 32),
-              Wrap(
-                spacing: 14,
-                runSpacing: 12,
-                children: [
-                  FilledButton.icon(
-                    onPressed: () => context.go('/games/browse'),
-                    icon: const Icon(Icons.explore_rounded),
-                    label: const Text('Explore the game catalog'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: accentPrimary,
-                      foregroundColor: backgroundDark,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 18,
-                      ),
+                const SizedBox(height: 20),
+                const SizedBox(
+                  width: 680,
+                  child: Text(
+                    'Explore games and global rankings now. Create a free account when you are ready to sync your profiles, track achievements, and build your StatusXP identity.',
+                    style: TextStyle(
+                      color: textSecondary,
+                      fontSize: 18,
+                      height: 1.55,
                     ),
                   ),
-                  OutlinedButton.icon(
-                    onPressed: () => context.go('/leaderboards'),
-                    icon: const Icon(Icons.leaderboard_rounded),
-                    label: const Text('View leaderboards'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 18,
+                ),
+                const SizedBox(height: 32),
+                Wrap(
+                  spacing: 14,
+                  runSpacing: 12,
+                  children: [
+                    FilledButton.icon(
+                      onPressed: () => context.go('/games/browse'),
+                      icon: const Icon(Icons.explore_rounded),
+                      label: Text(
+                        isNarrow ? 'Explore games' : 'Explore the game catalog',
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: accentPrimary,
+                        foregroundColor: backgroundDark,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 18,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 58),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final width = constraints.maxWidth > 850
-                      ? (constraints.maxWidth - 40) / 3
-                      : constraints.maxWidth;
-                  return Wrap(
-                    spacing: 20,
-                    runSpacing: 20,
-                    children: [
-                      _FeatureCard(
-                        width: width,
-                        icon: Icons.public_rounded,
-                        title: 'Browse freely',
-                        body:
-                            'Search the complete cross-platform game catalog without creating an account.',
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/leaderboards'),
+                      icon: const Icon(Icons.leaderboard_rounded),
+                      label: const Text('View leaderboards'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 18,
+                        ),
                       ),
-                      _FeatureCard(
-                        width: width,
-                        icon: Icons.emoji_events_rounded,
-                        title: 'See who leads',
-                        body:
-                            'Explore community rankings across StatusXP, trophies, Xbox, and Steam.',
-                      ),
-                      _FeatureCard(
-                        width: width,
-                        icon: Icons.insights_rounded,
-                        title: 'Unlock your stats',
-                        body:
-                            'Sign up to sync your profiles and turn achievement history into one unified dashboard.',
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 58),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = constraints.maxWidth > 850
+                        ? (constraints.maxWidth - 40) / 3
+                        : constraints.maxWidth;
+                    return Wrap(
+                      spacing: 20,
+                      runSpacing: 20,
+                      children: [
+                        _FeatureCard(
+                          width: width,
+                          icon: Icons.public_rounded,
+                          title: 'Browse freely',
+                          body:
+                              'Search the complete cross-platform game catalog without creating an account.',
+                        ),
+                        _FeatureCard(
+                          width: width,
+                          icon: Icons.emoji_events_rounded,
+                          title: 'See who leads',
+                          body:
+                              'Explore community rankings across StatusXP, trophies, Xbox, and Steam.',
+                        ),
+                        _FeatureCard(
+                          width: width,
+                          icon: Icons.insights_rounded,
+                          title: 'Unlock your stats',
+                          body:
+                              'Sign up to sync your profiles and turn achievement history into one unified dashboard.',
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _FeatureCard extends StatelessWidget {

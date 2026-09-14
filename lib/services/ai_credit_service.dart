@@ -28,7 +28,7 @@ class AICreditStatus {
   /// Get user-friendly message about credit status
   String get statusMessage {
     if (source == 'premium') {
-      return 'Premium: Unlimited AI';
+      return 'Premium: AI guides included';
     } else if (source == 'pack') {
       return '$packCredits pack credits';
     } else if (source == 'daily_free') {
@@ -81,56 +81,6 @@ class AICreditService {
         packCredits: 0,
         dailyFree: 0,
       );
-    }
-  }
-
-  /// Consume one AI credit (call this when generating AI guide)
-  Future<AICreditStatus> consumeCredit() async {
-    try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final response = await _supabase.rpc(
-        'consume_ai_credit',
-        params: {'p_user_id': userId},
-      );
-
-      return AICreditStatus.fromJson(response as Map<String, dynamic>);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Add pack credits after successful purchase
-  Future<bool> addPackCredits({
-    required String packType, // 'small', 'medium', 'large'
-    required int credits,
-    required double price,
-    required String platform,
-  }) async {
-    try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final response = await _supabase.rpc(
-        'add_ai_pack_credits',
-        params: {
-          'p_user_id': userId,
-          'p_pack_type': packType,
-          'p_credits': credits,
-          'p_price': price,
-          'p_platform': platform,
-        },
-      );
-
-      final result = response as Map<String, dynamic>;
-      return result['success'] ?? false;
-    } catch (e) {
-      return false;
     }
   }
 

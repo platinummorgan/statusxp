@@ -1,3 +1,4 @@
+import { quotaResponse } from '../_shared/provider-quota.ts';
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -12,6 +13,8 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
+
+  if (req.method !== 'POST') return new Response(JSON.stringify({error: 'Use POST.'}), {status: 405, headers: {...corsHeaders, 'Content-Type': 'application/json'}});
 
   try {
     const authHeader = req.headers.get('Authorization')!;
@@ -50,6 +53,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const quotaDenied = await quotaResponse(user.id, 'sync_xbox', corsHeaders);
+    if (quotaDenied) return quotaDenied;
 
     // Mark all old pending syncs as failed
     await supabase

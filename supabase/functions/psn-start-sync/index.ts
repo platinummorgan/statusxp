@@ -1,3 +1,4 @@
+import { quotaResponse } from '../_shared/provider-quota.ts';
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { exchangeRefreshTokenForAuthTokens } from '../_shared/psn-api.ts';
@@ -57,6 +58,8 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
+  if (req.method !== 'POST') return new Response(JSON.stringify({error: 'Use POST.'}), {status: 405, headers: {...corsHeaders, 'Content-Type': 'application/json'}});
+
   try {
     const authHeader = req.headers.get('Authorization')!;
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -112,6 +115,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const quotaDenied = await quotaResponse(user.id, 'sync_psn', corsHeaders);
+    if (quotaDenied) return quotaDenied;
 
     // Preflight token refresh so we fail fast with a clear relink message
     // instead of reporting "sync started" when PSN credentials are expired.
@@ -212,7 +218,6 @@ serve(async (req) => {
       console.log('🔐 PSN SYNC_SERVICE_SECRET value:', syncSecret ? '[SET]' : '[NOT SET]');
       if (syncSecret) {
         headers['Authorization'] = `Bearer ${syncSecret}`;
-        console.log('🔐 PSN Authorization header set:', `Bearer ${syncSecret.substring(0, 3)}...`);
       } else {
         console.log('🔐 PSN No SYNC_SERVICE_SECRET found - no auth header sent');
       }

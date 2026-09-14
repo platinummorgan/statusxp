@@ -96,8 +96,9 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
       _syncStartedAt = DateTime.now();
       _lastSyncAtBeforeSync = ref
           .read(psnSyncStatusProvider)
-          .valueOrNull
-          ?.lastSyncAt;
+          .asData
+          ?.value
+          .lastSyncAt;
     });
 
     try {

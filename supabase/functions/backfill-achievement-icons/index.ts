@@ -1,3 +1,4 @@
+import { withAdminAccess } from '../_shared/admin-runtime.ts';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -6,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+serve(withAdminAccess('POST', async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -124,7 +125,7 @@ serve(async (req) => {
         results.errors.push({
           icon_id: icon.id,
           platform_achievement_id: icon.platform_achievement_id,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Operation failed',
         });
         console.error(`✗ Failed to process ${table} icon ${icon.platform_achievement_id}:`, error);
       }
@@ -132,7 +133,6 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        success: true,
         table,
         processed: icons.length,
         ...results,
@@ -143,8 +143,8 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Operation failed' }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

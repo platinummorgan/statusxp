@@ -29,6 +29,7 @@ class TwitchService {
         twitchUsername: data['twitchUsername'],
         twitchDisplayName: data['twitchDisplayName'],
         isSubscribed: data['isSubscribed'] ?? false,
+        subscriptionCheckPending: data['subscriptionCheckPending'] == true,
       );
     } catch (e) {
       throw Exception('Failed to link Twitch account: $e');
@@ -73,10 +74,7 @@ class TwitchService {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception('Not authenticated');
 
-      await _supabase
-          .from('profiles')
-          .update({'twitch_user_id': null})
-          .eq('id', user.id);
+      await _supabase.rpc('disconnect_my_twitch_account');
     } catch (e) {
       throw Exception('Failed to disconnect Twitch: $e');
     }
@@ -90,6 +88,7 @@ class TwitchLinkResult {
   final String? twitchUsername;
   final String? twitchDisplayName;
   final bool isSubscribed;
+  final bool subscriptionCheckPending;
 
   TwitchLinkResult({
     required this.success,
@@ -97,6 +96,7 @@ class TwitchLinkResult {
     this.twitchUsername,
     this.twitchDisplayName,
     required this.isSubscribed,
+    this.subscriptionCheckPending = false,
   });
 }
 

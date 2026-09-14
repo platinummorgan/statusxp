@@ -1,3 +1,4 @@
+import { reconcileTwitchSubscription } from '../_shared/twitch-reconcile.ts';
 /**
  * Twitch Link Account Edge Function
  * 
@@ -31,13 +32,6 @@ interface TwitchUserResponse {
     login: string;
     display_name: string;
     profile_image_url: string;
-  }>;
-}
-
-interface TwitchSubscriptionCheckResponse {
-  data: Array<{
-    broadcaster_id: string;
-    tier: string;
   }>;
 }
 
@@ -97,59 +91,6 @@ async function getTwitchUser(accessToken: string): Promise<TwitchUserResponse> {
   return await response.json();
 }
 
-/**
- * Check if user is subscribed to broadcaster
- * Note: This requires the BROADCASTER's access token with channel:read:subscriptions scope
- */
-async function checkSubscription(userId: string): Promise<boolean> {
-  const clientId = Deno.env.get('TWITCH_CLIENT_ID');
-  const broadcasterId = Deno.env.get('TWITCH_BROADCASTER_ID');
-  const broadcasterToken = Deno.env.get('TWITCH_BROADCASTER_TOKEN');
-
-  if (!broadcasterId) {
-    console.log('TWITCH_BROADCASTER_ID not set, skipping subscription check');
-    return false;
-  }
-
-  if (!broadcasterToken) {
-    console.error('TWITCH_BROADCASTER_TOKEN not set - cannot check subscriptions');
-    console.error('Please set this secret with your broadcaster access token that has channel:read:subscriptions scope');
-    return false;
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.twitch.tv/helix/subscriptions/user?broadcaster_id=${broadcasterId}&user_id=${userId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${broadcasterToken}`,
-          'Client-Id': clientId!,
-        },
-      }
-    );
-
-    if (response.status === 404) {
-      // User is not subscribed
-      console.log('User is not subscribed (404 response)');
-      return false;
-    }
-
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('Failed to check subscription:', response.status, error);
-      return false;
-    }
-
-    const data: TwitchSubscriptionCheckResponse = await response.json();
-    const isSubscribed = data.data && data.data.length > 0;
-    console.log(`Subscription check result: ${isSubscribed ? 'SUBSCRIBED' : 'NOT SUBSCRIBED'}`);
-    return isSubscribed;
-  } catch (error) {
-    console.error('Error checking subscription:', error);
-    return false;
-  }
-}
-
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -201,138 +142,35 @@ serve(async (req) => {
 
     console.log(`Twitch user: ${twitchUser.display_name} (${twitchUser.id})`);
 
-    // Check if this Twitch account is already linked to another user
-    const { data: existingProfile } = await supabaseClient
-      .from('profiles')
-      .select('id')
-      .eq('twitch_user_id', twitchUser.id)
-      .neq('id', user.id)
-      .single();
-
-    if (existingProfile) {
-      return new Response(
-        JSON.stringify({
-          error: 'Twitch account already linked',
-          message: 'This Twitch account is already connected to another StatusXP account.',
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
-      );
-    }
-
-    console.log('Checking subscription status...');
-
-    // Check subscription status
-    const isSubscribed = await checkSubscription(twitchUser.id);
-
-    console.log(`Subscription status: ${isSubscribed ? 'subscribed' : 'not subscribed'}`);
-
-    // Calculate token expiry
-    const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + tokenResponse.expires_in);
-
     // Create service role client for updating profiles
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Update profile with Twitch info
-    const { error: updateError } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        twitch_user_id: twitchUser.id,
-      })
-      .eq('id', user.id);
-
-    if (updateError) {
-      console.error('Failed to update profile:', updateError);
-      throw updateError;
+    // Only a Twitch identity obtained through this OAuth exchange may bind.
+    const { error: bindingError } = await supabaseAdmin.rpc('bind_verified_twitch_account', {
+      p_user_id: user.id,
+      p_twitch_user_id: twitchUser.id,
+    });
+    if (bindingError) {
+      const conflict = bindingError.code === '23505' || bindingError.message === 'Twitch account already linked';
+      return new Response(JSON.stringify({ error: conflict
+        ? 'Account already linked. Disconnect the existing Twitch account first.'
+        : 'Unable to save Twitch link. Please try again.' }), {
+        status: conflict ? 409 : 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    // If subscribed, grant premium access (but don't overwrite existing premium from other sources)
-    if (isSubscribed) {
-      console.log('User is subscribed - checking existing premium status');
-      
-      // Check if user already has premium from another source (Apple/Google/Stripe)
-      const { data: existingPremium } = await supabaseAdmin
-        .from('user_premium_status')
-        .select('premium_source, is_premium, premium_expires_at')
-        .eq('user_id', user.id)
-        .single();
-
-      // NEVER overwrite Apple/Google IAP or Stripe premium with Twitch
-      // Hierarchy: Apple/Google > Stripe > Twitch
-      const hasHigherPriorityPremium = existingPremium?.is_premium && 
-        existingPremium?.premium_source && 
-        (existingPremium.premium_source === 'apple' || 
-         existingPremium.premium_source === 'google' ||
-         existingPremium.premium_source === 'stripe');
-
-      if (hasHigherPriorityPremium) {
-        console.log(`User already has active premium from ${existingPremium.premium_source}, not overwriting with Twitch`);
-        
-        // Create notification (generic message - don't mention Twitch)
-        const { error: notifError } = await supabaseAdmin.from('notifications').insert({
-          user_id: user.id,
-          type: 'subscription_conflict',
-          title: 'Active Subscription Detected',
-          message: 'You already have an active premium subscription. Please cancel your existing subscription or wait until it expires before linking a new premium source.',
-          created_at: new Date().toISOString(),
-        });
-        if (notifError) {
-          console.error('Failed to create subscription conflict notification:', notifError);
-        }
-        
-        // Don't overwrite - Apple/Google/Stripe take precedence over Twitch
-      } else {
-        console.log('Granting premium access via Twitch subscription');
-        
-        // Check if user already has active Twitch premium to stack time
-        const { data: existingTwitchPremium } = await supabaseAdmin
-          .from('user_premium_status')
-          .select('premium_source, premium_expires_at')
-          .eq('user_id', user.id)
-          .eq('premium_source', 'twitch')
-          .single();
-
-        let premiumExpiresAt: Date;
-
-        if (existingTwitchPremium?.premium_expires_at) {
-          // User already has Twitch premium - add 33 days to existing time
-          const currentExpiry = new Date(existingTwitchPremium.premium_expires_at);
-          const now = new Date();
-          
-          // If current expiry is in the future, add to that date
-          // Otherwise, add to now (in case they're in grace period)
-          const baseDate = currentExpiry > now ? currentExpiry : now;
-          premiumExpiresAt = new Date(baseDate);
-          premiumExpiresAt.setDate(premiumExpiresAt.getDate() + 33);
-          
-          console.log(`Extending existing Twitch premium from ${currentExpiry.toISOString()} to ${premiumExpiresAt.toISOString()}`);
-        } else {
-          // New Twitch premium - 30 days membership + 3 days grace period = 33 days
-          premiumExpiresAt = new Date();
-          premiumExpiresAt.setDate(premiumExpiresAt.getDate() + 33);
-          console.log(`Granting new Twitch premium until ${premiumExpiresAt.toISOString()}`);
-        }
-
-        const { error: premiumError } = await supabaseAdmin
-          .from('user_premium_status')
-          .upsert({
-            user_id: user.id,
-            is_premium: true,
-            premium_source: 'twitch',
-            premium_expires_at: premiumExpiresAt.toISOString(),
-            updated_at: new Date().toISOString(),
-          }, {
-            onConflict: 'user_id',
-          });
-
-        if (premiumError) {
-          console.error('Failed to update premium status:', premiumError);
-          // Don't fail the entire request if premium update fails
-        }
-      }
+    // Linking and entitlement verification have separate outcomes. A temporary
+    // provider failure must not require reusing an already-consumed OAuth code.
+    let isSubscribed: boolean | null = null;
+    let subscriptionCheckPending = false;
+    try {
+      isSubscribed = await reconcileTwitchSubscription(twitchUser.id);
+    } catch {
+      subscriptionCheckPending = true;
     }
 
     console.log('Twitch account linked successfully!');
@@ -344,6 +182,7 @@ serve(async (req) => {
         twitchUsername: twitchUser.login,
         twitchDisplayName: twitchUser.display_name,
         isSubscribed: isSubscribed,
+        subscriptionCheckPending,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

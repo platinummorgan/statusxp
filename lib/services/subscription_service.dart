@@ -1,3 +1,4 @@
+import 'package:statusxp/services/premium_access.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -255,7 +256,7 @@ class SubscriptionService {
   PurchaseParam _purchaseParam(ProductDetails product, String userId) {
     final accountHash = Platform.isAndroid
         ? sha256.convert(utf8.encode(userId)).toString()
-        : null;
+        : userId;
     if (Platform.isAndroid && product is GooglePlayProductDetails) {
       return GooglePlayPurchaseParam(
         productDetails: product,
@@ -265,8 +266,8 @@ class SubscriptionService {
     }
     return PurchaseParam(
       productDetails: product,
-      // Flutter maps applicationUserName to Play's obfuscated account ID.
-      // This lets the backend bind new Play purchases to the signed-in user.
+      // StoreKit carries this UUID as appAccountToken; Play uses its hash.
+      // Verification checks the store's account claim before delivery.
       applicationUserName: accountHash,
     );
   }
@@ -451,13 +452,10 @@ class SubscriptionService {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) return false;
 
-      final response = await supabase
-          .from('user_premium_status')
-          .select('is_premium')
-          .eq('user_id', userId)
-          .maybeSingle();
+      final response = await supabase.rpc('get_my_premium_entitlement');
 
-      return response?['is_premium'] == true;
+      return supabase.auth.currentUser?.id == userId &&
+          hasActivePremium(response);
     } catch (e) {
       return false;
     }
@@ -468,16 +466,12 @@ class SubscriptionService {
       final supabase = _supabase;
       final userId = supabase?.auth.currentUser?.id;
       if (supabase == null || userId == null) return null;
-      final response = await supabase
-          .from('user_premium_status')
-          .select(
-            'is_premium, premium_since, premium_expires_at, premium_source',
-          )
-          .eq('user_id', userId)
-          .maybeSingle();
-      if (response == null) return null;
+      final response = await supabase.rpc('get_my_premium_entitlement');
+      if (response == null || supabase.auth.currentUser?.id != userId) {
+        return null;
+      }
       return PremiumEntitlement(
-        active: response['is_premium'] == true,
+        active: hasActivePremium(response),
         startedAt: DateTime.tryParse(
           response['premium_since']?.toString() ?? '',
         ),
@@ -532,7 +526,7 @@ class SubscriptionService {
     price: _products.isNotEmpty ? _products[0].price : '\$4.99',
     features: [
       '📊 Premium Analytics Dashboard',
-      '∞ Unlimited AI Achievement Guides',
+      'AI Achievement Guides (daily limits apply)',
       '⚡ Faster Sync Cooldowns',
       '🎯 12 PSN syncs/day (vs 3 free)',
       '⏱️ 30min PSN cooldown (vs 2hr free)',

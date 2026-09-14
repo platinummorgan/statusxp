@@ -221,7 +221,7 @@ class AutoSyncService {
       await _psnService.startSync(
         syncType: 'incremental', // Faster incremental sync for auto-sync
         forceResync: false,
-        isAutoSync: true, // Don't count against rate limits
+        isAutoSync: true, // Uses the same server cooldown as manual sync
       );
 
       debugPrint('✅ PSN auto-sync started successfully');
@@ -247,7 +247,7 @@ class AutoSyncService {
       await _xboxService.startSync(
         syncType: 'incremental',
         forceResync: false,
-        isAutoSync: true, // Don't count against rate limits
+        isAutoSync: true, // Uses the same server cooldown as manual sync
       );
 
       debugPrint('✅ Xbox auto-sync started successfully');

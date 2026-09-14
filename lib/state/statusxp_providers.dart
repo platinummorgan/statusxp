@@ -99,8 +99,10 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
 ///
 /// Returns the authenticated user's ID, or null if not authenticated.
 final currentUserIdProvider = Provider<String?>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return authService.currentUser?.id;
+  final authState = ref.watch(authStateProvider);
+  // A signed-out event is authoritative: do not fall back to a cached user.
+  if (authState.hasValue) return authState.value!.session?.user.id;
+  return ref.watch(authServiceProvider).currentUser?.id;
 });
 
 /// Provider for the PSNService instance.
@@ -125,6 +127,7 @@ final twitchServiceProvider = Provider<TwitchService>((ref) {
 ///
 /// Watches sync status and updates UI automatically during syncs.
 final psnSyncStatusProvider = StreamProvider<PSNSyncStatus>((ref) {
+  ref.watch(currentUserIdProvider);
   final psnService = ref.watch(psnServiceProvider);
   return psnService.watchSyncStatus();
 });
@@ -133,6 +136,7 @@ final psnSyncStatusProvider = StreamProvider<PSNSyncStatus>((ref) {
 ///
 /// Watches sync status and updates UI automatically during syncs.
 final xboxSyncStatusProvider = StreamProvider<XboxSyncStatus>((ref) {
+  ref.watch(currentUserIdProvider);
   final xboxService = ref.watch(xboxServiceProvider);
   return xboxService.watchSyncStatus();
 });
@@ -253,6 +257,9 @@ final unifiedGamesProvider = FutureProvider<List<UnifiedGame>>((ref) async {
 /// an empty list when inaccessible.
 final publicUnifiedGamesProvider =
     FutureProvider.family<List<UnifiedGame>, String>((ref, targetUserId) async {
+      ref.watch(
+        currentUserIdProvider,
+      ); // Public visibility depends on the viewer.
       final repository = ref.watch(unifiedGamesRepositoryProvider);
       return repository.getPublicUnifiedGames(targetUserId);
     });
@@ -367,7 +374,7 @@ final gameEditServiceProvider = Provider<SupabaseGameEditService?>((ref) {
 /// Returns a map with rank data for efficient Status Poster loading
 final leaderboardRanksProvider = FutureProvider<Map<String, int?>>((ref) async {
   final client = ref.watch(supabaseClientProvider);
-  final userId = client.auth.currentUser?.id;
+  final userId = ref.watch(currentUserIdProvider);
 
   if (userId == null) {
     return {'global': null, 'psn': null, 'xbox': null, 'steam': null};

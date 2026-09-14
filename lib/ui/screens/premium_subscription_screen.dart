@@ -554,7 +554,7 @@ class _PremiumSubscriptionScreenState
     const rows = [
       ('Daily syncs', '3', 'Up to 12'),
       ('Sync cooldown', 'Up to 2 hours', 'As low as 15 min'),
-      ('AI achievement guides', 'Limited', 'Unlimited'),
+      ('AI achievement guides', '3 free/day', '100/day'),
       ('Advanced player insights', '—', 'Included'),
       ('Goals & achievement radar', '—', 'Included'),
     ];

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:statusxp/state/recommendation_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -482,7 +483,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       orElse: () => 0,
     );
     final challengesLoading = engagementSnapshotAsync.isLoading;
-    final engagementSnapshot = engagementSnapshotAsync.valueOrNull;
+    final engagementSnapshot = engagementSnapshotAsync.asData?.value;
     if (engagementSnapshot != null) {
       _refreshStreakReminder(engagementSnapshot);
     }
@@ -765,8 +766,15 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                           data: (games) => FutureBuilder<bool>(
                             future: _premiumStatusFuture,
                             builder: (context, premiumSnapshot) {
+                              final userId = ref.watch(currentUserIdProvider);
+                              final skippedProvider =
+                                  skippedRecommendationGamesProvider(
+                                    userId ?? 'guest',
+                                  );
+                              final skipped = ref.watch(skippedProvider);
                               final action = chooseNextBestAction(
                                 games: games,
+                                skippedGameKeys: skipped,
                                 isPremium: premiumSnapshot.data ?? false,
                                 availableRewardXp: availableRewardXp,
                                 currentStreak: currentStreak,
@@ -775,6 +783,24 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                               _trackNextActionImpression(action);
                               return NextBestActionCard(
                                 action: action,
+                                onAnother: userId == null || action.game == null
+                                    ? null
+                                    : () {
+                                        ref
+                                            .read(skippedProvider.notifier)
+                                            .state = {
+                                          ...skipped,
+                                          recommendationGameKey(action.game!),
+                                        };
+                                      },
+                                onReset: skipped.isEmpty
+                                    ? null
+                                    : () {
+                                        ref
+                                                .read(skippedProvider.notifier)
+                                                .state =
+                                            <String>{};
+                                      },
                                 onDismiss: _dismissNextActionForToday,
                                 onTap: () async {
                                   await _dismissNextActionForToday();

@@ -1,3 +1,4 @@
+import { withAdminAccess } from '../_shared/admin-runtime.ts';
 /**
  * Twitch Premium Expiry Check
  * 
@@ -22,7 +23,7 @@ interface ExpiringUser {
   username?: string;
 }
 
-serve(async (req) => {
+serve(withAdminAccess('POST', async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -152,4 +153,4 @@ serve(async (req) => {
       }
     );
   }
-});
+}));

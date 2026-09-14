@@ -228,7 +228,7 @@ class LeaderboardRepository {
       final response = await _client
           .from('xbox_leaderboard_cache')
           .select(
-            'user_id,display_name,avatar_url,gamerscore,achievement_count,total_games',
+            'user_id,display_name,avatar_url,gamerscore,potential_gamerscore,achievement_count,total_games',
           )
           .order('gamerscore', ascending: false)
           .order('achievement_count', ascending: false)
@@ -244,6 +244,8 @@ class LeaderboardRepository {
           'display_name': row['display_name'],
           'avatar_url': row['avatar_url'],
           'score': (row['gamerscore'] as num?)?.toInt() ?? 0,
+          'potential_score':
+              (row['potential_gamerscore'] as num?)?.toInt() ?? 0,
           'games_count': (row['total_games'] as num?)?.toInt() ?? 0,
         });
       }).toList();
