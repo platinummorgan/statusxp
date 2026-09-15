@@ -13,6 +13,7 @@ import 'package:statusxp/data/repositories/supabase_dashboard_repository.dart';
 import 'package:statusxp/data/repositories/trophy_room_repository.dart';
 import 'package:statusxp/data/repositories/unified_games_repository.dart';
 import 'package:statusxp/data/repositories/game_overview_repository.dart';
+import 'package:statusxp/data/repositories/achievement_overview_repository.dart';
 import 'package:statusxp/data/supabase_game_edit_service.dart';
 import 'package:statusxp/services/platform_achievement_checker.dart';
 import 'package:statusxp/services/trophy_help_service.dart';
@@ -22,6 +23,7 @@ import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/trophy_room_data.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/domain/game_overview.dart';
+import 'package:statusxp/domain/achievement_overview.dart';
 import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/domain/user_stats.dart';
 import 'package:statusxp/domain/user_stats_calculator.dart';
@@ -195,6 +197,18 @@ final gameOverviewProvider = FutureProvider.family<GameOverview?, GameRef>((
   final userId = ref.watch(currentUserIdProvider);
   return repository.getGame(gameRef, userId: userId);
 });
+
+final achievementOverviewRepositoryProvider =
+    Provider<AchievementOverviewRepository>((ref) {
+      return AchievementOverviewRepository(ref.watch(supabaseClientProvider));
+    });
+
+final achievementOverviewProvider =
+    FutureProvider.family<AchievementOverview?, AchievementRef>((ref, item) {
+      return ref
+          .watch(achievementOverviewRepositoryProvider)
+          .getAchievement(item, userId: ref.watch(currentUserIdProvider));
+    });
 
 /// FutureProvider for loading games for the current user.
 ///

@@ -250,92 +250,65 @@ class SupabaseGameRepository {
     String? sortBy = 'name_asc',
   }) async {
     try {
-      // Use pre-computed achievement-matching grouping function for speed
-      final response = await _client.rpc(
-        'get_grouped_games_fast',
-        params: {
-          'search_query': searchQuery,
-          'platform_filter': platformFilter,
-          'result_limit': limit,
-          'result_offset': offset,
-          'sort_by': sortBy,
-        },
+      // Do not use grouped_games_cache here. Production exposes it as a
+      // regular view, so querying it can regroup the full catalog and count
+      // every achievement before applying LIMIT, regularly hitting 57014.
+      // The browser only needs game metadata; detail pages load achievements.
+      final platformRows = await _client
+          .from('platforms')
+          .select('id,code,name');
+      final platformList = (platformRows as List)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+      final filterPlatformIds = _platformIdsForFamily(
+        platformList,
+        platformFilter,
       );
 
+      var query = _client
+          .from('games')
+          .select('platform_id,platform_game_id,name,cover_url');
+      if (searchQuery != null && searchQuery.trim().isNotEmpty) {
+        query = query.ilike('name', '%${searchQuery.trim()}%');
+      }
+      if (platformFilter != null && platformFilter.isNotEmpty) {
+        // An empty family must return no rows, never silently fall back to All.
+        if (filterPlatformIds.isEmpty) return [];
+        query = query.inFilter('platform_id', filterPlatformIds);
+      }
+
+      final response = await query
+          .order('name', ascending: sortBy != 'name_desc')
+          .range(offset, offset + limit - 1);
+
+      final platformById = <int, Map<String, dynamic>>{
+        for (final row in platformList)
+          if (row['id'] is num) (row['id'] as num).toInt(): row,
+      };
+
       final games = (response as List).map((game) {
-        final platforms = (game['platforms'] as List?)?.cast<String>() ?? [];
-        final platformNames =
-            (game['platform_names'] as List?)?.cast<String>() ?? [];
-        final platformIds = (game['platform_ids'] as List?)?.cast<int>() ?? [];
-        final platformGameIds =
-            (game['platform_game_ids'] as List?)?.cast<String>() ?? [];
-
-        // Determine primary platform for display
-        String? primaryPlatform;
-        int? primaryPlatformId;
-        String? primaryPlatformGameId;
-
-        if (platforms.isNotEmpty) {
-          // Case-insensitive platform matching
-          if (platformFilter != null) {
-            final filterLower = platformFilter.toLowerCase();
-            final matchIndex = platforms.indexWhere(
-              (p) => p.toLowerCase() == filterLower,
-            );
-
-            if (matchIndex >= 0) {
-              primaryPlatform = platforms[matchIndex];
-              primaryPlatformId = platformIds.isNotEmpty
-                  ? platformIds[matchIndex]
-                  : null;
-              primaryPlatformGameId = platformGameIds.isNotEmpty
-                  ? platformGameIds[matchIndex]
-                  : null;
-            } else {
-              // Use first platform as default if filter doesn't match
-              primaryPlatform = platforms.first;
-              primaryPlatformId = platformIds.isNotEmpty
-                  ? platformIds.first
-                  : null;
-              primaryPlatformGameId = platformGameIds.isNotEmpty
-                  ? platformGameIds.first
-                  : null;
-            }
-          } else {
-            // Use first platform as default when no filter
-            primaryPlatform = platforms.first;
-            primaryPlatformId = platformIds.isNotEmpty
-                ? platformIds.first
-                : null;
-            primaryPlatformGameId = platformGameIds.isNotEmpty
-                ? platformGameIds.first
-                : null;
-          }
-        }
-
-        // Use values from RPC function if available, otherwise use derived values
-        final finalPlatformId =
-            game['primary_platform_id'] ?? primaryPlatformId;
-        final finalGameId = game['primary_game_id'] ?? primaryPlatformGameId;
+        final platformId = (game['platform_id'] as num).toInt();
+        final gameId = game['platform_game_id'].toString();
+        final platform = platformById[platformId];
+        final platformCode = platform?['code']?.toString() ?? 'unknown';
 
         return {
-          'id': finalGameId, // Keep for backwards compatibility
-          'platform_id': finalPlatformId, // V2 composite key part 1
-          'platform_game_id': finalGameId, // V2 composite key part 2
-          'group_id': game['group_id'],
+          'id': gameId,
+          'platform_id': platformId,
+          'platform_game_id': gameId,
+          'group_id': '${game['name']}'.trim().toLowerCase(),
           'name': game['name'],
           'cover_url': game['cover_url'],
-          'proxied_cover_url': kIsWeb
-              ? (game['proxied_cover_url'] ?? game['cover_url'])
-              : game['cover_url'],
-          'platforms': primaryPlatform != null
-              ? {'code': primaryPlatform, 'name': primaryPlatform}
-              : null,
-          'all_platforms': platforms,
-          'platform_names': platformNames,
-          'platform_ids': platformIds, // All platform IDs in group
-          'platform_game_ids': platformGameIds, // All game IDs in group
-          'total_achievements': game['total_achievements'],
+          'proxied_cover_url': game['cover_url'],
+          'platforms': {
+            'code': platformCode,
+            'name': platform?['name'] ?? platformCode,
+          },
+          'all_platforms': [platformCode],
+          'platform_names': [platform?['name']?.toString() ?? platformCode],
+          'platform_ids': [platformId],
+          'platform_game_ids': [gameId],
+          'total_achievements': null,
         };
       }).toList();
 
@@ -360,15 +333,15 @@ class SupabaseGameRepository {
       }
 
       if (platformFilter != null && platformFilter.isNotEmpty) {
-        final platformResponse = await _client
-            .from('platforms')
-            .select('id')
-            .eq('code', platformFilter)
-            .maybeSingle();
-
-        if (platformResponse != null) {
-          query = query.eq('platform_id', platformResponse['id']);
-        }
+        final rows = await _client.from('platforms').select('id,code,name');
+        final platformIds = _platformIdsForFamily(
+          (rows as List)
+              .map((row) => Map<String, dynamic>.from(row as Map))
+              .toList(),
+          platformFilter,
+        );
+        if (platformIds.isEmpty) return 0;
+        query = query.inFilter('platform_id', platformIds);
       }
 
       final response = await query;
@@ -376,5 +349,30 @@ class SupabaseGameRepository {
     } catch (e) {
       return 0;
     }
+  }
+
+  List<int> _platformIdsForFamily(
+    List<Map<String, dynamic>> platforms,
+    String? family,
+  ) {
+    if (family == null || family.isEmpty) return const [];
+    final normalizedFamily = family.toLowerCase();
+
+    return platforms
+        .where((platform) {
+          final code = platform['code']?.toString().toLowerCase() ?? '';
+          final name = platform['name']?.toString().toLowerCase() ?? '';
+          return switch (normalizedFamily) {
+            'psn' =>
+              code.startsWith('ps') ||
+                  code.contains('playstation') ||
+                  name.contains('playstation'),
+            'xbox' => code.contains('xbox') || name.contains('xbox'),
+            'steam' => code.contains('steam') || name.contains('steam'),
+            _ => code == normalizedFamily,
+          };
+        })
+        .map((platform) => (platform['id'] as num).toInt())
+        .toList();
   }
 }

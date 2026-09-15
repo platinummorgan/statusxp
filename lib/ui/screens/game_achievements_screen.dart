@@ -9,6 +9,7 @@ import 'package:statusxp/services/youtube_search_service.dart';
 import 'package:statusxp/services/ai_credit_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/services/analytics_service.dart';
+import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/ui/widgets/create_trophy_request_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -851,14 +852,15 @@ class _GameAchievementsScreenState
                       return;
                     }
 
-                    context.push(
-                      '/achievement-comments/${achievement['id']}'
-                      '?name=${Uri.encodeComponent(safeAchievementName)}'
-                      '&icon=${Uri.encodeComponent(achievement['icon_url'] ?? achievement['proxied_icon_url'] ?? '')}'
-                      '&platformId=${widget.platformId}'
-                      '&platformGameId=${Uri.encodeComponent(widget.platformGameId!)}'
-                      '&platformAchievementId=${Uri.encodeComponent(achievement['platform_achievement_id'])}',
+                    final achievementRef = AchievementRef(
+                      gameRef: GameRef(
+                        platformId: widget.platformId!,
+                        platformGameId: widget.platformGameId!,
+                      ),
+                      platformAchievementId:
+                          achievement['platform_achievement_id'].toString(),
                     );
+                    context.push(achievementRef.location);
                   },
                   icon: const Icon(Icons.chat_bubble_outline, size: 14),
                   label: const Text(

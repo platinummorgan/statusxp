@@ -60,4 +60,33 @@ void main() {
       );
     });
   });
+
+  group('AchievementRef', () {
+    test('round trips canonical achievement identifiers', () {
+      const item = AchievementRef(
+        gameRef: GameRef(platformId: 1, platformGameId: 'NPWR/123'),
+        platformAchievementId: 'trophy 42',
+      );
+      expect(item.location, '/games/ps5/NPWR%2F123/achievements/trophy%2042');
+      expect(
+        AchievementRef.fromRoute(
+          platformCode: 'ps5',
+          encodedGameId: 'NPWR%2F123',
+          encodedAchievementId: 'trophy%2042',
+        ),
+        item,
+      );
+    });
+
+    test('rejects malformed achievement identifiers', () {
+      expect(
+        AchievementRef.fromRoute(
+          platformCode: 'ps5',
+          encodedGameId: 'NPWR123',
+          encodedAchievementId: '%ZZ',
+        ),
+        isNull,
+      );
+    });
+  });
 }

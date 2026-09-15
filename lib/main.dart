@@ -429,19 +429,9 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
       routerConfig: appRouter,
     );
 
-    // Web: Center app with max-width constraint (looks like mobile app in browser)
-    if (kIsWeb) {
-      return Container(
-        color: const Color(0xFF0A0A0F), // backgroundDark
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: app,
-          ),
-        ),
-      );
-    }
-
+    // Web uses the full browser viewport. Individual routes provide responsive
+    // content bounds where needed; constraining MaterialApp here forced every
+    // page into a 600px phone-shaped column on desktop.
     return app;
   }
 }
