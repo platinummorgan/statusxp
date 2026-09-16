@@ -73,6 +73,8 @@ void main() {
                 name: 'Crimson Desert',
                 isOwned: true,
                 achievementsTotal: 3,
+                achievementsEarned: 2,
+                completionPercentage: 66.7,
               ),
             ),
             gameCatalogTotalsProvider(
@@ -99,12 +101,21 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Crimson Desert'), findsOneWidget);
       expect(find.text('Remaining'), findsOneWidget);
-      expect(find.text('YOUR PROGRESS'), findsNothing);
+      expect(find.text('YOUR PROGRESS'), findsOneWidget);
+      expect(find.text('67%'), findsOneWidget);
+      expect(find.text('2/3 trophies'), findsOneWidget);
+      expect(find.text('1 remaining'), findsOneWidget);
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey('inline-game-progress')))
+            .height,
+        lessThan(150),
+      );
       expect(find.textContaining('in the catalog'), findsNothing);
       final firstCard = tester.getRect(find.byType(GameAchievementCard).first);
       expect(firstCard.left, closeTo(32, 1));
       expect(firstCard.width, greaterThanOrEqualTo(324));
-      expect(firstCard.top, lessThan(260));
+      expect(firstCard.top, lessThan(390));
       expect(
         tester.getBottomRight(find.byType(SingleChildScrollView)).dy,
         closeTo(796, 1),
@@ -119,7 +130,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Game details'));
       await tester.pumpAndSettle();
-      expect(find.text('YOUR PROGRESS'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(BottomSheet),
+          matching: find.text('YOUR PROGRESS'),
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.byTooltip('Close game details'));
       await tester.pumpAndSettle();
       expect(find.text('Trophy 2').last, findsOneWidget);

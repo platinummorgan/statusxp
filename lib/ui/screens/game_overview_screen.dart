@@ -150,15 +150,114 @@ class _GameOverviewScreenState extends ConsumerState<GameOverviewScreen> {
                     onAction: () => context.go('/games/browse'),
                   )
                 : SingleChildScrollView(
-                    child: GameAchievementSection(
-                      key: ValueKey(game.ref),
-                      game: game.ref,
-                      gameName: game.name,
-                      fullScreen: true,
-                      revealHidden: _revealHidden,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (game.isOwned) _InlineGameProgress(game: game),
+                        GameAchievementSection(
+                          key: ValueKey(game.ref),
+                          game: game.ref,
+                          gameName: game.name,
+                          fullScreen: true,
+                          revealHidden: _revealHidden,
+                        ),
+                      ],
                     ),
                   ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A standalone summary; it never encloses or narrows the trophy list.
+class _InlineGameProgress extends StatelessWidget {
+  const _InlineGameProgress({required this.game});
+  final GameOverview game;
+
+  @override
+  Widget build(BuildContext context) {
+    final completion = game.completionPercentage.clamp(0, 100);
+    final remaining = (game.achievementsTotal - game.achievementsEarned).clamp(
+      0,
+      game.achievementsTotal,
+    );
+    final label = game.ref.platform?.code.startsWith('ps') == true
+        ? 'trophies'
+        : 'achievements';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        key: const ValueKey('inline-game-progress'),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0E27),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'YOUR PROGRESS',
+                    style: TextStyle(
+                      color: CyberpunkTheme.neonCyan,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${completion.toStringAsFixed(0)}%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: completion / 100,
+                minHeight: 6,
+                color: CyberpunkTheme.neonCyan,
+                semanticsLabel: 'Game completion',
+                semanticsValue: '${completion.toStringAsFixed(0)}%',
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 16,
+              runSpacing: 6,
+              children: [
+                Text(
+                  '${game.achievementsEarned}/${game.achievementsTotal} $label',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '$remaining remaining',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                if (game.currentScore > 0)
+                  Text(
+                    'Platform score: ${game.currentScore}',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );

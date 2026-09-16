@@ -290,3 +290,11 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] Full suite: 185 tests passed, 9 existing skips; targeted analysis clean. New full-screen regression checks game title, card width/position, first trophy visibility, 48px navigation inset, search and details-menu return. Rendered the complete screen and compared against the owner's reference.
 - [x] Built and signed Android 1.1.18+100; Google accepted the bundle with matching SHA-256 and released it to existing internal testers. Fresh API read verified internal 100 completed and production 92 completed; other tracks unchanged.
 - [ ] Owner confirmation: update through Play and confirm the trophy screen uses the full width with no gray outer box and no content behind phone navigation.
+
+
+### September 16 compact progress and direct phone installs
+- [x] Owner approved the full-width trophy formatting and requested visible progress again. Added a compact standalone progress panel above filters: completion percentage, earned/total trophies or achievements, remaining count, and platform score when present. Trophy groups retain the same full-width margins; the summary does not wrap the list.
+- [x] Updated the layout regression to verify progress values, compact height, unchanged card width, first-trophy visibility, navigation clearance and details return. Six focused tests passed; targeted analysis clean. Inspected the rendered summary above full-width cards.
+- [x] Workflow preference: install UI-only test APKs directly over USB. Do not upload every UI iteration to Google Play. Use Play internal testing when store/billing behavior specifically needs it or when requested.
+- [x] Built release ARM64 APK 1.1.18+101 and installed directly over USB (`adb install -r`: Success). Verified package version 101, started MainActivity, and confirmed the process remained running with no entries in its crash buffer. No Play upload, uninstall, or data clear was performed.
+- [ ] Owner confirmation of compact progress above the approved trophy layout.

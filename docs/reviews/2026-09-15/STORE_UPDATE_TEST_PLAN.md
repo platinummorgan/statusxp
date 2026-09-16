@@ -106,3 +106,12 @@ The owner clarified with an original-screen reference that the remaining issue w
 Validation: 185 Flutter tests passed (9 existing skips), targeted analysis clean. The new full-screen test checks card position/width, first trophy visibility, bottom navigation clearance, search, and return from game details. A rendered screen was compared with the owner's reference. Owner acceptance of this formatting and the separate AI-pack purchase/delivery test remain pending.
 
 Android 1.1.18+100 was signed and released to existing internal testers. Google returned a matching bundle SHA-256; a fresh API read confirmed internal 100 completed and production 92 completed. Other tracks and tester settings were unchanged. Release audit: `D:/.tmp/statusxp-premium-audit-20260914/play_internal_100_release_20260916.json`.
+
+
+## Direct device UI testing — September 16
+
+The owner requested direct USB installs for UI-only iterations instead of uploading every build to Google Play. Local build 101 adds a compact standalone progress summary above the full-width trophy list. Completion, earned/total and remaining counts are visible without opening Game details. Trophy layout and navigation spacing remain unchanged. Focused layout/action/data tests passed (6 tests), and targeted analysis is clean.
+
+Build 101 is a local APK, not a Play release. The most recently verified Play internal release remains build 100 and production remains build 92. Store purchase testing still requires the appropriate Play-distributed build and test payment configuration; it is separate from this UI iteration. Future Play updates must use an unused build number that also accounts for local installs.
+
+Local APK installed successfully over USB: `build/app/outputs/flutter-apk/app-release.apk`, version 1.1.18+101, ARM64. Device package version and launch were verified; the process remained alive with no crash-buffer entries. No Play upload or uninstall/data-clear operation was performed. The local APK uses the repository release signing configuration; future Play-store testing must account for the different Play app-signing identity. Owner confirmation of the compact progress UI remains pending.
