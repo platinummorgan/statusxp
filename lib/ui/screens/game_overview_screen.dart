@@ -1,4 +1,6 @@
 import 'package:statusxp/ui/widgets/game_achievement_section.dart';
+import 'package:statusxp/ui/widgets/game_achievement_card.dart';
+import 'package:statusxp/ui/screens/ai_credit_shop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:statusxp/ui/widgets/game_catalog_summary.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,6 +21,7 @@ class GameOverviewScreen extends ConsumerStatefulWidget {
 }
 
 class _GameOverviewScreenState extends ConsumerState<GameOverviewScreen> {
+  bool _revealHidden = false;
   @override
   void initState() {
     super.initState();
@@ -37,35 +40,125 @@ class _GameOverviewScreenState extends ConsumerState<GameOverviewScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
       appBar: AppBar(
-        title: const Text('GAME OVERVIEW'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              overview.asData?.value?.name ?? 'Game',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              widget.gameRef.platform?.label ?? '',
+              style: const TextStyle(
+                fontSize: 12,
+                color: CyberpunkTheme.neonCyan,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            tooltip: _revealHidden
+                ? 'Hide hidden trophy details'
+                : 'Reveal hidden trophy details',
+            icon: Icon(_revealHidden ? Icons.visibility : Icons.visibility_off),
+            onPressed: () => setState(() => _revealHidden = !_revealHidden),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Game options',
+            onSelected: (value) async {
+              if (value == 'credits') {
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const AICreditShopScreen()),
+                );
+                if (mounted) ref.invalidate(achievementCreditsProvider);
+              } else {
+                final game = overview.asData?.value;
+                if (game == null) return;
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (context) => SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.8,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const SizedBox(width: 20),
+                              const Expanded(child: Text('Game details')),
+                              IconButton(
+                                tooltip: 'Close game details',
+                                onPressed: () => Navigator.pop(context),
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
+                          ),
+                          Expanded(child: _GameOverviewBody(game: game)),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'details',
+                child: Text('Game details'),
+              ),
+              if (ref.read(currentUserIdProvider) != null)
+                const PopupMenuItem(
+                  value: 'credits',
+                  child: Text('Buy AI Credits'),
+                ),
+            ],
+          ),
+        ],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () =>
               context.canPop() ? context.pop() : context.go('/games'),
         ),
       ),
-      body: Container(
-        decoration: CyberpunkTheme.gradientBackground(),
-        child: overview.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => _MessageState(
-            icon: Icons.cloud_off,
-            title: 'Unable to load this game',
-            message: error.toString(),
-            actionLabel: 'Try again',
-            onAction: () =>
-                ref.invalidate(gameOverviewProvider(widget.gameRef)),
+      body: SafeArea(
+        top: false,
+        child: Container(
+          decoration: CyberpunkTheme.gradientBackground(),
+          child: overview.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => _MessageState(
+              icon: Icons.cloud_off,
+              title: 'Unable to load this game',
+              message: error.toString(),
+              actionLabel: 'Try again',
+              onAction: () =>
+                  ref.invalidate(gameOverviewProvider(widget.gameRef)),
+            ),
+            data: (game) => game == null
+                ? _MessageState(
+                    icon: Icons.search_off,
+                    title: 'Game not found',
+                    message:
+                        'This game may have been removed or the link is incorrect.',
+                    actionLabel: 'Browse games',
+                    onAction: () => context.go('/games/browse'),
+                  )
+                : SingleChildScrollView(
+                    child: GameAchievementSection(
+                      key: ValueKey(game.ref),
+                      game: game.ref,
+                      gameName: game.name,
+                      fullScreen: true,
+                      revealHidden: _revealHidden,
+                    ),
+                  ),
           ),
-          data: (game) => game == null
-              ? _MessageState(
-                  icon: Icons.search_off,
-                  title: 'Game not found',
-                  message:
-                      'This game may have been removed or the link is incorrect.',
-                  actionLabel: 'Browse games',
-                  onAction: () => context.go('/games/browse'),
-                )
-              : _GameOverviewBody(game: game),
         ),
       ),
     );
@@ -121,12 +214,6 @@ class _GameOverviewBody extends StatelessWidget {
                 _ProgressPanel(game: game)
               else
                 const _LibraryNotice(),
-              const SizedBox(height: 20),
-              GameAchievementSection(
-                key: ValueKey(game.ref),
-                game: game.ref,
-                gameName: game.name,
-              ),
             ],
           ),
         ),

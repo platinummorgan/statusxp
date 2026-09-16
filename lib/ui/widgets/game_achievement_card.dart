@@ -494,12 +494,14 @@ class _GameAchievementCardState extends ConsumerState<GameAchievementCard> {
         children: [
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

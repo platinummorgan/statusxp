@@ -280,3 +280,13 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] Full Flutter suite: 184 passed, 9 existing skips; targeted analysis clean. Regression coverage includes the actual game overview route, correct guide/co-op context, hidden reveal, DLC grouping, native order, paginated field loading, narrow layout with large text, and existing Back/search/paging state.
 - [x] Built and signed Android 1.1.18+99. Google accepted the bundle with matching SHA-256; released to existing internal testers. Fresh API verification: internal 99 completed, production 92 completed; other tracks unchanged. Owner confirmed the report concerned the previous Android test build.
 - [ ] Owner device check: open a game through My Games, confirm full trophy cards and Base Game/DLC groups, then open AI Help. Resume the separate AI pack delivery test afterward.
+
+
+### September 16 original full-width trophy formatting
+- [x] Owner supplied the original screen reference and clarified the issue was the gray outer panel and constrained trophy width. Restore that layout rather than changing score/date data.
+- [x] Game routes now open directly on trophies with the game/platform header and All/Remaining controls. Removed the outer gray card; restored dark Base Game/DLC panels, inline counts, and original 16px group / 32px card side positions.
+- [x] Search remains available beside filters. Game details (cover, catalog totals, progress) and Buy AI Credits are available through Game options. AI Help, comments, co-op, hidden reveal and pagination remain available.
+- [x] Both canonical and legacy game screens respect bottom/side system insets. Badges wrap at large text sizes instead of overflowing.
+- [x] Full suite: 185 tests passed, 9 existing skips; targeted analysis clean. New full-screen regression checks game title, card width/position, first trophy visibility, 48px navigation inset, search and details-menu return. Rendered the complete screen and compared against the owner's reference.
+- [x] Built and signed Android 1.1.18+100; Google accepted the bundle with matching SHA-256 and released it to existing internal testers. Fresh API read verified internal 100 completed and production 92 completed; other tracks unchanged.
+- [ ] Owner confirmation: update through Play and confirm the trophy screen uses the full width with no gray outer box and no content behind phone navigation.

@@ -409,50 +409,53 @@ class _GameAchievementsScreenState
           ),
         ],
       ),
-      body: Container(
-        decoration: CyberpunkTheme.gradientBackground(),
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        top: false,
+        child: Container(
+          decoration: CyberpunkTheme.gradientBackground(),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error: $_error',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                )
+              : Column(
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error: $_error',
-                      style: const TextStyle(color: Colors.white),
+                    _buildAchievementFilterBar(platformColor),
+                    Expanded(
+                      child: displayedAchievements.isEmpty
+                          ? Center(
+                              child: Text(
+                                _achievements.isEmpty
+                                    ? 'No achievements found'
+                                    : (_showRemainingOnly
+                                          ? 'No remaining achievements'
+                                          : 'No achievements found'),
+                                style: const TextStyle(color: Colors.white70),
+                              ),
+                            )
+                          : _buildGroupedAchievements(
+                              displayedAchievements,
+                              platformColor,
+                            ),
                     ),
                   ],
                 ),
-              )
-            : Column(
-                children: [
-                  _buildAchievementFilterBar(platformColor),
-                  Expanded(
-                    child: displayedAchievements.isEmpty
-                        ? Center(
-                            child: Text(
-                              _achievements.isEmpty
-                                  ? 'No achievements found'
-                                  : (_showRemainingOnly
-                                        ? 'No remaining achievements'
-                                        : 'No achievements found'),
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                          )
-                        : _buildGroupedAchievements(
-                            displayedAchievements,
-                            platformColor,
-                          ),
-                  ),
-                ],
-              ),
+        ),
       ),
     );
   }

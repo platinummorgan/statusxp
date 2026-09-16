@@ -61,9 +61,13 @@ class GameAchievementSection extends ConsumerStatefulWidget {
     super.key,
     required this.game,
     this.gameName = 'Game',
+    this.fullScreen = false,
+    this.revealHidden = false,
   });
   final GameRef game;
   final String gameName;
+  final bool fullScreen;
+  final bool revealHidden;
 
   @override
   ConsumerState<GameAchievementSection> createState() => _SectionState();
@@ -79,6 +83,7 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
   }
 
   bool _expanded = true;
+  bool _searchVisible = false;
   bool _reveal = false;
   String _query = '';
   String _filter = 'All';
@@ -89,7 +94,7 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
   bool _hidden(Map<String, dynamic> row) {
     final metadata = row['metadata'] as Map? ?? {};
     return row['earned'] != true &&
-        !_reveal &&
+        !(_reveal || widget.revealHidden) &&
         ['hidden', 'psn_hidden', 'steam_hidden', 'xbox_is_secret'].any(
           (key) => [
             'true',
@@ -110,12 +115,12 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
         : platform.startsWith('xbox')
         ? const Color(0xFF107C10)
         : const Color(0xFF00D4FF);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!widget.fullScreen)
             Semantics(
               expanded: _expanded,
               child: TextButton.icon(
@@ -124,7 +129,8 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
                 label: const Text('Achievements'),
               ),
             ),
-            if (_expanded) ...[
+          if (_expanded) ...[
+            if (!widget.fullScreen || _searchVisible)
               TextField(
                 decoration: const InputDecoration(
                   labelText: 'Search achievements',
@@ -136,22 +142,48 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
                 }),
                 controller: _search,
               ),
-              Wrap(
-                spacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  for (final filter in [
-                    'All',
-                    if (signedIn) ...['Earned', 'Unearned'],
-                  ])
-                    ChoiceChip(
-                      label: Text(filter),
-                      selected: _filter == filter,
-                      onSelected: (_) => setState(() {
-                        _filter = filter;
-                        _page = 0;
-                      }),
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                for (final filter in [
+                  'All',
+                  if (signedIn) ...[
+                    if (!widget.fullScreen) 'Earned',
+                    widget.fullScreen ? 'Remaining' : 'Unearned',
+                  ],
+                ])
+                  ChoiceChip(
+                    label: Text(filter),
+                    selected: _filter == filter,
+                    selectedColor: platformColor.withValues(alpha: 0.25),
+                    labelStyle: TextStyle(
+                      color: _filter == filter ? platformColor : Colors.white70,
+                      fontWeight: FontWeight.w700,
                     ),
+                    onSelected: (_) => setState(() {
+                      _filter = filter;
+                      _page = 0;
+                    }),
+                  ),
+                if (widget.fullScreen)
+                  IconButton(
+                    tooltip: _searchVisible
+                        ? 'Close achievement search'
+                        : 'Search achievements',
+                    icon: Icon(
+                      _searchVisible ? Icons.search_off : Icons.search,
+                    ),
+                    onPressed: () => setState(() {
+                      _searchVisible = !_searchVisible;
+                      if (!_searchVisible) {
+                        _search.clear();
+                        _query = '';
+                        _page = 0;
+                      }
+                    }),
+                  ),
+                if (!widget.fullScreen)
                   FilterChip(
                     label: const Text('Reveal hidden'),
                     selected: _reveal,
@@ -160,148 +192,194 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
                       _page = 0;
                     }),
                   ),
+              ],
+            ),
+            if (signedIn && !widget.fullScreen)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Buy AI Credits'),
+                  onPressed: () async {
+                    await Navigator.of(context).push<void>(
+                      MaterialPageRoute(
+                        builder: (_) => const AICreditShopScreen(),
+                      ),
+                    );
+                    if (mounted) ref.invalidate(achievementCreditsProvider);
+                  },
+                ),
+              ),
+            const SizedBox(height: 16),
+            data.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, _) => Column(
+                children: [
+                  const Text('Unable to load achievements.'),
+                  TextButton(
+                    onPressed: () => ref.invalidate(
+                      gameAchievementListProvider(widget.game),
+                    ),
+                    child: const Text('Try again'),
+                  ),
                 ],
               ),
-              if (signedIn)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    icon: const Icon(Icons.auto_awesome),
-                    label: const Text('Buy AI Credits'),
-                    onPressed: () async {
-                      await Navigator.of(context).push<void>(
-                        MaterialPageRoute(
-                          builder: (_) => const AICreditShopScreen(),
-                        ),
+              data: (rows) {
+                final catalog =
+                    rows
+                        .asMap()
+                        .entries
+                        .map(
+                          (entry) =>
+                              achievementPresentation(entry.value, entry.key),
+                        )
+                        .toList()
+                      ..sort(
+                        (a, b) =>
+                            compareAchievementPresentation(a, b, platform),
                       );
-                      if (mounted) ref.invalidate(achievementCreditsProvider);
-                    },
-                  ),
-                ),
-              data.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (_, _) => Column(
-                  children: [
-                    const Text('Unable to load achievements.'),
-                    TextButton(
-                      onPressed: () => ref.invalidate(
-                        gameAchievementListProvider(widget.game),
-                      ),
-                      child: const Text('Try again'),
-                    ),
-                  ],
-                ),
-                data: (rows) {
-                  final catalog =
-                      rows
-                          .asMap()
-                          .entries
-                          .map(
-                            (entry) =>
-                                achievementPresentation(entry.value, entry.key),
-                          )
-                          .toList()
-                        ..sort(
-                          (a, b) =>
-                              compareAchievementPresentation(a, b, platform),
-                        );
-                  final filtered = catalog.where((row) {
-                    if (signedIn &&
-                        _filter == 'Earned' &&
-                        row['earned'] != true) {
-                      return false;
-                    }
-                    if (signedIn &&
-                        _filter == 'Unearned' &&
-                        row['earned'] == true) {
-                      return false;
-                    }
-                    final text = _hidden(row)
-                        ? 'hidden achievement'
-                        : '${row['name']} ${row['description']}';
-                    return text.toLowerCase().contains(_query);
-                  }).toList();
-                  final pages = (filtered.length / _pageSize).ceil();
-                  final page = pages == 0 ? 0 : _page.clamp(0, pages - 1);
-                  final visibleGroups = <String, List<Map<String, dynamic>>>{};
-                  for (final row
-                      in filtered.skip(page * _pageSize).take(_pageSize)) {
-                    visibleGroups
-                        .putIfAbsent(achievementGroup(row), () => [])
-                        .add(row);
+                final filtered = catalog.where((row) {
+                  if (signedIn &&
+                      _filter == 'Earned' &&
+                      row['earned'] != true) {
+                    return false;
                   }
-                  return Column(
-                    children: [
-                      if (filtered.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Text('No achievements match.'),
-                        ),
-                      for (final group in visibleGroups.entries)
-                        ExpansionTile(
-                          key: ValueKey('${group.key}:$page:$_filter:$_query'),
-                          initiallyExpanded:
-                              _query.isNotEmpty ||
-                              (_expandedGroups[group.key] ?? false),
-                          onExpansionChanged: (value) =>
-                              _expandedGroups[group.key] = value,
-                          tilePadding: EdgeInsets.zero,
-                          childrenPadding: EdgeInsets.zero,
-                          leading: Icon(
-                            group.key == 'Base Game'
-                                ? Icons.stars
-                                : Icons.extension,
-                            color: platformColor,
+                  if (signedIn &&
+                      (_filter == 'Unearned' || _filter == 'Remaining') &&
+                      row['earned'] == true) {
+                    return false;
+                  }
+                  final text = _hidden(row)
+                      ? 'hidden achievement'
+                      : '${row['name']} ${row['description']}';
+                  return text.toLowerCase().contains(_query);
+                }).toList();
+                final pages = (filtered.length / _pageSize).ceil();
+                final page = pages == 0 ? 0 : _page.clamp(0, pages - 1);
+                final visibleGroups = <String, List<Map<String, dynamic>>>{};
+                for (final row
+                    in filtered.skip(page * _pageSize).take(_pageSize)) {
+                  visibleGroups
+                      .putIfAbsent(achievementGroup(row), () => [])
+                      .add(row);
+                }
+                return Column(
+                  children: [
+                    if (filtered.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text('No achievements match.'),
+                      ),
+                    for (final group in visibleGroups.entries)
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        color: const Color(0xFF0A0E27).withValues(alpha: 0.6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: platformColor.withValues(alpha: 0.3),
                           ),
-                          title: Text(group.key),
-                          subtitle: Text(
-                            '${catalog.where((row) => achievementGroup(row) == group.key && row['earned'] == true).length} / ${catalog.where((row) => achievementGroup(row) == group.key).length} earned',
+                        ),
+                        child: Theme(
+                          data: Theme.of(
+                            context,
+                          ).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            key: ValueKey(
+                              '${group.key}:$page:$_filter:$_query',
+                            ),
+                            initiallyExpanded:
+                                _query.isNotEmpty ||
+                                (_expandedGroups[group.key] ?? false),
+                            onExpansionChanged: (value) => setState(
+                              () => _expandedGroups[group.key] = value,
+                            ),
+                            tilePadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            childrenPadding: const EdgeInsets.fromLTRB(
+                              16,
+                              0,
+                              16,
+                              12,
+                            ),
+                            leading: Icon(
+                              group.key == 'Base Game'
+                                  ? Icons.stars
+                                  : Icons.extension,
+                              color: platformColor,
+                            ),
+                            iconColor: platformColor,
+                            collapsedIconColor: platformColor,
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    group.key,
+                                    style: TextStyle(
+                                      color: platformColor,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '${catalog.where((row) => achievementGroup(row) == group.key && row['earned'] == true).length} / ${catalog.where((row) => achievementGroup(row) == group.key).length}',
+                                  style: TextStyle(
+                                    color: platformColor,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            children: [
+                              for (final row in group.value)
+                                GameAchievementCard(
+                                  key: ValueKey(row['platform_achievement_id']),
+                                  achievement: row,
+                                  platformId: widget.game.platformId,
+                                  platformGameId: widget.game.platformGameId,
+                                  gameName: widget.gameName,
+                                  platform: platform,
+                                  platformColor: platformColor,
+                                  showHidden: _reveal || widget.revealHidden,
+                                ),
+                            ],
                           ),
-                          children: [
-                            for (final row in group.value)
-                              GameAchievementCard(
-                                key: ValueKey(row['platform_achievement_id']),
-                                achievement: row,
-                                platformId: widget.game.platformId,
-                                platformGameId: widget.game.platformGameId,
-                                gameName: widget.gameName,
-                                platform: platform,
-                                platformColor: platformColor,
-                                showHidden: _reveal,
-                              ),
-                          ],
                         ),
-                      if (pages > 1)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              tooltip: 'Previous achievements',
-                              onPressed: page > 0
-                                  ? () => setState(() => _page = page - 1)
-                                  : null,
-                              icon: const Icon(Icons.chevron_left),
-                            ),
-                            Text('${page + 1} / $pages'),
-                            IconButton(
-                              tooltip: 'Next achievements',
-                              onPressed: page + 1 < pages
-                                  ? () => setState(() => _page = page + 1)
-                                  : null,
-                              icon: const Icon(Icons.chevron_right),
-                            ),
-                          ],
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ],
+                      ),
+                    if (pages > 1)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconButton(
+                            tooltip: 'Previous achievements',
+                            onPressed: page > 0
+                                ? () => setState(() => _page = page - 1)
+                                : null,
+                            icon: const Icon(Icons.chevron_left),
+                          ),
+                          Text('${page + 1} / $pages'),
+                          IconButton(
+                            tooltip: 'Next achievements',
+                            onPressed: page + 1 < pages
+                                ? () => setState(() => _page = page + 1)
+                                : null,
+                            icon: const Icon(Icons.chevron_right),
+                          ),
+                        ],
+                      ),
+                  ],
+                );
+              },
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

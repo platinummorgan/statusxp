@@ -55,6 +55,77 @@ AICreditStatus get premiumCredits => AICreditStatus(
 );
 
 void main() {
+  testWidgets(
+    'game opens full width at trophies and stays above system navigation',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const game = GameRef(platformId: 1, platformGameId: 'layout');
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserIdProvider.overrideWithValue('user'),
+            gameOverviewProvider(game).overrideWith(
+              (ref) async => const GameOverview(
+                ref: game,
+                name: 'Crimson Desert',
+                isOwned: true,
+                achievementsTotal: 3,
+              ),
+            ),
+            gameCatalogTotalsProvider(
+              game,
+            ).overrideWith((ref) async => const GameCatalogTotals(3, 75)),
+            gameAchievementListProvider(game).overrideWith(
+              (ref) async => List.generate(3, (i) => trophy('$i')),
+            ),
+            achievementCreditsProvider.overrideWith(
+              (ref) async => premiumCredits,
+            ),
+          ],
+          child: MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(padding: const EdgeInsets.only(bottom: 48)),
+              child: child!,
+            ),
+            home: const GameOverviewScreen(gameRef: game),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Crimson Desert'), findsOneWidget);
+      expect(find.text('Remaining'), findsOneWidget);
+      expect(find.text('YOUR PROGRESS'), findsNothing);
+      expect(find.textContaining('in the catalog'), findsNothing);
+      final firstCard = tester.getRect(find.byType(GameAchievementCard).first);
+      expect(firstCard.left, closeTo(32, 1));
+      expect(firstCard.width, greaterThanOrEqualTo(324));
+      expect(firstCard.top, lessThan(260));
+      expect(
+        tester.getBottomRight(find.byType(SingleChildScrollView)).dy,
+        closeTo(796, 1),
+      );
+      await tester.tap(find.byTooltip('Search achievements'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Trophy 2');
+      await tester.pumpAndSettle();
+      expect(find.text('Trophy 0'), findsNothing);
+      expect(find.text('Trophy 2').last, findsOneWidget);
+      await tester.tap(find.byTooltip('Game options'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Game details'));
+      await tester.pumpAndSettle();
+      expect(find.text('YOUR PROGRESS'), findsOneWidget);
+      await tester.tap(find.byTooltip('Close game details'));
+      await tester.pumpAndSettle();
+      expect(find.text('Trophy 2').last, findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
   test(
     'catalog loading preserves artwork and earned dates across pages',
     () async {

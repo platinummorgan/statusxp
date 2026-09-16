@@ -12,9 +12,9 @@ September 15 client fixes:
 - Enumeration and verification errors remain retryable; server verification waiting is bounded to 45 seconds. Reopening the membership page does not add duplicate purchase listeners.
 - Android AI-credit packs are consumed only after verified credit delivery. Consumption errors remain retryable and do not trigger a second acknowledgement. iOS completion remains after delivery.
 
-Validation: after the checkout correction, the full suite passed 171 tests with 9 existing skips; an additional reopened-screen regression subsequently passed. After the SafeArea change, all six membership widget tests passed again and targeted analysis was clean. Android release builds passed. The AI credit shop update subsequently passed the full suite (180 tests, 9 existing skips) and targeted analysis. The trophy restoration subsequently passed 184 tests with 9 existing skips. **Current internal release is 1.1.18+99; production remains build 92.** Project `pubspec.yaml` remains **1.1.18+93**; Android test builds used explicit `--build-number` overrides. Future uploads must use an unused number above 99. An iOS archive still needs Mac/Xcode or the established Apple build pipeline; this workspace is Windows.
+Validation: after the checkout correction, the full suite passed 171 tests with 9 existing skips; an additional reopened-screen regression subsequently passed. After the SafeArea change, all six membership widget tests passed again and targeted analysis was clean. Android release builds passed. The AI credit shop update subsequently passed the full suite (180 tests, 9 existing skips) and targeted analysis. The trophy restoration subsequently passed 184 tests with 9 existing skips. The full-width formatting correction passed 185 tests with 9 existing skips. **Current internal release is 1.1.18+100; production remains build 92.** Project `pubspec.yaml` remains **1.1.18+93**; Android test builds used explicit `--build-number` overrides. Future uploads must use an unused number above 100. An iOS archive still needs Mac/Xcode or the established Apple build pipeline; this workspace is Windows.
 
-Current Android artifact: `build/app/outputs/bundle/release/app-release.aab`, build **99**. `jarsigner -verify` passed, Google accepted the upload, and its returned SHA-256 matched the local bundle. Upload/release audit: `D:/.tmp/statusxp-premium-audit-20260914/play_internal_99_release_20260916.json`; a fresh API read confirmed internal build 99 completed and production build 92 completed. This supersedes the earlier artifact audits. Client changes are available to the existing Android internal testers; no production or Apple update was submitted. Owner confirmed the build-97 phone navigation spacing fix succeeded. The separate checkout cancellation UI retest remains unconfirmed.
+Current Android artifact: `build/app/outputs/bundle/release/app-release.aab`, build **100**. `jarsigner -verify` passed, Google accepted the upload, and its returned SHA-256 matched the local bundle. Upload/release audit: `D:/.tmp/statusxp-premium-audit-20260914/play_internal_100_release_20260916.json`; a fresh API read confirmed internal build 100 completed and production build 92 completed. This supersedes the earlier artifact audits. Client changes are available to the existing Android internal testers; no production or Apple update was submitted. Owner confirmed the build-97 phone navigation spacing fix succeeded. The separate checkout cancellation UI retest remains unconfirmed.
 
 ## Device and account prerequisites
 
@@ -78,7 +78,7 @@ The membership page now has **Buy AI Credits** for both Premium and free users. 
 Automated validation: 180 Flutter tests passed, 9 existing skips; targeted analysis clean. New coverage includes Premium navigation, verified delivery and server-balance refresh, cancellation/retry, pending/error/unconfirmed outcomes, duplicate-tap prevention, unavailable products/balance, and large text with a phone navigation inset.
 
 Pending device test:
-1. Install internal build **99** through Google Play, then open **Premium > Buy AI Credits**.
+1. Install internal build **100** through Google Play, then open **Premium > Buy AI Credits**.
 2. Record the displayed pack balance. Prior backend baseline was 10.
 3. Choose the **20-credit** pack and confirm Google's payment sheet uses **Test card, always approves** before completing it.
 4. Confirm one verified success, exactly 20 additional credits, and persistence after closing/reopening the shop. Starting from 10, expect 30.
@@ -97,3 +97,12 @@ Validation: 184 Flutter tests passed, 9 existing skips; targeted analysis clean.
 Build 99 was built, signed and released to existing internal testers. Google returned a matching SHA-256; a fresh API read confirmed internal 99 completed and production 92 completed. Other tracks were unchanged. The owner confirmed the report was from the previous Android test build.
 
 Pending owner check on internal build 99: open a game from My Games, confirm the detailed cards and AI Help are present, open a guide, and return to the same game. AI credit pack purchase/delivery remains pending separately. This change requires a separate web deployment before it appears on the public website.
+
+
+## September 16 full-width trophy layout correction
+
+The owner clarified with an original-screen reference that the remaining issue was formatting: trophies were squeezed inside a gray outer panel. The canonical game screen now opens directly on the full-width trophy list with a game/platform header, All/Remaining controls, and original dark Base Game/DLC group styling. Search is available beside filters; Game options provides the cover/catalog/progress details and AI credit shop. Both game screen variants now respect system navigation insets. No scoring rules or earned dates were changed.
+
+Validation: 185 Flutter tests passed (9 existing skips), targeted analysis clean. The new full-screen test checks card position/width, first trophy visibility, bottom navigation clearance, search, and return from game details. A rendered screen was compared with the owner's reference. Owner acceptance of this formatting and the separate AI-pack purchase/delivery test remain pending.
+
+Android 1.1.18+100 was signed and released to existing internal testers. Google returned a matching bundle SHA-256; a fresh API read confirmed internal 100 completed and production 92 completed. Other tracks and tester settings were unchanged. Release audit: `D:/.tmp/statusxp-premium-audit-20260914/play_internal_100_release_20260916.json`.
