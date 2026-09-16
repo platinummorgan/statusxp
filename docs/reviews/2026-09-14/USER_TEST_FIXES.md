@@ -35,3 +35,8 @@ The screenshot reports PostgreSQL 57014 from the unified-library request. The re
 Local recovery: only a private-library 57014 activates a basic user_progress + games(name) query, filtered to the current user, fetched in stable 500-row batches. The UI shows synced achievement counts, search and links to game overviews. Detailed XP/rarity/trophy breakdowns and their sort controls are omitted with an explicit explanation; retry returns to the full view. Other failures have a readable retry action. Public-profile failures never load the viewer's private library.
 
 Validation: two focused tests passed (HTTP pagination/user filters; timeout/search/retry widget flow), focused analysis clean. This handles the failure state, not the server-side timeout root cause. Live SQL verification and signed-in browser testing remain pending; no production migration was applied.
+
+## Developer entitlement correction
+After the owner reported that Radar and Goals & Pace were blocked locally and publicly, an authorized read of the identified account showed an active flag with an expired Twitch membership date (March 14, 2026). At the owner's request, a conditional update changed that one record to premium_source=developer, is_premium=true, premium_expires_at=null. A separate read verified the saved entitlement. No schema changes were made. Account details and credentials are omitted.
+
+Local follow-up UI distinguishes verification errors from expired/missing/inactive membership and provides retry. Sync status uses the shared compatibility reader. Four premium tests and affected-screen analysis passed; web build passed. Actual signed-in access must be rechecked by the owner; non-expiring projection preservation against future billing updates remains follow-up work.

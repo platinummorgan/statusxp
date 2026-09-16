@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:statusxp/ui/widgets/premium_access_issue.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -95,4 +96,28 @@ void main() {
       );
     }
   });
+  test(
+    'premium diagnostics distinguish active, expired and failed checks',
+    () async {
+      final active = await clientFor([], {
+        'is_premium': true,
+        'premium_expires_at': null,
+      }, 200);
+      expect(await premiumAccessIssue(active), isNull);
+      final expired = await clientFor([], {
+        'is_premium': true,
+        'premium_expires_at': '2020-01-01T00:00:00Z',
+      }, 200);
+      expect(await premiumAccessIssue(expired), contains('expired'));
+      final failed = await clientFor([], {
+        'code': '57014',
+        'message': 'timeout',
+      }, 500);
+      expect(await premiumAccessIssue(failed), contains('57014'));
+      expect(
+        await premiumAccessIssue(failed),
+        isNot(contains('not currently premium')),
+      );
+    },
+  );
 }

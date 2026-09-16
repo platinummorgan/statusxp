@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/premium_features_data.dart';
-import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/ui/widgets/premium_access_issue.dart';
 import 'package:statusxp/state/premium_features_providers.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -22,7 +22,7 @@ class _PremiumAchievementRadarScreenState
     extends ConsumerState<PremiumAchievementRadarScreen> {
   static const String _hiddenGamesKeyPrefix = 'premium_radar_hidden_games_';
 
-  final SubscriptionService _subscriptionService = SubscriptionService();
+  String? _premiumIssue;
   final DateFormat _dateFormat = DateFormat('MMM d, y');
   bool _isChecking = true;
   bool _isPremium = false;
@@ -40,19 +40,21 @@ class _PremiumAchievementRadarScreenState
   }
 
   Future<void> _checkPremiumStatus() async {
-    final isPremium = await _subscriptionService.isPremiumActive();
+    if (!mounted) return;
+    setState(() {
+      _isChecking = true;
+    });
+    final issue = await premiumAccessIssue(ref.read(supabaseClientProvider));
+    final isPremium = issue == null;
     if (!mounted) return;
 
     setState(() {
       _isPremium = isPremium;
+      _premiumIssue = issue;
       _isChecking = false;
     });
 
-    if (!isPremium) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showPremiumRequiredDialog();
-      });
-    } else {
+    if (isPremium) {
       ref.invalidate(achievementRadarDataProvider);
     }
   }
@@ -105,43 +107,6 @@ class _PremiumAchievementRadarScreenState
     await _persistHiddenGames();
   }
 
-  void _showPremiumRequiredDialog() {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: surfaceLight,
-        title: const Row(
-          children: [
-            Icon(Icons.radar, color: accentPrimary),
-            SizedBox(width: 10),
-            Text('Premium Feature'),
-          ],
-        ),
-        content: const Text(
-          'Achievement Radar is available to Premium users.',
-          style: TextStyle(color: textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              context.pop();
-              context.pop();
-            },
-            child: const Text('Back'),
-          ),
-          FilledButton(
-            onPressed: () {
-              context.pop();
-              context.push('/premium-subscription?source=achievement_radar');
-            },
-            child: const Text('Upgrade'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_isChecking) {
@@ -152,9 +117,9 @@ class _PremiumAchievementRadarScreenState
     }
 
     if (!_isPremium) {
-      return const Scaffold(
-        backgroundColor: backgroundDark,
-        body: Center(child: CircularProgressIndicator()),
+      return PremiumAccessIssueScreen(
+        message: _premiumIssue ?? 'Please check your membership again.',
+        onRetry: _checkPremiumStatus,
       );
     }
 

@@ -144,3 +144,15 @@ Deno.test("legacy handler responses retain status and gain no-store headers", as
   assert.equal(await response.text(), "retired");
   assert.equal(response.headers.get("Cache-Control"), "no-store");
 });
+Deno.test("protected owner grant authorizes verified owner without an allowlist", async () => {
+  const f = fixture({ adminUserIds: [], hasAdminAccess: async (id) => id === "admin-id" });
+  assert.equal((await f.handler(request("Bearer valid-admin"))).status, 200);
+  assert.equal((await f.handler(request("Bearer valid-member"))).status, 403);
+  assert.equal((await f.handler(request("Bearer invalid"))).status, 401);
+  assert.equal(f.calls(), 1);
+});
+Deno.test("grant lookup failure fails closed", async () => {
+  const f = fixture({ adminUserIds: [], hasAdminAccess: async () => { throw new Error("offline"); } });
+  assert.equal((await f.handler(request("Bearer valid-admin"))).status, 503);
+  assert.equal(f.calls(), 0);
+});

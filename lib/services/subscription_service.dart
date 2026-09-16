@@ -1,4 +1,6 @@
 import 'package:statusxp/services/premium_access.dart';
+import 'package:statusxp/services/store_restore_session.dart';
+import 'package:statusxp/services/store_purchase_attempt.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -30,6 +32,28 @@ bool shouldCompleteStorePurchase({
 @visibleForTesting
 bool storeEntitlementWasDelivered(Object? responseData) {
   return responseData is Map && responseData['success'] == true;
+}
+
+@visibleForTesting
+Future<void> finalizeVerifiedStorePurchase({
+  required PurchaseStatus status,
+  required bool entitlementDelivered,
+  required bool pendingCompletePurchase,
+  required bool androidConsumable,
+  required Future<void> Function() consume,
+  required Future<void> Function() complete,
+}) async {
+  if (!entitlementDelivered ||
+      (status != PurchaseStatus.purchased &&
+          status != PurchaseStatus.restored)) {
+    return;
+  }
+  if (androidConsumable) {
+    // Successful consumption also acknowledges a Google Play consumable.
+    await consume();
+  } else if (pendingCompletePurchase) {
+    await complete();
+  }
 }
 
 /// Subscription plans available
@@ -93,6 +117,9 @@ class SubscriptionService {
   SupabaseClient? get _supabase => tryGetSupabaseClient();
 
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+  Future<void>? _initialization;
+  Future<StoreRestoreResult>? _restoreInFlight;
+  StoreRestoreSession? _restoreSession;
 
   // Product IDs (configure these in Google Play Console and App Store Connect)
   static const String monthlySubscriptionId = 'statusxp_premium_monthly';
@@ -106,15 +133,18 @@ class SubscriptionService {
   List<ProductDetails> _products = [];
   List<ProductDetails> _aiPackProducts = [];
   bool _isAvailable = false;
-  bool _purchasePending = false;
+  final _purchaseFlow = StorePurchaseFlow();
 
   List<ProductDetails> get products => _products;
   List<ProductDetails> get aiPackProducts => _aiPackProducts;
   bool get isAvailable => _isAvailable;
-  bool get purchasePending => _purchasePending;
+  bool get purchasePending => _purchaseFlow.busy;
+  Listenable get purchaseActivity => _purchaseFlow;
 
   /// Initialize the IAP connection and listen for purchase updates
-  Future<void> initialize() async {
+  Future<void> initialize() => _initialization ??= _initialize();
+
+  Future<void> _initialize() async {
     // Skip IAP initialization on web
     if (kIsWeb) {
       _isAvailable = false;
@@ -130,16 +160,36 @@ class SubscriptionService {
 
     // Listen to purchase updates
     _subscription = _iap.purchaseStream.listen(
-      _onPurchaseUpdate,
-      onDone: () => _subscription?.cancel(),
-      onError: (error) => debugPrint('Purchase stream error: $error'),
+      (purchases) {
+        final session = _restoreSession;
+        final processing = _onPurchaseUpdate(purchases, session);
+        if (session != null) {
+          session.track(processing);
+        } else {
+          unawaited(
+            processing.catchError((Object _) {
+              _purchaseFlow.fail();
+              statusxpLog('Purchase processing will need to be retried');
+            }),
+          );
+        }
+      },
+      onDone: () {
+        _purchaseFlow.fail();
+        _subscription?.cancel();
+      },
+      onError: (Object error) {
+        _restoreSession?.recordFailure();
+        _purchaseFlow.fail();
+        statusxpLog('Purchase stream unavailable');
+      },
     );
 
     // Load products
     await _loadProducts();
 
     // Check for pending purchases on startup
-    await _restorePurchases(silent: true);
+    await restorePurchases();
   }
 
   /// Load available subscription products from store
@@ -188,14 +238,15 @@ class SubscriptionService {
   }
 
   /// Handle purchase updates from the store
-  Future<void> _onPurchaseUpdate(List<PurchaseDetails> purchases) async {
+  Future<void> _onPurchaseUpdate(
+    List<PurchaseDetails> purchases,
+    StoreRestoreSession? restoreSession,
+  ) async {
     for (final purchase in purchases) {
+      final attempt = _purchaseFlow.observe(purchase);
       if (purchase.status == PurchaseStatus.pending) {
-        _purchasePending = true;
         unawaited(_logPurchaseStage(purchase.productID, 'pending'));
       } else {
-        _purchasePending = false;
-
         var entitlementDelivered = false;
 
         if (purchase.status == PurchaseStatus.purchased ||
@@ -203,10 +254,12 @@ class SubscriptionService {
           if (purchase.productID == monthlySubscriptionId ||
               _isAIPackProduct(purchase.productID)) {
             entitlementDelivered = await _verifyAndDeliverPurchase(purchase);
+            restoreSession?.recordDelivery(entitlementDelivered);
           }
         }
 
         if (purchase.status == PurchaseStatus.error) {
+          restoreSession?.recordFailure();
           unawaited(_logPurchaseStage(purchase.productID, 'store_failed'));
           statusxpLog('Purchase failed: ${purchase.error}');
         }
@@ -214,12 +267,39 @@ class SubscriptionService {
         // Acknowledge/finish only after the trusted backend has verified the
         // store transaction and delivered the entitlement. Failed deliveries
         // remain pending so the store can retry them.
-        if (shouldCompleteStorePurchase(
-          status: purchase.status,
-          pendingCompletePurchase: purchase.pendingCompletePurchase,
-          entitlementDelivered: entitlementDelivered,
-        )) {
-          await _iap.completePurchase(purchase);
+        try {
+          await finalizeVerifiedStorePurchase(
+            status: purchase.status,
+            pendingCompletePurchase: purchase.pendingCompletePurchase,
+            entitlementDelivered: entitlementDelivered,
+            androidConsumable:
+                !kIsWeb &&
+                Platform.isAndroid &&
+                _isAIPackProduct(purchase.productID),
+            consume: () async {
+              final result = await _iap
+                  .getPlatformAddition<InAppPurchaseAndroidPlatformAddition>()
+                  .consumePurchase(purchase);
+              if (result.responseCode != BillingResponse.ok) {
+                throw StateError('Google Play consumption must be retried');
+              }
+            },
+            complete: () => _iap.completePurchase(purchase),
+          );
+        } catch (_) {
+          restoreSession?.recordFailure();
+          attempt?.complete(StorePurchaseResult.failed);
+          statusxpLog('Purchase finalization will need to be retried');
+          continue;
+        }
+        if (purchase.status == PurchaseStatus.purchased) {
+          attempt?.complete(
+            entitlementDelivered
+                ? StorePurchaseResult.verified
+                : StorePurchaseResult.failed,
+          );
+        }
+        if (entitlementDelivered) {
           unawaited(
             _logPurchaseStage(purchase.productID, 'entitlement_delivered'),
           );
@@ -379,66 +459,66 @@ class SubscriptionService {
   }
 
   /// Purchase a subscription
-  Future<bool> purchaseSubscription(ProductDetails product) async {
-    if (!_isAvailable) {
-      return false;
-    }
+  Future<StorePurchaseResult> purchaseSubscription(ProductDetails product) =>
+      _purchase(product, consumable: false);
 
-    try {
-      final supabase = _supabase;
-      if (supabase == null) {
-        return false;
-      }
-
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) {
-        return false;
-      }
-
-      final purchaseParam = _purchaseParam(product, userId);
-
-      _purchasePending = true;
-      unawaited(_logPurchaseStage(product.id, 'checkout_started'));
-
-      // Subscriptions use buyNonConsumable (auto-renewing)
-      final bool success = await _iap.buyNonConsumable(
-        purchaseParam: purchaseParam,
-      );
-
-      unawaited(
-        _logPurchaseStage(
-          product.id,
-          success ? 'store_flow_started' : 'store_flow_rejected',
-        ),
-      );
-
-      return success;
-    } catch (e) {
-      _purchasePending = false;
-      return false;
-    }
+  Future<StorePurchaseResult> _purchase(
+    ProductDetails product, {
+    required bool consumable,
+  }) async {
+    final userId = _supabase?.auth.currentUser?.id;
+    if (!_isAvailable || userId == null) return StorePurchaseResult.notStarted;
+    return _purchaseFlow.run(
+      productId: product.id,
+      launch: () async {
+        final param = _purchaseParam(product, userId);
+        unawaited(_logPurchaseStage(product.id, 'checkout_started'));
+        final started = consumable
+            ? await _iap.buyConsumable(
+                purchaseParam: param,
+                autoConsume: !Platform.isAndroid,
+              )
+            : await _iap.buyNonConsumable(purchaseParam: param);
+        unawaited(
+          _logPurchaseStage(
+            product.id,
+            started ? 'store_flow_started' : 'store_flow_rejected',
+          ),
+        );
+        return started;
+      },
+    );
   }
 
   /// Restore previous purchases
-  Future<bool> _restorePurchases({bool silent = false}) async {
-    if (!_isAvailable) {
-      if (!silent) debugPrint('IAP not available');
-      return false;
-    }
-
+  Future<StoreRestoreResult> _restorePurchases() async {
+    if (!_isAvailable) return StoreRestoreResult.unavailable;
+    final userId = _supabase?.auth.currentUser?.id;
+    if (userId == null) return StoreRestoreResult.notSignedIn;
+    final session = StoreRestoreSession();
+    _restoreSession = session;
     try {
       await _iap.restorePurchases();
-      if (!silent) debugPrint('Purchases restored');
-      return true;
-    } catch (e) {
-      if (!silent) debugPrint('Error restoring purchases: $e');
-      return false;
+      final result = await session.finish().timeout(
+        const Duration(seconds: 45),
+        onTimeout: () => StoreRestoreResult.verificationFailed,
+      );
+      if (_supabase?.auth.currentUser?.id != userId) {
+        return StoreRestoreResult.notSignedIn;
+      }
+      return result;
+    } catch (_) {
+      return StoreRestoreResult.verificationFailed;
+    } finally {
+      if (identical(_restoreSession, session)) _restoreSession = null;
     }
   }
 
   /// Public method to restore purchases (called from UI)
-  Future<bool> restorePurchases() async {
-    return _restorePurchases(silent: false);
+  Future<StoreRestoreResult> restorePurchases() {
+    return _restoreInFlight ??= _restorePurchases().whenComplete(() {
+      _restoreInFlight = null;
+    });
   }
 
   /// Check if user has active premium subscription
@@ -538,45 +618,8 @@ class SubscriptionService {
   );
 
   /// Purchase an AI credit pack (consumable)
-  Future<bool> purchaseAIPack(ProductDetails product) async {
-    if (!_isAvailable) {
-      return false;
-    }
-
-    try {
-      final supabase = _supabase;
-      if (supabase == null) {
-        return false;
-      }
-
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) {
-        return false;
-      }
-
-      final purchaseParam = _purchaseParam(product, userId);
-
-      _purchasePending = true;
-      unawaited(_logPurchaseStage(product.id, 'checkout_started'));
-
-      // Consumable purchase
-      final bool success = await _iap.buyConsumable(
-        purchaseParam: purchaseParam,
-      );
-
-      unawaited(
-        _logPurchaseStage(
-          product.id,
-          success ? 'store_flow_started' : 'store_flow_rejected',
-        ),
-      );
-
-      return success;
-    } catch (e) {
-      _purchasePending = false;
-      return false;
-    }
-  }
+  Future<StorePurchaseResult> purchaseAIPack(ProductDetails product) =>
+      _purchase(product, consumable: true);
 
   /// Get AI pack details by product ID
   Map<String, dynamic>? getAIPackDetails(String productId) {
@@ -594,6 +637,9 @@ class SubscriptionService {
 
   /// Dispose resources
   void dispose() {
+    _purchaseFlow.fail();
     _subscription?.cancel();
+    _subscription = null;
+    _initialization = null;
   }
 }

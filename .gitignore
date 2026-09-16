@@ -66,3 +66,4 @@ key.properties
 node_modules/
 package-lock.json
 !sync-service/package-lock.json
+!services/apple-verifier/package-lock.json

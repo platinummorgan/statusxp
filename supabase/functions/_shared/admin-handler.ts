@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 export interface AdminAuthOptions {
   serviceRoleKey: string;
   adminUserIds: string[];
+  hasAdminAccess?: (userId: string) => Promise<boolean>;
   // Verify with Supabase Auth; never trust a decoded JWT or user metadata.
   getUser: (token: string) => Promise<{
     data: { user: { id: string } | null };
@@ -57,13 +58,14 @@ export function createAdminHandler(options: {
     const isService = received.length === expected.length &&
       timingSafeEqual(received, expected);
     if (!isService) {
-      if (options.auth.adminUserIds.length === 0) {
+      if (options.auth.adminUserIds.length === 0 && !options.auth.hasAdminAccess) {
         return json({ error: "Forbidden" }, 403);
       }
       try {
         const { data, error } = await options.auth.getUser(token);
         if (error || !data.user) return json({ error: "Unauthorized" }, 401);
-        if (!options.auth.adminUserIds.includes(data.user.id)) {
+        if (!options.auth.adminUserIds.includes(data.user.id) &&
+            !(await options.auth.hasAdminAccess?.(data.user.id))) {
           return json({ error: "Forbidden" }, 403);
         }
       } catch {

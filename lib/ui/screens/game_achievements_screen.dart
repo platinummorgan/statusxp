@@ -8,6 +8,7 @@ import 'package:statusxp/services/achievement_guide_service.dart';
 import 'package:statusxp/services/youtube_search_service.dart';
 import 'package:statusxp/services/ai_credit_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/services/store_purchase_attempt.dart';
 import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/ui/widgets/create_trophy_request_dialog.dart';
@@ -1560,32 +1561,28 @@ class _GameAchievementsScreenState
 
     // Attempt purchase
     try {
-      final creditService = AICreditService();
-      final startingCredits = (await creditService.checkCredits()).packCredits;
-      final success = await subscriptionService.purchaseAIPack(product);
+      final result = await subscriptionService.purchaseAIPack(product);
 
       if (!context.mounted) return;
 
-      if (success) {
-        final delivered = await _waitForAICreditDelivery(
-          creditService: creditService,
-          minimumCredits: startingCredits + pack.credits,
-        );
-        if (!context.mounted) return;
+      if (result == StorePurchaseResult.verified) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              delivered
-                  ? '✅ ${pack.credits} AI credits added!'
-                  : 'Purchase received and still processing. Your credits will appear automatically.',
-            ),
-            backgroundColor: delivered ? Colors.green : Colors.blueGrey,
+            content: Text('✅ ${pack.credits} AI credits added!'),
+            backgroundColor: Colors.green,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('❌ Purchase cancelled or failed'),
+          SnackBar(
+            content: Text(switch (result) {
+              StorePurchaseResult.canceled => 'Purchase canceled.',
+              StorePurchaseResult.pending =>
+                'Payment is pending approval. Credits will arrive after it completes.',
+              StorePurchaseResult.unconfirmed =>
+                'No purchase confirmation received. Check the store or try Restore Purchases.',
+              _ => 'The purchase could not be completed. Please try again.',
+            }),
             backgroundColor: Colors.orange,
           ),
         );
@@ -1596,18 +1593,6 @@ class _GameAchievementsScreenState
         SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     }
-  }
-
-  Future<bool> _waitForAICreditDelivery({
-    required AICreditService creditService,
-    required int minimumCredits,
-  }) async {
-    for (var attempt = 0; attempt < 12; attempt++) {
-      final status = await creditService.checkCredits();
-      if (status.packCredits >= minimumCredits) return true;
-      await Future.delayed(const Duration(seconds: 1));
-    }
-    return false;
   }
 
   Future<void> _purchaseAIPackWeb(BuildContext context, AIPack pack) async {

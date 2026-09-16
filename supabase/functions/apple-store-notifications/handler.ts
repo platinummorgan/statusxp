@@ -46,8 +46,10 @@ export function createAppleHandler(deps: AppleDependencies) {
     } catch {
       return new Response("Invalid notification", { status: 400 });
     }
+    let phase = "verification";
     try {
       const notice = await deps.verify(signed);
+      phase = "receipt";
       const digest = await crypto.subtle.digest(
         "SHA-256",
         new TextEncoder().encode(signed),
@@ -60,6 +62,7 @@ export function createAppleHandler(deps: AppleDependencies) {
         return new Response(null, { status: 204 });
       }
       const observedAt = new Date((deps.now ?? Date.now)()).toISOString();
+      phase = "subscription";
       const snapshot = notice.originalId
         ? await deps.lookup(notice.originalId, notice.sandbox)
         : null;
@@ -69,11 +72,24 @@ export function createAppleHandler(deps: AppleDependencies) {
           snapshot.accountToken.toLowerCase()
       ) throw new Error("Account changed");
       if (snapshot) snapshot.accountToken ??= notice.accountToken;
+      phase = "reconciliation";
       await deps.apply(notice.id, hash, observedAt, snapshot);
       return new Response(null, { status: 204 });
-    } catch {
+    } catch (error) {
+      // Only expose bounded diagnostic codes, never payloads, tokens or provider errors.
+      const headers: Record<string, string> = { "X-StatusXP-Phase": phase };
+      if (phase === "verification" && error && typeof error === "object" &&
+        "status" in error && Number.isInteger(error.status)) {
+        headers["X-StatusXP-Verification-Status"] = String(error.status);
+        if ("cause" in error && error.cause instanceof Error) {
+          if (error.cause.message.toLowerCase().includes("not implemented")) {
+            headers["X-StatusXP-Verification-Reason"] = "runtime-unsupported";
+          }
+        }
+      }
       return new Response("Verification or reconciliation unavailable", {
         status: 503,
+        headers,
       });
     }
   };

@@ -1,10 +1,11 @@
+import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/domain/premium_features_data.dart';
-import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/ui/widgets/premium_access_issue.dart';
 import 'package:statusxp/state/premium_features_providers.dart';
 import 'package:statusxp/theme/colors.dart';
 
@@ -22,7 +23,7 @@ class _PremiumGoalsPaceScreenState
   static const String _monthlyGoalKeyPrefix = 'premium_goal_monthly_';
   static const String _rangeGoalKeyPrefix = 'premium_goal_range_';
 
-  final SubscriptionService _subscriptionService = SubscriptionService();
+  String? _premiumIssue;
   final DateFormat _dateShort = DateFormat('MMM d');
   final DateFormat _dateLong = DateFormat('MMM d, y');
   bool _isChecking = true;
@@ -44,18 +45,20 @@ class _PremiumGoalsPaceScreenState
 
   Future<void> _bootstrap() async {
     await _loadGoals();
-    final isPremium = await _subscriptionService.isPremiumActive();
+    if (!mounted) return;
+    setState(() {
+      _isChecking = true;
+    });
+    final issue = await premiumAccessIssue(ref.read(supabaseClientProvider));
+    final isPremium = issue == null;
     if (!mounted) return;
     setState(() {
       _isPremium = isPremium;
+      _premiumIssue = issue;
       _isChecking = false;
     });
 
-    if (!isPremium) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showPremiumRequiredDialog();
-      });
-    } else {
+    if (isPremium) {
       ref.invalidate(goalsPaceDataProvider(_selectedMetric));
     }
   }
@@ -97,43 +100,6 @@ class _PremiumGoalsPaceScreenState
     await prefs.setInt(_rangeGoalKey(metric: _selectedMetric), goal);
     if (!mounted) return;
     setState(() => _rangeGoal = goal);
-  }
-
-  void _showPremiumRequiredDialog() {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: surfaceLight,
-        title: const Row(
-          children: [
-            Icon(Icons.workspace_premium, color: accentPrimary),
-            SizedBox(width: 10),
-            Text('Premium Feature'),
-          ],
-        ),
-        content: const Text(
-          'Goals & Pace Coach is available to Premium users.',
-          style: TextStyle(color: textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              context.pop();
-              context.pop();
-            },
-            child: const Text('Back'),
-          ),
-          FilledButton(
-            onPressed: () {
-              context.pop();
-              context.push('/premium-subscription?source=goals_pace');
-            },
-            child: const Text('Upgrade'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _editGoal({
@@ -246,9 +212,9 @@ class _PremiumGoalsPaceScreenState
     }
 
     if (!_isPremium) {
-      return const Scaffold(
-        backgroundColor: backgroundDark,
-        body: Center(child: CircularProgressIndicator()),
+      return PremiumAccessIssueScreen(
+        message: _premiumIssue ?? 'Please check your membership again.',
+        onRetry: _bootstrap,
       );
     }
 

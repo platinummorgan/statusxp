@@ -91,7 +91,7 @@ class SyncLimitService {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return false;
 
-      final response = await _supabase.rpc('get_my_premium_entitlement');
+      final response = await readPremiumEntitlement(_supabase);
 
       if (response == null) return false;
       return _supabase.auth.currentUser?.id == userId &&

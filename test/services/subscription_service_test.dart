@@ -3,6 +3,87 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:statusxp/services/subscription_service.dart';
 
 void main() {
+  group('verified consumable finalization', () {
+    test(
+      'failed delivery does not consume or acknowledge a purchase',
+      () async {
+        final calls = <String>[];
+        await finalizeVerifiedStorePurchase(
+          status: PurchaseStatus.purchased,
+          entitlementDelivered: false,
+          pendingCompletePurchase: true,
+          androidConsumable: true,
+          consume: () async {
+            calls.add('consume');
+          },
+          complete: () async {
+            calls.add('complete');
+          },
+        );
+        expect(calls, isEmpty);
+      },
+    );
+    test(
+      'verified Android consumables use consumption without a second acknowledgement',
+      () async {
+        final calls = <String>[];
+        await finalizeVerifiedStorePurchase(
+          status: PurchaseStatus.restored,
+          entitlementDelivered: true,
+          pendingCompletePurchase: false,
+          androidConsumable: true,
+          consume: () async {
+            calls.add('consume');
+          },
+          complete: () async {
+            calls.add('complete');
+          },
+        );
+        expect(calls, ['consume']);
+      },
+    );
+    test(
+      'consumption failure propagates for retry instead of completing the purchase',
+      () async {
+        var completed = false;
+        await expectLater(
+          finalizeVerifiedStorePurchase(
+            status: PurchaseStatus.purchased,
+            entitlementDelivered: true,
+            pendingCompletePurchase: true,
+            androidConsumable: true,
+            consume: () async {
+              throw StateError('offline');
+            },
+            complete: () async {
+              completed = true;
+            },
+          ),
+          throwsStateError,
+        );
+        expect(completed, isFalse);
+      },
+    );
+    test(
+      'verified iOS purchases and subscriptions retain normal completion',
+      () async {
+        var completed = false;
+        await finalizeVerifiedStorePurchase(
+          status: PurchaseStatus.purchased,
+          entitlementDelivered: true,
+          pendingCompletePurchase: true,
+          androidConsumable: false,
+          consume: () async {
+            fail('Not a Google consumable');
+          },
+          complete: () async {
+            completed = true;
+          },
+        );
+        expect(completed, isTrue);
+      },
+    );
+  });
   group('subscription offer copy', () {
     test('humanizes Google Play trial periods', () {
       expect(humanizeBillingPeriod('P7D'), '7 days');

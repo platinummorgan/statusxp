@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.8";
 import { createAdminHandler } from "./admin-handler.ts";
 
 // STATUSXP_ADMIN_USER_IDS is an optional server-managed comma-separated list.
-// Without it, only trusted automation holding the service-role key is allowed.
+// Protected owner/admin grants also authorize a verified account.
 export function withAdminAccess(
   method: "GET" | "POST",
   execute: (req: Request) => Promise<unknown>,
@@ -14,6 +14,13 @@ export function withAdminAccess(
       serviceRoleKey,
       adminUserIds: (Deno.env.get("STATUSXP_ADMIN_USER_IDS") ?? "")
         .split(",").map((id) => id.trim()).filter(Boolean),
+      hasAdminAccess: async (userId) => {
+        const db = createClient(Deno.env.get("SUPABASE_URL") ?? "", serviceRoleKey,
+          { auth: { persistSession: false, autoRefreshToken: false } });
+        const { data, error } = await db.rpc("has_app_admin_access", { p_user_id: userId });
+        if (error) throw new Error("Administrative grant lookup unavailable");
+        return data === true;
+      },
       getUser: (token) =>
         createClient(
           Deno.env.get("SUPABASE_URL") ?? "",

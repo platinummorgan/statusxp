@@ -50,6 +50,22 @@ Deno.test("failed signature, provider and database never acknowledge a notificat
     assert.ok(!f.calls.some((c) => c.startsWith("apply")));
   }
 });
+Deno.test("Apple failure diagnostics identify runtime incompatibility without exposing error contents", async () => {
+  const failure = Object.assign(new Error("private provider payload"), {
+    status: 1,
+    cause: new Error("Not implemented: crypto.X509Certificate.prototype.toString private-token"),
+  });
+  const f = fixture({ verify: async () => { throw failure; } });
+  const response = await f.handle(request());
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("X-StatusXP-Phase"), "verification");
+  assert.equal(response.headers.get("X-StatusXP-Verification-Status"), "1");
+  assert.equal(response.headers.get("X-StatusXP-Verification-Reason"), "runtime-unsupported");
+  const output = JSON.stringify([...response.headers]) + await response.text();
+  assert.ok(!output.includes("private"));
+  assert.ok(!output.includes("X509Certificate"));
+  assert.deepEqual(f.calls, []);
+});
 Deno.test("Apple replay skips the API and tests commit a receipt only", async () => {
   const duplicate = fixture({ seen: async () => true });
   assert.equal((await duplicate.handle(request())).status, 204);

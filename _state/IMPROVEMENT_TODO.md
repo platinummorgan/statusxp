@@ -1,6 +1,6 @@
 StatusXP improvement checklist
 
-Created: 2026-09-11 · Last updated: 2026-09-14
+Created: 2026-09-11 · Last updated: 2026-09-15
 
 This is the working checklist for the [September app review](../docs/reviews/2026-09-11/APP_REVIEW.md). The review contains the detailed findings, file references, screenshots, and validation results. Track implementation here so the original review remains a historical record.
 
@@ -194,3 +194,69 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] HTTP test verifies user binding, composite ordering and later pages; widget test verifies timeout recovery, search and retry. Focused analysis clean.
 - [ ] Verify live get_user_grouped_games definition/query plan and whether 20260812001000_bound_my_games_achievement_aggregation.sql is applied. Existing earlier SQL aggregates the entire catalog; local source alone does not establish which definition is deployed. No production SQL changed.
 - [ ] Signed-in browser check: refresh My Games; if detailed stats time out, confirm basic library and game navigation load. This recovery still waits for the original database timeout before starting.
+
+### Developer premium access — September 14
+- [x] Identified the owner's live membership record: premium flag true, Twitch source, expiry March 14, 2026. Expiry validation correctly denied access despite the flag.
+- [x] At the owner's explicit request, updated exactly the identified account's expired Twitch record to an active developer entitlement with no expiry. Conditional update affected one row; independent read confirmed the result. No credentials or account identifiers recorded here.
+- [x] Local Radar and Goals & Pace now distinguish failed membership checks, missing records and expired/inactive records, with Check again and View membership actions. Removed misleading upgrade dialogs on verification failure.
+- [x] Sync premium status now uses the shared compatibility reader. Four premium compatibility/diagnostic tests passed; affected-screen analysis and release web build passed.
+- [ ] Owner to refresh local and public screens and verify access. The entitlement change is live; diagnostic UI changes require publication. A non-expiring entitlement does not itself prevent future billing/admin code from replacing its projection; dedicated grant preservation is separate follow-up work.
+
+### Priority: cross-provider premium and owner access
+- [x] Audit live schema, owner ledger and deployed Twitch/Stripe/store handlers. See docs/reviews/2026-09-14/PREMIUM_ENTITLEMENT_AUDIT.md.
+- [x] Confirmed global Stripe cancellation/update writes, legacy Twitch expiry-column mismatches, and lack of developer-grant preservation in Twitch backfill.
+- [x] Implement/deploy account-wide ANY-active-provider entitlement using independent provider state, including protected owner grants. Backend rollout completed; store routing and real restore checks remain below.
+- [x] Resolved the historical Google-purchase question: owner confirmed there was no paid Google subscription. No Twitch-over-Google overwrite was established. A new controlled Google test purchase and restore were verified September 15 (see results below).
+- [x] Define and implement protected app owner/admin grants and shared authorization. The get-users handler and changelog permissions are deployed; this does not introduce a complete admin dashboard.
+
+### Protected owner rollout
+- [x] Live protected owner grant and premium-projection preservation; explicit grant lifecycle synchronization; both narrow migrations recorded in production.
+- [x] Owner/admin changelog authorization and shared admin gate implementation; get-users deployed with protected grant support. This is backend authorization, not a new admin dashboard or a claim that every admin endpoint was deployed.
+- [x] Local combined billing fixture chain and new cross-provider/owner scenarios passed; 17 admin handler tests passed.
+- [x] Independently found and configured Apple app ID 6757080961 from Apple's listing and matching bundle/seller lookup.
+- [ ] Complete store console configuration and compatibility validation. Backend handlers and credentials are now deployed; remaining checks are listed below.
+
+### Account-wide billing server rollout
+- [x] Applied billing-only consolidated migration 20260914130000 and deployed 12 coordinated billing handlers. All 11 existing effective membership results preserved.
+- [x] Configured and authenticated Apple credentials; Google Pub/Sub authenticated delivery tested against the live handler.
+- [x] Applied reconciliation scheduler 20260914131000 and private HTTP transport 20260914132000; Vault authentication, HTTP 200, idle behavior, and denied client execution verified.
+- [x] 80 Deno tests and 149 Flutter tests passed (9 existing skips); billing migration and Google/Apple/owner cross-provider tests passed against a clone of the live billing table definitions.
+- [x] Owner saved both Apple notification URLs; confirmed by screenshot. No version selection/display appeared in the UI.
+- [x] Apple now recognizes both saved URLs; Production and Sandbox test requests accepted after the two-minute wait.
+- [x] Fixed Apple server-library compatibility using the authenticated Node service. On September 15, fresh Production and Sandbox Apple tests both reported SUCCESS and matching webhook receipts were confirmed. Certificate/signature/online revocation checks remain enabled.
+- [x] Built a separate authenticated Node 22 verification service using Apple's unmodified library, plus the Supabase HTTPS client. Seven Node tests passed, including actual Apple Production/Sandbox TEST signatures and rejection of tampering/environment mismatch; 12 Deno tests passed on current Deno and 2.1.4.
+- [x] September 15: deployed statusxp-apple-verifier on existing Railway project; securely configured dedicated secret/URL and redeployed apple-store-notifications, verify-store-purchase, reconcile-premium-entitlements. Valid signed tests accepted, tampered tests rejected, unauthenticated calls denied. Existing sync deployment unchanged. See services/apple-verifier/README.md.
+- [ ] Verify real subscription event format/lifecycle and controlled purchase/restore behavior before store updates. Apple TEST uses V2 regardless of the configured subscription event version.
+- [x] September 15: owner sent the Google Play Console test; StatusXP recorded the new authenticated notification at 14:27:43 UTC (10:27:43 AM Eastern), distinct from the earlier synthetic Pub/Sub test.
+- [ ] Confirm Save changes was clicked in Play Console after configuring RTDN; successful test delivery alone does not confirm the settings were saved.
+- [ ] Finish remaining store lifecycle checks and existing Twitch relinking where needed. Google controlled test purchase/cancellation/restore verified September 15; Apple purchase/restore and remaining cases still pending. See docs/reviews/2026-09-14/PREMIUM_ROLLOUT.md for exact settings and compatibility limits.
+
+### September 15 purchase/restore preparation
+- [x] Restore now waits for server delivery, distinguishes empty/failed restores from success, and remains available to premium members. Purchase listener initialization is reused across membership-page openings.
+- [x] Android AI packs are consumed only after verified credit delivery; failed consumption remains retryable. Apple completion remains after delivery.
+- [x] 21 focused tests and 158 full-suite Flutter tests passed (9 existing skips); targeted analysis clean.
+- [x] Rebuilt Android release bundle after final changes and verified its JAR signature. Artifact: build/app/outputs/bundle/release/app-release.aab, version 1.1.18+93. Not uploaded or submitted; compare build number and signing identity with Play Console first.
+- [x] Android package preparation: connected Samsung phone, confirmed installed internal build 93 and production build 92, and compared signing certificates. Uploaded build 94 as an internal draft; downloaded and verified Google's matching signed APK and updated the phone without uninstalling. No rollout to testers or production.
+- [x] User authorized the internal rollout; build 94 released to existing Google Play internal testers. Verified internal status completed/build 94 and production still completed/build 92; other tracks unchanged.
+- [x] Following the user's Play installation error, built and released identical changes as internal build 95 to provide an update above the USB-installed build 94. Google accepted the bundle/digest and fresh API reads confirmed internal 95 completed, production 92 completed.
+- [x] Android test startup: confirmed build 95 installed by `com.android.vending`; user opened membership and completed a restore attempt. No uninstall or data clearing was needed.
+- [x] Owner restore observation: user received "No purchases found for this store account" while protected premium stayed active. Backend ledger remained empty at 16:33 UTC September 15. This is an observed empty restore, not proof of successful paid-subscription restoration or absence of a historical purchase.
+- [x] Owner clarified there was no paid Google subscription; the empty restore was expected. Stop investigating a missing paid subscription or attributing an overwrite to Twitch.
+- [x] Owner authorized a controlled Google test purchase using his account. September 15 at 16:36 UTC: backed up the protected grant outside the repo and set only its Premium flag false. Verified effective Premium false and owner/admin access true. No provider subscriptions or role assignments were removed.
+- [x] Google controlled purchase/cancellation/restore: user reported restore success. At 21:34 UTC September 15, backend showed one verified statusxp_premium_monthly test purchase (`is_test=true`), one Google account binding, canceled state with expiry 21:38:42 UTC, and effective Premium from Google while the developer grant was disabled. No raw receipt or user identifier recorded here.
+- [x] Restored protected developer Premium at 21:35 UTC after the successful restore check. Verified owner/admin access, Premium source developer, and no expiration. Active-test audit marked complete; original grant backup retained outside the repo.
+- [ ] Verify remaining expiry/renewal, wrong-account, repeated restore and Apple device cases. Expiry while the account has no other Premium source was not observed in this run; developer access was restored before test expiry as agreed.
+
+### September 15 canceled checkout correction
+- [x] Reproduced the cause in code: checkout-launch success was treated as purchase success, and a 12-second entitlement poll displayed a processing message after cancellation. Separate nonreactive pending state could leave Subscribe spinning.
+- [x] Added checkout outcomes driven by store callbacks and verified delivery. Empty-product Play cancellations, errors, rejected launch, stream failure and missing callback now end loading without claiming success; pending payments remain distinct from verified purchases. Applied the same result handling to AI packs.
+- [x] Full Flutter suite passed 171 tests with 9 existing skips; additional reopened-screen widget regression passed. Ten purchase-flow tests and four checkout widget cases cover cancel/retry, pending, failure, verified delivery, missing callback and unrelated restore behavior. Targeted analysis clean.
+- [x] Live owner check after canceled checkout: Premium false, admin access true, no store purchase events. The false message did not correspond to a delivered backend entitlement.
+- [x] Built and signed Android 1.1.18+96; Google accepted the upload with matching SHA-256. Released to existing internal testers and verified fresh track state: internal 96 completed, production 92 completed. Other tracks and tester configuration unchanged.
+- [ ] Confirm device build 96 and repeat checkout cancel/back and immediate retry. The subsequent genuine Google test purchase/restore is verified, but the device remained disconnected and the separate cancellation UI retest was not explicitly reported.
+
+### September 15 membership navigation spacing
+- [x] Wrapped the membership body in SafeArea with the existing app bar handling the top inset. Scrollable content and Restore Purchases now respect bottom and side system insets instead of extending underneath phone navigation controls.
+- [x] All six existing membership widget tests passed; targeted analysis and whitespace checks clean.
+- [x] Built and signed Android 1.1.18+97; Google accepted its upload with matching SHA-256. Released to existing internal testers; fresh API read confirmed internal 97 completed and production 92 completed.
+- [x] Owner confirmed success on the phone after the build-97 spacing fix: Restore Purchases is accessible above the Back/Home navigation buttons.

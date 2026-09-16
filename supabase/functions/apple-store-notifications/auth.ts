@@ -28,9 +28,6 @@ export async function verifyAppleNotice(signed: string): Promise<AppleNotice> {
     throw new Error("Unsupported Apple envelope");
   }
   const sandbox = environment === "Sandbox";
-  if (sandbox && Deno.env.get("APPLE_ALLOW_SANDBOX_NOTIFICATIONS") !== "true") {
-    throw new Error("Sandbox notifications disabled");
-  }
   const verifier = appleVerifier(sandbox);
   const verified = await verifier.verifyAndDecodeNotification(signed);
   if (
@@ -44,6 +41,9 @@ export async function verifyAppleNotice(signed: string): Promise<AppleNotice> {
       sandbox,
       accountToken: null,
     };
+  }
+  if (sandbox && Deno.env.get("APPLE_ALLOW_SANDBOX_NOTIFICATIONS") !== "true") {
+    throw new Error("Sandbox notifications disabled");
   }
   if (
     !types.has(verified.notificationType ?? "") ||
