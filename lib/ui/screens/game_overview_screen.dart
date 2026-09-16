@@ -122,7 +122,11 @@ class _GameOverviewBody extends StatelessWidget {
               else
                 const _LibraryNotice(),
               const SizedBox(height: 20),
-              GameAchievementSection(key: ValueKey(game.ref), game: game.ref),
+              GameAchievementSection(
+                key: ValueKey(game.ref),
+                game: game.ref,
+                gameName: game.name,
+              ),
             ],
           ),
         ),

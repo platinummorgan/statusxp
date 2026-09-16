@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:statusxp/domain/achievement_presentation.dart';
+import 'package:statusxp/ui/widgets/game_achievement_card.dart';
+import 'package:statusxp/ui/screens/ai_credit_shop_screen.dart';
 import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 
@@ -15,8 +17,8 @@ final gameAchievementListProvider = FutureProvider.autoDispose
               .from(table)
               .select(
                 table == 'achievements'
-                    ? 'platform_achievement_id,name,description,metadata,base_status_xp'
-                    : 'platform_achievement_id',
+                    ? 'platform_achievement_id,name,description,metadata,base_status_xp,icon_url,proxied_icon_url,rarity_global'
+                    : 'platform_achievement_id,earned_at',
               );
           query = query
               .eq('platform_id', game.platformId)
@@ -37,13 +39,17 @@ final gameAchievementListProvider = FutureProvider.autoDispose
         if (userId != null) readRows('user_achievements'),
       ]);
       final earned = results.length > 1
-          ? results[1].map((row) => row['platform_achievement_id']).toSet()
-          : <dynamic>{};
+          ? {
+              for (final row in results[1])
+                row['platform_achievement_id']: row['earned_at'],
+            }
+          : <dynamic, dynamic>{};
       return results.first
           .map(
             (row) => <String, dynamic>{
               ...row,
-              'earned': earned.contains(row['platform_achievement_id']),
+              'earned': earned.containsKey(row['platform_achievement_id']),
+              'earned_at': earned[row['platform_achievement_id']],
             },
           )
           .toList();
@@ -51,8 +57,13 @@ final gameAchievementListProvider = FutureProvider.autoDispose
 
 /// Inline catalog with independent loading and state retained while collapsed.
 class GameAchievementSection extends ConsumerStatefulWidget {
-  const GameAchievementSection({super.key, required this.game});
+  const GameAchievementSection({
+    super.key,
+    required this.game,
+    this.gameName = 'Game',
+  });
   final GameRef game;
+  final String gameName;
 
   @override
   ConsumerState<GameAchievementSection> createState() => _SectionState();
@@ -72,6 +83,7 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
   String _query = '';
   String _filter = 'All';
   int _page = 0;
+  final Map<String, bool> _expandedGroups = {'Base Game': true};
   static const _pageSize = 20;
 
   bool _hidden(Map<String, dynamic> row) {
@@ -92,6 +104,12 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
   Widget build(BuildContext context) {
     final data = ref.watch(gameAchievementListProvider(widget.game));
     final signedIn = ref.watch(currentUserIdProvider) != null;
+    final platform = widget.game.platform?.code ?? '';
+    final platformColor = platform.startsWith('ps')
+        ? const Color(0xFF0070CC)
+        : platform.startsWith('xbox')
+        ? const Color(0xFF107C10)
+        : const Color(0xFF00D4FF);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -144,6 +162,22 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
                   ),
                 ],
               ),
+              if (signedIn)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Buy AI Credits'),
+                    onPressed: () async {
+                      await Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => const AICreditShopScreen(),
+                        ),
+                      );
+                      if (mounted) ref.invalidate(achievementCreditsProvider);
+                    },
+                  ),
+                ),
               data.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.all(24),
@@ -161,7 +195,20 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
                   ],
                 ),
                 data: (rows) {
-                  final filtered = rows.where((row) {
+                  final catalog =
+                      rows
+                          .asMap()
+                          .entries
+                          .map(
+                            (entry) =>
+                                achievementPresentation(entry.value, entry.key),
+                          )
+                          .toList()
+                        ..sort(
+                          (a, b) =>
+                              compareAchievementPresentation(a, b, platform),
+                        );
+                  final filtered = catalog.where((row) {
                     if (signedIn &&
                         _filter == 'Earned' &&
                         row['earned'] != true) {
@@ -179,6 +226,13 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
                   }).toList();
                   final pages = (filtered.length / _pageSize).ceil();
                   final page = pages == 0 ? 0 : _page.clamp(0, pages - 1);
+                  final visibleGroups = <String, List<Map<String, dynamic>>>{};
+                  for (final row
+                      in filtered.skip(page * _pageSize).take(_pageSize)) {
+                    visibleGroups
+                        .putIfAbsent(achievementGroup(row), () => [])
+                        .add(row);
+                  }
                   return Column(
                     children: [
                       if (filtered.isEmpty)
@@ -186,36 +240,39 @@ class _SectionState extends ConsumerState<GameAchievementSection> {
                           padding: EdgeInsets.all(20),
                           child: Text('No achievements match.'),
                         ),
-                      for (final row
-                          in filtered.skip(page * _pageSize).take(_pageSize))
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
+                      for (final group in visibleGroups.entries)
+                        ExpansionTile(
+                          key: ValueKey('${group.key}:$page:$_filter:$_query'),
+                          initiallyExpanded:
+                              _query.isNotEmpty ||
+                              (_expandedGroups[group.key] ?? false),
+                          onExpansionChanged: (value) =>
+                              _expandedGroups[group.key] = value,
+                          tilePadding: EdgeInsets.zero,
+                          childrenPadding: EdgeInsets.zero,
                           leading: Icon(
-                            row['earned'] == true
-                                ? Icons.check_circle
-                                : Icons.emoji_events_outlined,
+                            group.key == 'Base Game'
+                                ? Icons.stars
+                                : Icons.extension,
+                            color: platformColor,
                           ),
-                          title: Text(
-                            _hidden(row)
-                                ? 'Hidden achievement'
-                                : row['name'] as String? ?? 'Achievement',
-                          ),
+                          title: Text(group.key),
                           subtitle: Text(
-                            _hidden(row)
-                                ? 'Reveal hidden to see details.'
-                                : '${row['description'] ?? ''}\n${row['base_status_xp'] ?? '—'} base StatusXP',
+                            '${catalog.where((row) => achievementGroup(row) == group.key && row['earned'] == true).length} / ${catalog.where((row) => achievementGroup(row) == group.key).length} earned',
                           ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: _hidden(row)
-                              ? null
-                              : () => context.push(
-                                  AchievementRef(
-                                    gameRef: widget.game,
-                                    platformAchievementId:
-                                        row['platform_achievement_id']
-                                            .toString(),
-                                  ).location,
-                                ),
+                          children: [
+                            for (final row in group.value)
+                              GameAchievementCard(
+                                key: ValueKey(row['platform_achievement_id']),
+                                achievement: row,
+                                platformId: widget.game.platformId,
+                                platformGameId: widget.game.platformGameId,
+                                gameName: widget.gameName,
+                                platform: platform,
+                                platformColor: platformColor,
+                                showHidden: _reveal,
+                              ),
+                          ],
                         ),
                       if (pages > 1)
                         Row(

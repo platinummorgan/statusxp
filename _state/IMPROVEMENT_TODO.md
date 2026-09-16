@@ -270,3 +270,13 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] Preserve bottom navigation spacing and scrolling. Full Flutter suite: 180 passed, 9 existing skips. Targeted analysis clean. Eight new widget cases cover the Premium entry, pack outcomes, duplicate-tap prevention, store price, balance refresh, unavailable data and narrow-screen layout.
 - [x] Built and signed Android 1.1.18+98; Google accepted the bundle with matching SHA-256. Released to existing internal testers; a fresh API read confirmed internal 98 completed and production 92 completed. Other tracks and tester configuration unchanged.
 - [ ] Device test: from Premium > Buy AI Credits, buy the 20-credit pack with Google's test payment method. Record the starting balance, verify exactly +20 once and persistence after reopening, then inspect the verified test-purchase ledger. Developer Premium stays enabled. Prior baseline was 10; expected 30 if no intervening usage/purchase.
+
+
+### September 16 inline trophy feature regression
+- [x] Traced the missing AI Help and trophy details to the earlier inline catalog: the normal game route showed basic ListTiles instead of the existing rich trophy cards. The build-98 credit shop change did not remove the original AI guide implementation.
+- [x] Extracted a shared rich trophy card/guide implementation and reused it in the inline section and legacy trophy screen. Restored artwork, trophy type/Gamerscore, rarity, StatusXP, earned dates, Tips/Comments, AI Help and Find Partner.
+- [x] Restored Base Game/DLC sections and platform-native ordering while preserving inline collapse, search, earned filters, hidden reveal and pagination. Hidden actions remain disabled until revealed; signed-out users cannot start personal AI/co-op actions.
+- [x] Load artwork, rarity and earned dates in the paginated catalog. Share one AI credit status request across visible cards and refresh after guide use or returning from the credit shop.
+- [x] Full Flutter suite: 184 passed, 9 existing skips; targeted analysis clean. Regression coverage includes the actual game overview route, correct guide/co-op context, hidden reveal, DLC grouping, native order, paginated field loading, narrow layout with large text, and existing Back/search/paging state.
+- [x] Built and signed Android 1.1.18+99. Google accepted the bundle with matching SHA-256; released to existing internal testers. Fresh API verification: internal 99 completed, production 92 completed; other tracks unchanged. Owner confirmed the report concerned the previous Android test build.
+- [ ] Owner device check: open a game through My Games, confirm full trophy cards and Base Game/DLC groups, then open AI Help. Resume the separate AI pack delivery test afterward.

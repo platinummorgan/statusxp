@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,8 +6,287 @@ import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/widgets/game_achievement_section.dart';
+import 'package:statusxp/ui/widgets/game_achievement_card.dart';
+import 'package:statusxp/ui/widgets/game_catalog_summary.dart';
+import 'package:statusxp/ui/widgets/create_trophy_request_dialog.dart';
+import 'package:statusxp/ui/screens/game_overview_screen.dart';
+import 'package:statusxp/domain/game_overview.dart';
+import 'package:statusxp/services/achievement_guide_service.dart';
+import 'package:statusxp/services/ai_credit_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class _GuideService extends AchievementGuideService {
+  final calls = <List<String?>>[];
+  @override
+  Stream<String> generateGuide({
+    required String gameTitle,
+    required String achievementName,
+    required String achievementDescription,
+    String? platform,
+  }) async* {
+    calls.add([gameTitle, achievementName, achievementDescription, platform]);
+    yield 'Complete the challenge without taking damage.';
+  }
+}
+
+Map<String, dynamic> trophy(
+  String id, {
+  bool earned = false,
+  Map<String, dynamic> metadata = const {},
+}) => {
+  'platform_achievement_id': id,
+  'name': 'Trophy $id',
+  'description': 'Finish the challenge',
+  'earned': earned,
+  'earned_at': earned ? DateTime.now().toIso8601String() : null,
+  'metadata': {'psn_trophy_type': 'gold', ...metadata},
+  'base_status_xp': 25,
+  'rarity_global': 2.5,
+};
+
+AICreditStatus get premiumCredits => AICreditStatus(
+  canUse: true,
+  source: 'premium',
+  remaining: -1,
+  packCredits: 10,
+  dailyFree: 3,
+);
 
 void main() {
+  test(
+    'catalog loading preserves artwork and earned dates across pages',
+    () async {
+      const game = GameRef(platformId: 1, platformGameId: 'game');
+      var catalogReads = 0;
+      final client = SupabaseClient(
+        'https://test.invalid',
+        'test',
+        authOptions: const AuthClientOptions(autoRefreshToken: false),
+        httpClient: MockClient((request) async {
+          expect(request.url.queryParameters['platform_id'], 'eq.1');
+          expect(request.url.queryParameters['platform_game_id'], 'eq.game');
+          final isCatalog = request.url.path.endsWith('/achievements');
+          final fields = request.url.queryParameters['select']!;
+          late List<Map<String, dynamic>> rows;
+          if (isCatalog) {
+            expect(fields, contains('icon_url'));
+            expect(fields, contains('rarity_global'));
+            rows = catalogReads++ == 0
+                ? List.generate(500, (i) => trophy('$i'))
+                : [
+                    {
+                      ...trophy('last'),
+                      'icon_url': 'https://test.invalid/icon.png',
+                    },
+                  ];
+          } else {
+            expect(request.url.queryParameters['user_id'], 'eq.user');
+            expect(fields, contains('earned_at'));
+            rows = [
+              {
+                'platform_achievement_id': 'last',
+                'earned_at': '2026-09-15T10:00:00Z',
+              },
+            ];
+          }
+          return http.Response(
+            jsonEncode(rows),
+            200,
+            request: request,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.dispose);
+      final container = ProviderContainer(
+        overrides: [
+          currentUserIdProvider.overrideWithValue('user'),
+          supabaseClientProvider.overrideWithValue(client),
+        ],
+      );
+      addTearDown(container.dispose);
+      final rows = await container.read(
+        gameAchievementListProvider(game).future,
+      );
+      expect(rows, hasLength(501));
+      expect(rows.last['earned'], true);
+      expect(rows.last['earned_at'], '2026-09-15T10:00:00Z');
+      expect(rows.last['icon_url'], 'https://test.invalid/icon.png');
+      expect(catalogReads, 2);
+    },
+  );
+  testWidgets(
+    'normal game overview retains trophy details, AI guide and co-op actions',
+    (tester) async {
+      const game = GameRef(platformId: 1, platformGameId: 'test-game');
+      final guide = _GuideService();
+      var allowanceReads = 0;
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserIdProvider.overrideWithValue('user'),
+            gameOverviewProvider(game).overrideWith(
+              (ref) async => const GameOverview(
+                ref: game,
+                name: 'The Actual Game',
+                isOwned: true,
+                achievementsTotal: 2,
+                achievementsEarned: 1,
+              ),
+            ),
+            gameCatalogTotalsProvider(
+              game,
+            ).overrideWith((ref) async => const GameCatalogTotals(2, 50)),
+            gameAchievementListProvider(game).overrideWith(
+              (ref) async => [trophy('1'), trophy('2', earned: true)],
+            ),
+            achievementCreditsProvider.overrideWith((ref) async {
+              allowanceReads++;
+              return premiumCredits;
+            }),
+            achievementGuideServiceProvider.overrideWithValue(guide),
+          ],
+          child: const MaterialApp(home: GameOverviewScreen(gameRef: game)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('GOLD'), findsNWidgets(2));
+      expect(find.text('2.5% • VERY RARE'), findsNWidgets(2));
+      expect(find.text('25.0 XP'), findsNWidgets(2));
+      expect(find.text('Today'), findsOneWidget);
+      expect(find.text('Tips/Comments'), findsNWidgets(2));
+      expect(find.text('Find Partner'), findsOneWidget);
+      expect(allowanceReads, 1);
+      await tester.ensureVisible(find.text('AI Help').first);
+      await tester.tap(find.text('AI Help').first);
+      await tester.pumpAndSettle();
+      expect(find.text('ACHIEVEMENT GUIDE'), findsOneWidget);
+      expect(guide.calls, [
+        ['The Actual Game', 'Trophy 1', 'Finish the challenge', 'ps5'],
+      ]);
+      expect(
+        find.textContaining('Complete the challenge without taking damage.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Find Partner'));
+      await tester.tap(find.text('Find Partner'));
+      await tester.pumpAndSettle();
+      final request = tester.widget<CreateTrophyRequestDialog>(
+        find.byType(CreateTrophyRequestDialog),
+      );
+      expect(request.gameId, 'test-game');
+      expect(request.gameTitle, 'The Actual Game');
+      expect(request.achievementId, '1');
+      expect(request.platform, 'psn');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'hidden trophies keep actions disabled until revealed; DLC groups and native order remain',
+    (tester) async {
+      const game = GameRef(platformId: 1, platformGameId: 'game');
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserIdProvider.overrideWithValue('user'),
+            achievementCreditsProvider.overrideWith(
+              (ref) async => premiumCredits,
+            ),
+            gameAchievementListProvider(game).overrideWith(
+              (ref) async => [
+                trophy('10'),
+                trophy('2', metadata: {'hidden': true}),
+                trophy(
+                  '3',
+                  metadata: {
+                    'trophy_group_id': '001',
+                    'dlc_name': 'Expansion One',
+                  },
+                ),
+              ],
+            ),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: GameAchievementSection(game: game),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Hidden Achievement'), findsOneWidget);
+      final help = find.widgetWithText(TextButton, 'AI Help').first;
+      expect(tester.widget<TextButton>(help).onPressed, isNull);
+      expect(find.text('Trophy 2'), findsNothing);
+      await tester.tap(find.text('Reveal hidden'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextButton>(help).onPressed, isNotNull);
+      expect(
+        tester.getTopLeft(find.text('Trophy 2')).dy,
+        lessThan(tester.getTopLeft(find.text('Trophy 10')).dy),
+      );
+      expect(find.text('Trophy 3'), findsNothing);
+      await tester.ensureVisible(find.text('Expansion One'));
+      await tester.tap(find.text('Expansion One'));
+      await tester.pumpAndSettle();
+      expect(find.text('Trophy 3'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'rich cards fit narrow phones with large text and Xbox gamerscore',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const game = GameRef(platformId: 12, platformGameId: 'game');
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserIdProvider.overrideWithValue('user'),
+            achievementCreditsProvider.overrideWith(
+              (ref) async => premiumCredits,
+            ),
+            gameAchievementListProvider(game).overrideWith(
+              (ref) async => [
+                trophy(
+                  '1',
+                  earned: true,
+                  metadata: {'psn_trophy_type': null, 'xbox_gamerscore': 100},
+                ),
+              ],
+            ),
+          ],
+          child: MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: const TextScaler.linear(1.5)),
+              child: child!,
+            ),
+            home: const Scaffold(
+              body: SingleChildScrollView(
+                child: GameAchievementSection(game: game),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('100G'), findsOneWidget);
+      await tester.ensureVisible(find.text('AI Help'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets(
     'inline paging, search, collapse and detail Back preserve state',
     (tester) async {

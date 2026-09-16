@@ -12,9 +12,9 @@ September 15 client fixes:
 - Enumeration and verification errors remain retryable; server verification waiting is bounded to 45 seconds. Reopening the membership page does not add duplicate purchase listeners.
 - Android AI-credit packs are consumed only after verified credit delivery. Consumption errors remain retryable and do not trigger a second acknowledgement. iOS completion remains after delivery.
 
-Validation: after the checkout correction, the full suite passed 171 tests with 9 existing skips; an additional reopened-screen regression subsequently passed. After the SafeArea change, all six membership widget tests passed again and targeted analysis was clean. Android release builds passed. The AI credit shop update subsequently passed the full suite (180 tests, 9 existing skips) and targeted analysis. **Current internal release is 1.1.18+98; production remains build 92.** Project `pubspec.yaml` remains **1.1.18+93**; Android test builds used explicit `--build-number` overrides. Future uploads must use an unused number above 98. An iOS archive still needs Mac/Xcode or the established Apple build pipeline; this workspace is Windows.
+Validation: after the checkout correction, the full suite passed 171 tests with 9 existing skips; an additional reopened-screen regression subsequently passed. After the SafeArea change, all six membership widget tests passed again and targeted analysis was clean. Android release builds passed. The AI credit shop update subsequently passed the full suite (180 tests, 9 existing skips) and targeted analysis. The trophy restoration subsequently passed 184 tests with 9 existing skips. **Current internal release is 1.1.18+99; production remains build 92.** Project `pubspec.yaml` remains **1.1.18+93**; Android test builds used explicit `--build-number` overrides. Future uploads must use an unused number above 99. An iOS archive still needs Mac/Xcode or the established Apple build pipeline; this workspace is Windows.
 
-Current Android artifact: `build/app/outputs/bundle/release/app-release.aab`, build **98**. `jarsigner -verify` passed, Google accepted the upload, and its returned SHA-256 matched the local bundle. Upload/release audit: `D:/.tmp/statusxp-premium-audit-20260914/play_internal_98_release_20260915.json`; a fresh API read confirmed internal build 98 completed and production build 92 completed. This supersedes the earlier artifact audits. Client changes are available to the existing Android internal testers; no production or Apple update was submitted. Owner confirmed the build-97 phone navigation spacing fix succeeded. The separate checkout cancellation UI retest remains unconfirmed.
+Current Android artifact: `build/app/outputs/bundle/release/app-release.aab`, build **99**. `jarsigner -verify` passed, Google accepted the upload, and its returned SHA-256 matched the local bundle. Upload/release audit: `D:/.tmp/statusxp-premium-audit-20260914/play_internal_99_release_20260916.json`; a fresh API read confirmed internal build 99 completed and production build 92 completed. This supersedes the earlier artifact audits. Client changes are available to the existing Android internal testers; no production or Apple update was submitted. Owner confirmed the build-97 phone navigation spacing fix succeeded. The separate checkout cancellation UI retest remains unconfirmed.
 
 ## Device and account prerequisites
 
@@ -78,7 +78,7 @@ The membership page now has **Buy AI Credits** for both Premium and free users. 
 Automated validation: 180 Flutter tests passed, 9 existing skips; targeted analysis clean. New coverage includes Premium navigation, verified delivery and server-balance refresh, cancellation/retry, pending/error/unconfirmed outcomes, duplicate-tap prevention, unavailable products/balance, and large text with a phone navigation inset.
 
 Pending device test:
-1. Install internal build **98** through Google Play, then open **Premium > Buy AI Credits**.
+1. Install internal build **99** through Google Play, then open **Premium > Buy AI Credits**.
 2. Record the displayed pack balance. Prior backend baseline was 10.
 3. Choose the **20-credit** pack and confirm Google's payment sheet uses **Test card, always approves** before completing it.
 4. Confirm one verified success, exactly 20 additional credits, and persistence after closing/reopening the shop. Starting from 10, expect 30.
@@ -86,3 +86,14 @@ Pending device test:
 6. Cancel a separate checkout and confirm no success message, no balance change, and an enabled Buy button afterward.
 
 Device completion and backend credit delivery are not yet verified. No real paid pack purchase has been requested.
+
+
+## September 16 trophy screen regression
+
+The normal game route's earlier inline catalog omitted the original rich trophy presentation and AI/co-op actions. The restored inline list now shares the original card and guide implementation with the legacy trophy screen, including artwork, platform badges, rarity, StatusXP, earned date, Tips/Comments, AI Help and Find Partner. Base Game/DLC sections and native ordering are restored; inline search, filters, hidden reveal, paging and collapse remain.
+
+Validation: 184 Flutter tests passed, 9 existing skips; targeted analysis clean. Tests open AI Help from the actual game overview and assert game/trophy/platform context, check co-op prefill, hidden reveal, DLC grouping, numeric trophy order, later-page artwork/earned dates, and large text at phone width. A local rendered layout was also inspected. No live guide generation or co-op request was sent by these tests.
+
+Build 99 was built, signed and released to existing internal testers. Google returned a matching SHA-256; a fresh API read confirmed internal 99 completed and production 92 completed. Other tracks were unchanged. The owner confirmed the report was from the previous Android test build.
+
+Pending owner check on internal build 99: open a game from My Games, confirm the detailed cards and AI Help are present, open a guide, and return to the same game. AI credit pack purchase/delivery remains pending separately. This change requires a separate web deployment before it appears on the public website.
