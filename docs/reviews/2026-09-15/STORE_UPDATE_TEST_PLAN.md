@@ -12,9 +12,9 @@ September 15 client fixes:
 - Enumeration and verification errors remain retryable; server verification waiting is bounded to 45 seconds. Reopening the membership page does not add duplicate purchase listeners.
 - Android AI-credit packs are consumed only after verified credit delivery. Consumption errors remain retryable and do not trigger a second acknowledgement. iOS completion remains after delivery.
 
-Validation: after the checkout correction, the full suite passed 171 tests with 9 existing skips; an additional reopened-screen regression subsequently passed. After the SafeArea change, all six membership widget tests passed again and targeted analysis was clean. Android release builds passed. **Current internal release is 1.1.18+97; production remains build 92.** Project `pubspec.yaml` remains **1.1.18+93**; Android test builds used explicit `--build-number` overrides. Future uploads must use an unused number above 97. An iOS archive still needs Mac/Xcode or the established Apple build pipeline; this workspace is Windows.
+Validation: after the checkout correction, the full suite passed 171 tests with 9 existing skips; an additional reopened-screen regression subsequently passed. After the SafeArea change, all six membership widget tests passed again and targeted analysis was clean. Android release builds passed. The AI credit shop update subsequently passed the full suite (180 tests, 9 existing skips) and targeted analysis. **Current internal release is 1.1.18+98; production remains build 92.** Project `pubspec.yaml` remains **1.1.18+93**; Android test builds used explicit `--build-number` overrides. Future uploads must use an unused number above 98. An iOS archive still needs Mac/Xcode or the established Apple build pipeline; this workspace is Windows.
 
-Current Android artifact: `build/app/outputs/bundle/release/app-release.aab`, build **97**. `jarsigner -verify` passed, Google accepted the upload, and its returned SHA-256 matched the local bundle. Upload/release audit: `D:/.tmp/statusxp-premium-audit-20260914/play_internal_97_release_20260915.json`; a fresh API read confirmed internal build 97 completed and production build 92 completed. This supersedes the earlier artifact audits. Client changes are available to the existing Android internal testers; no production or Apple update was submitted. Owner confirmed the build-97 phone navigation spacing fix succeeded. The separate checkout cancellation UI retest remains unconfirmed.
+Current Android artifact: `build/app/outputs/bundle/release/app-release.aab`, build **98**. `jarsigner -verify` passed, Google accepted the upload, and its returned SHA-256 matched the local bundle. Upload/release audit: `D:/.tmp/statusxp-premium-audit-20260914/play_internal_98_release_20260915.json`; a fresh API read confirmed internal build 98 completed and production build 92 completed. This supersedes the earlier artifact audits. Client changes are available to the existing Android internal testers; no production or Apple update was submitted. Owner confirmed the build-97 phone navigation spacing fix succeeded. The separate checkout cancellation UI retest remains unconfirmed.
 
 ## Device and account prerequisites
 
@@ -69,3 +69,20 @@ September 15 device result: confirmed installed version 1.1.18/build 95 with ins
 - [ ] Build and validate signed iOS archive with an unused Apple build number.
 
 Do not mark purchase/restore cases passed from inspection, unit tests, notification TEST messages, or protected owner premium. Record device/build, account role, provider event, server verification and observed app behavior for completed cases. Keep raw purchase tokens, receipts and personal account identifiers outside this document and repository.
+
+
+## AI credit shop validation — September 15
+
+The membership page now has **Buy AI Credits** for both Premium and free users. The game achievements toolbar and out-of-credits action open the same shop. Pack balance comes from the authenticated account's credit row because the Premium allowance response omits banked credits. Mobile prices come from store products. Premium remains active throughout this test; packs do not increase daily limits and remain banked while Premium covers guides.
+
+Automated validation: 180 Flutter tests passed, 9 existing skips; targeted analysis clean. New coverage includes Premium navigation, verified delivery and server-balance refresh, cancellation/retry, pending/error/unconfirmed outcomes, duplicate-tap prevention, unavailable products/balance, and large text with a phone navigation inset.
+
+Pending device test:
+1. Install internal build **98** through Google Play, then open **Premium > Buy AI Credits**.
+2. Record the displayed pack balance. Prior backend baseline was 10.
+3. Choose the **20-credit** pack and confirm Google's payment sheet uses **Test card, always approves** before completing it.
+4. Confirm one verified success, exactly 20 additional credits, and persistence after closing/reopening the shop. Starting from 10, expect 30.
+5. Inspect the backend purchase event for the small pack, test flag and intended account; verify no duplicate delivery on later restore/reopening.
+6. Cancel a separate checkout and confirm no success message, no balance change, and an enabled Buy button afterward.
+
+Device completion and backend credit delivery are not yet verified. No real paid pack purchase has been requested.

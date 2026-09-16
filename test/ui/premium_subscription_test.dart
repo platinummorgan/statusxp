@@ -5,8 +5,32 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:statusxp/services/store_purchase_attempt.dart';
 import 'package:statusxp/services/subscription_service.dart';
 import 'package:statusxp/ui/screens/premium_subscription_screen.dart';
+import 'package:statusxp/ui/screens/ai_credit_shop_screen.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 
 void main() {
+  testWidgets('active Premium members can open the AI credit shop', (
+    tester,
+  ) async {
+    final service = CheckoutTestService(premium: true);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [currentUserIdProvider.overrideWithValue(null)],
+        child: MaterialApp(
+          home: PremiumSubscriptionScreen(subscriptionService: service),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text("You're Premium! 🎉"), findsOneWidget);
+    final shop = find.text('Buy AI Credits');
+    await tester.ensureVisible(shop);
+    await tester.tap(shop);
+    await tester.pumpAndSettle();
+    expect(find.byType(AICreditShopScreen), findsOneWidget);
+    expect(find.text('Already Premium'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'reopened membership page reacts when an existing checkout is canceled',
     (tester) async {
@@ -109,6 +133,8 @@ void main() {
 }
 
 class CheckoutTestService implements SubscriptionService {
+  CheckoutTestService({this.premium = false});
+  final bool premium;
   final flow = StorePurchaseFlow();
   int launches = 0;
   final product = ProductDetails(
@@ -128,7 +154,11 @@ class CheckoutTestService implements SubscriptionService {
   @override
   Future<void> initialize() async {}
   @override
-  Future<bool> isPremiumActive() async => false;
+  Future<bool> isPremiumActive() async => premium;
+  @override
+  Future<PremiumEntitlement?> getPremiumEntitlement() async => null;
+  @override
+  List<ProductDetails> get aiPackProducts => [];
   @override
   bool isAnnualProduct(ProductDetails product) => false;
   @override

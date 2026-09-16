@@ -53,6 +53,18 @@ class AICreditStatus {
 class AICreditService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
+  /// Read banked credits directly: the allowance RPC omits them for Premium.
+  Future<int> getPackBalance() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw StateError('Sign in to view AI credits.');
+    final row = await _supabase
+        .from('user_ai_credits')
+        .select('pack_credits')
+        .eq('user_id', userId)
+        .maybeSingle();
+    return (row?['pack_credits'] as num?)?.toInt() ?? 0;
+  }
+
   /// Check if user can use AI and get credit status
   Future<AICreditStatus> checkCredits() async {
     try {
@@ -85,7 +97,9 @@ class AICreditService {
   }
 
   /// Get available AI pack options
-  List<AIPack> getAvailablePacks() {
+  List<AIPack> getAvailablePacks() => availablePacks;
+
+  static List<AIPack> get availablePacks {
     return [
       AIPack(
         type: 'small',

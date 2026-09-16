@@ -1,3 +1,4 @@
+import 'package:statusxp/ui/screens/ai_credit_shop_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -371,6 +372,18 @@ class _PremiumSubscriptionScreenState
                       _buildFooter(),
                     ],
                     const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => AICreditShopScreen(
+                            subscriptionService: _subscriptionService,
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.auto_awesome),
+                      label: const Text('Buy AI Credits'),
+                    ),
+                    const SizedBox(height: 8),
                     _buildRestoreButton(),
                   ],
                 ),

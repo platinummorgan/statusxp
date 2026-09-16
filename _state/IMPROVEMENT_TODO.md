@@ -260,3 +260,13 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] All six existing membership widget tests passed; targeted analysis and whitespace checks clean.
 - [x] Built and signed Android 1.1.18+97; Google accepted its upload with matching SHA-256. Released to existing internal testers; fresh API read confirmed internal 97 completed and production 92 completed.
 - [x] Owner confirmed success on the phone after the build-97 spacing fix: Restore Purchases is accessible above the Back/Home navigation buttons.
+
+
+### September 15 AI credit shop access
+- [x] Added Buy AI Credits to the membership screen for both Premium and free accounts, plus an entry in game achievements. The out-of-credits action opens the same shop.
+- [x] Removed the Premium purchase block. Explain that Premium already includes guides, purchased credits remain banked while Premium is active, and packs do not raise daily usage limits.
+- [x] Display authenticated pack balance separately from the Premium allowance; use localized mobile store prices and disable unavailable packs. Credit read failures are shown as unavailable instead of zero.
+- [x] Reuse verified store delivery, cancellation/pending/error handling and server-owned Stripe pack pricing. Refresh balance after verified delivery and app resume; include a manual refresh.
+- [x] Preserve bottom navigation spacing and scrolling. Full Flutter suite: 180 passed, 9 existing skips. Targeted analysis clean. Eight new widget cases cover the Premium entry, pack outcomes, duplicate-tap prevention, store price, balance refresh, unavailable data and narrow-screen layout.
+- [x] Built and signed Android 1.1.18+98; Google accepted the bundle with matching SHA-256. Released to existing internal testers; a fresh API read confirmed internal 98 completed and production 92 completed. Other tracks and tester configuration unchanged.
+- [ ] Device test: from Premium > Buy AI Credits, buy the 20-credit pack with Google's test payment method. Record the starting balance, verify exactly +20 once and persistence after reopening, then inspect the verified test-purchase ledger. Developer Premium stays enabled. Prior baseline was 10; expected 30 if no intervening usage/purchase.
