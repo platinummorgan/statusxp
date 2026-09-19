@@ -309,7 +309,7 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] Repaired the Supabase migration ledger after verifying the manually applied Premium/store objects. All 102 local and remote migration versions now agree.
 - [x] Deployed the validated sync service to Railway. Deployment `2a676e3e-662f-488a-8b14-0ed3624e1a0d` succeeded and the live health endpoint is OK.
 - [x] Validation passed: 106 Deno tests, 21 sync-service tests, 185 Flutter tests with 9 existing skips, and clean Flutter analysis.
-- [ ] Confirm AI Help from the owner's normal phone account after the live backend repair.
+- [x] Owner confirmed AI Help works from the normal phone account after the live backend repair.
 - [ ] Decide whether to remove or restore the two unused live-only Steam OpenID functions.
 - [ ] Build the Android 1.1.19+102 bundle only when the owner is ready. Do not use the existing build-100 AAB as the candidate.
 - [ ] Build/archive iOS on the Mac and complete Apple purchase/restore validation.

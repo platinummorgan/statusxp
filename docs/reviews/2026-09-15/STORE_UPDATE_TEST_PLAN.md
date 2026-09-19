@@ -21,6 +21,7 @@ The existing Android artifact at `build/app/outputs/bundle/release/app-release.a
 - Candidate source version set to **1.1.19+102**. No Android candidate bundle was produced, uploaded, or released.
 - Audited all live Supabase Edge Functions against repository source. All 36 tracked functions now match live exactly. Two older Steam OpenID functions remain live-only and unreferenced by current or September 2 web/app source; they were left untouched pending an explicit retire-or-restore decision.
 - Deployed the current AI guide contract and restored its quota/reservation database functions. A temporary-account live request returned JSON, produced a guide, recorded one successful request and one daily-free use, and was removed afterward.
+- Owner subsequently confirmed AI Help works from the normal phone account.
 - Reconciled all six genuinely missing database migrations: the durable leaderboard queue and five co-op lifecycle migrations. Preserved owner-scoped direct updates for production build 92 during the store transition.
 - Live co-op smoke test passed create, offer, accept, unauthorized-user rejection, reschedule, complete, private per-user feedback, and build-92 direct-update compatibility. Both temporary accounts were removed.
 - Verified all 102 repository migrations now match the remote migration ledger; prior manually applied Premium/store migrations were marked applied only after their expected live tables, RPCs, columns, and earlier rollout behavior were confirmed.
