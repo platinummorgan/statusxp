@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
-import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 
 /// Screen for browsing ALL games in the database
 /// Allows users to explore games they don't own
@@ -23,6 +24,9 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   bool _isLoading = false;
   bool _hasMore = true;
   int _offset = 0;
+  int _generation = 0;
+  Timer? _searchDebounce;
+  String? _loadError;
   final int _limit = 50;
   String? _platformFilter;
   String _searchQuery = '';
@@ -39,6 +43,8 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _generation++;
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -47,88 +53,100 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
-      if (!_isLoading && _hasMore) {
+      if (!_isLoading && _hasMore && _loadError == null) {
         _loadMore();
       }
     }
   }
 
-  Future<void> _loadGames() async {
-    if (_isLoading) return;
-
+  void _loadGames({bool debounce = false}) {
+    _searchDebounce?.cancel();
+    final generation = ++_generation;
     setState(() {
       _isLoading = true;
+      _hasMore = true;
       _offset = 0;
       _games = [];
+      _loadError = null;
     });
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
+    if (debounce) {
+      _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+        _fetchPage(generation);
+      });
+    } else {
+      _fetchPage(generation);
+    }
+  }
 
+  Future<void> _fetchPage(int generation, {bool append = false}) async {
+    // Capture the criteria and page before awaiting. Only this generation can
+    // publish data, loading state, errors, or the next offset.
+    final offset = _offset;
+    final query = _searchQuery;
+    final platform = _platformFilter;
+    final sort = _sortBy;
     try {
-      final repository = ref.read(gameRepositoryProvider);
-      final games = await repository.getAllGames(
-        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-        platformFilter: _platformFilter,
-        limit: _limit,
-        offset: _offset,
-        sortBy: _sortBy,
-      );
-
-      if (mounted) {
-        setState(() {
-          _games = games;
-          _hasMore = games.length == _limit;
-          _offset = _limit;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error loading games: $e')));
-      }
+      final games = await ref
+          .read(gameRepositoryProvider)
+          .getAllGames(
+            searchQuery: query.isEmpty ? null : query,
+            platformFilter: platform,
+            limit: _limit,
+            offset: offset,
+            sortBy: sort,
+          );
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _games = append ? [..._games, ...games] : games;
+        _hasMore = games.length == _limit;
+        _offset = offset + games.length;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _isLoading = false;
+        _loadError = 'Could not load games. Please try again.';
+      });
     }
   }
 
   Future<void> _loadMore() async {
     if (_isLoading || !_hasMore) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      final repository = ref.read(gameRepositoryProvider);
-      final games = await repository.getAllGames(
-        searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-        platformFilter: _platformFilter,
-        limit: _limit,
-        offset: _offset,
-        sortBy: _sortBy,
-      );
-
-      if (mounted) {
-        setState(() {
-          _games.addAll(games);
-          _hasMore = games.length == _limit;
-          _offset += _limit;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    await _fetchPage(_generation, append: true);
   }
 
   void _onSearch(String value) {
-    setState(() => _searchQuery = value);
-    _loadGames();
+    final query = value.trim();
+    if (query == _searchQuery) return;
+    _searchQuery = query;
+    _loadGames(debounce: query.isNotEmpty);
   }
 
   void _onPlatformFilter(String? platform) {
-    setState(() => _platformFilter = platform);
+    if (platform == _platformFilter) return;
+    _platformFilter = platform;
     _loadGames();
   }
+
+  Widget _paginationFooter() => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: _isLoading
+          ? const CircularProgressIndicator(color: CyberpunkTheme.neonCyan)
+          : TextButton(
+              onPressed: _loadMore,
+              child: Text(
+                _loadError == null ? 'Load more' : 'Retry loading games',
+              ),
+            ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -309,12 +327,17 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No games found',
+                          _loadError ?? 'No games found',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 16,
                           ),
                         ),
+                        if (_loadError != null)
+                          TextButton(
+                            onPressed: _loadGames,
+                            child: const Text('Retry'),
+                          ),
                       ],
                     ),
                   )
@@ -332,11 +355,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                     itemCount: _games.length + (_hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == _games.length) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: CyberpunkTheme.neonCyan,
-                          ),
-                        );
+                        return _paginationFooter();
                       }
 
                       final game = _games[index];
@@ -349,14 +368,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                     itemCount: _games.length + (_hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == _games.length) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: CircularProgressIndicator(
-                              color: CyberpunkTheme.neonCyan,
-                            ),
-                          ),
-                        );
+                        return _paginationFooter();
                       }
 
                       final game = _games[index];
@@ -378,10 +390,6 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
     final platformNames = game['platform_names'] as List<dynamic>? ?? [];
     final platformIds = game['platform_ids'] as List<dynamic>? ?? [];
     final platformGameIds = game['platform_game_ids'] as List<dynamic>? ?? [];
-    final coverUrl = kIsWeb
-        ? (game['proxied_cover_url'] ?? game['cover_url']) as String?
-        : game['cover_url'] as String?;
-
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -451,17 +459,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
                     child: InkWell(
                       onTap: () {
                         Navigator.pop(dialogContext);
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => GameAchievementsScreen(
-                              platformId: platformId,
-                              platformGameId: platformGameId?.toString(),
-                              gameName: name,
-                              platform: platformCode.toString(),
-                              coverUrl: coverUrl,
-                            ),
-                          ),
-                        );
+                        _openGame(context, platformId, platformGameId);
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -553,18 +551,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
           if (allPlatforms.length > 1) {
             _showPlatformSelectionDialog(context, game);
           } else {
-            // Navigate directly to achievements for single-platform games
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => GameAchievementsScreen(
-                  platformId: platformId,
-                  platformGameId: platformGameId?.toString(),
-                  gameName: name,
-                  platform: _platformFilter ?? platformCode,
-                  coverUrl: coverUrl,
-                ),
-              ),
-            );
+            _openGame(context, platformId, platformGameId);
           }
         }
       },
@@ -722,18 +709,7 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
             if (allPlatforms.length > 1) {
               _showPlatformSelectionDialog(context, game);
             } else {
-              // Navigate directly to achievements for single-platform games
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => GameAchievementsScreen(
-                    platformId: platformId,
-                    platformGameId: platformGameId?.toString(),
-                    gameName: name,
-                    platform: _platformFilter ?? platformCode,
-                    coverUrl: coverUrl,
-                  ),
-                ),
-              );
+              _openGame(context, platformId, platformGameId);
             }
           }
         },
@@ -889,6 +865,24 @@ class _GameBrowserScreenState extends ConsumerState<GameBrowserScreen> {
         ),
       ),
     );
+  }
+
+  void _openGame(
+    BuildContext context,
+    dynamic platformId,
+    dynamic platformGameId,
+  ) {
+    final parsedPlatformId = platformId is int
+        ? platformId
+        : int.tryParse(platformId?.toString() ?? '');
+    final parsedGameId = platformGameId?.toString() ?? '';
+    if (parsedPlatformId == null || parsedGameId.isEmpty) return;
+    final gameRef = GameRef(
+      platformId: parsedPlatformId,
+      platformGameId: parsedGameId,
+    );
+    if (gameRef.platform == null) return;
+    context.go(gameRef.location);
   }
 
   Color _getPlatformColor(String platform) {

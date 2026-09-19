@@ -1,3 +1,4 @@
+import { withAdminAccess } from '../_shared/admin-runtime.ts';
 // Backfill game covers by downloading external URLs and uploading to Supabase Storage
 // This fixes CORS issues on web for PlayStation and Xbox game covers
 
@@ -65,7 +66,7 @@ async function downloadAndUploadCover(
   }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withAdminAccess('POST', async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
         const { error: updateError } = await supabase
           .from('game_titles')
           .update({ 
-            proxied_cover_url: publicUrl,
+            proxied_cover_url: newUrl,
             updated_at: new Date().toISOString()
           })
           .eq('platform_id', game.platform_id)
@@ -147,8 +148,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Operation failed' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
-});
+}));

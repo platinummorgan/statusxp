@@ -21,14 +21,16 @@ class AICreditStatus {
       source: json['source'] ?? 'none',
       remaining: json['remaining'] ?? 0,
       packCredits: json['pack_credits'] ?? 0,
-      dailyFree: json['daily_free'] ?? 0,
+      dailyFree:
+          ((json['daily_free'] ?? json['daily_free_remaining'] ?? 0) as num)
+              .toInt(),
     );
   }
 
   /// Get user-friendly message about credit status
   String get statusMessage {
     if (source == 'premium') {
-      return 'Premium: Unlimited AI';
+      return 'Premium: AI guides included';
     } else if (source == 'pack') {
       return '$packCredits pack credits';
     } else if (source == 'daily_free') {
@@ -52,6 +54,18 @@ class AICreditStatus {
 
 class AICreditService {
   final SupabaseClient _supabase = Supabase.instance.client;
+
+  /// Read banked credits directly: the allowance RPC omits them for Premium.
+  Future<int> getPackBalance() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw StateError('Sign in to view AI credits.');
+    final row = await _supabase
+        .from('user_ai_credits')
+        .select('pack_credits')
+        .eq('user_id', userId)
+        .maybeSingle();
+    return (row?['pack_credits'] as num?)?.toInt() ?? 0;
+  }
 
   /// Check if user can use AI and get credit status
   Future<AICreditStatus> checkCredits() async {
@@ -84,58 +98,10 @@ class AICreditService {
     }
   }
 
-  /// Consume one AI credit (call this when generating AI guide)
-  Future<AICreditStatus> consumeCredit() async {
-    try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final response = await _supabase.rpc(
-        'consume_ai_credit',
-        params: {'p_user_id': userId},
-      );
-
-      return AICreditStatus.fromJson(response as Map<String, dynamic>);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Add pack credits after successful purchase
-  Future<bool> addPackCredits({
-    required String packType, // 'small', 'medium', 'large'
-    required int credits,
-    required double price,
-    required String platform,
-  }) async {
-    try {
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) {
-        throw Exception('User not authenticated');
-      }
-
-      final response = await _supabase.rpc(
-        'add_ai_pack_credits',
-        params: {
-          'p_user_id': userId,
-          'p_pack_type': packType,
-          'p_credits': credits,
-          'p_price': price,
-          'p_platform': platform,
-        },
-      );
-
-      final result = response as Map<String, dynamic>;
-      return result['success'] ?? false;
-    } catch (e) {
-      return false;
-    }
-  }
-
   /// Get available AI pack options
-  List<AIPack> getAvailablePacks() {
+  List<AIPack> getAvailablePacks() => availablePacks;
+
+  static List<AIPack> get availablePacks {
     return [
       AIPack(
         type: 'small',

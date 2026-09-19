@@ -1,3 +1,4 @@
+import 'package:statusxp/services/premium_access.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/utils/statusxp_logger.dart';
 
@@ -90,14 +91,11 @@ class SyncLimitService {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return false;
 
-      final response = await _supabase
-          .from('user_premium_status')
-          .select('is_premium')
-          .eq('user_id', userId)
-          .maybeSingle();
+      final response = await readPremiumEntitlement(_supabase);
 
       if (response == null) return false;
-      return response['is_premium'] ?? false;
+      return _supabase.auth.currentUser?.id == userId &&
+          hasActivePremium(response);
     } catch (e) {
       return false;
     }

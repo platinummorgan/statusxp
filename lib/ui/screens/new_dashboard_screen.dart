@@ -2,6 +2,9 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:statusxp/domain/recommendation_goal.dart';
+import 'package:statusxp/ui/widgets/recommendation_goal_controls.dart';
+import 'package:statusxp/state/recommendation_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +14,7 @@ import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/engagement_hub_data.dart';
 import 'package:statusxp/domain/next_best_action.dart';
 import 'package:statusxp/domain/unified_game.dart';
+import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/services/local_reminder_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
@@ -18,7 +22,6 @@ import 'package:statusxp/services/premium_trigger_service.dart';
 import 'package:statusxp/state/engagement_providers.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
-import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/ui/widgets/activity_feed_widget.dart';
 import 'package:statusxp/ui/widgets/dashboard_background_controls.dart';
@@ -244,6 +247,24 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('dashboard_next_action_dismissed_day', key);
     if (mounted) setState(() => _dismissedNextActionDay = key);
+  }
+
+  Future<void> _restoreNextAction() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!await prefs.remove('dashboard_next_action_dismissed_day')) {
+        throw StateError('Save failed');
+      }
+      if (mounted) setState(() => _dismissedNextActionDay = null);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not restore recommendations. Please retry.'),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _dismissWeeklyRecapForWeek() async {
@@ -482,7 +503,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       orElse: () => 0,
     );
     final challengesLoading = engagementSnapshotAsync.isLoading;
-    final engagementSnapshot = engagementSnapshotAsync.valueOrNull;
+    final engagementSnapshot = engagementSnapshotAsync.asData?.value;
     if (engagementSnapshot != null) {
       _refreshStreakReminder(engagementSnapshot);
     }
@@ -759,14 +780,35 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                       const SizedBox(height: 20),
 
                       if (_dashboardPromptsLoaded &&
+                          _dismissedNextActionDay ==
+                              _localDayKey(DateTime.now()))
+                        TextButton.icon(
+                          onPressed: _restoreNextAction,
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: const Text('Show recommendations'),
+                        ),
+                      if (_dashboardPromptsLoaded &&
                           _dismissedNextActionDay !=
                               _localDayKey(DateTime.now())) ...[
                         gamesAsync.maybeWhen(
                           data: (games) => FutureBuilder<bool>(
                             future: _premiumStatusFuture,
                             builder: (context, premiumSnapshot) {
+                              final userId = ref.watch(currentUserIdProvider);
+                              final skippedProvider =
+                                  skippedRecommendationGamesProvider(
+                                    userId ?? 'guest',
+                                  );
+                              final skipped = ref.watch(skippedProvider);
+                              final goals = ref.watch(
+                                recommendationGoalsProvider(userId ?? 'guest'),
+                              );
                               final action = chooseNextBestAction(
                                 games: games,
+                                skippedGameKeys: skipped,
+                                goals:
+                                    goals.asData?.value ??
+                                    const RecommendationGoals(),
                                 isPremium: premiumSnapshot.data ?? false,
                                 availableRewardXp: availableRewardXp,
                                 currentStreak: currentStreak,
@@ -775,6 +817,31 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                               _trackNextActionImpression(action);
                               return NextBestActionCard(
                                 action: action,
+                                goalControls: userId == null
+                                    ? null
+                                    : RecommendationGoalControls(
+                                        userId: userId,
+                                        games: games,
+                                        selectedGame: action.game,
+                                      ),
+                                onAnother: userId == null || action.game == null
+                                    ? null
+                                    : () {
+                                        ref
+                                            .read(skippedProvider.notifier)
+                                            .state = {
+                                          ...skipped,
+                                          recommendationGameKey(action.game!),
+                                        };
+                                      },
+                                onReset: skipped.isEmpty
+                                    ? null
+                                    : () {
+                                        ref
+                                                .read(skippedProvider.notifier)
+                                                .state =
+                                            <String>{};
+                                      },
                                 onDismiss: _dismissNextActionForToday,
                                 onTap: () async {
                                   await _dismissNextActionForToday();
@@ -2270,17 +2337,8 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   Future<void> _handleGameTap(BuildContext context, UnifiedGame game) async {
     if (game.platforms.length == 1) {
       final platform = game.platforms.first;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => GameAchievementsScreen(
-            platformId: platform.platformId,
-            platformGameId: platform.platformGameId ?? platform.gameId,
-            gameName: game.title,
-            platform: platform.platform,
-            coverUrl: game.coverUrl,
-          ),
-        ),
-      );
+      final opened = await _openCanonicalGame(context, platform);
+      if (!opened) return;
       if (!mounted || game.overallCompletion < 80) return;
       final isPremium = await _subscriptionService.isPremiumActive();
       if (!mounted || isPremium) return;
@@ -2299,7 +2357,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   void _showPlatformSelectionDialog(BuildContext context, UnifiedGame game) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return Dialog(
           backgroundColor: const Color(0xFF0A0E27),
           shape: RoundedRectangleBorder(
@@ -2357,19 +2415,8 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                     padding: const EdgeInsets.only(bottom: 12),
                     child: InkWell(
                       onTap: () {
-                        Navigator.pop(context);
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => GameAchievementsScreen(
-                              platformId: platform.platformId,
-                              platformGameId:
-                                  platform.platformGameId ?? platform.gameId,
-                              gameName: game.title,
-                              platform: platform.platform,
-                              coverUrl: game.coverUrl,
-                            ),
-                          ),
-                        );
+                        Navigator.pop(dialogContext);
+                        _openCanonicalGame(context, platform);
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -2419,7 +2466,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                 }),
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(dialogContext),
                   child: const Text(
                     'Cancel',
                     style: TextStyle(
@@ -2434,6 +2481,38 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         );
       },
     );
+  }
+
+  Future<bool> _openCanonicalGame(
+    BuildContext context,
+    PlatformGameData platform,
+  ) async {
+    final platformId = platform.platformId;
+    final platformGameId = platform.platformGameId ?? platform.gameId;
+    if (platformId == null || platformGameId.isEmpty) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Game details are not available yet.')),
+        );
+      }
+      return false;
+    }
+
+    final gameRef = GameRef(
+      platformId: platformId,
+      platformGameId: platformGameId,
+    );
+    if (gameRef.platform == null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This platform is not supported yet.')),
+        );
+      }
+      return false;
+    }
+
+    await context.push(gameRef.location);
+    return true;
   }
 
   Color _getPlatformColor(String platform) {

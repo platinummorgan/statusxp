@@ -42,7 +42,7 @@ PremiumOffer premiumOfferFor(
       source: 'ai_limit',
       title: 'Keep getting achievement help',
       message:
-          'Premium includes unlimited AI achievement guides, so you can keep going without buying individual credit packs.',
+          'Premium includes AI achievement guides without individual credit packs. Daily usage limits apply.',
       upgradeLabel: 'Get Unlimited Guides',
     ),
     PremiumTrigger.weeklyRecap => const PremiumOffer(

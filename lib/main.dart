@@ -345,6 +345,11 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
       }
 
       final uri = Uri.base;
+      // Twitch uses its own authorization-code exchange. Passing that code to
+      // Supabase Auth makes GoTrue look for a PKCE verifier that does not exist
+      // and strips the Twitch code before the linking screen can process it.
+      if (uri.path == '/twitch-callback') return;
+
       final hasAuthStuff =
           uri.fragment.isNotEmpty || uri.queryParameters.containsKey('code');
 

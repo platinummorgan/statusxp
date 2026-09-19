@@ -154,11 +154,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           'steam_api_key': null,
           'steam_sync_status': 'never_synced',
         };
-      } else if (platform == 'Twitch') {
-        updates = {'twitch_user_id': null};
       }
 
-      await supabase.from('profiles').update(updates).eq('id', userId);
+      if (platform == 'Twitch') {
+        await ref.read(twitchServiceProvider).disconnect();
+      } else {
+        await supabase.from('profiles').update(updates).eq('id', userId);
+      }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -206,7 +208,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (status.isSubscribed) ...[
+              if (!status.isLinked) ...[
+                const Text(
+                  'Reconnect Twitch to verify your account and check your subscription.',
+                ),
+              ] else if (status.isSubscribed) ...[
                 const Row(
                   children: [
                     Icon(Icons.check_circle, color: Colors.green),
@@ -256,7 +262,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Close'),
             ),
-            if (!status.isSubscribed)
+            if (!status.isLinked)
+              FilledButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await Navigator.of(this.context).push<bool>(
+                    MaterialPageRoute(
+                      builder: (_) => const TwitchConnectScreen(),
+                    ),
+                  );
+                  if (mounted) await _loadProfile();
+                },
+                child: const Text('Reconnect Twitch'),
+              ),
+            if (status.isLinked && !status.isSubscribed)
               FilledButton(
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -1128,7 +1147,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       subtitle: Text(
                         isPremium
-                            ? 'Unlimited AI • Faster syncs'
+                            ? 'AI guides • Faster syncs'
                             : 'Unlock unlimited features',
                       ),
                       trailing: isPremium

@@ -1,3 +1,4 @@
+import { stripeCustomer } from '../_shared/stripe-customer.ts'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@14.10.0?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
@@ -5,6 +6,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
+  timeout: 20000,
+  maxNetworkRetries: 1,
 })
 
 const corsHeaders = {
@@ -16,6 +19,8 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
+
+  if (req.method !== 'POST') return new Response('Use POST', {status:405,headers:corsHeaders})
 
   try {
     const authHeader = req.headers.get('Authorization')
@@ -46,7 +51,9 @@ serve(async (req) => {
     console.log(`Creating checkout session for user: ${user.id}`)
 
     // Create Stripe Checkout Session
+    const customer = await stripeCustomer(stripe, user.id)
     const session = await stripe.checkout.sessions.create({
+      customer,
       payment_method_types: ['card'],
       line_items: [
         {
@@ -69,7 +76,6 @@ serve(async (req) => {
       subscription_data: {
         metadata: {
           user_id: user.id,
-          user_email: user.email,
         },
       },
       success_url: 'https://statusxp.com/premium/success',
@@ -83,9 +89,9 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('❌ Error creating checkout session:', error)
+    console.error('Checkout creation failed')
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Checkout unavailable. Please try again.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

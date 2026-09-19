@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/trophy_help_request.dart';
-import 'package:statusxp/services/trophy_help_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 
@@ -28,7 +27,7 @@ class _OfferHelpDialogState extends ConsumerState<OfferHelpDialog> {
     setState(() => _isSubmitting = true);
 
     try {
-      final service = TrophyHelpService(ref.read(supabaseClientProvider));
+      final service = ref.read(trophyHelpServiceProvider);
 
       await service.offerHelp(
         requestId: widget.request.id,

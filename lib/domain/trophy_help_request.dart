@@ -11,9 +11,20 @@ class TrophyHelpRequest {
   final String? description;
   final String? availability;
   final String? platformUsername;
+  final DateTime? scheduledAt;
+  final int? sessionUtcOffsetMinutes;
+  final int helpersNeeded;
   final String status; // 'open', 'matched', 'completed', 'cancelled'
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? lastConfirmedAt;
+  final int scheduleRevision;
+  final DateTime? scheduleChangedAt;
+
+  bool needsConfirmation(DateTime now) =>
+      status == 'open' &&
+      (now.difference(lastConfirmedAt ?? createdAt).inDays >= 30 ||
+          (scheduledAt != null && scheduledAt!.isBefore(now)));
 
   TrophyHelpRequest({
     required this.id,
@@ -27,9 +38,15 @@ class TrophyHelpRequest {
     this.description,
     this.availability,
     this.platformUsername,
+    this.scheduledAt,
+    this.sessionUtcOffsetMinutes,
+    this.helpersNeeded = 1,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    this.lastConfirmedAt,
+    this.scheduleRevision = 0,
+    this.scheduleChangedAt,
   });
 
   factory TrophyHelpRequest.fromJson(Map<String, dynamic> json) {
@@ -49,9 +66,19 @@ class TrophyHelpRequest {
       description: json['description'] as String?,
       availability: json['availability'] as String?,
       platformUsername: json['platform_username'] as String?,
+      scheduledAt: DateTime.tryParse(json['scheduled_at'] as String? ?? ''),
+      sessionUtcOffsetMinutes: json['session_utc_offset_minutes'] as int?,
+      helpersNeeded: json['helpers_needed'] as int? ?? 1,
       status: json['status'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      scheduleRevision: json['schedule_revision'] as int? ?? 0,
+      scheduleChangedAt: DateTime.tryParse(
+        json['schedule_changed_at'] as String? ?? '',
+      ),
+      lastConfirmedAt: DateTime.tryParse(
+        json['last_confirmed_at'] as String? ?? '',
+      ),
     );
   }
 
@@ -68,9 +95,15 @@ class TrophyHelpRequest {
       'description': description,
       'availability': availability,
       'platform_username': platformUsername,
+      'scheduled_at': scheduledAt?.toUtc().toIso8601String(),
+      'session_utc_offset_minutes': sessionUtcOffsetMinutes,
+      'helpers_needed': helpersNeeded,
       'status': status,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'schedule_revision': scheduleRevision,
+      'schedule_changed_at': scheduleChangedAt?.toUtc().toIso8601String(),
+      'last_confirmed_at': lastConfirmedAt?.toUtc().toIso8601String(),
     };
   }
 
@@ -86,9 +119,15 @@ class TrophyHelpRequest {
     String? description,
     String? availability,
     String? platformUsername,
+    DateTime? scheduledAt,
+    int? sessionUtcOffsetMinutes,
+    int? helpersNeeded,
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? lastConfirmedAt,
+    int? scheduleRevision,
+    DateTime? scheduleChangedAt,
   }) {
     return TrophyHelpRequest(
       id: id ?? this.id,
@@ -102,9 +141,16 @@ class TrophyHelpRequest {
       description: description ?? this.description,
       availability: availability ?? this.availability,
       platformUsername: platformUsername ?? this.platformUsername,
+      scheduledAt: scheduledAt ?? this.scheduledAt,
+      sessionUtcOffsetMinutes:
+          sessionUtcOffsetMinutes ?? this.sessionUtcOffsetMinutes,
+      helpersNeeded: helpersNeeded ?? this.helpersNeeded,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      lastConfirmedAt: lastConfirmedAt ?? this.lastConfirmedAt,
+      scheduleRevision: scheduleRevision ?? this.scheduleRevision,
+      scheduleChangedAt: scheduleChangedAt ?? this.scheduleChangedAt,
     );
   }
 }

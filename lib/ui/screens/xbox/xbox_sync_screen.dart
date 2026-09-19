@@ -93,8 +93,9 @@ class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
       _syncStartedAt = DateTime.now();
       _lastSyncAtBeforeSync = ref
           .read(xboxSyncStatusProvider)
-          .valueOrNull
-          ?.lastSyncAt;
+          .asData
+          ?.value
+          .lastSyncAt;
     });
 
     try {

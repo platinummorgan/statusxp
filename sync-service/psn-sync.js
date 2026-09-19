@@ -1,3 +1,4 @@
+import { refreshLeaderboardsAfterSync, LeaderboardRefreshPendingError } from './leaderboard-refresh.js';
 // psn-sync.js (rewritten - drop-in replacement)
 // Fixes:
 // - NO cross-platform "duplicate prevention" that corrupts platform_id
@@ -401,24 +402,7 @@ async function updateSyncStatus(userId, updates, retries = 3) {
 }
 
 async function refreshLeaderboardCachesAfterPsnSync(userId) {
-  // Keep cache-backed dashboard and leaderboard numbers aligned with the rows
-  // written during this sync. Activity feed snapshots read live trophy counts,
-  // so without this the feed can show a new platinum before the app totals do.
-  console.log('Running refresh_statusxp_leaderboard_for_user...');
-  try {
-    await supabase.rpc('refresh_statusxp_leaderboard_for_user', { p_user_id: userId });
-    console.log('✅ refresh_statusxp_leaderboard_for_user complete');
-  } catch (e) {
-    console.warn('⚠️ refresh_statusxp_leaderboard_for_user failed:', e.message);
-  }
-
-  console.log('Running refresh_psn_leaderboard_cache...');
-  try {
-    await supabase.rpc('refresh_psn_leaderboard_cache');
-    console.log('✅ refresh_psn_leaderboard_cache complete');
-  } catch (e) {
-    console.warn('⚠️ refresh_psn_leaderboard_cache failed:', e.message);
-  }
+  await refreshLeaderboardsAfterSync(supabase, userId, 'psn');
 }
 
 async function isCancelled(userId) {
@@ -1452,9 +1436,12 @@ export async function syncPSNAchievements(
     console.error('🚨 PSN sync failed:', error);
     const normalizedError = normalizePsnSyncError(error);
 
-    if (processedGames > 0) {
-      console.log('📊 Sync failed after writing data; refreshing leaderboard caches from partial progress...');
-      await refreshLeaderboardCachesAfterPsnSync(userId);
+    if (processedGames > 0 && !(error instanceof LeaderboardRefreshPendingError)) {
+      try {
+        await refreshLeaderboardCachesAfterPsnSync(userId);
+      } catch {
+        console.warn('Partial PSN sync leaderboard refresh incomplete; check retry queue');
+      }
     }
 
     // If this sync partially wrote trophy data before failing, still try to emit stories.

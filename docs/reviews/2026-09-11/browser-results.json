@@ -1,0 +1,20 @@
+[
+  {
+    "name": "desktop-home",
+    "errors": [],
+    "loadingVisible": false,
+    "bodyText": ""
+  },
+  {
+    "name": "mobile-home",
+    "errors": [],
+    "loadingVisible": false,
+    "bodyText": ""
+  },
+  {
+    "name": "desktop-signin",
+    "errors": [],
+    "loadingVisible": false,
+    "bodyText": ""
+  }
+]

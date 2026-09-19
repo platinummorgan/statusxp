@@ -4,6 +4,16 @@
 import 'dart:html' as html;
 
 class WebUtils {
+  static String? readSessionValue(String key) =>
+      html.window.sessionStorage[key];
+  static void writeSessionValue(String key, String value) {
+    html.window.sessionStorage[key] = value;
+  }
+
+  static void removeSessionValue(String key) {
+    html.window.sessionStorage.remove(key);
+  }
+
   static String getCurrentUrl() {
     return html.window.location.href;
   }

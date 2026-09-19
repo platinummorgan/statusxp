@@ -5,8 +5,10 @@ import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/ui/screens/auth/auth_gate.dart';
 import 'package:statusxp/ui/screens/auth/reset_password_screen.dart';
 import 'package:statusxp/ui/screens/new_dashboard_screen.dart';
-import 'package:statusxp/ui/screens/games_list_screen.dart';
 import 'package:statusxp/ui/screens/unified_games_list_screen.dart';
+import 'package:statusxp/ui/screens/game_overview_screen.dart';
+import 'package:statusxp/ui/screens/achievement_overview_screen.dart';
+import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 import 'package:statusxp/ui/screens/game_browser_screen.dart';
 import 'package:statusxp/ui/screens/leaderboard_screen.dart';
@@ -34,6 +36,7 @@ import 'package:statusxp/ui/screens/first_sync_onboarding_screen.dart';
 import 'package:statusxp/ui/screens/first_sync_results_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_sync_screen.dart';
+import 'package:statusxp/ui/screens/twitch/twitch_connect_screen.dart';
 import 'package:statusxp/ui/screens/weekly_recap_screen.dart';
 import 'package:statusxp/ui/screens/invite_friends_screen.dart';
 import 'package:statusxp/services/premium_activation_service.dart';
@@ -82,24 +85,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PremiumSuccessScreen(),
     ),
 
-    // Twitch OAuth Callback - Redirect to settings with OAuth params
+    // Twitch OAuth uses its own code exchange, separate from Supabase Auth.
     GoRoute(
       path: '/twitch-callback',
       name: 'twitch-callback',
-      redirect: (context, state) {
-        // Preserve OAuth code and state parameters when redirecting to settings
-        final code = state.uri.queryParameters['code'];
-        final error = state.uri.queryParameters['error'];
-        final errorDescription = state.uri.queryParameters['error_description'];
-
-        if (error != null) {
-          return '/settings?error=$error${errorDescription != null ? '&error_description=$errorDescription' : ''}';
-        }
-        if (code != null) {
-          return '/settings?code=$code&state=${state.uri.queryParameters['state'] ?? ''}';
-        }
-        return '/settings';
-      },
+      builder: (context, state) => const TwitchConnectScreen(),
     ),
 
     // Apple/Google OAuth Callback - Redirect to dashboard after authentication
@@ -165,18 +155,18 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const SteamSyncScreen(),
         ),
 
-        // Games List - View all tracked games
+        // Canonical cross-platform personal library
         GoRoute(
           path: '/games',
           name: 'games',
-          builder: (context, state) => const GamesListScreen(),
+          builder: (context, state) => const UnifiedGamesListScreen(),
         ),
 
-        // Unified Games List - Cross-platform game view with filters
+        // Temporary compatibility route for existing links.
         GoRoute(
           path: '/unified-games',
           name: 'unified-games',
-          builder: (context, state) => const UnifiedGamesListScreen(),
+          redirect: (context, state) => '/games',
         ),
 
         // Game Browser - Browse ALL games in database (catalog)
@@ -184,6 +174,38 @@ final GoRouter appRouter = GoRouter(
           path: '/games/browse',
           name: 'game-browser',
           builder: (context, state) => const GameBrowserScreen(),
+        ),
+
+        // Canonical platform-scoped game overview.
+        GoRoute(
+          path: '/games/:platformCode/:platformGameId',
+          name: 'canonical-game-overview',
+          builder: (context, state) {
+            final gameRef = GameRef.fromRoute(
+              platformCode: state.pathParameters['platformCode']!,
+              encodedGameId: state.pathParameters['platformGameId']!,
+            );
+            return gameRef == null
+                ? const GameRouteNotFoundScreen()
+                : GameOverviewScreen(gameRef: gameRef);
+          },
+        ),
+
+        GoRoute(
+          path:
+              '/games/:platformCode/:platformGameId/achievements/:platformAchievementId',
+          name: 'canonical-achievement-overview',
+          builder: (context, state) {
+            final achievementRef = AchievementRef.fromRoute(
+              platformCode: state.pathParameters['platformCode']!,
+              encodedGameId: state.pathParameters['platformGameId']!,
+              encodedAchievementId:
+                  state.pathParameters['platformAchievementId']!,
+            );
+            return achievementRef == null
+                ? const GameRouteNotFoundScreen()
+                : AchievementOverviewScreen(achievementRef: achievementRef);
+          },
         ),
 
         // Game detail shortcut - redirects to achievements

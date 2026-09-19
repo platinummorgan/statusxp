@@ -1,3 +1,4 @@
+import 'package:statusxp/data/repositories/flex_tile_loader.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/flex_room_data.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +11,8 @@ class FlexRoomRepository {
   final SupabaseClient _client;
 
   FlexRoomRepository(this._client);
+
+  late final _tileLoader = FlexTileLoader(_client);
 
   static const List<int> _psnPlatformIds = [1, 2, 5, 9];
   static const List<int> _xboxPlatformIds = [10, 11, 12];
@@ -179,7 +182,10 @@ class FlexRoomRepository {
   }
 
   /// Get complete Flex Room data for a user
-  Future<FlexRoomData?> getFlexRoomData(String userId) async {
+  Future<FlexRoomData?> getFlexRoomData(
+    String userId, {
+    bool includeRecent = true,
+  }) async {
     try {
       // First, try to fetch existing flex room configuration
       final response = await _client
@@ -198,7 +204,10 @@ class FlexRoomRepository {
           _getRarestAchievement(userId),
           _getMostTimeSunkGame(userId),
           _getSweattiestPlatinum(userId),
-          _getRecentNotableAchievements(userId),
+          includeRecent
+              ? _getRecentNotableAchievements(userId)
+              : Future.value(<RecentFlex>[]),
+          autofillSuperlatives(userId),
         ]);
 
         final rarestFlex = results[0] as FlexTile?;
@@ -206,7 +215,7 @@ class FlexRoomRepository {
         final sweattiestPlatinum = results[2] as FlexTile?;
         final recentFlexes = (results[3] as List?)?.cast<RecentFlex>() ?? [];
 
-        final superlatives = await autofillSuperlatives(userId);
+        final superlatives = results[4] as Map<String, FlexTile>;
         final flexOfAllTime = _chooseFlexOfAllTime(
           rarestFlex: rarestFlex,
           mostTimeSunk: mostTimeSunk,
@@ -226,7 +235,7 @@ class FlexRoomRepository {
         );
 
         final currentUserId = _client.auth.currentUser?.id;
-        if (currentUserId == userId) {
+        if (currentUserId == userId && flexOfAllTime != null) {
           // Persist auto-populated defaults for owner only (respects RLS).
           updateFlexRoomData(autoData).catchError((e) {
             statusxpLog('⚠️ Failed to persist auto-created flex room data: $e');
@@ -315,7 +324,11 @@ class FlexRoomRepository {
       }
 
       // Add recent flexes query
-      featuredQueries.add(_getRecentNotableAchievements(userId));
+      featuredQueries.add(
+        includeRecent
+            ? _getRecentNotableAchievements(userId)
+            : Future.value(<RecentFlex>[]),
+      );
 
       // Execute all queries in parallel
       final results = await Future.wait(featuredQueries);
@@ -341,8 +354,8 @@ class FlexRoomRepository {
         }
       }
 
-      // Auto-fill superlatives if empty or has fewer than 3
-      if (superlatives.length < 3) {
+      // Fill missing superlative categories while preserving saved choices
+      if (superlativesJson.length < 12) {
         statusxpLog('🎯 Superlatives mostly empty, auto-filling...');
         final autoFilled = await autofillSuperlatives(userId);
         if (autoFilled.isNotEmpty) {
@@ -363,10 +376,15 @@ class FlexRoomRepository {
           );
 
           // Save asynchronously (don't wait)
-          updateFlexRoomData(dataToSave).catchError((e) {
-            statusxpLog('⚠️ Failed to save auto-filled superlatives: $e');
-            return false;
-          });
+          if (_client.auth.currentUser?.id == userId) {
+            updateFlexRoomData(
+              dataToSave,
+              existingConfiguration: data,
+            ).catchError((e) {
+              statusxpLog('⚠️ Failed to save auto-filled superlatives: $e');
+              return false;
+            });
+          }
         }
       }
 
@@ -392,7 +410,10 @@ class FlexRoomRepository {
   }
 
   /// Update or create flex room data
-  Future<bool> updateFlexRoomData(FlexRoomData data) async {
+  Future<bool> updateFlexRoomData(
+    FlexRoomData data, {
+    Map<String, dynamic>? existingConfiguration,
+  }) async {
     try {
       // Convert superlatives to JSONB format with composite keys
       final superlativesJson = <String, Map<String, dynamic>>{};
@@ -438,6 +459,32 @@ class FlexRoomRepository {
         'superlatives': superlativesJson,
       };
 
+      // Automatic completion must never replace a saved selection, even if
+      // its tile could not be hydrated during this load.
+      if (existingConfiguration != null) {
+        for (final prefix in [
+          'flex_of_all_time',
+          'rarest_flex',
+          'most_time_sunk',
+          'sweatiest_platinum',
+        ]) {
+          for (final suffix in [
+            'platform_id',
+            'platform_game_id',
+            'platform_achievement_id',
+          ]) {
+            final key = '${prefix}_$suffix';
+            if (existingConfiguration[key] != null) {
+              payload[key] = existingConfiguration[key];
+            }
+          }
+        }
+        payload['superlatives'] = {
+          ...superlativesJson,
+          ...?existingConfiguration['superlatives'] as Map<String, dynamic>?,
+        };
+      }
+
       statusxpLog('💾 Saving flex room with composite keys:');
       statusxpLog('  - userId: ${data.userId}');
       statusxpLog(
@@ -482,20 +529,13 @@ class FlexRoomRepository {
     String userId,
   ) async {
     try {
-      final response = await _client
-          .from('user_achievements')
-          .select(
-            'user_id, platform_id, platform_game_id, platform_achievement_id, earned_at',
-          )
-          .eq('platform_id', platformId)
-          .eq('platform_game_id', platformGameId)
-          .eq('platform_achievement_id', platformAchievementId)
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (response == null) return null;
-
-      return await _buildFlexTileFromUserAchievement(response);
+      final row = await _tileLoader.load((
+        user: userId,
+        platform: platformId,
+        game: platformGameId,
+        achievement: platformAchievementId,
+      ));
+      return row == null ? null : await _buildFlexTile(row);
     } catch (e) {
       return null;
     }
@@ -609,7 +649,13 @@ class FlexRoomRepository {
   }
 
   /// Get recent notable achievements (platinums, ultra-rares, 100% completions)
-  Future<List<RecentFlex>> _getRecentNotableAchievements(String userId) async {
+  Future<List<RecentFlex>> getRecentFlexes(String userId) =>
+      _getRecentNotableAchievements(userId, throwOnError: true);
+
+  Future<List<RecentFlex>> _getRecentNotableAchievements(
+    String userId, {
+    bool throwOnError = false,
+  }) async {
     try {
       final response = await _client.rpc(
         'get_recent_notable_achievements_v2',
@@ -662,6 +708,7 @@ class FlexRoomRepository {
 
       return recentFlexes;
     } catch (e) {
+      if (throwOnError) rethrow;
       return [];
     }
   }
@@ -722,8 +769,17 @@ class FlexRoomRepository {
 
       final suggestions = <FlexTile>[];
 
-      for (final item in response as List) {
-        final tile = await _buildFlexTileFromUserAchievement(item);
+      final tiles = await Future.wait(
+        (response as List).map(
+          (item) => _getAchievementTileV2(
+            item['platform_id'],
+            item['platform_game_id'],
+            item['platform_achievement_id'],
+            userId,
+          ),
+        ),
+      );
+      for (final tile in tiles) {
         if (tile != null) {
           final rarity = tile.rarityPercent;
           if (rarity != null) {
@@ -777,31 +833,37 @@ class FlexRoomRepository {
         'hidden_gem',
       ];
 
-      final futures = categories.map((category) async {
-        try {
-          final response = await _client.rpc(
-            'get_superlative_suggestions_v3',
-            params: {'p_user_id': userId, 'p_category': category},
-          );
-
-          if (response != null && response is List && response.isNotEmpty) {
-            final result = response.first;
-            final tile = await _getAchievementTileV2(
-              result['platform_id'],
-              result['platform_game_id'],
-              result['platform_achievement_id'],
-              userId,
+      final suggestions = await Future.wait(
+        categories.map((category) async {
+          try {
+            final response = await _client.rpc(
+              'get_superlative_suggestions_v3',
+              params: {'p_user_id': userId, 'p_category': category},
             );
-            return MapEntry(category, tile);
+            return response is List && response.isNotEmpty
+                ? MapEntry(
+                    category,
+                    Map<String, dynamic>.from(response.first as Map),
+                  )
+                : null;
+          } catch (_) {
+            return null;
           }
-          return null;
-        } catch (e) {
-          statusxpLog('⚠️ Failed to get suggestion for $category: $e');
-          return null;
-        }
-      });
-
-      final results = await Future.wait(futures);
+        }),
+      );
+      final results = await Future.wait(
+        suggestions.map((suggestion) async {
+          if (suggestion == null) return null;
+          final row = suggestion.value;
+          final tile = await _getAchievementTileV2(
+            row['platform_id'],
+            row['platform_game_id'],
+            row['platform_achievement_id'],
+            userId,
+          );
+          return MapEntry(suggestion.key, tile);
+        }),
+      );
 
       for (final entry in results) {
         if (entry != null && entry.value != null) {
@@ -859,8 +921,17 @@ class FlexRoomRepository {
 
       final achievements = <FlexTile>[];
 
-      for (final item in response as List) {
-        final tile = await _buildFlexTileFromUserAchievement(item);
+      final tiles = await Future.wait(
+        (response as List).map(
+          (item) => _getAchievementTileV2(
+            item['platform_id'],
+            item['platform_game_id'],
+            item['platform_achievement_id'],
+            userId,
+          ),
+        ),
+      );
+      for (final tile in tiles) {
         if (tile != null) {
           achievements.add(tile);
         }
@@ -877,6 +948,7 @@ class FlexRoomRepository {
     String userId,
     String platform, {
     String? searchQuery,
+    int? page,
   }) async {
     try {
       // Map platform name to platform_id(s)
@@ -902,19 +974,30 @@ class FlexRoomRepository {
 
       // Query each platform variant (e.g., Xbox 360/One/Series) and merge.
       final responses = await Future.wait(
-        targetPlatformIds.map(
-          (platformId) => _client.rpc(
+        targetPlatformIds.map((platformId) {
+          final query = _client.rpc(
             'get_user_games_for_platform',
             params: {
               'p_user_id': userId,
               'p_platform_id': platformId,
               'p_search_query': searchQuery,
             },
-          ),
-        ),
+          );
+          return page == null
+              ? query
+              : query
+                    .order('game_name', ascending: true)
+                    .order('platform_game_id', ascending: true)
+                    .range(
+                      page.clamp(0, 100000) * 30,
+                      page.clamp(0, 100000) * 30 + 29,
+                    );
+        }),
       );
 
       final games = <Map<String, dynamic>>[];
+      final hasMore =
+          page != null && responses.any((rows) => (rows as List).length == 30);
       final seen = <String>{};
 
       for (final response in responses) {
@@ -930,6 +1013,7 @@ class FlexRoomRepository {
             'game_name': row['game_name'],
             'game_cover_url': row['cover_url'],
             'achievement_count': row['achievement_count'],
+            'page_has_more': hasMore,
           });
         }
       }
@@ -943,7 +1027,7 @@ class FlexRoomRepository {
       return games;
     } catch (e) {
       statusxpLog('❌ Error in getGamesForPlatform: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -955,6 +1039,7 @@ class FlexRoomRepository {
     String? searchQuery,
     int? platformId,
     String? platformGameId,
+    int? page,
   }) async {
     try {
       // Map platform name to platform_id
@@ -981,7 +1066,7 @@ class FlexRoomRepository {
       }
 
       // Single efficient query with JOIN
-      final response = await _client.rpc(
+      final query = _client.rpc(
         'get_user_achievements_for_game',
         params: {
           'p_user_id': userId,
@@ -990,6 +1075,15 @@ class FlexRoomRepository {
           'p_search_query': searchQuery,
         },
       );
+      final response = await (page == null
+          ? query
+          : query
+                .order('achievement_name', ascending: true)
+                .order('platform_achievement_id', ascending: true)
+                .range(
+                  page.clamp(0, 100000) * 30,
+                  page.clamp(0, 100000) * 30 + 29,
+                ));
 
       final achievements = <FlexTile>[];
       final achievementRows = (response as List)
@@ -1039,7 +1133,7 @@ class FlexRoomRepository {
       return achievements;
     } catch (e) {
       statusxpLog('❌ Error in getAchievementsForGame: $e');
-      return [];
+      rethrow;
     }
   }
 }
@@ -1059,5 +1153,10 @@ final flexRoomDataProvider = FutureProvider.family<FlexRoomData?, String>((
   userId,
 ) async {
   final repository = ref.watch(flexRoomRepositoryProvider);
-  return await repository.getFlexRoomData(userId);
+  return await repository.getFlexRoomData(userId, includeRecent: false);
 });
+
+final recentFlexesProvider = FutureProvider.autoDispose
+    .family<List<RecentFlex>, String>((ref, userId) {
+      return ref.watch(flexRoomRepositoryProvider).getRecentFlexes(userId);
+    });

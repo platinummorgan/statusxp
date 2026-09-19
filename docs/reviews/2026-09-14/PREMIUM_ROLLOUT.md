@@ -1,0 +1,63 @@
+# Account-wide premium rollout — September 14, 2026
+
+The server-side rollout is deployed. Store-console routing and real purchase/restore tests remain required before calling the integration complete.
+
+## September 15: Apple compatibility fix deployed
+
+- User renewed Railway authentication and authorized continuation. Deployed the isolated `statusxp-apple-verifier` service in the existing StatusXP production project. Deployment `0e792735-534f-407f-82d3-521c7717e8fe` succeeded; endpoint `https://statusxp-apple-verifier-production.up.railway.app`. Existing sync deployment `b903f4ae-4456-4a3f-96eb-a099a76c7e1d` remained unchanged; restored the workspace's CLI link to that original service afterward.
+- Configured a new dedicated verifier secret through stdin and transferred it to Supabase through an ephemeral file outside the repository. Verified matching stored digests, removed the temporary file and did not print credentials. The Node service receives signed Apple payloads, no Apple private key or database credentials.
+- Live Node tests: health HTTP 200; unauthenticated verification HTTP 401; authentic Production/Sandbox TEST payloads HTTP 200; altered signatures HTTP 422. Apple's unmodified certificate/signature/online revocation checks remain enabled.
+- Deployed all three dependent Edge handlers: `apple-store-notifications`, `verify-store-purchase`, `reconcile-premium-entitlements`.
+- Requested fresh Production and Sandbox notifications directly from Apple after deployment. Both returned `sendAttemptResult: SUCCESS`; each matching notification UUID was independently found in `apple_notification_receipts`. No manual receipt insertion was used for these September 15 tests. Audit metadata is outside the repository in `D:/.tmp/statusxp-premium-audit-20260914/apple_deployed_tests_20260915.json`.
+- The runtime compatibility/delivery blocker is resolved. Earlier sections below record the investigation and are superseded by these results. Real purchase/restore and lifecycle checks, verification of actual subscription event format, and Google Play Console RTDN setup remain pending. TEST delivery does not prove purchase behavior or the configured event version. No app binary or frontend release was submitted.
+
+## September 15: Google Play Console test received
+
+After the owner reported sending the Play Console test, a read-only check found a new authenticated receipt at `2026-09-15T14:27:43.813977+00:00`, message ID `21205486977628212`. It is distinct from the September 14 synthetic Pub/Sub test (`21818976744082474`). This verifies the console-triggered delivery path into StatusXP; no synthetic message was published during this check. Receipt metadata is saved outside the repository in `D:/.tmp/statusxp-premium-audit-20260914/google_console_receipts_20260915.json`.
+
+Remind the owner to click **Save changes** in Play Console if not already done: sending a successful test does not prove the RTDN configuration was persisted. Real Google/Apple purchase, restore and lifecycle validation remains pending before store updates.
+
+## Applied and verified
+- Owner protection: 20260914120000_protected_app_access and 20260914121000_sync_app_access_grants remain active.
+- Applied 20260914130000_account_wide_premium in a bounded transaction. It consolidates provider-specific Stripe/Twitch/Apple/Google state and read-time effective entitlement without changing legacy AI or sync quota APIs. It requires the existing verified-store schema. All 11 preexisting membership rows retained the same effective premium result across migration.
+- Deployed stripe-webhook, stripe-create-checkout, stripe-customer-portal, stripe-ai-pack-checkout, twitch-eventsub-webhook, twitch-check-subscription, twitch-backfill-subscribers, twitch-link-account, verify-store-purchase, google-play-notifications, apple-store-notifications, reconcile-premium-entitlements.
+- Existing deployed function snapshots are saved outside the repository at D:/.tmp/statusxp-premium-audit-20260914/pre-billing-rollout. The live pre-rollout fulfillment function and billing table definitions were also saved outside the repository; customer data was not exported into the repository.
+- Apple credentials were read from the owner-provided Downloads key, checked as ES256/P-256, and accepted by Apple's production notification-history API (HTTP 200). Configured issuer/key/private-key secrets. Temporary secret-transfer files were removed; no key contents were printed or committed.
+- Google project statusxp / 99712650730: created topic statusxp-play-billing and authenticated push subscription statusxp-play-billing-push. The dedicated statusxp-play-push service account identifies delivery, and the Pub/Sub service agent can mint its ID tokens. Google Play has publisher access only to this topic. Configured expected audience/subscription/email and generated a new token encryption key after confirming no prior vault keys existed.
+- An actual Pub/Sub test message was delivered through Google's authenticated push path and recorded in google_play_notification_receipts. Unsigned Stripe/Apple/Google requests were rejected. This proves transport/authentication, not a real purchase lifecycle.
+- Applied 20260914131000_entitlement_scheduler and 20260914132000_private_entitlement_transport. A cron job checks for due work every minute; empty queues do not invoke the Edge Function. Authentication is read from Supabase Vault and sent through the synchronous HTTP extension, never persisted in an outbound request queue, cron command or migration. The transport returned HTTP 200; the idle wrapper returned NULL and client execution was denied. The runner processes one queued subscription per invocation; throughput should be revisited as the active subscription population grows.
+- During verification, pg_net's queue permissions could not be restricted by the project database role. That attempted migration rolled back and was replaced by the private transport migration above. The old queue was confirmed empty. HTTP connection/total timeouts are bounded to 5/50 seconds; failures appear in cron history and the provider job leases permit retries.
+
+## Tests
+- Prepared compatibility replacement (not deployed): `services/apple-verifier` runs Apple's pinned 3.1.0 library on Node 22 with online certificate checks, fixed Apple roots/app identifiers and dedicated bearer authentication. The Supabase shared verifier delegates notification, transaction and renewal validation over HTTPS and rejects redirects, missing configuration and failed responses. No custom certificate implementation or verification bypass was added.
+- Replacement verification: seven Node tests passed, including the actual Apple-signed Production and Sandbox TEST messages, signature tampering, wrong environment, wrong payload kind, forged chains and unauthorized requests. Twelve Deno client/handler tests passed on current Deno and 2.1.4; three dependent Edge entrypoints type checked. Older Deno exposed a fetch overload typing mismatch in the new test adapter; narrowing its injected fetch signature fixed it.
+- Deployment is pending hosting access: `railway status` reports expired authentication, and `gcloud billing projects describe statusxp` reports billing disabled. User was asked to choose existing Railway hosting with a renewed login or enable Google Cloud billing. No new hosting service, billing link, secret or dependent Edge deployment was performed for this replacement. The previously deployed verifier still fails on the hosted runtime until the coordinated replacement is deployed.
+- 80 Deno tests passed across shared billing/admin helpers and Stripe, Twitch, Google, Apple handlers; deployment entry points type checked.
+- Full Flutter suite: 149 passed, 9 existing skips.
+- The existing combined SQL fixture chain and protected-owner cross-provider matrix passed previously. This rollout additionally applied the consolidated migration to an isolated database using actual live billing table definitions and the old fulfillment signature. Google/Apple lifecycle tests (excluding unrelated AI assertions) and owner/cross-provider tests passed against that shape.
+- The first broad Deno invocation accidentally included Node-only concurrency scripts; rerunning only the TypeScript test entry points passed. The earliest store-binding fixture uses pre-notification toy Google keys; latest Google/Apple fixtures were used for the final-schema check instead.
+- No purchases were charged, subscriptions canceled, customer notifications sent, or synthetic customer records inserted into production as tests.
+
+## Store console actions still needed
+September 14 console follow-up: the owner's screenshot confirms both Apple URLs are saved with the correct endpoint. The UI did not offer or display a notification version. Initial requests returned 4040007; after the requested two-minute wait, both test requests succeeded. Apple then reported UNSUCCESSFUL_HTTP_RESPONSE_CODE for both deliveries. Replaying those signed TEST messages confirmed HTTP 503 during verification: the hosted runtime reports `Not implemented: crypto.X509Certificate.prototype.toString` inside Apple's server library. Both signatures verify locally with current Deno, including online certificate checks, and tampered signatures are rejected. **Apple notification and purchase-verification runtime compatibility remains a release blocker.** Do not disable certificate validation to make delivery pass.
+
+The handler now permits fully verified Sandbox TEST messages without enabling Sandbox subscription processing; non-TEST Sandbox events retain the environment guard. Bounded phase/status diagnostics expose no payloads or credentials. Nine handler tests passed, and this narrow handler update was deployed. A production TEST receipt was inserted via the existing RPC only after its full local signature verification to isolate the database path; that manual receipt is not evidence of successful webhook delivery. Apple's TEST endpoint sends V2 even for V1-configured URLs, so a successful TEST alone does not establish the configured version for subscription events.
+
+Apple: App Store Connect > Apps > StatusXP > General > App Information > App Store Server Notifications. Set both Production and Sandbox URLs to:
+
+https://ksriqcmumjkemtfjuedm.supabase.co/functions/v1/apple-store-notifications
+
+Choose Version 2. After saving, request signed Apple test notifications and confirm their delivery/status. [Apple instructions](https://developer.apple.com/help/app-store-connect/configure-in-app-purchase-settings/enter-server-urls-for-app-store-server-notifications).
+
+Google: Play Console > StatusXP > Monetize > Monetization setup > Real-time developer notifications. Enable notifications, set topic:
+
+projects/statusxp/topics/statusxp-play-billing
+
+Select subscription notifications, send the Play Console test message, and save. Confirm its receipt server-side. [Google instructions](https://developer.android.com/google/play/billing/getting-ready#enable-rtdn).
+
+## Migration and compatibility limits
+- The pre-rollout store_purchase_events table was empty. This rollout cannot reconstruct undocumented historical Google/Apple purchases from a single overwritten premium projection. The owner's alleged Google purchase still needs a verified Restore Purchases/store-account check; no conclusion about its active store status was made.
+- Existing valid legacy entitlement projections are retained until provider-authoritative records replace that source. Old client-editable Twitch profile IDs are not silently promoted to trusted ownership. Existing Twitch members may need to relink through the verified OAuth flow.
+- New subscriptions must be bound to the authenticated StatusXP account. Test current and previously released store clients using sandbox/license-test purchases and restores; older purchases lacking account claims may require support-assisted proof of ownership. The old production client already lacked verified ledger entries, so a fresh app release/restore test remains important.
+- No web main-branch merge, Vercel deployment, App Store binary upload or Play Store binary upload is included in this backend rollout.
+- For rollback, pause the reconciliation cron and Pub/Sub push if necessary; review the saved deployed sources and fulfillment definition. Preserve new source records and owner grants. Do not drop source tables or blindly replay old migrations, since that would restore the overwrite defect. The consolidated billing migration intentionally excludes AI/quota statements from 20260912100000; do not mark that entire historical migration applied or run db push indiscriminately.

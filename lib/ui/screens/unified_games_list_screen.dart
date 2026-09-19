@@ -1,10 +1,12 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/ui/widgets/basic_library.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/unified_game.dart';
+import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
-import 'package:statusxp/ui/screens/game_achievements_screen.dart';
 
 /// Sort options for games list
 enum GameSort { lastTrophy, nameAsc, nameDesc, rarityAsc, rarityDesc }
@@ -36,6 +38,18 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     final gamesAsync = _isPublicMode
         ? ref.watch(publicUnifiedGamesProvider(targetUserId!))
         : ref.watch(unifiedGamesProvider);
+    final timedOut =
+        !_isPublicMode &&
+        gamesAsync.error is PostgrestException &&
+        (gamesAsync.error as PostgrestException).code == '57014';
+    void retry() {
+      if (_isPublicMode) {
+        ref.invalidate(publicUnifiedGamesProvider(targetUserId!));
+      } else {
+        ref.invalidate(unifiedGamesProvider);
+      }
+    }
+
     final platformFilter = ref.watch(platformFilterProvider);
     final sortOption = ref.watch(gameSortProvider);
     final searchQuery = ref.watch(searchQueryProvider);
@@ -62,24 +76,43 @@ class UnifiedGamesListScreen extends ConsumerWidget {
               data: (games) =>
                   _buildHeader(context, ref, games, platformFilter),
             ),
-            _buildSearchBar(context, ref, sortOption),
+            if (timedOut)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: TextFormField(
+                  initialValue: searchQuery,
+                  decoration: const InputDecoration(labelText: 'Search games'),
+                  onChanged: (value) =>
+                      ref.read(searchQueryProvider.notifier).state = value,
+                ),
+              )
+            else
+              _buildSearchBar(context, ref, sortOption),
             Expanded(
               child: gamesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: Colors.red,
+                error: (error, stack) => timedOut
+                    ? BasicLibrary(query: searchQuery, onRetry: retry)
+                    : Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Unable to load games. Please try again.',
+                            ),
+                            TextButton(
+                              onPressed: retry,
+                              child: const Text('Try again'),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      Text('Error loading games: $error'),
-                    ],
-                  ),
-                ),
                 data: (games) {
                   final filteredGames = _filterAndSortGames(
                     games,
@@ -831,16 +864,14 @@ class UnifiedGamesListScreen extends ConsumerWidget {
     UnifiedGame game,
     PlatformGameData platform,
   ) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => GameAchievementsScreen(
-          platformId: platform.platformId,
-          platformGameId: platform.platformGameId ?? platform.gameId,
-          gameName: game.title,
-          platform: platform.platform,
-          coverUrl: game.coverUrl,
-        ),
-      ),
+    final platformId = platform.platformId;
+    final platformGameId = platform.platformGameId ?? platform.gameId;
+    if (platformId == null || platformGameId.isEmpty) return;
+    final gameRef = GameRef(
+      platformId: platformId,
+      platformGameId: platformGameId,
     );
+    if (gameRef.platform == null) return;
+    context.go(gameRef.location);
   }
 }

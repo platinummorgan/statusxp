@@ -7,12 +7,18 @@ class NextBestActionCard extends StatelessWidget {
     required this.action,
     required this.onTap,
     required this.onDismiss,
+    this.onAnother,
+    this.onReset,
+    this.goalControls,
     super.key,
   });
 
   final NextBestAction action;
   final VoidCallback onTap;
   final VoidCallback onDismiss;
+  final VoidCallback? onAnother;
+  final VoidCallback? onReset;
+  final Widget? goalControls;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +78,7 @@ class NextBestActionCard extends StatelessWidget {
             style: const TextStyle(color: Colors.white70, height: 1.35),
           ),
           const SizedBox(height: 14),
+          if (goalControls != null) goalControls!,
           FilledButton.icon(
             onPressed: onTap,
             icon: const Icon(Icons.arrow_forward, size: 17),
@@ -82,6 +89,29 @@ class NextBestActionCard extends StatelessWidget {
               textStyle: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
+          if (onAnother != null || onReset != null) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              children: [
+                if (onAnother != null)
+                  TextButton.icon(
+                    onPressed: onAnother,
+                    icon: const Icon(Icons.shuffle, size: 17),
+                    label: const Text('Suggest another game'),
+                  ),
+                if (onReset != null)
+                  TextButton(
+                    onPressed: onReset,
+                    child: const Text('Reset suggestions'),
+                  ),
+              ],
+            ),
+            const Text(
+              'Changes apply for this app session.',
+              style: TextStyle(color: Colors.white60, fontSize: 12),
+            ),
+          ],
         ],
       ),
     );

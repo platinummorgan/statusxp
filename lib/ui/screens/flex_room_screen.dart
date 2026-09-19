@@ -12,7 +12,7 @@ import 'package:statusxp/ui/widgets/achievement_picker_modal.dart';
 import 'package:statusxp/ui/widgets/psn_avatar.dart';
 import 'package:statusxp/ui/widgets/title_selector_modal.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/state/statusxp_providers.dart' as app_state;
 import 'package:statusxp/utils/statusxp_logger.dart';
 
 /// Flex Room - Cross-platform curated museum of gaming achievements
@@ -31,6 +31,10 @@ class FlexRoomScreen extends ConsumerStatefulWidget {
 
 class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   bool _isEditMode = false;
+  String? _profileUserId;
+  FlexRoomData? _lastLoadedData;
+  int _profileRequest = 0;
+  bool _saving = false;
   FlexRoomViewTab _activeTab = FlexRoomViewTab.showcase;
   FlexRoomData? _editingData;
   FlexRoomData?
@@ -42,7 +46,10 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   String? _achievementIcon; // Icon emoji for selected achievement title
 
   Future<void> _toggleEditMode(String userId) async {
+    if (_saving) return;
     if (_isEditMode && _editingData != null) {
+      final previousData = _savedData;
+      _saving = true;
       final dataToSave = _editingData!;
 
       setState(() {
@@ -55,13 +62,19 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
       final success = await repository.updateFlexRoomData(dataToSave);
 
       if (!mounted) return;
+      _saving = false;
+      if (_profileUserId != userId) return;
 
       if (success) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Flex Room saved!')));
       } else {
-        ref.invalidate(flexRoomDataProvider(userId));
+        setState(() {
+          _savedData = previousData;
+          _editingData = dataToSave;
+          _isEditMode = true;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to save changes'),
@@ -78,31 +91,15 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();
-    // Load profile after the first frame to ensure ref is available
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadUserProfile();
-    });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Reload profile when navigating back
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadUserProfile();
-    });
-  }
-
   Future<void> _loadUserProfile() async {
     final currentUserId = ref.read(currentUserIdProvider);
     final userId =
         widget.viewerId ??
         currentUserId ??
         ''; // View someone else's profile or your own
-    final supabase = Supabase.instance.client;
+    if (userId.isEmpty) return;
+    final requestId = ++_profileRequest;
+    final supabase = ref.read(app_state.supabaseClientProvider);
 
     try {
       final profile = await supabase
@@ -112,7 +109,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           )
           .eq('id', userId)
           .single();
-      if (mounted) {
+      if (mounted && requestId == _profileRequest && _profileUserId == userId) {
         final preferredPlatform =
             profile['preferred_display_platform'] as String? ?? 'psn';
         setState(() {
@@ -143,14 +140,14 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           )
           .eq('user_id', userId)
           .maybeSingle();
-      if (titleData != null && mounted) {
+      if (mounted && requestId == _profileRequest && _profileUserId == userId) {
         setState(() {
           _selectedTitle =
-              titleData['custom_title'] as String? ??
-              (titleData['meta_achievements']?['default_title'] as String?) ??
+              titleData?['custom_title'] as String? ??
+              (titleData?['meta_achievements']?['default_title'] as String?) ??
               'Completionist';
           _achievementIcon =
-              titleData['meta_achievements']?['icon_emoji'] as String?;
+              titleData?['meta_achievements']?['icon_emoji'] as String?;
         });
       }
     } catch (e) {
@@ -165,6 +162,22 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
         widget.viewerId ??
         currentUserId ??
         ''; // View someone else's room or your own
+    if (_profileUserId != userId) {
+      _profileUserId = userId;
+      _profileRequest++;
+      _savedData = null;
+      _lastLoadedData = null;
+      _editingData = null;
+      _isEditMode = false;
+      _username = 'Player';
+      _avatarUrl = null;
+      _isPsPlus = false;
+      _selectedTitle = 'Completionist';
+      _achievementIcon = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadUserProfile();
+      });
+    }
     final isOwner =
         userId == currentUserId && currentUserId != null; // Only owner can edit
     final flexRoomAsyncValue = ref.watch(flexRoomDataProvider(userId));
@@ -252,7 +265,13 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           }
 
           // Update saved data cache only on first load
-          _savedData ??= flexRoomData;
+          if (_savedData == null ||
+              (!_isEditMode &&
+                  !_saving &&
+                  !identical(_lastLoadedData, flexRoomData))) {
+            _savedData = flexRoomData;
+            _lastLoadedData = flexRoomData;
+          }
 
           // Show editing data in edit mode, otherwise show saved/cached data
           final displayData = _isEditMode && _editingData != null
@@ -286,6 +305,38 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (isOwner &&
+                flexRoomData.flexOfAllTime == null &&
+                flexRoomData.rarestFlex == null &&
+                flexRoomData.mostTimeSunk == null &&
+                flexRoomData.sweattiestPlatinum == null &&
+                flexRoomData.superlatives.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Your achievements will fill this room',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Connect a platform or sync your latest unlocks. We’ll suggest highlights for you.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 8),
+                    FilledButton.icon(
+                      onPressed: () => context.push('/get-started'),
+                      icon: const Icon(Icons.sync),
+                      label: const Text('Connect or sync a platform'),
+                    ),
+                  ],
+                ),
+              ),
             // Hero Banner
             _buildHeroBanner(flexRoomData, isOwner),
 
@@ -311,7 +362,30 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
             ] else ...[
               _buildFlexStatsStrip(flexRoomData),
               const SizedBox(height: 20),
-              _buildRecentFlexes(flexRoomData, showEmptyState: true),
+              ref
+                  .watch(recentFlexesProvider(userId))
+                  .when(
+                    skipLoadingOnRefresh: false,
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (_, _) => Column(
+                      children: [
+                        const Text('Recent highlights could not be loaded.'),
+                        TextButton.icon(
+                          onPressed: () =>
+                              ref.invalidate(recentFlexesProvider(userId)),
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry highlights'),
+                        ),
+                      ],
+                    ),
+                    data: (recent) => _buildRecentFlexes(
+                      flexRoomData.copyWith(recentFlexes: recent),
+                      showEmptyState: true,
+                    ),
+                  ),
             ],
 
             const SizedBox(height: 32),
@@ -531,7 +605,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -560,7 +634,7 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           PsnAvatar(
             avatarUrl: _avatarUrl,
             isPsPlus: _isPsPlus,
-            size: 96,
+            size: MediaQuery.sizeOf(context).width >= 700 ? 64 : 80,
             borderColor: CyberpunkTheme.neonCyan,
           ),
 
@@ -657,8 +731,8 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
           // Last Updated
           Text(
             daysSinceUpdate == 0
-                ? 'Updated today'
-                : 'Last updated $daysSinceUpdate ${daysSinceUpdate == 1 ? 'day' : 'days'} ago',
+                ? 'Showcase edited today'
+                : 'Showcase edited $daysSinceUpdate ${daysSinceUpdate == 1 ? 'day' : 'days'} ago',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.4),
               fontSize: 12,
@@ -692,7 +766,11 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: GridView.count(
-            crossAxisCount: 2,
+            crossAxisCount: MediaQuery.sizeOf(context).width >= 1000
+                ? 4
+                : MediaQuery.sizeOf(context).width >= 700
+                ? 3
+                : 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
             childAspectRatio: kIsWeb ? 0.85 : 0.82,
@@ -1112,29 +1190,31 @@ class _FlexRoomScreenState extends ConsumerState<FlexRoomScreen> {
   }
 
   Widget _buildStatItem(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: color,
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
-            shadows: [
-              Shadow(color: color.withValues(alpha: 0.6), blurRadius: 6),
-            ],
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              shadows: [
+                Shadow(color: color.withValues(alpha: 0.6), blurRadius: 6),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

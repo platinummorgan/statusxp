@@ -6,6 +6,10 @@ import 'package:statusxp/services/trophy_help_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:statusxp/ui/widgets/coop_session_summary.dart';
+import 'package:statusxp/ui/widgets/coop_confirmed_session.dart';
+import 'package:statusxp/ui/widgets/coop_feedback_card.dart';
+import 'package:statusxp/ui/widgets/coop_reschedule_dialog.dart';
 
 final requestDetailsProvider = FutureProvider.autoDispose
     .family<TrophyHelpRequest?, String>((ref, requestId) async {
@@ -123,6 +127,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
         statusText = 'Open';
         break;
       case 'assigned':
+      case 'matched':
         statusColor = Colors.orange;
         statusText = 'Helper Assigned';
         break;
@@ -143,13 +148,40 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
         statusText = request.status;
     }
 
-    final currentUserId = ref.read(supabaseClientProvider).auth.currentUser?.id;
-    final isOwner = currentUserId == request.userId;
+    final currentUserId = ref.watch(currentUserIdProvider);
+    final isOwner = currentUserId == (request.profileId ?? request.userId);
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        responsesAsync.when(
+          data: (responses) => CoopConfirmedSession(
+            request: request,
+            responses: responses,
+            currentUserId: currentUserId,
+          ),
+          loading: () => const SizedBox.shrink(),
+          error: (_, _) => const SizedBox.shrink(),
+        ),
         // Request Card
+        if (request.status == 'completed')
+          responsesAsync.when(
+            data: (responses) =>
+                isOwner ||
+                    responses.any(
+                      (r) =>
+                          (r.helperProfileId ?? r.helperUserId) ==
+                              currentUserId &&
+                          ['accepted', 'completed'].contains(r.status),
+                    )
+                ? CoopFeedbackCard(
+                    key: ValueKey('feedback-${request.id}-$currentUserId'),
+                    requestId: request.id,
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, _) => const SizedBox.shrink(),
+          ),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -266,6 +298,8 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                 ),
               ],
 
+              CoopSessionSummary(request: request),
+              const SizedBox(height: 16),
               if (request.availability != null &&
                   request.availability!.isNotEmpty) ...[
                 const SizedBox(height: 12),
@@ -352,7 +386,37 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
               ],
 
               // Owner actions
-              if (isOwner && request.status == 'open') ...[
+              if (isOwner &&
+                  ['open', 'assigned', 'matched'].contains(request.status)) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.edit_calendar),
+                  label: const Text('Change session time'),
+                  onPressed: () async {
+                    final service = ref.read(trophyHelpServiceProvider);
+                    final saved = await showDialog<bool>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => CoopRescheduleDialog(
+                        request: request,
+                        onSave: (start) => service.rescheduleRequest(
+                          request.id,
+                          scheduledAt: start,
+                          expectedRevision: request.scheduleRevision,
+                        ),
+                      ),
+                    );
+                    if (!context.mounted || saved != true) return;
+                    ref.invalidate(requestDetailsProvider(requestId));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Session time saved. Confirm the plan with your partners.',
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -390,6 +454,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                                 'completed',
                               );
                               ref.invalidate(requestDetailsProvider(requestId));
+                              ref.invalidate(
+                                requestResponsesProvider(requestId),
+                              );
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -452,6 +519,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                                 'cancelled',
                               );
                               ref.invalidate(requestDetailsProvider(requestId));
+                              ref.invalidate(
+                                requestResponsesProvider(requestId),
+                              );
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -487,7 +557,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
 
         // Responses section
         Text(
-          'OFFERS TO HELP',
+          request.status == 'completed' ? 'SESSION HISTORY' : 'OFFERS TO HELP',
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.55),
             letterSpacing: 2.5,
@@ -519,7 +589,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'No offers yet',
+                      request.status == 'completed'
+                          ? 'No recorded helpers'
+                          : 'No offers yet',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.6),
                         fontSize: 16,
@@ -527,7 +599,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Wait for other players to offer help',
+                      request.status == 'completed'
+                          ? 'This request ended without a recorded helper.'
+                          : 'Wait for other players to offer help',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.4),
                         fontSize: 13,
@@ -588,6 +662,11 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
     IconData statusIcon;
 
     switch (response.status) {
+      case 'completed':
+        statusColor = Colors.green;
+        statusText = 'Completed';
+        statusIcon = Icons.task_alt;
+        break;
       case 'accepted':
         statusColor = Colors.green;
         statusText = 'Accepted';
@@ -683,7 +762,7 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
           ),
 
           // Show helper's platform contact info if accepted
-          if (response.status == 'accepted') ...[
+          if (['accepted', 'completed'].contains(response.status)) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -749,7 +828,9 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
           ],
 
           // Owner actions for pending responses
-          if (isOwner && response.status == 'pending') ...[
+          if (isOwner &&
+              request.status == 'open' &&
+              response.status == 'pending') ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -761,11 +842,6 @@ class TrophyHelpRequestDetailsScreen extends ConsumerWidget {
                           ref.read(supabaseClientProvider),
                         );
                         await service.acceptHelper(response.id);
-                        // Update request status to assigned
-                        await service.updateRequestStatus(
-                          request.id,
-                          'assigned',
-                        );
                         ref.invalidate(requestResponsesProvider(requestId));
                         ref.invalidate(requestDetailsProvider(requestId));
                         if (context.mounted) {

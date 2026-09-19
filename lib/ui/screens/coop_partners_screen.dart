@@ -1,768 +1,436 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:statusxp/domain/trophy_help_request.dart';
+import 'package:statusxp/services/trophy_help_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/ui/widgets/offer_help_dialog.dart';
+import 'package:statusxp/ui/widgets/coop_session_summary.dart';
+import 'package:statusxp/ui/widgets/coop_game_artwork.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-// ------------------------------
-// Screen
-// ------------------------------
-
-class CoopPartnersScreen extends ConsumerStatefulWidget {
+class CoopPartnersScreen extends ConsumerWidget {
   const CoopPartnersScreen({super.key});
 
   @override
-  ConsumerState<CoopPartnersScreen> createState() => _CoopPartnersScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userId = ref.watch(currentUserIdProvider);
+    return _CoopHub(key: ValueKey(userId), userId: userId);
+  }
 }
 
-class _CoopPartnersScreenState extends ConsumerState<CoopPartnersScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _CoopHub extends ConsumerStatefulWidget {
+  const _CoopHub({super.key, required this.userId});
+  final String? userId;
+  @override
+  ConsumerState<_CoopHub> createState() => _CoopHubState();
+}
+
+class _CoopHubState extends ConsumerState<_CoopHub> {
+  static const _pageSize = 24;
+  final _search = TextEditingController();
+  final _scroll = ScrollController();
+  final _sentOffers = <String>{};
+  Timer? _debounce;
+  CoopFeed _feed = CoopFeed.discover;
+  String? _platform;
+  List<CoopEntry> _entries = [];
+  bool _loading = true;
+  bool _more = false;
+  bool _failed = false;
+  int _generation = 0;
+  int _offset = 0;
+  int _artEpoch = 0;
+  final _covers = <CoopGameKey, String>{};
+  final _confirming = <String>{};
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _load(reset: true);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _generation++;
+    _debounce?.cancel();
+    _search.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  Future<void> _load({bool reset = false}) async {
+    _debounce?.cancel();
+    if (!reset && _loading) return;
+    final generation = ++_generation;
+    setState(() {
+      _loading = true;
+      _failed = false;
+      if (reset) {
+        _artEpoch++;
+        _covers.clear();
+        _entries = [];
+        _offset = 0;
+        _more = false;
+      }
+    });
+    try {
+      final rows = await ref
+          .read(trophyHelpServiceProvider)
+          .getCoopPage(
+            feed: _feed,
+            platform: _platform,
+            search: _search.text,
+            offset: _offset,
+            limit: _pageSize,
+          );
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _offset += rows.length;
+        final ids = _entries.map((e) => e.request.id).toSet();
+        _entries = [..._entries, ...rows.where((e) => ids.add(e.request.id))];
+        _more = rows.length == _pageSize;
+        _loading = false;
+      });
+      unawaited(_loadArtwork(rows, _artEpoch));
+    } catch (_) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _failed = true;
+        _loading = false;
+      });
+    }
+  }
+
+  void _filterChanged() {
+    _artEpoch++;
+    _covers.clear();
+    _generation++; // Ignore old results immediately, including during debounce.
+    _debounce?.cancel();
+    setState(() {
+      _entries = [];
+      _offset = 0;
+      _more = false;
+      _loading = true;
+      _failed = false;
+    });
+    _debounce = Timer(
+      const Duration(milliseconds: 300),
+      () => _load(reset: true),
+    );
+  }
+
+  Future<void> _loadArtwork(List<CoopEntry> rows, int epoch) async {
+    try {
+      final covers = await ref
+          .read(trophyHelpServiceProvider)
+          .getCoopArtwork(rows.map((e) => e.request).toList());
+      if (mounted && epoch == _artEpoch && covers.isNotEmpty) {
+        setState(() => _covers.addAll(covers));
+      }
+    } catch (_) {
+      // Artwork is optional; keep the request and its actions available.
+    }
+  }
+
+  Future<void> _reconfirm(CoopEntry entry) async {
+    if (_confirming.contains(entry.request.id)) return;
+    final past = entry.request.scheduledAt?.isBefore(DateTime.now()) ?? false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Still looking for partners?'),
+        content: Text(
+          past
+              ? 'The scheduled time has passed. Confirm that you still need help and switch this request to flexible timing. Let any confirmed partners know about the change.'
+              : 'Confirm that this request is still active and the availability you posted is current.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(past ? 'Confirm flexible timing' : 'Confirm request'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _confirming.add(entry.request.id));
+    try {
+      await ref
+          .read(trophyHelpServiceProvider)
+          .reconfirmRequest(entry.request.id, clearPastSchedule: past);
+      if (mounted) await _load(reset: true);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not confirm the request. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _confirming.remove(entry.request.id));
+    }
+  }
+
+  Future<void> _requestHelp() async {
+    final proceed = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'What are you working toward?',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Choose a game from your library, open its achievements, then select Find Partner on an achievement you still need. Add your availability so partners know when to join.',
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () => Navigator.pop(context, true),
+                icon: const Icon(Icons.videogame_asset),
+                label: const Text('Choose a game'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (proceed != true || !mounted) return;
+    await context.push('/games');
+    if (mounted) _load(reset: true);
+  }
+
+  Future<void> _open(CoopEntry entry) async {
+    await context.push('/coop-partners/${entry.request.id}');
+    if (mounted) _load(reset: true);
+  }
+
+  Future<void> _offer(CoopEntry entry) async {
+    final sent = await showDialog<bool>(
+      context: context,
+      builder: (_) => OfferHelpDialog(request: entry.request),
+    );
+    if (sent == true && mounted) {
+      setState(() => _sentOffers.add(entry.request.id));
+    }
+  }
+
+  Future<void> _delete(CoopEntry entry) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete request?'),
+        content: const Text('This removes the request and its offers.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref.read(trophyHelpServiceProvider).deleteRequest(entry.request.id);
+      if (mounted) _load(reset: true);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not delete the request. Please try again.'),
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0B1020),
       appBar: AppBar(
-        title: const Text('Find Co-op Partners'),
-        centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Find Help', icon: Icon(Icons.search)),
-            Tab(text: 'My Requests', icon: Icon(Icons.list)),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          _FindHelpTab(key: ValueKey('find_help_tab')),
-          _MyRequestsTab(key: ValueKey('my_requests_tab')),
-        ],
-      ),
-    );
-  }
-}
-
-// ------------------------------
-// Find Help Tab
-// ------------------------------
-
-class _FindHelpTab extends ConsumerStatefulWidget {
-  const _FindHelpTab({super.key});
-
-  @override
-  ConsumerState<_FindHelpTab> createState() => _FindHelpTabState();
-}
-
-class _FindHelpTabState extends ConsumerState<_FindHelpTab>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  String? _selectedPlatform;
-  List<TrophyHelpRequest> _allRequests = [];
-  bool _isLoading = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRequests();
-  }
-
-  Future<void> _loadRequests() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final service = ref.read(trophyHelpServiceProvider);
-      final requests = await service.getOpenRequests();
-      if (mounted) {
-        setState(() {
-          _allRequests = requests;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-
-    return Column(
-      children: [
-        _PlatformFilterBar(
-          selectedPlatform: _selectedPlatform,
-          onChanged: (platform) {
-            setState(() {
-              _selectedPlatform = platform;
-            });
-          },
-        ),
-
-        Expanded(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-              ? _ErrorState(message: 'Error: $_error')
-              : () {
-                  // Filter on UI side
-                  final requests = _selectedPlatform == null
-                      ? _allRequests
-                      : _allRequests
-                            .where((r) => r.platform == _selectedPlatform)
-                            .toList();
-
-                  if (requests.isEmpty) return const _EmptyFindHelpState();
-
-                  return RefreshIndicator(
-                    onRefresh: _loadRequests,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: requests.length,
-                      itemBuilder: (context, index) =>
-                          _RequestCard(request: requests[index]),
-                    ),
-                  );
-                }(),
-        ),
-      ],
-    );
-  }
-}
-
-class _PlatformFilterBar extends StatelessWidget {
-  final String? selectedPlatform;
-  final ValueChanged<String?> onChanged;
-
-  const _PlatformFilterBar({
-    required this.selectedPlatform,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1a1f3a),
-        border: Border(
-          bottom: BorderSide(
-            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Text(
-            'Platform:',
-            style: TextStyle(
-              color: CyberpunkTheme.neonCyan,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Wrap(
-              spacing: 8,
-              children: [
-                _PlatformChip(
-                  label: 'All',
-                  value: null,
-                  selected: selectedPlatform,
-                  onChanged: onChanged,
-                ),
-                _PlatformChip(
-                  label: 'PSN',
-                  value: 'psn',
-                  selected: selectedPlatform,
-                  onChanged: onChanged,
-                ),
-                _PlatformChip(
-                  label: 'Xbox',
-                  value: 'xbox',
-                  selected: selectedPlatform,
-                  onChanged: onChanged,
-                ),
-                _PlatformChip(
-                  label: 'Steam',
-                  value: 'steam',
-                  selected: selectedPlatform,
-                  onChanged: onChanged,
-                ),
-              ],
-            ),
+        title: const Text('Co-op hub'),
+        backgroundColor: const Color(0xFF0B1020),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh requests',
+            onPressed: () => _load(reset: true),
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _PlatformChip extends StatelessWidget {
-  final String label;
-  final String? value;
-  final String? selected;
-  final ValueChanged<String?> onChanged;
-
-  const _PlatformChip({
-    required this.label,
-    required this.value,
-    required this.selected,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = selected == value;
-
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selectedNow) => onChanged(selectedNow ? value : null),
-      backgroundColor: const Color(0xFF1a1f3a),
-      selectedColor: CyberpunkTheme.neonCyan.withValues(alpha: 0.3),
-      checkmarkColor: CyberpunkTheme.neonCyan,
-      labelStyle: TextStyle(
-        color: isSelected ? CyberpunkTheme.neonCyan : Colors.white70,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-      side: BorderSide(
-        color: isSelected ? CyberpunkTheme.neonCyan : Colors.white24,
-      ),
-    );
-  }
-}
-
-class _EmptyFindHelpState extends StatelessWidget {
-  const _EmptyFindHelpState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.group_off,
-            size: 64,
-            color: Colors.white.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No active requests',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 18,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Be the first to request help!',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ------------------------------
-// Request Card (Find Help)
-// ------------------------------
-
-class _RequestCard extends ConsumerWidget {
-  final TrophyHelpRequest request;
-
-  const _RequestCard({required this.request});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final platformStyle = _platformStyle(request.platform);
-    final createdAgo = timeago.format(request.createdAt);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: const Color(0xFF1a1f3a),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2)),
-      ),
-      child: InkWell(
-        onTap: () => context.push('/coop-partners/${request.id}'),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  _PlatformPill(
-                    label: request.platform.toUpperCase(),
-                    color: platformStyle.color,
-                    icon: platformStyle.icon,
-                  ),
-                  const Spacer(),
-                  Text(
-                    createdAgo,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 12,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _search,
+                  maxLength: 100,
+                  onChanged: (_) => _filterChanged(),
+                  decoration: InputDecoration(
+                    counterText: '',
+                    hintText: 'Search games or achievements',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _search.text.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'Clear search',
+                            onPressed: () {
+                              _search.clear();
+                              _filterChanged();
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
+                    filled: true,
+                    fillColor: const Color(0xFF171F36),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                request.gameTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Icon(
-                    Icons.emoji_events,
-                    size: 16,
-                    color: CyberpunkTheme.neonCyan.withValues(alpha: 0.7),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      for (final p in <String?, String>{
+                        null: 'All platforms',
+                        'psn': 'PlayStation',
+                        'xbox': 'Xbox',
+                        'steam': 'Steam',
+                      }.entries)
+                        ChoiceChip(
+                          label: Text(p.value),
+                          selected: _platform == p.key,
+                          onSelected: (_) {
+                            setState(() => _platform = p.key);
+                            _load(reset: true);
+                          },
+                        ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      request.achievementName,
-                      style: TextStyle(
-                        color: CyberpunkTheme.neonCyan.withValues(alpha: 0.9),
-                        fontSize: 14,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+                ),
               ),
-              if ((request.description ?? '').isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  request.description!,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 13,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              if ((request.availability ?? '').isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 14,
-                      color: Colors.white.withValues(alpha: 0.5),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      request.availability!,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    await showDialog<bool>(
-                      context: context,
-                      builder: (_) => OfferHelpDialog(request: request),
-                    );
-
-                    // Dialog returns true if help was offered successfully
-                    // No need to invalidate anything - user can pull to refresh if needed
+              DefaultTabController(
+                length: 3,
+                child: TabBar(
+                  onTap: (index) {
+                    setState(() => _feed = CoopFeed.values[index]);
+                    _load(reset: true);
                   },
-                  icon: const Icon(Icons.handshake, size: 18),
-                  label: const Text('Offer Help'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: CyberpunkTheme.neonCyan.withValues(
-                      alpha: 0.2,
-                    ),
-                    foregroundColor: CyberpunkTheme.neonCyan,
-                    side: const BorderSide(color: CyberpunkTheme.neonCyan),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PlatformPill extends StatelessWidget {
-  final String label;
-  final Color color;
-  final IconData icon;
-
-  const _PlatformPill({
-    required this.label,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ------------------------------
-// My Requests Tab
-// ------------------------------
-
-class _MyRequestsTab extends ConsumerStatefulWidget {
-  const _MyRequestsTab({super.key});
-
-  @override
-  ConsumerState<_MyRequestsTab> createState() => _MyRequestsTabState();
-}
-
-class _MyRequestsTabState extends ConsumerState<_MyRequestsTab>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  List<TrophyHelpRequest> _myRequests = [];
-  bool _isLoading = true;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadMyRequests();
-  }
-
-  Future<void> _loadMyRequests() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      final service = ref.read(trophyHelpServiceProvider);
-      final requests = await service.getMyRequests();
-      if (mounted) {
-        setState(() {
-          _myRequests = requests;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    final theme = Theme.of(context);
-
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(CyberpunkTheme.neonCyan),
-        ),
-      );
-    }
-
-    if (_error != null) {
-      return _ErrorState(message: 'Error: $_error');
-    }
-
-    if (_myRequests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inbox_outlined,
-              size: 64,
-              color: Colors.white.withValues(alpha: 0.3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No requests yet',
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Create a request to find co-op partners',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.4),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadMyRequests,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _myRequests.length,
-        itemBuilder: (context, index) => _MyRequestCard(
-          request: _myRequests[index],
-          onDeleted: _loadMyRequests,
-        ),
-      ),
-    );
-  }
-}
-
-class _MyRequestCard extends ConsumerWidget {
-  final TrophyHelpRequest request;
-  final VoidCallback onDeleted;
-
-  const _MyRequestCard({required this.request, required this.onDeleted});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final createdAgo = timeago.format(request.createdAt);
-    final service = ref.read(trophyHelpServiceProvider);
-
-    final platformStyle = _platformStyle(request.platform);
-    final statusStyle = _statusStyle(request.status);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: const Color(0xFF1a1f3a),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: CyberpunkTheme.neonCyan.withValues(alpha: 0.2)),
-      ),
-      child: InkWell(
-        onTap: () => context.push('/coop-partners/${request.id}'),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _PlatformPill(
-                    label: request.platform.toUpperCase(),
-                    color: platformStyle.color,
-                    icon: platformStyle.icon,
-                  ),
-                  const SizedBox(width: 8),
-                  _StatusPill(
-                    label: statusStyle.label,
-                    color: statusStyle.color,
-                  ),
-                  const Spacer(),
-                  Text(
-                    createdAgo,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                request.gameTitle,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                request.achievementName,
-                style: TextStyle(
-                  color: CyberpunkTheme.neonCyan.withValues(alpha: 0.9),
-                  fontSize: 14,
-                ),
-              ),
-              if ((request.description ?? '').isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  request.description!,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 13,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () =>
-                          context.push('/coop-partners/${request.id}'),
-                      icon: const Icon(Icons.visibility, size: 18),
-                      label: const Text('View Details'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: CyberpunkTheme.neonCyan,
-                        side: const BorderSide(color: CyberpunkTheme.neonCyan),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  if (request.status == 'open') ...[
-                    IconButton(
-                      tooltip: 'Cancel Request',
-                      icon: const Icon(Icons.close),
-                      color: Colors.red,
-                      onPressed: () async {
-                        final confirmed = await _confirm(
-                          context,
-                          title: 'Cancel Request',
-                          message:
-                              'Are you sure you want to cancel this request?',
-                          confirmLabel: 'Yes',
-                        );
-
-                        if (confirmed != true) return;
-
-                        try {
-                          await service.updateRequestStatus(
-                            request.id,
-                            'cancelled',
-                          );
-                          // Request cancelled - user can pull to refresh to see updated list
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Request cancelled'),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: $e')),
-                            );
-                          }
-                        }
-                      },
-                    ),
-                    IconButton(
-                      tooltip: 'Delete Request',
-                      icon: const Icon(Icons.delete),
-                      color: Colors.red.withValues(alpha: 0.7),
-                      onPressed: () async {
-                        final confirmed = await _confirm(
-                          context,
-                          title: 'Delete Request',
-                          message:
-                              'Are you sure you want to delete this request? This cannot be undone.',
-                          confirmLabel: 'Delete',
-                          destructive: true,
-                        );
-
-                        if (confirmed != true) return;
-
-                        try {
-                          await service.deleteRequest(request.id);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Request deleted')),
-                            );
-                            // Reload the list to remove the deleted item
-                            onDeleted();
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Error: $e')),
-                            );
-                          }
-                        }
-                      },
-                    ),
+                  tabs: const [
+                    Tab(text: 'Find partners'),
+                    Tab(text: 'My requests'),
+                    Tab(text: 'My offers'),
                   ],
-                  if (request.status == 'completed')
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 24,
-                    ),
-                ],
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () => _load(reset: true),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 760 ? 2 : 1;
+                      return CustomScrollView(
+                        controller: _scroll,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(child: _intro()),
+                          if (_entries.isEmpty && !_loading && !_failed)
+                            SliverToBoxAdapter(child: _empty()),
+                          SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            sliver: SliverList.builder(
+                              itemCount: (_entries.length / columns).ceil(),
+                              itemBuilder: (context, row) => Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    for (
+                                      var column = 0;
+                                      column < columns;
+                                      column++
+                                    ) ...[
+                                      if (column > 0) const SizedBox(width: 16),
+                                      Expanded(
+                                        child:
+                                            row * columns + column <
+                                                _entries.length
+                                            ? _card(
+                                                _entries[row * columns +
+                                                    column],
+                                              )
+                                            : const SizedBox(),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Center(
+                                child: _loading
+                                    ? const CircularProgressIndicator()
+                                    : _failed
+                                    ? Column(
+                                        children: [
+                                          const Text(
+                                            'Could not load requests. Please try again.',
+                                          ),
+                                          const SizedBox(height: 8),
+                                          OutlinedButton.icon(
+                                            onPressed: () => _load(),
+                                            icon: const Icon(Icons.refresh),
+                                            label: const Text('Retry'),
+                                          ),
+                                        ],
+                                      )
+                                    : _more
+                                    ? OutlinedButton(
+                                        onPressed: () => _load(),
+                                        child: const Text('Load more'),
+                                      )
+                                    : const SizedBox(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
               ),
             ],
           ),
@@ -770,126 +438,270 @@ class _MyRequestCard extends ConsumerWidget {
       ),
     );
   }
-}
 
-// ------------------------------
-// Shared UI helpers
-// ------------------------------
-
-class _ErrorState extends StatelessWidget {
-  final String message;
-
-  const _ErrorState({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
-          const SizedBox(height: 16),
-          Text(message),
-        ],
+  Widget _intro() => Container(
+    margin: const EdgeInsets.all(16),
+    padding: const EdgeInsets.all(24),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20),
+      gradient: const LinearGradient(
+        colors: [Color(0xFF242A55), Color(0xFF122E3C)],
       ),
-    );
-  }
-}
-
-Future<bool?> _confirm(
-  BuildContext context, {
-  required String title,
-  required String message,
-  required String confirmLabel,
-  bool destructive = false,
-}) {
-  return showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Cancel'),
+      border: Border.all(color: CyberpunkTheme.neonCyan.withValues(alpha: .25)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'BETTER TOGETHER',
+          style: TextStyle(
+            color: CyberpunkTheme.neonCyan,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 2,
+            fontSize: 11,
+          ),
         ),
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, true),
-          style: destructive
-              ? TextButton.styleFrom(foregroundColor: Colors.red)
-              : null,
-          child: Text(confirmLabel),
+        const SizedBox(height: 8),
+        Text(
+          switch (_feed) {
+            CoopFeed.discover => 'Make the next unlock a team effort.',
+            CoopFeed.requests => 'Your goals. Your next teammates.',
+            CoopFeed.offers => 'Keep track of the help you offered.',
+          },
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        Text(switch (_feed) {
+          CoopFeed.discover =>
+            'Find a shared goal, compare availability, and help each other finish.',
+          CoopFeed.requests =>
+            'Review offers, connect with an accepted helper, and celebrate completed goals.',
+          CoopFeed.offers =>
+            'Revisit your offers and open a request for partner details and the next step.',
+        }, style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: _requestHelp,
+          icon: const Icon(Icons.add),
+          label: const Text('Request help'),
         ),
       ],
     ),
   );
-}
 
-class _PlatformStyle {
-  final Color color;
-  final IconData icon;
-  const _PlatformStyle(this.color, this.icon);
-}
-
-_PlatformStyle _platformStyle(String platformRaw) {
-  final p = platformRaw.toLowerCase();
-  switch (p) {
-    case 'psn':
-    case 'playstation':
-      return const _PlatformStyle(Color(0xFF0070CC), Icons.sports_esports);
-    case 'xbox':
-      return const _PlatformStyle(Color(0xFF107C10), Icons.videogame_asset);
-    case 'steam':
-      return const _PlatformStyle(Color(0xFF1B2838), Icons.store);
-    default:
-      return const _PlatformStyle(Colors.grey, Icons.gamepad);
-  }
-}
-
-class _StatusStyle {
-  final Color color;
-  final String label;
-  const _StatusStyle(this.color, this.label);
-}
-
-_StatusStyle _statusStyle(String statusRaw) {
-  switch (statusRaw) {
-    case 'open':
-      return const _StatusStyle(CyberpunkTheme.neonCyan, 'Open');
-    case 'matched':
-      return const _StatusStyle(Colors.orange, 'Matched');
-    case 'completed':
-      return const _StatusStyle(Colors.green, 'Completed');
-    case 'cancelled':
-      return const _StatusStyle(Colors.red, 'Cancelled');
-    default:
-      return _StatusStyle(Colors.grey, statusRaw);
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _StatusPill({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+  Widget _empty() => Padding(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      children: [
+        const Icon(
+          Icons.handshake_outlined,
+          size: 40,
+          color: CyberpunkTheme.neonCyan,
         ),
+        const SizedBox(height: 12),
+        Text(
+          _search.text.isNotEmpty || _platform != null
+              ? 'No requests match these filters.'
+              : switch (_feed) {
+                  CoopFeed.discover => 'Start the next team-up.',
+                  CoopFeed.requests => 'Your next goal starts here.',
+                  CoopFeed.offers => 'You have not offered help yet.',
+                },
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _search.text.isNotEmpty || _platform != null
+              ? 'Try another game, achievement, or platform.'
+              : _feed == CoopFeed.offers
+              ? 'Browse Find partners and offer help on a goal you can tackle.'
+              : 'Use Request help to choose an achievement from your library.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70),
+        ),
+      ],
+    ),
+  );
+
+  Widget _card(CoopEntry entry) {
+    final request = entry.request;
+    final owner = (request.profileId ?? request.userId) == widget.userId;
+    final sent = entry.offerStatus != null || _sentOffers.contains(request.id);
+    final canOffer = !owner && !sent && request.status == 'open';
+    final old = request.needsConfirmation(DateTime.now());
+    final color = switch (request.platform) {
+      'psn' => const Color(0xFF75B6FF),
+      'xbox' => const Color(0xFF88DC84),
+      _ => CyberpunkTheme.neonCyan,
+    };
+    final status = switch (request.status) {
+      'assigned' || 'matched' => 'Partner found',
+      'completed' => 'Completed',
+      'cancelled' => 'Cancelled',
+      'closed' => 'Closed',
+      _ => old ? 'Needs confirmation' : 'Looking for help',
+    };
+    final offerLabel = switch (entry.offerStatus) {
+      'accepted' => 'Your offer accepted',
+      'declined' => 'Your offer declined',
+      'pending' => 'Your offer pending',
+      'completed' => 'Help completed',
+      _ => 'Offer sent',
+    };
+    return Container(
+      key: ValueKey('request-${request.id}'),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171F36),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: color.withValues(alpha: .25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _badge(
+                request.platform == 'psn'
+                    ? 'PlayStation'
+                    : request.platform == 'xbox'
+                    ? 'Xbox'
+                    : request.platform == 'steam'
+                    ? 'Steam'
+                    : request.platform,
+                color,
+              ),
+              _badge(status, Colors.white70),
+              if (sent && !owner) _badge(offerLabel, Colors.white70),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              CoopGameArtwork(
+                url:
+                    _covers[(
+                      platform: request.platform,
+                      gameId: request.gameId,
+                    )],
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  request.gameTitle,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.emoji_events_outlined, size: 20, color: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  request.achievementName,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          if (request.description?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 12),
+            Text(
+              request.description!,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white70),
+            ),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.schedule, size: 18, color: Colors.white60),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  request.availability?.trim().isNotEmpty == true
+                      ? request.availability!
+                      : 'Availability not shared yet',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          CoopSessionSummary(request: request),
+          const SizedBox(height: 8),
+          Text(
+            'Posted ${timeago.format(request.createdAt)}${old && request.status == 'open' ? ' · Check availability before planning' : ''}',
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+          if (request.lastConfirmedAt != null)
+            Text(
+              'Owner confirmed ${timeago.format(request.lastConfirmedAt!)}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (owner && request.status == 'open')
+                OutlinedButton.icon(
+                  onPressed: _confirming.contains(request.id)
+                      ? null
+                      : () => _reconfirm(entry),
+                  icon: const Icon(Icons.update, size: 18),
+                  label: const Text('Still looking'),
+                ),
+              if (canOffer)
+                FilledButton.icon(
+                  onPressed: () => _offer(entry),
+                  icon: const Icon(Icons.handshake_outlined, size: 18),
+                  label: const Text('Offer help'),
+                ),
+              OutlinedButton(
+                onPressed: () => _open(entry),
+                child: Text(
+                  owner
+                      ? 'Manage request'
+                      : entry.offerStatus == 'accepted'
+                      ? 'View partner details'
+                      : 'View request',
+                ),
+              ),
+              if (owner)
+                TextButton(
+                  onPressed: () => _delete(entry),
+                  child: const Text('Delete'),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
+
+  Widget _badge(String text, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: .1),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+    ),
+  );
 }

@@ -1,3 +1,4 @@
+import { refreshLeaderboardsAfterSync } from './leaderboard-refresh.js';
 import { createServiceClient } from './supabase-client.js';
 import { uploadGameCover, uploadExternalIcon } from './icon-proxy-utils.js';
 import { createPreSyncSnapshot, detectChangesAndGenerateStories } from './activity-feed-snapshots.js';
@@ -1852,13 +1853,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       logMemory(`After processing batch ${i / BATCH_SIZE + 1}`);
     }
 
-    // Refresh StatusXP leaderboard cache (source of truth is user_achievements)
-    try {
-      await supabase.rpc('refresh_statusxp_leaderboard_for_user', { p_user_id: userId });
-      console.log('✅ StatusXP leaderboard refresh complete');
-    } catch (refreshError) {
-      console.error('⚠️ StatusXP leaderboard refresh failed:', refreshError);
-    }
+    await refreshLeaderboardsAfterSync(supabase, userId, 'xbox');
 
     // Mark as completed with retry logic
     const statusUpdated = await updateSyncStatus(userId, {

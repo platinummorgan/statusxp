@@ -1,13 +1,186 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/domain/trophy_help_request.dart';
+import 'package:statusxp/domain/coop_feedback.dart';
 
 import 'package:statusxp/utils/statusxp_logger.dart';
+
+enum CoopFeed { discover, requests, offers }
+
+typedef CoopGameKey = ({String platform, String gameId});
+
+class CoopEntry {
+  const CoopEntry(this.request, {this.offerStatus});
+  final TrophyHelpRequest request;
+  final String? offerStatus;
+}
 
 class TrophyHelpService {
   TrophyHelpService(this._supabase);
 
   final SupabaseClient _supabase;
+
+  Future<CoopFeedback?> getMyFeedback(String requestId) async {
+    final row = await _supabase
+        .from('coop_session_feedback')
+        .select('outcome,team_again')
+        .eq('request_id', requestId)
+        .eq('user_id', _requireUserId())
+        .maybeSingle();
+    return row == null ? null : CoopFeedback.fromJson(row);
+  }
+
+  Future<void> saveFeedback(String requestId, CoopFeedback feedback) async {
+    await _supabase.rpc(
+      'save_coop_feedback',
+      params: {
+        'p_request_id': requestId,
+        'p_outcome': feedback.outcome,
+        'p_team_again': feedback.teamAgain,
+      },
+    );
+  }
+
+  /// One bounded artwork lookup for the page, independent of request loading.
+  Future<Map<CoopGameKey, String>> getCoopArtwork(
+    List<TrophyHelpRequest> requests,
+  ) async {
+    if (requests.isEmpty) return {};
+    if (requests.length > 50) {
+      throw ArgumentError('Artwork page exceeds 50 requests');
+    }
+    final wanted = requests
+        .map((r) => (platform: r.platform, gameId: r.gameId))
+        .toSet();
+    final rows = await _supabase
+        .from('games')
+        .select('platform_id,platform_game_id,cover_url')
+        .inFilter(
+          'platform_game_id',
+          wanted.map((k) => k.gameId).toSet().toList(),
+        )
+        .inFilter('platform_id', [1, 2, 5, 9, 4, 10, 11, 12])
+        .order('platform_id');
+    final covers = <CoopGameKey, String>{};
+    for (final row in rows) {
+      final id = row['platform_id'] as int;
+      final platform = [1, 2, 5, 9].contains(id)
+          ? 'psn'
+          : id == 4
+          ? 'steam'
+          : 'xbox';
+      final key = (
+        platform: platform,
+        gameId: row['platform_game_id'] as String,
+      );
+      final url = row['cover_url'] as String?;
+      if (wanted.contains(key) && url != null && url.isNotEmpty) {
+        covers.putIfAbsent(key, () => url);
+      }
+    }
+    return covers;
+  }
+
+  Future<void> rescheduleRequest(
+    String requestId, {
+    required DateTime? scheduledAt,
+    required int expectedRevision,
+  }) async {
+    await _supabase.rpc(
+      'reschedule_coop_request',
+      params: {
+        'p_request_id': requestId,
+        'p_scheduled_at': scheduledAt?.toUtc().toIso8601String(),
+        'p_utc_offset_minutes': scheduledAt?.timeZoneOffset.inMinutes,
+        'p_expected_revision': expectedRevision,
+      },
+    );
+    _invalidateOpenCache();
+  }
+
+  Future<void> reconfirmRequest(
+    String requestId, {
+    bool clearPastSchedule = false,
+  }) async {
+    await _supabase.rpc(
+      'reconfirm_coop_request',
+      params: {
+        'p_request_id': requestId,
+        'p_clear_past_schedule': clearPastSchedule,
+      },
+    );
+    _invalidateOpenCache();
+  }
+
+  /// A fresh, bounded page. Errors propagate so the hub can offer a retry.
+  Future<List<CoopEntry>> getCoopPage({
+    required CoopFeed feed,
+    String? platform,
+    String search = '',
+    int offset = 0,
+    int limit = 24,
+  }) async {
+    if (offset < 0 || limit < 1 || limit > 50) {
+      throw ArgumentError('Invalid co-op page bounds');
+    }
+    final offers = feed == CoopFeed.offers;
+    var query = offers
+        ? _supabase
+              .from('trophy_help_responses')
+              .select('status,request:trophy_help_requests!inner(*)')
+              .eq('helper_profile_id', _requireUserId())
+        : _supabase.from('trophy_help_requests').select();
+    final prefix = offers ? 'request.' : '';
+    if (feed == CoopFeed.discover) query = query.eq('status', 'open');
+    if (feed == CoopFeed.requests) {
+      query = query.eq('profile_id', _requireUserId());
+    }
+    if (platform != null) query = query.eq('${prefix}platform', platform);
+    final term = search.trim();
+    if (term.isNotEmpty) {
+      // Quote the PostgREST value and escape LIKE wildcards for literal search.
+      final pattern =
+          '%${term.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_').replaceAll('*', '\\*')}%';
+      final quoted =
+          '"${pattern.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"';
+      query = query.or(
+        'game_title.ilike.$quoted,achievement_name.ilike.$quoted',
+        referencedTable: offers ? 'request' : null,
+      );
+    }
+    final rows = await query
+        .order('created_at', ascending: false)
+        .order('id', ascending: false)
+        .range(offset, offset + limit - 1);
+    final ownOffers = <String, String>{};
+    final userId = _supabase.auth.currentUser?.id;
+    if (feed == CoopFeed.discover && userId != null && rows.isNotEmpty) {
+      final responses = await _supabase
+          .from('trophy_help_responses')
+          .select('request_id,status')
+          .eq('helper_profile_id', userId)
+          .inFilter('request_id', rows.map((r) => r['id']).toList())
+          .order('created_at', ascending: false);
+      for (final response in responses) {
+        ownOffers.putIfAbsent(
+          response['request_id'] as String,
+          () => response['status'] as String,
+        );
+      }
+    }
+    return rows
+        .map(
+          (row) => CoopEntry(
+            TrophyHelpRequest.fromJson(
+              offers ? row['request'] as Map<String, dynamic> : row,
+            ),
+            offerStatus: offers
+                ? row['status'] as String?
+                : ownOffers[row['id']],
+          ),
+        )
+        .toList();
+  }
 
   // ------------------------------
   // Cache / de-dupe settings
@@ -37,6 +210,8 @@ class TrophyHelpService {
     String? description,
     String? availability,
     String? platformUsername,
+    DateTime? scheduledAt,
+    int helpersNeeded = 1,
   }) async {
     final userId = _requireUserId();
 
@@ -53,6 +228,9 @@ class TrophyHelpService {
           'description': description,
           'availability': availability,
           'platform_username': platformUsername,
+          'scheduled_at': scheduledAt?.toUtc().toIso8601String(),
+          'session_utc_offset_minutes': scheduledAt?.timeZoneOffset.inMinutes,
+          'helpers_needed': helpersNeeded,
           'status': 'open',
         })
         .select()
@@ -146,10 +324,10 @@ class TrophyHelpService {
   }
 
   Future<void> updateRequestStatus(String requestId, String status) async {
-    await _supabase
-        .from('trophy_help_requests')
-        .update({'status': status})
-        .eq('id', requestId);
+    await _supabase.rpc(
+      'finish_coop_request',
+      params: {'p_request_id': requestId, 'p_status': status},
+    );
 
     // status changes affect open lists
     _invalidateOpenCache();
@@ -217,17 +395,18 @@ class TrophyHelpService {
   }
 
   Future<void> acceptHelper(String responseId) async {
-    await _supabase
-        .from('trophy_help_responses')
-        .update({'status': 'accepted'})
-        .eq('id', responseId);
+    await _supabase.rpc(
+      'accept_coop_offer',
+      params: {'p_response_id': responseId},
+    );
+    _invalidateOpenCache();
   }
 
   Future<void> declineHelper(String responseId) async {
-    await _supabase
-        .from('trophy_help_responses')
-        .update({'status': 'declined'})
-        .eq('id', responseId);
+    await _supabase.rpc(
+      'decline_coop_offer',
+      params: {'p_response_id': responseId},
+    );
   }
 
   Future<List<TrophyHelpRequest>> getRequestsIOfferedHelpOn() async {

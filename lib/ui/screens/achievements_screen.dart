@@ -85,7 +85,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
 
         // Get the full achievement objects to show names
         final allAchievements =
-            ref.read(allAchievementsProvider(userId)).valueOrNull ?? [];
+            ref.read(allAchievementsProvider(userId)).asData?.value ?? [];
         final unlockedAchievements = allAchievements
             .where((a) => newlyUnlocked.contains(a.id))
             .toList();

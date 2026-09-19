@@ -1,13 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 
 /// Provider that detects which gaming platforms the user has connected
 /// Returns a set of platform codes: {'psn', 'xbox', 'steam'}
 final connectedPlatformsProvider = FutureProvider.autoDispose<Set<String>>((
   ref,
 ) async {
-  final supabase = Supabase.instance.client;
-  final userId = supabase.auth.currentUser?.id;
+  final supabase = ref.watch(supabaseClientProvider);
+  final userId = ref.watch(currentUserIdProvider);
 
   if (userId == null) return {};
 

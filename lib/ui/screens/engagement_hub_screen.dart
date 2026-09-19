@@ -83,7 +83,7 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
     setState(() => _updatingPreferences = true);
     try {
       var effectivePreferences = preferences;
-      final current = ref.read(engagementSnapshotProvider).valueOrNull;
+      final current = ref.read(engagementSnapshotProvider).asData?.value;
       final wasPushEnabled =
           current?.notificationPreferences.pushEnabled ?? false;
       if (preferences.pushEnabled && !wasPushEnabled) {
@@ -146,7 +146,7 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
     if (userId == null || _claimingChallengeIds.contains(challenge.id)) return;
     if (!challenge.claimable) return;
     final currentStreak =
-        ref.read(engagementSnapshotProvider).valueOrNull?.currentStreak ?? 0;
+        ref.read(engagementSnapshotProvider).asData?.value.currentStreak ?? 0;
 
     setState(() => _claimingChallengeIds.add(challenge.id));
     try {

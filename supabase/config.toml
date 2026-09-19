@@ -380,3 +380,18 @@ s3_region = "env(S3_REGION)"
 s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
+
+# Stripe authenticates webhook payloads with its signature, not a Supabase JWT.
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.twitch-eventsub-webhook]
+verify_jwt = false
+
+# Authenticated Google Pub/Sub push uses its Google-signed OIDC token.
+[functions.google-play-notifications]
+verify_jwt = false
+
+# Apple signs notification JWS payloads; the handler verifies its certificate chain.
+[functions.apple-store-notifications]
+verify_jwt = false

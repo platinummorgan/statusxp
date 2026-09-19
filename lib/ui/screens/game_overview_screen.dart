@@ -1,0 +1,541 @@
+import 'package:statusxp/ui/widgets/game_achievement_section.dart';
+import 'package:statusxp/ui/widgets/game_achievement_card.dart';
+import 'package:statusxp/ui/screens/ai_credit_shop_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:statusxp/ui/widgets/game_catalog_summary.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:statusxp/domain/game_overview.dart';
+import 'package:statusxp/domain/game_ref.dart';
+import 'package:statusxp/services/analytics_service.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/theme/cyberpunk_theme.dart';
+
+class GameOverviewScreen extends ConsumerStatefulWidget {
+  final GameRef gameRef;
+
+  const GameOverviewScreen({super.key, required this.gameRef});
+
+  @override
+  ConsumerState<GameOverviewScreen> createState() => _GameOverviewScreenState();
+}
+
+class _GameOverviewScreenState extends ConsumerState<GameOverviewScreen> {
+  bool _revealHidden = false;
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService().logCustomEvent(
+      eventName: 'game_overview_viewed',
+      parameters: {
+        'platform_id': widget.gameRef.platformId,
+        'platform_game_id': widget.gameRef.platformGameId,
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final overview = ref.watch(gameOverviewProvider(widget.gameRef));
+    return Scaffold(
+      backgroundColor: const Color(0xFF0A0E27),
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              overview.asData?.value?.name ?? 'Game',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              widget.gameRef.platform?.label ?? '',
+              style: const TextStyle(
+                fontSize: 12,
+                color: CyberpunkTheme.neonCyan,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            tooltip: _revealHidden
+                ? 'Hide hidden trophy details'
+                : 'Reveal hidden trophy details',
+            icon: Icon(_revealHidden ? Icons.visibility : Icons.visibility_off),
+            onPressed: () => setState(() => _revealHidden = !_revealHidden),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Game options',
+            onSelected: (value) async {
+              if (value == 'credits') {
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const AICreditShopScreen()),
+                );
+                if (mounted) ref.invalidate(achievementCreditsProvider);
+              } else {
+                final game = overview.asData?.value;
+                if (game == null) return;
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (context) => SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      height: MediaQuery.sizeOf(context).height * 0.8,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const SizedBox(width: 20),
+                              const Expanded(child: Text('Game details')),
+                              IconButton(
+                                tooltip: 'Close game details',
+                                onPressed: () => Navigator.pop(context),
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
+                          ),
+                          Expanded(child: _GameOverviewBody(game: game)),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'details',
+                child: Text('Game details'),
+              ),
+              if (ref.read(currentUserIdProvider) != null)
+                const PopupMenuItem(
+                  value: 'credits',
+                  child: Text('Buy AI Credits'),
+                ),
+            ],
+          ),
+        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/games'),
+        ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: Container(
+          decoration: CyberpunkTheme.gradientBackground(),
+          child: overview.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => _MessageState(
+              icon: Icons.cloud_off,
+              title: 'Unable to load this game',
+              message: error.toString(),
+              actionLabel: 'Try again',
+              onAction: () =>
+                  ref.invalidate(gameOverviewProvider(widget.gameRef)),
+            ),
+            data: (game) => game == null
+                ? _MessageState(
+                    icon: Icons.search_off,
+                    title: 'Game not found',
+                    message:
+                        'This game may have been removed or the link is incorrect.',
+                    actionLabel: 'Browse games',
+                    onAction: () => context.go('/games/browse'),
+                  )
+                : SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (game.isOwned) _InlineGameProgress(game: game),
+                        GameAchievementSection(
+                          key: ValueKey(game.ref),
+                          game: game.ref,
+                          gameName: game.name,
+                          fullScreen: true,
+                          revealHidden: _revealHidden,
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A standalone summary; it never encloses or narrows the trophy list.
+class _InlineGameProgress extends StatelessWidget {
+  const _InlineGameProgress({required this.game});
+  final GameOverview game;
+
+  @override
+  Widget build(BuildContext context) {
+    final completion = game.completionPercentage.clamp(0, 100);
+    final remaining = (game.achievementsTotal - game.achievementsEarned).clamp(
+      0,
+      game.achievementsTotal,
+    );
+    final label = game.ref.platform?.code.startsWith('ps') == true
+        ? 'trophies'
+        : 'achievements';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Container(
+        key: const ValueKey('inline-game-progress'),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0E27),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: CyberpunkTheme.neonCyan.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'YOUR PROGRESS',
+                    style: TextStyle(
+                      color: CyberpunkTheme.neonCyan,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${completion.toStringAsFixed(0)}%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: completion / 100,
+                minHeight: 6,
+                color: CyberpunkTheme.neonCyan,
+                semanticsLabel: 'Game completion',
+                semanticsValue: '${completion.toStringAsFixed(0)}%',
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 16,
+              runSpacing: 6,
+              children: [
+                Text(
+                  '${game.achievementsEarned}/${game.achievementsTotal} $label',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '$remaining remaining',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                if (game.currentScore > 0)
+                  Text(
+                    'Platform score: ${game.currentScore}',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GameOverviewBody extends StatelessWidget {
+  final GameOverview game;
+
+  const _GameOverviewBody({required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    final platform = game.ref.platform!;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1050),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 680;
+                  final cover = _Cover(url: game.coverUrl ?? game.iconUrl);
+                  final details = _HeroDetails(
+                    game: game,
+                    platformLabel: platform.label,
+                  );
+                  return compact
+                      ? Column(
+                          children: [
+                            cover,
+                            const SizedBox(height: 20),
+                            details,
+                          ],
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            cover,
+                            const SizedBox(width: 28),
+                            Expanded(child: details),
+                          ],
+                        );
+                },
+              ),
+              const SizedBox(height: 24),
+              GameCatalogSummary(game: game.ref),
+              const SizedBox(height: 12),
+              if (game.isOwned)
+                _ProgressPanel(game: game)
+              else
+                const _LibraryNotice(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class GameRouteNotFoundScreen extends StatelessWidget {
+  const GameRouteNotFoundScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: const Color(0xFF0A0E27),
+    appBar: AppBar(title: const Text('GAME NOT FOUND')),
+    body: _MessageState(
+      icon: Icons.link_off,
+      title: 'Invalid game link',
+      message: 'The platform or game identifier in this link is not valid.',
+      actionLabel: 'Browse games',
+      onAction: () => context.go('/games/browse'),
+    ),
+  );
+}
+
+class _Cover extends StatelessWidget {
+  final String? url;
+  const _Cover({this.url});
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(16),
+    child: SizedBox(
+      width: 220,
+      height: 290,
+      child: url == null || url!.isEmpty
+          ? const ColoredBox(
+              color: Color(0xFF1A1F3A),
+              child: Icon(
+                Icons.videogame_asset,
+                size: 72,
+                color: Colors.white24,
+              ),
+            )
+          : Image.network(
+              url!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const ColoredBox(
+                color: Color(0xFF1A1F3A),
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  size: 64,
+                  color: Colors.white24,
+                ),
+              ),
+            ),
+    ),
+  );
+}
+
+class _HeroDetails extends StatelessWidget {
+  final GameOverview game;
+  final String platformLabel;
+  const _HeroDetails({required this.game, required this.platformLabel});
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        game.name,
+        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      const SizedBox(height: 10),
+      Chip(label: Text(platformLabel)),
+      if (game.developer != null) ...[
+        const SizedBox(height: 12),
+        Text(
+          'Developed by ${game.developer}',
+          style: const TextStyle(color: Colors.white70),
+        ),
+      ],
+      if (game.publisher != null)
+        Text(
+          'Published by ${game.publisher}',
+          style: const TextStyle(color: Colors.white70),
+        ),
+      if (game.description != null && game.description!.isNotEmpty) ...[
+        const SizedBox(height: 18),
+        Text(
+          game.description!,
+          style: const TextStyle(color: Colors.white70, height: 1.5),
+        ),
+      ],
+    ],
+  );
+}
+
+class _ProgressPanel extends StatelessWidget {
+  final GameOverview game;
+  const _ProgressPanel({required this.game});
+
+  @override
+  Widget build(BuildContext context) => Card(
+    color: const Color(0xFF151A35),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'YOUR PROGRESS',
+            style: TextStyle(
+              color: CyberpunkTheme.neonCyan,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 16),
+          LinearProgressIndicator(
+            value: (game.completionPercentage / 100).clamp(0, 1),
+            minHeight: 10,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 24,
+            runSpacing: 12,
+            children: [
+              _Stat(
+                label: 'Complete',
+                value: '${game.completionPercentage.toStringAsFixed(0)}%',
+              ),
+              _Stat(
+                label: 'Achievements',
+                value: '${game.achievementsEarned}/${game.achievementsTotal}',
+              ),
+              if (game.currentScore > 0)
+                _Stat(label: 'Platform score', value: '${game.currentScore}'),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _Stat extends StatelessWidget {
+  final String label;
+  final String value;
+  const _Stat({required this.label, required this.value});
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        value,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 22,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      Text(label, style: const TextStyle(color: Colors.white60)),
+    ],
+  );
+}
+
+class _LibraryNotice extends StatelessWidget {
+  const _LibraryNotice();
+  @override
+  Widget build(BuildContext context) => const Card(
+    color: Color(0xFF151A35),
+    child: Padding(
+      padding: EdgeInsets.all(20),
+      child: Text(
+        'You do not have synced progress for this game yet.',
+        style: TextStyle(color: Colors.white70),
+      ),
+    ),
+  );
+}
+
+class _MessageState extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+  const _MessageState({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 64, color: Colors.white38),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.white60),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          FilledButton(onPressed: onAction, child: Text(actionLabel)),
+        ],
+      ),
+    ),
+  );
+}

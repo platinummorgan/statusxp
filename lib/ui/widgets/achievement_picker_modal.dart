@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/data/repositories/flex_room_repository.dart';
@@ -38,6 +40,132 @@ class _AchievementPickerModalState
   int? _selectedPlatformId;
   String? _selectedPlatformGameId;
   String _searchQuery = '';
+  Timer? _searchTimer;
+  bool _searchPending = false;
+  final _searchController = TextEditingController();
+  String? _gamesKey;
+  String? _achievementsKey;
+  Future<List<Map<String, dynamic>>>? _gamesFuture;
+  Future<List<FlexTile>>? _achievementsFuture;
+  int _gamesPage = 0;
+  int _achievementsPage = 0;
+
+  Widget _paged(Widget child, {required bool games, required bool hasMore}) {
+    final page = games ? _gamesPage : _achievementsPage;
+    return Column(
+      children: [
+        Expanded(child: child),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: page == 0
+                  ? null
+                  : () => setState(() {
+                      if (games) {
+                        _gamesPage--;
+                      } else {
+                        _achievementsPage--;
+                      }
+                    }),
+              child: const Text('Previous'),
+            ),
+            Text('Page ${page + 1}'),
+            TextButton(
+              onPressed: !hasMore
+                  ? null
+                  : () => setState(() {
+                      if (games) {
+                        _gamesPage++;
+                      } else {
+                        _achievementsPage++;
+                      }
+                    }),
+              child: const Text('Next'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _search(String value) {
+    _searchTimer?.cancel();
+    setState(() => _searchPending = true);
+    _searchTimer = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      setState(() {
+        _searchQuery = value.trim();
+        _gamesPage = 0;
+        _achievementsPage = 0;
+        _searchPending = false;
+      });
+    });
+  }
+
+  void _resetSearch() {
+    _searchTimer?.cancel();
+    _searchPending = false;
+    _searchQuery = '';
+    _gamesPage = 0;
+    _achievementsPage = 0;
+    _searchController.clear();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadGames() {
+    final key = jsonEncode([
+      widget.userId,
+      _selectedPlatform,
+      _searchQuery,
+      _gamesPage,
+    ]);
+    if (_gamesKey != key || _gamesFuture == null) {
+      _gamesKey = key;
+      _gamesFuture = ref
+          .read(flexRoomRepositoryProvider)
+          .getGamesForPlatform(
+            widget.userId,
+            _selectedPlatform!,
+            page: _gamesPage,
+            searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+          );
+    }
+    return _gamesFuture!;
+  }
+
+  Future<List<FlexTile>> _loadAchievements() {
+    final key = jsonEncode([
+      widget.userId,
+      _selectedPlatform,
+      _selectedPlatformId,
+      _selectedPlatformGameId,
+      _selectedGameId,
+      _searchQuery,
+      _achievementsPage,
+    ]);
+    if (_achievementsKey != key || _achievementsFuture == null) {
+      _achievementsKey = key;
+      _achievementsFuture = ref
+          .read(flexRoomRepositoryProvider)
+          .getAchievementsForGame(
+            widget.userId,
+            _selectedGameId,
+            _selectedPlatform!,
+            searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+            platformId: _selectedPlatformId,
+            platformGameId: _selectedPlatformGameId,
+            page: _achievementsPage,
+          );
+    }
+    return _achievementsFuture!;
+  }
+
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +235,7 @@ class _AchievementPickerModalState
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () {
                 setState(() {
+                  _resetSearch();
                   switch (_currentView) {
                     case PickerView.suggestions:
                       _currentView = PickerView.platformSelect;
@@ -199,7 +328,7 @@ class _AchievementPickerModalState
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: _buildPlatformCard(
               'Smart Suggestions',
-              'AI-curated best picks for this category',
+              'Suggested achievements for this category',
               Icons.auto_awesome,
               CyberpunkTheme.neonOrange,
               onTap: () {
@@ -387,7 +516,8 @@ class _AchievementPickerModalState
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
-            onChanged: (value) => setState(() => _searchQuery = value),
+            controller: _searchController,
+            onChanged: _search,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Search games...',
@@ -423,96 +553,91 @@ class _AchievementPickerModalState
 
         // Games list
         Expanded(
-          child: FutureBuilder<List<Map<String, dynamic>>>(
-            future: ref
-                .read(flexRoomRepositoryProvider)
-                .getGamesForPlatform(
-                  widget.userId,
-                  _selectedPlatform!,
-                  searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
+          child: _searchPending
+              ? const Center(child: CircularProgressIndicator())
+              : FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _loadGames(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: CyberpunkTheme.neonPurple,
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      statusxpLog(
+                        '❌ FutureBuilder error in getGamesForPlatform: ${snapshot.error}',
+                      );
+                      statusxpLog('Stack trace: ${snapshot.stackTrace}');
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Colors.red.withValues(alpha: 0.8),
+                              size: 48,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading games',
+                              style: TextStyle(
+                                color: Colors.red.withValues(alpha: 0.8),
+                                fontSize: 16,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => setState(() {
+                                _gamesFuture = null;
+                                _achievementsFuture = null;
+                              }),
+                              child: const Text('Retry'),
+                            ),
+                            Text(
+                              'Please try again.',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final games = snapshot.data ?? [];
+
+                    if (games.isEmpty) {
+                      return _paged(
+                        Center(
+                          child: Text(
+                            _gamesPage > 0 ? 'No more games' : 'No games found',
+                          ),
+                        ),
+                        games: true,
+                        hasMore: false,
+                      );
+                    }
+
+                    return _paged(
+                      ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: games.length,
+                        itemBuilder: (context, index) {
+                          final game = games[index];
+                          return _buildGameCard(game);
+                        },
+                      ),
+                      games: true,
+                      hasMore: games.any(
+                        (game) => game['page_has_more'] == true,
+                      ),
+                    );
+                  },
                 ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: CyberpunkTheme.neonPurple,
-                  ),
-                );
-              }
-
-              if (snapshot.hasError) {
-                statusxpLog(
-                  '❌ FutureBuilder error in getGamesForPlatform: ${snapshot.error}',
-                );
-                statusxpLog('Stack trace: ${snapshot.stackTrace}');
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.red.withValues(alpha: 0.8),
-                        size: 48,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading games',
-                        style: TextStyle(
-                          color: Colors.red.withValues(alpha: 0.8),
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${snapshot.error}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 12,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final games = snapshot.data ?? [];
-
-              if (games.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.videogame_asset_off,
-                        color: Colors.white.withValues(alpha: 0.4),
-                        size: 48,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _searchQuery.isNotEmpty
-                            ? 'No games found'
-                            : 'No games yet',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: games.length,
-                itemBuilder: (context, index) {
-                  final game = games[index];
-                  return _buildGameCard(game);
-                },
-              );
-            },
-          ),
         ),
       ],
     );
@@ -540,6 +665,7 @@ class _AchievementPickerModalState
         onTap: () {
           setState(() {
             _selectedGameId = gameId;
+            _resetSearch();
             _selectedGameName = gameName;
             _selectedPlatformId = platformId;
             _selectedPlatformGameId = platformGameId;
@@ -638,7 +764,8 @@ class _AchievementPickerModalState
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
-            onChanged: (value) => setState(() => _searchQuery = value),
+            controller: _searchController,
+            onChanged: _search,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Search achievements...',
@@ -674,88 +801,91 @@ class _AchievementPickerModalState
 
         // Achievements list
         Expanded(
-          child: FutureBuilder<List<FlexTile>>(
-            future: ref
-                .read(flexRoomRepositoryProvider)
-                .getAchievementsForGame(
-                  widget.userId,
-                  _selectedGameId,
-                  _selectedPlatform!,
-                  searchQuery: _searchQuery.isEmpty ? null : _searchQuery,
-                  platformId: _selectedPlatformId,
-                  platformGameId: _selectedPlatformGameId,
+          child: _searchPending
+              ? const Center(child: CircularProgressIndicator())
+              : FutureBuilder<List<FlexTile>>(
+                  future: _loadAchievements(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: CyberpunkTheme.neonPurple,
+                        ),
+                      );
+                    }
+
+                    if (snapshot.hasError) {
+                      statusxpLog(
+                        '❌ FutureBuilder error in getAchievementsForGame: ${snapshot.error}',
+                      );
+                      statusxpLog('Stack trace: ${snapshot.stackTrace}');
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: Colors.red.withValues(alpha: 0.8),
+                              size: 48,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading achievements',
+                              style: TextStyle(
+                                color: Colors.red.withValues(alpha: 0.8),
+                                fontSize: 16,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => setState(() {
+                                _gamesFuture = null;
+                                _achievementsFuture = null;
+                              }),
+                              child: const Text('Retry'),
+                            ),
+                            Text(
+                              'Please try again.',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final achievements = snapshot.data ?? [];
+
+                    if (achievements.isEmpty) {
+                      return _paged(
+                        Center(
+                          child: Text(
+                            _achievementsPage > 0
+                                ? 'No more achievements'
+                                : 'No achievements found',
+                          ),
+                        ),
+                        games: false,
+                        hasMore: false,
+                      );
+                    }
+
+                    return _paged(
+                      ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: achievements.length,
+                        itemBuilder: (context, index) {
+                          final tile = achievements[index];
+                          return _buildAchievementCard(tile);
+                        },
+                      ),
+                      games: false,
+                      hasMore: achievements.length == 30,
+                    );
+                  },
                 ),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: CyberpunkTheme.neonPurple,
-                  ),
-                );
-              }
-
-              if (snapshot.hasError) {
-                statusxpLog(
-                  '❌ FutureBuilder error in getAchievementsForGame: ${snapshot.error}',
-                );
-                statusxpLog('Stack trace: ${snapshot.stackTrace}');
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        color: Colors.red.withValues(alpha: 0.8),
-                        size: 48,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading achievements',
-                        style: TextStyle(
-                          color: Colors.red.withValues(alpha: 0.8),
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${snapshot.error}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 12,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              final achievements = snapshot.data ?? [];
-
-              if (achievements.isEmpty) {
-                return Center(
-                  child: Text(
-                    _searchQuery.isNotEmpty
-                        ? 'No achievements found'
-                        : 'No achievements yet',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 16,
-                    ),
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: achievements.length,
-                itemBuilder: (context, index) {
-                  final tile = achievements[index];
-                  return _buildAchievementCard(tile);
-                },
-              );
-            },
-          ),
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import { stripeCustomer } from '../_shared/stripe-customer.ts'
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Stripe from 'https://esm.sh/stripe@14.10.0?target=deno'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
@@ -5,6 +6,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
+  timeout: 20000,
+  maxNetworkRetries: 1,
 })
 
 const corsHeaders = {
@@ -16,6 +19,8 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
+
+  if (req.method !== 'POST') return new Response('Use POST', {status:405,headers:corsHeaders})
 
   try {
     const authHeader = req.headers.get('Authorization')
@@ -43,26 +48,22 @@ serve(async (req) => {
       )
     }
 
-    // Parse request body
-    const { packType, credits, price } = await req.json()
-    
-    if (!packType || !credits || !price) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    const { packType } = await req.json()
+    const catalog: Record<string, {credits:number;price:number}> = {
+      small:{credits:20,price:1.99},medium:{credits:60,price:4.99},large:{credits:150,price:9.99},
     }
-
-    const packNames: Record<string, string> = {
-      small: 'AI Pack S - 10 Uses',
-      medium: 'AI Pack M - 30 Uses',
-      large: 'AI Pack L - 75 Uses',
+    if(typeof packType !== 'string' || !Object.hasOwn(catalog,packType)) {
+      return new Response(JSON.stringify({error:'Unknown pack'}),{status:400,headers:{...corsHeaders,'Content-Type':'application/json'}})
     }
+    const {credits,price}=catalog[packType]
+    const packNames:Record<string,string>={small:'AI Pack S - 20 Uses',medium:'AI Pack M - 60 Uses',large:'AI Pack L - 150 Uses'}
 
     console.log(`Creating AI pack checkout for user: ${user.id}, pack: ${packType}`)
 
     // Create Stripe Checkout Session for one-time payment
+    const customer = await stripeCustomer(stripe, user.id)
     const session = await stripe.checkout.sessions.create({
+      customer,
       payment_method_types: ['card'],
       line_items: [
         {
@@ -81,7 +82,6 @@ serve(async (req) => {
       client_reference_id: user.id,
       metadata: {
         user_id: user.id,
-        user_email: user.email,
         pack_type: packType,
         credits: credits.toString(),
       },
@@ -96,9 +96,9 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (error) {
-    console.error('❌ Error creating AI pack checkout session:', error)
+    console.error('AI checkout creation failed')
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Checkout unavailable. Please try again.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

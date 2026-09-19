@@ -1,5 +1,6 @@
+import { quotaResponse } from '../_shared/provider-quota.ts';
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const RAILWAY_URL = 'https://statusxp-production.up.railway.app';
 
@@ -13,10 +14,12 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  let supabaseClient: ReturnType<typeof createClient> | null = null;
+  let supabaseClient: SupabaseClient | null = null;
   let currentUserId: string | null = null;
   let createdSyncLogId: number | null = null;
   let profileMarkedSyncing = false;
+
+  if (req.method !== 'POST') return new Response(JSON.stringify({error: 'Use POST.'}), {status: 405, headers: {...corsHeaders, 'Content-Type': 'application/json'}});
 
   try {
     const authHeader = req.headers.get('Authorization')!;
@@ -57,6 +60,9 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const quotaDenied = await quotaResponse(user.id, 'sync_steam', corsHeaders);
+    if (quotaDenied) return quotaDenied;
 
     // Mark all old pending syncs as failed
     await supabase
@@ -119,7 +125,6 @@ serve(async (req) => {
       console.log('🔐 SYNC_SERVICE_SECRET value:', syncSecret ? '[SET]' : '[NOT SET]');
       if (syncSecret) {
         headers['Authorization'] = `Bearer ${syncSecret}`;
-        console.log('🔐 Authorization header set:', `Bearer ${syncSecret.substring(0, 3)}...`);
       } else {
         console.log('🔐 No SYNC_SERVICE_SECRET found - no auth header sent');
       }

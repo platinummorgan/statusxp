@@ -31,7 +31,8 @@ supabase secrets set APPLE_APP_STORE_PRIVATE_KEY='<contents of the .p8 file>'
 Apply the database migration before deploying the function:
 
 ```powershell
-supabase db push
+## Do not bulk-push historical migrations.
+## See docs/reviews/2026-09-14/PREMIUM_ROLLOUT.md for the reviewed rollout.
 supabase functions deploy verify-store-purchase
 ```
 

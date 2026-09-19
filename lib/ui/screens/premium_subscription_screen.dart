@@ -1,3 +1,4 @@
+import 'package:statusxp/ui/screens/ai_credit_shop_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:intl/intl.dart';
 import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/services/subscription_service.dart';
+import 'package:statusxp/services/store_restore_session.dart';
+import 'package:statusxp/services/store_purchase_attempt.dart';
 import 'package:statusxp/theme/colors.dart';
 import 'package:statusxp/ui/screens/markdown_viewer_screen.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
@@ -28,9 +31,14 @@ int? annualSavingsPercent({
 ///
 /// Shows subscription benefits and allows users to subscribe to Premium
 class PremiumSubscriptionScreen extends ConsumerStatefulWidget {
-  const PremiumSubscriptionScreen({this.source = 'direct', super.key});
+  const PremiumSubscriptionScreen({
+    this.source = 'direct',
+    this.subscriptionService,
+    super.key,
+  });
 
   final String source;
+  final SubscriptionService? subscriptionService;
 
   @override
   ConsumerState<PremiumSubscriptionScreen> createState() =>
@@ -39,7 +47,7 @@ class PremiumSubscriptionScreen extends ConsumerStatefulWidget {
 
 class _PremiumSubscriptionScreenState
     extends ConsumerState<PremiumSubscriptionScreen> {
-  final SubscriptionService _subscriptionService = SubscriptionService();
+  late final SubscriptionService _subscriptionService;
   bool _isLoading = true;
   bool _isPremium = false;
   bool _isPurchasing = false;
@@ -50,6 +58,7 @@ class _PremiumSubscriptionScreenState
   @override
   void initState() {
     super.initState();
+    _subscriptionService = widget.subscriptionService ?? SubscriptionService();
     _initialize();
   }
 
@@ -152,42 +161,47 @@ class _PremiumSubscriptionScreenState
         _selectedSubscriptionProduct ?? _subscriptionService.products.first;
     _logFunnel('checkout_start', product: product);
     try {
-      final success = await _subscriptionService.purchaseSubscription(product);
-      if (!success) {
-        _logFunnel('checkout_not_started', product: product);
-        _showError('The purchase could not be started. Please try again.');
-        return;
-      }
-
-      final activated = await _waitForPremiumActivation();
+      final result = await _subscriptionService.purchaseSubscription(product);
       if (!mounted) return;
-
-      if (activated) {
+      if (result == StorePurchaseResult.verified) {
         _logFunnel('activated', product: product);
         final entitlement = await _subscriptionService.getPremiumEntitlement();
         if (!mounted) return;
         setState(() {
-          _isPremium = true;
+          _isPremium = entitlement?.active ?? false;
           _entitlement = entitlement;
         });
-        _showSuccess('Welcome to Premium! 🎉');
+        if (_isPremium) {
+          _showSuccess('Welcome to Premium! 🎉');
+        } else {
+          _showError(
+            'Purchase verified, but Premium is not active. Try Restore Purchases.',
+          );
+        }
       } else {
-        _logFunnel('activation_pending', product: product);
-        _showSuccess(
-          'Purchase received and still processing. Premium will activate automatically.',
-        );
+        _logFunnel('checkout_${result.name}', product: product);
+        if (result == StorePurchaseResult.canceled) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Purchase canceled.')));
+        } else {
+          _showError(switch (result) {
+            StorePurchaseResult.pending =>
+              'Payment is pending approval. Premium will activate after it completes.',
+            StorePurchaseResult.notStarted =>
+              'The purchase could not be started. Please try again.',
+            StorePurchaseResult.unconfirmed =>
+              'No purchase confirmation received. Check the store or try Restore Purchases.',
+            _ =>
+              'The purchase could not be verified. Try again or use Restore Purchases.',
+          });
+        }
       }
+    } catch (_) {
+      _showError('The purchase could not be completed. Please try again.');
     } finally {
       if (mounted) setState(() => _isPurchasing = false);
     }
-  }
-
-  Future<bool> _waitForPremiumActivation() async {
-    for (var attempt = 0; attempt < 12; attempt++) {
-      if (await _subscriptionService.isPremiumActive()) return true;
-      await Future.delayed(const Duration(seconds: 1));
-    }
-    return false;
   }
 
   Future<void> _subscribeWithStripe() async {
@@ -259,25 +273,29 @@ class _PremiumSubscriptionScreenState
   }
 
   Future<void> _restorePurchases() async {
+    if (_isLoading) return;
     setState(() => _isLoading = true);
-
-    final success = await _subscriptionService.restorePurchases();
-
-    if (success) {
-      final isPremium = await _subscriptionService.isPremiumActive();
-      setState(() {
-        _isPremium = isPremium;
-        _isLoading = false;
-      });
-
-      if (_isPremium && mounted) {
-        _showSuccess('Purchases restored successfully!');
-      } else if (mounted) {
-        _showError('No active subscriptions found');
-      }
+    final result = await _subscriptionService.restorePurchases();
+    final isPremium = await _subscriptionService.isPremiumActive();
+    final entitlement = await _subscriptionService.getPremiumEntitlement();
+    if (!mounted) return;
+    setState(() {
+      _isPremium = isPremium;
+      _entitlement = entitlement;
+      _isLoading = false;
+    });
+    if (result == StoreRestoreResult.restored) {
+      _showSuccess('Purchases verified and restored successfully!');
     } else {
-      setState(() => _isLoading = false);
-      _showError('Failed to restore purchases');
+      _showError(switch (result) {
+        StoreRestoreResult.noPurchases =>
+          'No purchases found for this store account.',
+        StoreRestoreResult.notSignedIn =>
+          'Sign in to StatusXP, then restore purchases.',
+        StoreRestoreResult.unavailable =>
+          'The app store is unavailable. Please try again.',
+        _ => 'We could not verify all purchases. Please try restoring again.',
+      });
     }
   }
 
@@ -313,42 +331,64 @@ class _PremiumSubscriptionScreenState
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: accentPrimary))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  if (_isPremium) ...[
-                    _buildPremiumActiveCard(),
-                    const SizedBox(height: 18),
-                    if (ref.read(currentUserIdProvider) case final userId?)
-                      PremiumActivationChecklist(userId: userId),
-                  ],
-                  if (!_isPremium) ...[
-                    _buildHeroSection(),
-                    const SizedBox(height: 18),
-                    _buildPersonalizedValue(),
-                    const SizedBox(height: 26),
-                    _buildFeaturesGrid(plan.features),
-                    const SizedBox(height: 26),
-                    _buildComparisonCard(),
-                    const SizedBox(height: 26),
-                    if (!kIsWeb && _subscriptionChoices.length > 1) ...[
-                      _buildPlanSelector(),
-                      const SizedBox(height: 16),
+      body: SafeArea(
+        top: false, // The app bar already handles the top system inset.
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: accentPrimary),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    if (_isPremium) ...[
+                      _buildPremiumActiveCard(),
+                      const SizedBox(height: 18),
+                      if (ref.read(currentUserIdProvider) case final userId?)
+                        PremiumActivationChecklist(userId: userId),
                     ],
-                    _buildPricingCard(plan, selectedProduct),
-                    const SizedBox(height: 24),
-                    _buildSubscribeButton(plan, selectedProduct),
+                    if (!_isPremium) ...[
+                      _buildHeroSection(),
+                      const SizedBox(height: 18),
+                      _buildPersonalizedValue(),
+                      const SizedBox(height: 26),
+                      _buildFeaturesGrid(plan.features),
+                      const SizedBox(height: 26),
+                      _buildComparisonCard(),
+                      const SizedBox(height: 26),
+                      if (!kIsWeb && _subscriptionChoices.length > 1) ...[
+                        _buildPlanSelector(),
+                        const SizedBox(height: 16),
+                      ],
+                      _buildPricingCard(plan, selectedProduct),
+                      const SizedBox(height: 24),
+                      ListenableBuilder(
+                        listenable: _subscriptionService.purchaseActivity,
+                        builder: (context, child) =>
+                            _buildSubscribeButton(plan, selectedProduct),
+                      ),
+                      const SizedBox(height: 16),
+                      const SizedBox(height: 32),
+                      _buildFooter(),
+                    ],
                     const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => AICreditShopScreen(
+                            subscriptionService: _subscriptionService,
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.auto_awesome),
+                      label: const Text('Buy AI Credits'),
+                    ),
+                    const SizedBox(height: 8),
                     _buildRestoreButton(),
-                    const SizedBox(height: 32),
-                    _buildFooter(),
                   ],
-                ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -554,7 +594,7 @@ class _PremiumSubscriptionScreenState
     const rows = [
       ('Daily syncs', '3', 'Up to 12'),
       ('Sync cooldown', 'Up to 2 hours', 'As low as 15 min'),
-      ('AI achievement guides', 'Limited', 'Unlimited'),
+      ('AI achievement guides', '3 free/day', '100/day'),
       ('Advanced player insights', '—', 'Included'),
       ('Goals & achievement radar', '—', 'Included'),
     ];
@@ -906,7 +946,7 @@ class _PremiumSubscriptionScreenState
     }
 
     return TextButton(
-      onPressed: _restorePurchases,
+      onPressed: _isPurchasing ? null : _restorePurchases,
       child: const Text(
         'Restore Purchases',
         style: TextStyle(color: accentPrimary, fontSize: 14),
