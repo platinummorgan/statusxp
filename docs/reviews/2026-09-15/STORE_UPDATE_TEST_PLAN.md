@@ -26,7 +26,7 @@ The existing Android artifact at `build/app/outputs/bundle/release/app-release.a
 - Verified all 102 repository migrations now match the remote migration ledger; prior manually applied Premium/store migrations were marked applied only after their expected live tables, RPCs, columns, and earlier rollout behavior were confirmed.
 - Deployed the current sync service to Railway as deployment `2a676e3e-662f-488a-8b14-0ed3624e1a0d`. Deployment succeeded and `/health` returned `status: ok`; startup logs confirmed required configuration presence without exposing values.
 - Validation: 106 Deno tests passed, 21 sync-service tests passed, 185 Flutter tests passed with 9 existing skips, and Flutter analysis reported no issues.
-- Public web remains on its September 2 production deployment until a separate web build and deployment is completed. App Store and Google Play production binaries remain unchanged.
+- Deployed the updated Flutter web client to Vercel production as `dpl_2hshEugBeHKqFsMd2Cz2G5DFVLzE`. `statusxp.com` resolves to the ready deployment; a fresh request returned HTTP 200 with the expected Flutter bootstrap and StatusXP title. App Store and Google Play production binaries remain unchanged.
 
 ## Device and account prerequisites
 

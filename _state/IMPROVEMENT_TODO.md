@@ -313,4 +313,4 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [ ] Decide whether to remove or restore the two unused live-only Steam OpenID functions.
 - [ ] Build the Android 1.1.19+102 bundle only when the owner is ready. Do not use the existing build-100 AAB as the candidate.
 - [ ] Build/archive iOS on the Mac and complete Apple purchase/restore validation.
-- [ ] Build and deploy the updated public web client; current production is still the September 2 deployment.
+- [x] Built and deployed the updated public web client to Vercel production. Deployment `dpl_2hshEugBeHKqFsMd2Cz2G5DFVLzE` is ready; `statusxp.com` returned HTTP 200 with the expected Flutter bootstrap and title.
