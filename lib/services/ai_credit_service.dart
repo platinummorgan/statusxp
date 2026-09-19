@@ -21,7 +21,9 @@ class AICreditStatus {
       source: json['source'] ?? 'none',
       remaining: json['remaining'] ?? 0,
       packCredits: json['pack_credits'] ?? 0,
-      dailyFree: json['daily_free'] ?? 0,
+      dailyFree:
+          ((json['daily_free'] ?? json['daily_free_remaining'] ?? 0) as num)
+              .toInt(),
     );
   }
 

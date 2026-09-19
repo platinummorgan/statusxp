@@ -49,8 +49,11 @@ DROP TRIGGER IF EXISTS guard_coop_session_insert ON public.trophy_help_requests;
 CREATE TRIGGER guard_coop_session_insert BEFORE INSERT ON public.trophy_help_requests
 FOR EACH ROW EXECUTE FUNCTION public.guard_coop_session_insert();
 
--- State changes go through owner-checked RPCs, never two independent writes.
-REVOKE UPDATE ON public.trophy_help_requests, public.trophy_help_responses FROM PUBLIC, anon, authenticated;
+-- New clients use the owner-checked RPCs below so each lifecycle transition is
+-- atomic. Keep the existing authenticated UPDATE grant during the mobile-store
+-- rollout because production build 92 still performs owner-scoped direct
+-- updates. Revoke that legacy grant in a later migration after adoption of the
+-- RPC client is confirmed.
 DROP POLICY IF EXISTS "Users can create trophy help requests" ON public.trophy_help_requests;
 CREATE POLICY "Users can create trophy help requests" ON public.trophy_help_requests
 FOR INSERT TO authenticated WITH CHECK (profile_id = auth.uid() AND user_id = auth.uid() AND status = 'open');

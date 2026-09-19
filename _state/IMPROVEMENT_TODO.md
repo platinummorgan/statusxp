@@ -298,3 +298,19 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] Workflow preference: install UI-only test APKs directly over USB. Do not upload every UI iteration to Google Play. Use Play internal testing when store/billing behavior specifically needs it or when requested.
 - [x] Built release ARM64 APK 1.1.18+101 and installed directly over USB (`adb install -r`: Success). Verified package version 101, started MainActivity, and confirmed the process remained running with no entries in its crash buffer. No Play upload, uninstall, or data clear was performed.
 - [ ] Owner confirmation of compact progress above the approved trophy layout.
+
+
+### September 19 release reconciliation
+- [x] Set the next release candidate source version to 1.1.19+102 and wrote store release notes. The dashboard redesign remains documented future work and is not included.
+- [x] Audited all live Supabase Edge Functions against repository source. Deployed all 14 mismatches; all 36 tracked functions now match live exactly. Two unreferenced legacy Steam OpenID functions remain live-only pending a retire-or-restore decision.
+- [x] Restored and live-tested the AI guide runtime contract. One isolated authenticated guide request succeeded and its temporary account was removed.
+- [x] Applied the missing durable leaderboard and co-op lifecycle migrations. Preserved build-92 owner-update compatibility during store rollout.
+- [x] Live co-op lifecycle smoke passed create, offer, accept, reschedule, complete, feedback privacy, unauthorized-user rejection, and legacy direct-update compatibility. Temporary accounts were removed.
+- [x] Repaired the Supabase migration ledger after verifying the manually applied Premium/store objects. All 102 local and remote migration versions now agree.
+- [x] Deployed the validated sync service to Railway. Deployment `2a676e3e-662f-488a-8b14-0ed3624e1a0d` succeeded and the live health endpoint is OK.
+- [x] Validation passed: 106 Deno tests, 21 sync-service tests, 185 Flutter tests with 9 existing skips, and clean Flutter analysis.
+- [ ] Confirm AI Help from the owner's normal phone account after the live backend repair.
+- [ ] Decide whether to remove or restore the two unused live-only Steam OpenID functions.
+- [ ] Build the Android 1.1.19+102 bundle only when the owner is ready. Do not use the existing build-100 AAB as the candidate.
+- [ ] Build/archive iOS on the Mac and complete Apple purchase/restore validation.
+- [ ] Build and deploy the updated public web client; current production is still the September 2 deployment.
