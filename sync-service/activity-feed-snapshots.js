@@ -132,7 +132,7 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot, optio
   if (!SOURCE_PLATFORM_IDS[source]) return;
   try {
     const rows = await readAllPages(() => supabase.from('user_achievements')
-      .select('platform_id,platform_game_id,platform_achievement_id,earned_at,synced_at,achievements(name,is_platinum,rarity_global,score_value,metadata)')
+      .select('platform_id,platform_game_id,platform_achievement_id,earned_at,synced_at,achievements(name,description,is_platinum,rarity_global,score_value,metadata)')
       .eq('user_id', userId).in('platform_id', SOURCE_PLATFORM_IDS[source])
       .gte('synced_at', preSnapshot.synced_at).lte('synced_at', postSnapshot.synced_at)
       .order('platform_id').order('platform_game_id').order('platform_achievement_id'));
@@ -185,6 +185,8 @@ async function generateAndInsertStory(userId, change, snapshot) {
     const result = await generateActivityStory(username, change, {
       recentStories: recentStories.slice(0, 5).map(story => story.story_text),
     });
+
+    if (!result.success) console.warn('Activity story fallback:', result.error);
 
     // Insert into activity_feed
     const { error } = await supabase

@@ -56,3 +56,19 @@ test('valid AI prose preserves non-English proper names verbatim', async () => {
  const result = await generateActivityStory('Player', { ...change, gameTitle: '黒神話' }, { client: { chat: { completions: { create: async () => ({ choices: [{ finish_reason: 'stop', message: { content: '{PLAYER} earned {ACTIVITY} {GAMES}. {EXTRA}' } }] }) } } } });
  assert.equal(result.success, true); assert.match(result.story, /黒神話/);
 });
+
+test('empty optional facts do not reject an otherwise complete AI story', () => {
+ const facts = buildStoryFacts('Dex-Morgan', { source: 'psn', gameTitle: 'Oblivion', gameCount: 1, bronzeCount: 2 });
+ assert.equal(renderStoryDraft('{PLAYER} picked up {ACTIVITY} {GAMES}.', facts), 'Dex-Morgan picked up 2 Bronze in Oblivion.');
+});
+test('accepts expanded facts with conjunctions and punctuation inside trophy quotes', () => {
+ const facts = buildStoryFacts('Dex-Morgan', { source: 'psn', gameTitle: 'Oblivion', gameCount: 1, silverCount: 2, bronzeCount: 4, highlight: { name: 'Guildmaster, Thieves Guild' } });
+ const story = renderStoryDraft('Dex-Morgan unlocked “Guildmaster, Thieves Guild.” Their haul: 2 Silver and 4 Bronze in Oblivion.', facts);
+ assert.ok(story); assert.match(story, /2 Silver, 4 Bronze/); assert.match(story, /Thieves Guild/);
+ assert.equal(renderStoryDraft('Dex-Morgan unlocked “Guildmaster, Thieves Guild.” Their haul: 20 Silver and 4 Bronze in Oblivion.', facts), null);
+});
+test('a supplied highlight is required and survives fallback', () => {
+ const c = { source: 'psn', gameTitle: 'Oblivion', gameCount: 1, bronzeCount: 2, highlight: { name: 'Silencer, Dark Brotherhood' } };
+ assert.equal(renderStoryDraft('{PLAYER} earned {ACTIVITY} {GAMES}.', buildStoryFacts('Dex', c)), null);
+ assert.match(buildTemplateStory('Dex', c), /Silencer, Dark Brotherhood/);
+});

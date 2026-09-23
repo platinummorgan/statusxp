@@ -36,3 +36,10 @@ test('pagination covers every row and fails closed on query errors', async () =>
  assert.equal((await readAllPages(() => ({ range: async (a, b) => ({ data: records.slice(a, b + 1) }) }))).length, 1001);
  await assert.rejects(readAllPages(() => ({ range: async () => ({ error: { message: 'timeout' } }) })), /timeout/);
 });
+
+test('ordinary unlocks provide a named highlight and objective without requiring rarity', () => {
+ const change = buildVerifiedChange('steam', { steam_achievement_count: 5 }, { steam_achievement_count: 6, synced_at: after.synced_at }, [{ ...rows[0], achievements: { name: 'Guildmaster', description: 'Completed the guild questline' } }], games);
+ assert.equal(change.highlight.name, 'Guildmaster');
+ assert.equal(change.highlight.description, 'Completed the guild questline');
+ assert.deepEqual(change.rareTrophies, []);
+});

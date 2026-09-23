@@ -60,7 +60,18 @@ export function buildVerifiedChange(source, before, after, rows, games) {
     return { name: a.name, rarity: a.rarity_global, gameTitle: names.get(key(row)), type: a.metadata?.psn_trophy_type };
   }).filter(a => a.name && a.rarity !== null && Number.isFinite(Number(a.rarity)) && Number(a.rarity) > 0 && Number(a.rarity) < 10)
     .sort((a, b) => Number(a.rarity) - Number(b.rarity));
+  // A named unlock gives the writer something concrete to celebrate even on a small update.
+  const highlights = unique.map(row => {
+    const a = definition(row);
+    return { name: a.name, description: a.description || '', gameTitle: names.get(key(row)),
+      rarity: a.rarity_global, earnedAt: row.earned_at,
+      importance: a.is_platinum ? 4 : ({ gold: 3, silver: 2, bronze: 1 }[a.metadata?.psn_trophy_type] || 1) };
+  }).filter(a => a.name).sort((a, b) => {
+    const rare = value => Number(value) > 0 && Number(value) < 10 ? Number(value) : 101;
+    return rare(a.rarity) - rare(b.rarity) || b.importance - a.importance || String(b.earnedAt).localeCompare(String(a.earnedAt));
+  });
   return {
+    highlight: highlights[0] || null,
     type: source === 'psn' ? 'trophy_detail' : source === 'xbox' ? 'gamerscore_gain' : 'steam_achievement_gain',
     source, oldValue: totalBefore, newValue: totalAfter, change: totalAfter - totalBefore,
     goldCount: source === 'psn' ? deltas[1] : 0,
