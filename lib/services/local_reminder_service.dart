@@ -1,10 +1,26 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show TargetPlatform, defaultTargetPlatform, kIsWeb, visibleForTesting;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:statusxp/services/analytics_service.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+
+@visibleForTesting
+const localReminderInitializationSettings = InitializationSettings(
+  android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+  iOS: DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+  ),
+  macOS: DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+  ),
+);
 
 class LocalReminderService {
   LocalReminderService._();
@@ -28,9 +44,7 @@ class LocalReminderService {
     final localZone = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(localZone.identifier));
     await _notifications.initialize(
-      settings: const InitializationSettings(
-        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-      ),
+      settings: localReminderInitializationSettings,
       onDidReceiveNotificationResponse: (response) {
         final payload = response.payload;
         if (payload != null && payload.startsWith('/')) {
@@ -63,12 +77,33 @@ class LocalReminderService {
   Future<bool> requestPermission() async {
     if (kIsWeb) return false;
     await initialize();
-    return await _notifications
-            .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin
-            >()
-            ?.requestNotificationsPermission() ??
-        false;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return await _notifications
+                .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin
+                >()
+                ?.requestNotificationsPermission() ??
+            false;
+      case TargetPlatform.iOS:
+        return await _notifications
+                .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin
+                >()
+                ?.requestPermissions(alert: true, badge: true, sound: true) ??
+            false;
+      case TargetPlatform.macOS:
+        return await _notifications
+                .resolvePlatformSpecificImplementation<
+                  MacOSFlutterLocalNotificationsPlugin
+                >()
+                ?.requestPermissions(alert: true, badge: true, sound: true) ??
+            false;
+      case TargetPlatform.fuchsia:
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
+        return false;
+    }
   }
 
   Future<void> updateStreakReminder({
@@ -106,6 +141,8 @@ class LocalReminderService {
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
         ),
+        iOS: DarwinNotificationDetails(threadIdentifier: 'statusxp_streaks'),
+        macOS: DarwinNotificationDetails(threadIdentifier: 'statusxp_streaks'),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: '/engagement-hub',
@@ -168,6 +205,12 @@ class LocalReminderService {
           importance: Importance.defaultImportance,
           priority: Priority.defaultPriority,
         ),
+        iOS: DarwinNotificationDetails(
+          threadIdentifier: 'statusxp_weekly_recap',
+        ),
+        macOS: DarwinNotificationDetails(
+          threadIdentifier: 'statusxp_weekly_recap',
+        ),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: '/weekly-recap',
@@ -224,6 +267,12 @@ class LocalReminderService {
             channelDescription: 'Helpful first-week StatusXP reminders',
             importance: Importance.defaultImportance,
           ),
+          iOS: DarwinNotificationDetails(
+            threadIdentifier: 'statusxp_first_week',
+          ),
+          macOS: DarwinNotificationDetails(
+            threadIdentifier: 'statusxp_first_week',
+          ),
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         payload: '/engagement-hub',
@@ -242,6 +291,8 @@ class LocalReminderService {
           channelDescription: 'Occasional reminders after inactivity',
           importance: Importance.defaultImportance,
         ),
+        iOS: DarwinNotificationDetails(threadIdentifier: 'statusxp_win_back'),
+        macOS: DarwinNotificationDetails(threadIdentifier: 'statusxp_win_back'),
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       payload: '/',
