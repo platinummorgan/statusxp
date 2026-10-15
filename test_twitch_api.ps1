@@ -1,8 +1,10 @@
 # Test Twitch API Access
 # Verifies that the Twitch credentials work and checks if a specific user is subscribed
 
-$clientId = "wugdu8pbxckurjet128o523dll87f7"
-$clientSecret = "ze3da0tptbqcmj57p3wliq1r0kfcjf"
+$clientId = $env:TWITCH_CLIENT_ID
+if ([string]::IsNullOrWhiteSpace($clientId)) { throw "Set TWITCH_CLIENT_ID in the environment before running this script." }
+$clientSecret = $env:TWITCH_CLIENT_SECRET
+if ([string]::IsNullOrWhiteSpace($clientSecret)) { throw "Set TWITCH_CLIENT_SECRET in the environment before running this script." }
 $broadcasterId = "39e33dec307f13908c60deffa5b9cecbb3f5c739b2a5"
 
 # Get app access token

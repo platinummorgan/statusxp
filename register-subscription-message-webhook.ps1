@@ -1,10 +1,13 @@
 # Get Twitch app access token and register EventSub webhook for subscription.message
 
-$clientId = "wugdu8pbxckurjet128o523dll87f7"
-$clientSecret = "jhwx95zr72230d6dcicvclccet80ap"
+$clientId = $env:TWITCH_CLIENT_ID
+if ([string]::IsNullOrWhiteSpace($clientId)) { throw "Set TWITCH_CLIENT_ID in the environment before running this script." }
+$clientSecret = $env:TWITCH_CLIENT_SECRET
+if ([string]::IsNullOrWhiteSpace($clientSecret)) { throw "Set TWITCH_CLIENT_SECRET in the environment before running this script." }
 $broadcasterId = "47221283"
 $webhookUrl = "https://ksriqcmumjkemtfjuedm.supabase.co/functions/v1/twitch-eventsub-webhook"
-$webhookSecret = "a2149f8760e5c3bd"
+$webhookSecret = $env:TWITCH_EVENTSUB_SECRET
+if ([string]::IsNullOrWhiteSpace($webhookSecret)) { throw "Set TWITCH_EVENTSUB_SECRET in the environment before running this script." }
 
 Write-Host "Getting app access token..." -ForegroundColor Cyan
 $tokenResponse = Invoke-RestMethod -Uri "https://id.twitch.tv/oauth2/token" `

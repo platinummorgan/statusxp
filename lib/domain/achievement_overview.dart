@@ -16,6 +16,7 @@ class AchievementOverview extends Equatable {
   final bool isPlatinum;
   final bool isHidden;
   final DateTime? earnedAt;
+  final bool hasConfirmedUnlock;
   final Map<String, dynamic> metadata;
 
   const AchievementOverview({
@@ -31,10 +32,11 @@ class AchievementOverview extends Equatable {
     this.isPlatinum = false,
     this.isHidden = false,
     this.earnedAt,
+    this.hasConfirmedUnlock = false,
     this.metadata = const {},
   });
 
-  bool get isEarned => earnedAt != null;
+  bool get isEarned => hasConfirmedUnlock || earnedAt != null;
 
   @override
   List<Object?> get props => [
@@ -50,6 +52,7 @@ class AchievementOverview extends Equatable {
     isPlatinum,
     isHidden,
     earnedAt,
+    hasConfirmedUnlock,
     metadata,
   ];
 }

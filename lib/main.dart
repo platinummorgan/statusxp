@@ -1,3 +1,9 @@
+import 'package:statusxp/state/statusxp_providers.dart'
+    show StatusXPRefresh, leaderboardRanksProvider;
+import 'package:statusxp/state/sync_completion_provider.dart';
+import 'package:statusxp/state/engagement_providers.dart';
+import 'package:statusxp/data/repositories/leaderboard_repository.dart'
+    as sync_leaderboards;
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
@@ -315,6 +321,7 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
+    ref.invalidate(syncCompletionProvider);
 
     // Refresh tokens and resume any stale syncs without blocking UI
     Future.delayed(const Duration(seconds: 1), () {
@@ -427,6 +434,20 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(syncCompletionProvider, (previous, next) {
+      final snapshot = next.asData?.value;
+      if (snapshot == null ||
+          !snapshot.shouldRefreshAfter(previous?.asData?.value)) {
+        return;
+      }
+      ref.refreshCoreData();
+      ref.invalidate(leaderboardRanksProvider);
+      ref.invalidate(sync_leaderboards.leaderboardProvider);
+      ref.invalidate(sync_leaderboards.seasonalLeaderboardProvider);
+      ref.invalidate(sync_leaderboards.seasonalUserBreakdownProvider);
+      ref.invalidate(sync_leaderboards.latestPeriodWinnersProvider);
+      ref.invalidate(engagementSnapshotProvider);
+    });
     final app = MaterialApp.router(
       title: 'StatusXP',
       debugShowCheckedModeBanner: false,

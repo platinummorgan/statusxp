@@ -1,3 +1,4 @@
+import 'package:statusxp/domain/achievement_progress.dart';
 import 'package:statusxp/ui/widgets/game_achievement_section.dart';
 import 'package:statusxp/ui/widgets/game_achievement_card.dart';
 import 'package:statusxp/ui/screens/ai_credit_shop_screen.dart';
@@ -214,7 +215,11 @@ class _InlineGameProgress extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${completion.toStringAsFixed(0)}%',
+                  achievementCompletionLabel(
+                    game.achievementsEarned,
+                    game.achievementsTotal,
+                    game.completionPercentage,
+                  ),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -227,11 +232,21 @@ class _InlineGameProgress extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
-                value: completion / 100,
+                value:
+                    hasKnownAchievementTotal(
+                      game.achievementsEarned,
+                      game.achievementsTotal,
+                    )
+                    ? completion / 100
+                    : 0,
                 minHeight: 6,
                 color: CyberpunkTheme.neonCyan,
                 semanticsLabel: 'Game completion',
-                semanticsValue: '${completion.toStringAsFixed(0)}%',
+                semanticsValue: achievementCompletionLabel(
+                  game.achievementsEarned,
+                  game.achievementsTotal,
+                  game.completionPercentage,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -240,14 +255,19 @@ class _InlineGameProgress extends StatelessWidget {
               runSpacing: 6,
               children: [
                 Text(
-                  '${game.achievementsEarned}/${game.achievementsTotal} $label',
+                  '${achievementCountLabel(game.achievementsEarned, game.achievementsTotal)} $label',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
-                  '$remaining remaining',
+                  hasKnownAchievementTotal(
+                        game.achievementsEarned,
+                        game.achievementsTotal,
+                      )
+                      ? '$remaining remaining'
+                      : 'Total unknown',
                   style: const TextStyle(color: Colors.white70),
                 ),
                 if (game.currentScore > 0)
@@ -436,7 +456,13 @@ class _ProgressPanel extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           LinearProgressIndicator(
-            value: (game.completionPercentage / 100).clamp(0, 1),
+            value:
+                hasKnownAchievementTotal(
+                  game.achievementsEarned,
+                  game.achievementsTotal,
+                )
+                ? (game.completionPercentage / 100).clamp(0, 1)
+                : 0,
             minHeight: 10,
           ),
           const SizedBox(height: 12),
@@ -446,11 +472,18 @@ class _ProgressPanel extends StatelessWidget {
             children: [
               _Stat(
                 label: 'Complete',
-                value: '${game.completionPercentage.toStringAsFixed(0)}%',
+                value: achievementCompletionLabel(
+                  game.achievementsEarned,
+                  game.achievementsTotal,
+                  game.completionPercentage,
+                ),
               ),
               _Stat(
                 label: 'Achievements',
-                value: '${game.achievementsEarned}/${game.achievementsTotal}',
+                value: achievementCountLabel(
+                  game.achievementsEarned,
+                  game.achievementsTotal,
+                ),
               ),
               if (game.currentScore > 0)
                 _Stat(label: 'Platform score', value: '${game.currentScore}'),

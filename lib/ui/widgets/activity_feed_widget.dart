@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/domain/activity_feed_entry.dart';
 import 'package:statusxp/data/repositories/activity_feed_repository.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
@@ -399,13 +401,13 @@ class _DateGroupState extends State<_DateGroup> {
 // STORY TILE (Individual story)
 // ============================================================
 
-class _StoryTile extends StatelessWidget {
+class _StoryTile extends ConsumerWidget {
   final ActivityFeedEntry story;
 
   const _StoryTile({required this.story});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ListTile(
       leading: CircleAvatar(
         backgroundImage: story.avatarUrl != null
@@ -424,6 +426,8 @@ class _StoryTile extends StatelessWidget {
         children: [
           const SizedBox(height: 4),
           Text(story.storyText, style: const TextStyle(fontSize: 14)),
+          if(story.userId==ref.watch(currentUserIdProvider) && story.storyText.toLowerCase().contains('platinum'))
+            TextButton.icon(onPressed:()=>context.push('/platinum-cards'),icon:const Icon(Icons.ios_share,size:16),label:const Text('Celebrate your platinums')),
           const SizedBox(height: 4),
           Text(
             _getTimeAgo(story.createdAt),

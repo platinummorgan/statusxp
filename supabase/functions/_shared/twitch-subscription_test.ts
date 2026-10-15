@@ -43,3 +43,12 @@ Deno.test("API errors and malformed responses never mean unsubscribed", async ()
     currentTwitchSubscription("20", settings({ error: "unexpected" }))
   );
 });
+Deno.test('expired authorization renews once and retries; failures never mark a user unsubscribed',async()=>{
+ let requests=0;let renewals=0;
+ const config={broadcaster:'10',token:'old',client:'client',renew:async()=>{renewals++;return 'fresh';},request:(async(_url:any,init:any)=>{
+  requests++;if(requests===1)return new Response('{}',{status:401});
+  assert.equal(init.headers.Authorization,'Bearer fresh');return new Response(JSON.stringify({data:[{user_id:'20',broadcaster_id:'10'}]}));
+ }) as typeof fetch};
+ assert.equal(await currentTwitchSubscription('20',config),true);assert.equal(requests,2);assert.equal(renewals,1);
+ await assert.rejects(()=>currentTwitchSubscription('20',{...config,request:(async()=>new Response('{}',{status:401})) as typeof fetch}));
+});

@@ -4,7 +4,7 @@ import '../helpers/test_helpers.dart';
 
 void main() {
   group('Game Edit Flow Tests', () {
-    testWidgets('More menu exposes key game destinations', (tester) async {
+    testWidgets('Menu exposes key game destinations', (tester) async {
       // Set realistic phone screen size
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
@@ -14,8 +14,8 @@ void main() {
       await tester.pumpWidget(getTestApp());
       await tester.pumpAndSettle();
 
-      // Open dashboard "More" menu
-      await tester.tap(find.text('More'));
+      // Open dashboard Menu
+      await tester.tap(find.text('Menu'));
       await tester.pumpAndSettle();
 
       // Verify core navigation options exist

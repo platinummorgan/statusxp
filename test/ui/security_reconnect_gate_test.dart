@@ -1,0 +1,256 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:statusxp/state/security_reconnect_provider.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/ui/screens/auth/security_reconnect_gate.dart';
+
+class FakeReconnectRepository implements SecurityReconnectRepository {
+  List<SecurityReconnectRequirement> pending = [];
+  bool failLoad = false;
+  bool failVerify = false;
+  int loads = 0;
+  int verifications = 0;
+  Completer<List<SecurityReconnectRequirement>>? delayedLoad;
+
+  @override
+  Future<List<SecurityReconnectRequirement>> load() async {
+    loads++;
+    if (failLoad) throw StateError('Offline');
+    if (delayedLoad != null) return delayedLoad!.future;
+    return List.of(pending);
+  }
+
+  @override
+  Future<void> reportReset(String platform) async {
+    pending = pending
+        .map(
+          (r) => SecurityReconnectRequirement(
+            platform: r.platform,
+            accountId: r.accountId,
+            resetReported: r.platform == platform || r.resetReported,
+            syncActive: r.syncActive,
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<void> verifySteam() async {
+    verifications++;
+    if (failVerify) throw StateError('Invalid key');
+    pending.removeWhere((r) => r.platform == 'steam');
+  }
+
+  @override
+  Future<void> stopSync(String platform) async {
+    pending = pending
+        .map(
+          (r) => SecurityReconnectRequirement(
+            platform: r.platform,
+            accountId: r.accountId,
+            resetReported: r.resetReported,
+            syncActive: false,
+          ),
+        )
+        .toList();
+  }
+}
+
+const steam = SecurityReconnectRequirement(
+  platform: 'steam',
+  accountId: '76561198999999991',
+  resetReported: false,
+  syncActive: false,
+);
+const psn = SecurityReconnectRequirement(
+  platform: 'psn',
+  accountId: '12345',
+  resetReported: true,
+  syncActive: false,
+);
+const readySteam = SecurityReconnectRequirement(
+  platform: 'steam',
+  accountId: '76561198999999991',
+  resetReported: true,
+  syncActive: false,
+);
+Future<void> render(
+  WidgetTester tester,
+  FakeReconnectRepository repo, {
+  Future<bool?> Function(SecurityReconnectRequirement)? onConnect,
+}) async {
+  tester.view.physicalSize = const Size(1000, 1400);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        currentUserIdProvider.overrideWithValue('owner'),
+        securityReconnectRepositoryProvider.overrideWithValue(repo),
+      ],
+      child: MaterialApp(
+        home: SecurityReconnectGate(
+          onConnect: onConnect,
+          child: const Scaffold(body: Text('Protected dashboard')),
+        ),
+      ),
+    ),
+  );
+}
+
+void main() {
+  testWidgets('switching signed-in users discards cached unlocked state', (
+    tester,
+  ) async {
+    final owner = StateProvider<String>((ref) => 'first');
+    final first = FakeReconnectRepository();
+    final second = FakeReconnectRepository()..pending = [readySteam];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          currentUserIdProvider.overrideWith((ref) => ref.watch(owner)),
+          securityReconnectRepositoryProvider.overrideWith(
+            (ref) => ref.watch(owner) == 'first' ? first : second,
+          ),
+        ],
+        child: MaterialApp(
+          home: Consumer(
+            builder: (context, ref, _) {
+              return SecurityReconnectGate(
+                key: ValueKey(ref.watch(owner)),
+                child: const Scaffold(body: Text('Protected dashboard')),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsOneWidget);
+    final context = tester.element(find.byType(SecurityReconnectGate));
+    ProviderScope.containerOf(context).read(owner.notifier).state = 'second';
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsNothing);
+    expect(find.text('Reconnect Steam'), findsOneWidget);
+  });
+
+  testWidgets('loading and network failure never expose the dashboard', (
+    tester,
+  ) async {
+    final repo = FakeReconnectRepository()..delayedLoad = Completer();
+    await render(tester, repo);
+    await tester.pump();
+    await tester.pump();
+    expect(repo.loads, 1);
+    expect(find.text('Protected dashboard'), findsNothing);
+    repo.delayedLoad!.completeError(StateError('Offline'));
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsNothing);
+    expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('users without a requirement continue normally', (tester) async {
+    await render(tester, FakeReconnectRepository());
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsOneWidget);
+  });
+
+  testWidgets('confirmation enables reconnect but does not unlock the app', (
+    tester,
+  ) async {
+    final repo = FakeReconnectRepository()..pending = [steam];
+    await render(tester, repo, onConnect: (_) async => false);
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Reconnect Steam'),
+          )
+          .onPressed,
+      isNull,
+    );
+    await tester.tap(find.text('I completed the security steps'));
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsNothing);
+    await tester.tap(find.text('Reconnect Steam'));
+    await tester.pumpAndSettle();
+    expect(repo.verifications, 0);
+    expect(find.text('Protected dashboard'), findsNothing);
+  });
+
+  testWidgets(
+    'invalid replacement stays locked; verified replacement unlocks',
+    (tester) async {
+      final repo = FakeReconnectRepository()
+        ..pending = [readySteam]
+        ..failVerify = true;
+      await render(tester, repo, onConnect: (_) async => true);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Reconnect Steam'));
+      await tester.pumpAndSettle();
+      expect(repo.verifications, 1);
+      expect(find.text('Protected dashboard'), findsNothing);
+      expect(
+        find.textContaining('Reconnect could not be verified'),
+        findsOneWidget,
+      );
+      repo.failVerify = false;
+      await tester.tap(find.text('Reconnect Steam'));
+      await tester.pumpAndSettle();
+      expect(repo.verifications, 2);
+      expect(find.text('Protected dashboard'), findsOneWidget);
+    },
+  );
+
+  testWidgets('every required platform must finish', (tester) async {
+    final repo = FakeReconnectRepository()..pending = [psn, readySteam];
+    await render(tester, repo, onConnect: (_) async => true);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reconnect Steam'));
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsNothing);
+    expect(find.text('Reconnect PlayStation'), findsOneWidget);
+  });
+
+  testWidgets('active sync must stop before reconnecting', (tester) async {
+    final repo = FakeReconnectRepository()
+      ..pending = [
+        const SecurityReconnectRequirement(
+          platform: 'steam',
+          accountId: '76561198999999991',
+          resetReported: true,
+          syncActive: true,
+        ),
+      ];
+    await render(tester, repo);
+    await tester.pumpAndSettle();
+    expect(find.text('Reconnect Steam'), findsNothing);
+    await tester.tap(find.text('Stop sync'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reconnect Steam'), findsOneWidget);
+    expect(find.text('Protected dashboard'), findsNothing);
+  });
+
+  testWidgets('rechecking never exposes cached dashboard while offline', (
+    tester,
+  ) async {
+    final repo = FakeReconnectRepository();
+    await render(tester, repo);
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsOneWidget);
+    repo.delayedLoad = Completer<List<SecurityReconnectRequirement>>();
+    final element = tester.element(find.byType(SecurityReconnectGate));
+    ProviderScope.containerOf(
+      element,
+    ).invalidate(securityReconnectRequirementsProvider);
+    await tester.pump();
+    await tester.pump();
+    expect(repo.loads, 2);
+    expect(find.text('Protected dashboard'), findsNothing);
+    repo.delayedLoad!.completeError(StateError('Offline'));
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsNothing);
+  });
+}

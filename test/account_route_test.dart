@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/state/security_reconnect_provider.dart';
+import 'package:statusxp/state/platinum_card_providers.dart';
 import 'package:statusxp/ui/screens/auth/auth_gate.dart';
 import 'package:statusxp/utils/html.dart' as html;
 import 'account_state_test.dart' show TestAuth, event, user;
@@ -53,7 +55,11 @@ void main() {
     addTearDown(auth.events.close);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authServiceProvider.overrideWithValue(auth)],
+        overrides: [
+          authServiceProvider.overrideWithValue(auth),
+          securityReconnectRequirementsProvider.overrideWith((ref) async => []),
+          platinumCelebrationProvider.overrideWith((ref) async => null),
+        ],
         child: const MaterialApp(
           home: AuthGate(location: '/games/browse', child: AccountProbe()),
         ),
@@ -82,7 +88,13 @@ void main() {
       addTearDown(auth.events.close);
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [authServiceProvider.overrideWithValue(auth)],
+          overrides: [
+            authServiceProvider.overrideWithValue(auth),
+            securityReconnectRequirementsProvider.overrideWith(
+              (ref) async => [],
+            ),
+            platinumCelebrationProvider.overrideWith((ref) async => null),
+          ],
           child: const MaterialApp(
             home: AuthGate(location: '/games/browse', child: AccountProbe()),
           ),

@@ -151,10 +151,15 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  fonts:
+    - family: PlatinumDisplay
+      fonts:
+        - asset: assets/fonts/Cinzel.ttf
 
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/fonts/Cinzel-OFL.txt
     - PRIVACY.md
     - TERMS_OF_SERVICE.md
 

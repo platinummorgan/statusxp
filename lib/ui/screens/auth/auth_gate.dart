@@ -12,6 +12,8 @@ import 'package:statusxp/utils/html.dart' as html;
 import 'package:statusxp/utils/runtime_mode.dart';
 import 'package:statusxp/utils/supabase_guard.dart';
 import 'package:statusxp/ui/widgets/web_app_shell.dart';
+import 'package:statusxp/ui/screens/auth/security_reconnect_gate.dart';
+import 'package:statusxp/ui/widgets/platinum_celebration_host.dart';
 
 /// Authentication gate that controls access to the main app.
 ///
@@ -215,11 +217,14 @@ class _AuthGateState extends ConsumerState<AuthGate>
         }
 
         if (_isAuthenticated) {
-          return WebAppShell(
+          return SecurityReconnectGate(
             key: ValueKey(_activeUserId),
-            location: widget.location,
-            isAuthenticated: true,
-            child: _accountChild,
+            child: WebAppShell(
+              key: ValueKey(_activeUserId),
+              location: widget.location,
+              isAuthenticated: true,
+              child: PlatinumCelebrationHost(child: _accountChild),
+            ),
           );
         }
 

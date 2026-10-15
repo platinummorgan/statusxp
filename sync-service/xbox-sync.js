@@ -1,3 +1,8 @@
+import { assertXboxIdentity, assertXboxSyncJob } from './xbox-account-binding.js';
+import { partitionXboxUnlockRows, saveUndatedXboxUnlocks } from './undated-xbox-unlocks.js';
+import { OPENXBL_API_BASE, unwrapOpenXblResponse, openXblPlayerAchievementsUrl, normalizeXboxAchievement, fetchOpenXblAchievementList, fetchOpenXblLegacyAchievements, fetchXboxLegacyAchievements, needsXboxAchievementFallback, mergeXboxAchievementSources } from './openxbl-achievements.js';
+import { finishSync } from './sync-lifecycle.js';
+import { finalizeGameImport } from './game-import-progress.js';
 import { refreshLeaderboardsAfterSync } from './leaderboard-refresh.js';
 import { createServiceClient } from './supabase-client.js';
 import { uploadGameCover, uploadExternalIcon } from './icon-proxy-utils.js';
@@ -253,7 +258,7 @@ async function fetchOpenXblJsonWithRetry(url, openXBLKey, contextLabel) {
         : undefined;
 
       const response = await fetch(url, {
-        headers: { 'x-authorization': openXBLKey },
+        headers: { 'x-authorization': openXBLKey, 'Accept': 'application/json', 'Accept-Language': 'en-US', 'User-Agent': 'StatusXP/1.0' },
         signal,
       });
 
@@ -268,7 +273,12 @@ async function fetchOpenXblJsonWithRetry(url, openXBLKey, contextLabel) {
       }
 
       const data = await response.json();
-      return { ok: true, status: response.status, data };
+      const result = unwrapOpenXblResponse(data);
+      if (!result.ok && attempt < OPENXBL_MAX_RETRIES && isRetryableOpenXblStatus(result.status)) {
+        await sleep(OPENXBL_RETRY_BASE_MS * Math.pow(2, attempt - 1));
+        continue;
+      }
+      return result;
     } catch (error) {
       lastError = error;
       if (attempt < OPENXBL_MAX_RETRIES && isRetryableOpenXblError(error)) {
@@ -400,7 +410,7 @@ function validateXboxPlatformMapping(devices, platformId, gameName, titleId, isP
   return true;
 }
 
-async function refreshXboxToken(refreshToken, userId) {
+async function refreshXboxToken(refreshToken, userId, expectedXuid) {
   const tokenResponse = await fetch('https://login.live.com/oauth20_token.srf', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -415,7 +425,7 @@ async function refreshXboxToken(refreshToken, userId) {
   if (!tokenResponse.ok) {
     const body = await tokenResponse.text();
     console.error('Failed to refresh Xbox token. Status:', tokenResponse.status, 'Body:', body);
-    if (body.includes('invalid_client') || body.includes('does not exist or is not enabled for consumers')) {
+    if (body.includes('invalid_grant') || body.includes('invalid_client') || body.includes('does not exist or is not enabled for consumers')) {
       throw new Error('Xbox link expired. Please unlink and relink your Xbox account.');
     }
     throw new Error('Failed to refresh Xbox token');
@@ -483,6 +493,7 @@ async function refreshXboxToken(refreshToken, userId) {
   }
   
   const xuid = xstsData.DisplayClaims.xui[0].xid;
+  assertXboxIdentity(expectedXuid, xuid);
 
   // Fetch gamertag and avatar from Xbox Live profile
   console.log('[GAMERTAG FETCH] Starting gamertag fetch for xuid:', xuid);
@@ -570,7 +581,7 @@ async function refreshXboxToken(refreshToken, userId) {
   let updateProfile = await supabase
     .from('profiles')
     .update(updateData)
-    .eq('id', userId);
+    .eq('id', userId).eq('xbox_xuid', expectedXuid).select('id').maybeSingle();
 
   // Safe rollout: if DB migration isn't applied yet, retry without the new column.
   if (updateProfile.error?.message?.includes('xbox_profile_gamerscore')) {
@@ -578,9 +589,9 @@ async function refreshXboxToken(refreshToken, userId) {
     updateProfile = await supabase
       .from('profiles')
       .update(fallbackUpdateData)
-      .eq('id', userId);
+      .eq('id', userId).eq('xbox_xuid', expectedXuid).select('id').maybeSingle();
   }
-  console.log('[GAMERTAG SAVE] Save result:', updateProfile.error || 'OK');
+  if (updateProfile.error || !updateProfile.data) throw new Error('Xbox connection changed or could not be saved. Reconnect and retry.');
 
   return {
     accessToken: xstsData.Token,
@@ -640,7 +651,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
   
   try {
     // Refresh token first
-    const refreshed = await refreshXboxToken(refreshToken, userId);
+    assertXboxIdentity(xuid, profileValidation.xbox_xuid);
+    await assertXboxSyncJob(supabase, userId, syncLogId);
+    const refreshed = await refreshXboxToken(refreshToken, userId, xuid);
     accessToken = refreshed.accessToken;
     xuid = refreshed.xuid;
     userHash = refreshed.userHash;
@@ -727,25 +740,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     console.log('Fetched title history - deduped titles length:', dedupedTitles.length);
     
     if (dedupedTitles.length === 0) {
-      console.log('No Xbox titles found - marking sync as success with 0 games');
-      await supabase
-        .from('profiles')
-        .update({
-          xbox_sync_status: 'success',
-          xbox_sync_progress: 100,
-          last_xbox_sync_at: new Date().toISOString(),
-        })
-        .eq('id', userId);
-
-      await supabase
-        .from('xbox_sync_logs')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          games_processed: 0,
-          achievements_synced: 0,
-        })
-        .eq('id', syncLogId);
+      await finishSync(supabase, { userId, platform: 'xbox', logId: syncLogId, outcome: 'completed', games: 0, achievements: 0 });
       return;
     }
 
@@ -819,6 +814,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
     async function cleanupDuplicatePlatformRows({ userId, platformId, platformGameId, gameName }) {
       try {
+        const { error: undatedCleanupError } = await supabase.from('user_undated_achievements')
+          .delete().eq('user_id', userId).eq('platform_game_id', platformGameId)
+          .in('platform_id', [10, 11, 12]).neq('platform_id', platformId);
+        if (undatedCleanupError) throw new Error(`Undated platform cleanup failed: ${undatedCleanupError.message}`);
+
         let removedAchievements = null;
         const { data: bulkRemovedAchievements, error: deleteAchievementsError } = await supabase
           .from('user_achievements')
@@ -952,6 +952,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
 
     let processedGames = 0;
     let totalAchievements = 0;
+    let titlesFailed = 0;
     
     // Process in batches to avoid OOM and reduce memory footprint
     // NOTE: BATCH_SIZE configurable via env var
@@ -959,7 +960,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       // Check if sync was cancelled
       const { data: profileCheck, error: profileCheckError } = await supabase
         .from('profiles')
-        .select('xbox_sync_status')
+        .select('xbox_sync_status,xbox_xuid')
         .eq('id', userId)
         .maybeSingle();
       
@@ -968,21 +969,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
         throw new Error(`Profile lookup failed: ${profileCheckError.message}`);
       }
       
+      assertXboxIdentity(xuid, profileCheck?.xbox_xuid);
+      await assertXboxSyncJob(supabase, userId, syncLogId);
       if (profileCheck?.xbox_sync_status === 'cancelling') {
         console.log('Xbox sync cancelled by user');
-        await supabase
-          .from('profiles')
-          .update({ 
-            xbox_sync_status: 'stopped',
-            xbox_sync_progress: 0 
-          })
-          .eq('id', userId);
-        
-        await supabase
-          .from('xbox_sync_logs')
-          .update({ status: 'cancelled', error: 'Cancelled by user' })
-          .eq('id', syncLogId);
-        
+        await finishSync(supabase, { userId, platform: 'xbox', logId: syncLogId, outcome: 'cancelled', games: processedGames, achievements: totalAchievements });
         return;
       }
       
@@ -996,27 +987,18 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
           
           // Check for cancellation every 5 games within batch
           if (batchIndex > 0 && batchIndex % 5 === 0) {
-            const { data: cancelCheck } = await supabase
+            const { data: cancelCheck, error: cancelCheckError } = await supabase
               .from('profiles')
-              .select('xbox_sync_status')
+              .select('xbox_sync_status,xbox_xuid')
               .eq('id', userId)
               .maybeSingle();
             
+            if (cancelCheckError) throw new Error(`Cancellation check failed: ${cancelCheckError.message}`);
+            assertXboxIdentity(xuid, cancelCheck?.xbox_xuid);
+            await assertXboxSyncJob(supabase, userId, syncLogId);
             if (cancelCheck?.xbox_sync_status === 'cancelling') {
               console.log('Xbox sync cancelled by user (mid-batch)');
-              await supabase
-                .from('profiles')
-                .update({ 
-                  xbox_sync_status: 'stopped',
-                  xbox_sync_progress: 0 
-                })
-                .eq('id', userId);
-              
-              await supabase
-                .from('xbox_sync_logs')
-                .update({ status: 'cancelled', error: 'Cancelled by user' })
-                .eq('id', syncLogId);
-              
+              await finishSync(supabase, { userId, platform: 'xbox', logId: syncLogId, outcome: 'cancelled', games: processedGames, achievements: totalAchievements });
               return;
             }
           }
@@ -1186,7 +1168,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 hasAchievementDefs = (gameAchievementsCount || 0) > 0;
                 if (hasAchievementDefs && apiEarnedAchievements > 0) {
                   const { count: existingAchievementsCount } = await supabase
-                    .from('user_achievements')
+                    .from('user_achievement_unlocks')
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', userId)
                     .eq('platform_id', platformId)
@@ -1233,73 +1215,66 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               console.log(`🔄 RETRY FAILED SYNC: ${title.name} (previous sync failed)`);
             }
 
-            // Fetch ALL achievements for this title (handle pagination)
+            // Validate every page and unique catalogue count before saving.
+            // Complete fallbacks may recover a failed or truncated primary fetch.
             const achievementsForTitle = [];
-            let continuationToken = null;
-            let pageCount = 0;
-            
-            do {
-              const url = continuationToken
-                ? `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}&continuationToken=${continuationToken}`
-                : `https://achievements.xboxlive.com/users/xuid(${xuid})/achievements?titleId=${title.titleId}`;
-              
-              const achievementsResult = await fetchXboxJsonWithRetry(
-                url,
-                {
-                  headers: {
-                    'x-xbl-contract-version': '2',
-                    Authorization: `XBL3.0 x=${userHash};${accessToken}`,
-                  },
-                },
-                `achievements page ${pageCount + 1} for ${title.name}`
-              );
-
-              if (!achievementsResult.ok) {
-                console.error(`[XBOX ACHIEVEMENTS] Failed to fetch achievements page ${pageCount + 1} for ${title.name}: ${achievementsResult.status}`);
-                break;
-              }
-
-              const achievementsData = achievementsResult.data;
-              const pageAchievements = achievementsData?.achievements || [];
-              
-              // LOG FIRST ACHIEVEMENT TO SEE FULL STRUCTURE
-              if (pageCount === 0 && pageAchievements.length > 0) {
-                console.log(`[XBOX API DEBUG] First achievement structure for ${title.name}:`, JSON.stringify(pageAchievements[0], null, 2));
-              }
-              
-              achievementsForTitle.push(...pageAchievements);
-              
-              continuationToken = achievementsData?.pagingInfo?.continuationToken || null;
-              pageCount++;
-              
-              console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched page ${pageCount} with ${pageAchievements.length} achievements (total so far: ${achievementsForTitle.length})`);
-              
-              // Safety: prevent infinite loops
-              if (pageCount > 20) {
-                console.warn(`[XBOX ACHIEVEMENTS] ${title.name}: Stopped after 20 pages to prevent infinite loop`);
-                break;
-              }
-            } while (continuationToken);
-
+            let firstPageFetchError = null;
+            try {
+              const result = await fetchOpenXblAchievementList(
+                (url) => fetchXboxJsonWithRetry(url, { headers: {
+                  'x-xbl-contract-version': '2', 'Accept-Language': 'en-US',
+                  Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+                } }, `achievements for ${title.name}`),
+                `https://achievements.xboxlive.com/users/xuid(${encodeURIComponent(xuid)})/achievements?titleId=${encodeURIComponent(title.titleId)}&maxItems=1000`);
+              if (!result.ok) throw new Error(`Xbox achievement fetch failed (${result.status})`);
+              achievementsForTitle.push(...result.data.achievements);
+            } catch (error) {
+              firstPageFetchError = error;
+              console.warn(`Xbox achievement fetch needs fallback for ${title.name}: ${error.message}`);
+            }
             let totalAchievementsFromAPI = achievementsForTitle.length;
-            console.log(`[XBOX ACHIEVEMENTS] ${title.name}: Fetched total of ${totalAchievementsFromAPI} achievements across ${pageCount} pages`);
 
-            // Fallback: Xbox 360 titles sometimes return 0 achievements from Xbox API
-            let usedOpenXblPlayerFallback = false;
+            // Legacy Xbox / Games for Windows Live keeps catalogue and earned
+            // progress in separate contract-v1 endpoints. Use the linked user's
+            // own refreshed session before a third-party fallback.
             if (totalAchievementsFromAPI === 0) {
+              try {
+                const legacyResult = await fetchXboxLegacyAchievements(
+                (url) => fetchXboxJsonWithRetry(url, { headers: {
+                  'x-xbl-contract-version': '1', 'Accept-Language': 'en-US',
+                  Authorization: `XBL3.0 x=${userHash};${accessToken}`,
+                } }, `legacy achievements for ${title.name}`), xuid, title.titleId);
+              if (legacyResult.ok) {
+                achievementsForTitle.push(...legacyResult.data.achievements);
+                totalAchievementsFromAPI = achievementsForTitle.length;
+              }
+              } catch (legacyError) {
+                console.warn(`Legacy Xbox fetch incomplete for ${title.name}; trying the provider fallback: ${legacyError.message}`);
+              }
+            }
+
+            // Recover empty catalogues and missing player unlocks, including legacy
+            // titles retained under existing Xbox One/Series keys.
+            let usedOpenXblPlayerFallback = false;
+            if (needsXboxAchievementFallback(achievementsForTitle, apiEarnedAchievements)) {
               const openXBLKey = process.env.OPENXBL_API_KEY;
               if (openXBLKey) {
                 try {
-                  const openXblResult = await fetchOpenXblJsonWithRetry(
-                    `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
-                    openXBLKey,
-                    `player achievements fallback for ${title.name}`
-                  );
+                  const fetchPlayerPage = (url) => fetchOpenXblJsonWithRetry(url, openXBLKey, `player achievements fallback for ${title.name}`);
+                  let openXblResult = platformId === 10
+                    ? await fetchOpenXblLegacyAchievements(fetchPlayerPage, xuid, title.titleId)
+                    : await fetchOpenXblAchievementList(fetchPlayerPage, openXblPlayerAchievementsUrl(xuid, title.titleId, platformId));
+                  // Older Games for Windows Live titles also use the legacy
+                  // achievement service while retaining their existing Xbox-family key.
+                  if (platformId !== 10 && openXblResult.ok && openXblResult.data.achievements.length === 0) {
+                    openXblResult = await fetchOpenXblLegacyAchievements(fetchPlayerPage, xuid, title.titleId);
+                  }
 
                   if (openXblResult.ok) {
                     const openXblAchievements = openXblResult.data?.achievements || [];
                     if (openXblAchievements.length > 0) {
-                      achievementsForTitle.push(...openXblAchievements);
+                      const merged = mergeXboxAchievementSources(achievementsForTitle, openXblAchievements);
+                      achievementsForTitle.splice(0, achievementsForTitle.length, ...merged);
                       totalAchievementsFromAPI = achievementsForTitle.length;
                       usedOpenXblPlayerFallback = true;
                       console.log(`[OPENXBL] Using player achievements fallback for ${title.name} (${totalAchievementsFromAPI} achievements)`);
@@ -1316,6 +1291,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 console.warn('[OPENXBL] OPENXBL_API_KEY not set; cannot use player achievements fallback.');
               }
             }
+
+            if (firstPageFetchError && totalAchievementsFromAPI === 0) throw firstPageFetchError;
 
             // Reuse the precomputed rarity freshness from user_progress metadata.
             // Optional null-rarity validation can be re-enabled via env.
@@ -1344,7 +1321,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 if (openXBLKey) {
                   // Use title endpoint (requires paid tier) for complete rarity data
                   const rarityResult = await fetchOpenXblJsonWithRetry(
-                    `https://xbl.io/api/v2/achievements/title/${title.titleId}`,
+                    `${OPENXBL_API_BASE}/achievements/title/${title.titleId}`,
                     openXBLKey,
                     `title rarity fetch for ${title.name}`
                   );
@@ -1353,7 +1330,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                     const achievementsWithRarity = rarityResult.data?.achievements || [];
                     for (const ach of achievementsWithRarity) {
                       if (ach.rarity?.currentPercentage !== undefined) {
-                        openXBLRarityMap.set(ach.id, ach.rarity.currentPercentage);
+                        openXBLRarityMap.set(String(ach.id), ach.rarity.currentPercentage);
                       }
                     }
                     console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements (title endpoint)`);
@@ -1365,7 +1342,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                     }
                     // Fallback to player endpoint if title endpoint fails
                     const playerRarityResult = await fetchOpenXblJsonWithRetry(
-                      `https://xbl.io/api/v2/achievements/player/${xuid}/${title.titleId}`,
+                      openXblPlayerAchievementsUrl(xuid, title.titleId, platformId),
                       openXBLKey,
                       `player rarity fallback for ${title.name}`
                     );
@@ -1374,7 +1351,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                       const playerAchievements = playerRarityResult.data?.achievements || [];
                       for (const ach of playerAchievements) {
                         if (ach.rarity?.currentPercentage !== undefined) {
-                          openXBLRarityMap.set(ach.id, ach.rarity.currentPercentage);
+                          openXBLRarityMap.set(String(ach.id), ach.rarity.currentPercentage);
                         }
                       }
                       console.log(`[OPENXBL] Fetched rarity for ${openXBLRarityMap.size} achievements (player endpoint fallback)`);
@@ -1400,10 +1377,11 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               platform_id: platformId,
               platform_game_id: gameTitle.platform_game_id,
               completion_percentage: title.achievement.progressPercentage,
-              total_achievements: totalAchievementsFromAPI,
+              total_achievements: Math.max(totalAchievementsFromAPI, Number(title.achievement.totalAchievements) || 0, existingUserGame?.total_achievements || 0),
               achievements_earned: title.achievement.currentAchievements,
               current_score: title.achievement.currentGamerscore,
               metadata: {
+                xbox_source_xuid: xuid,
                 current_gamerscore: title.achievement.currentGamerscore, // Store actual Gamerscore for display
                 max_gamerscore: title.achievement.totalGamerscore,
                 platform_version: platformVersion,
@@ -1419,19 +1397,6 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               userGameData.last_achievement_earned_at = existingUserGame.last_achievement_earned_at;
             }
             
-            await supabase
-              .from('user_progress')
-              .upsert(userGameData, {
-                onConflict: 'user_id,platform_id,platform_game_id',
-              });
-
-            await cleanupDuplicatePlatformRows({
-              userId,
-              platformId,
-              platformGameId: gameTitle.platform_game_id,
-              gameName: title.name,
-            });
-
             // Xbox icons have no CORS issues - no proxying needed, skip validation
 
             // Process achievements for this title
@@ -1490,6 +1455,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               console.error(
                 `❌ Failed to upsert achievement ${rows[0]?.platform_achievement_id}: ${compactErrorText(error)}`
               );
+              throw new Error(`Failed to upsert achievement ${rows[0]?.platform_achievement_id}: ${compactErrorText(error)}`);
             }
 
             async function upsertUserAchievementRowsWithRetry(rows, attempt = 1) {
@@ -1563,7 +1529,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const dlcName = null;
               
               // Get rarity from OpenXBL (falls back to null if not available)
-              const rarityPercent = openXBLRarityMap.get(achievement.id) || null;
+              const rarityPercent = achievement.rarity?.currentPercentage ?? openXBLRarityMap.get(String(achievement.id)) ?? null;
               
               // Xbox icons have no CORS issues - use icon_url directly (no proxying needed)
               const iconUrl = achievement.mediaAssets?.[0]?.url || achievement.mediaAsset?.url || achievement.mediaAsset || null;
@@ -1571,9 +1537,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               
               // Calculate base_status_xp using EXPONENTIAL CURVE (floor=0.5, cap=12, p=3)
               const includeInScore = true; // All Xbox achievements count
-              const rawGamerscore = Number(achievement.rewards?.[0]?.value ?? 0);
+              const rawGamerscore = Number(achievement.rewards?.find(reward => reward.type === 'Gamerscore')?.value ?? 0);
               let sanitizedGamerscore = Number.isFinite(rawGamerscore) ? rawGamerscore : 0;
-              if (sanitizedGamerscore < 0 || sanitizedGamerscore > 200) {
+              if (!Number.isSafeInteger(sanitizedGamerscore) || sanitizedGamerscore < 0) {
                 sanitizedGamerscore = 0;
               }
               
@@ -1631,6 +1597,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                   platform_game_id: gameTitle.platform_game_id,
                   platform_achievement_id: achievement.id,
                   earned_at: earnedAt,
+                  xbox_source_xuid: xuid,
                 });
               }
             }
@@ -1646,22 +1613,24 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               successfulAchievementIds.has(row.platform_achievement_id)
             );
 
-            for (let i = 0; i < userAchievementsToUpsert.length; i += XBOX_UPSERT_CHUNK_SIZE) {
-              const chunk = userAchievementsToUpsert.slice(i, i + XBOX_UPSERT_CHUNK_SIZE);
-              await upsertUserAchievementRowsWithRetry(chunk);
+            const unlockRows = partitionXboxUnlockRows(userAchievementsToUpsert,
+              usedOpenXblPlayerFallback ? 'openxbl' : 'xbox_live');
+            await saveUndatedXboxUnlocks(supabase, unlockRows.undated, XBOX_UPSERT_CHUNK_SIZE);
+            totalAchievements += unlockRows.undated.length;
+            for (let i = 0; i < unlockRows.dated.length; i += XBOX_UPSERT_CHUNK_SIZE) {
+              await upsertUserAchievementRowsWithRetry(unlockRows.dated.slice(i, i + XBOX_UPSERT_CHUNK_SIZE));
             }
 
-            // Update user_progress with the most recent achievement earned date
             if (mostRecentAchievementDate) {
-              await supabase
-                .from('user_progress')
-                .update({
-                  last_achievement_earned_at: mostRecentAchievementDate.toISOString(),
-                })
-                .eq('user_id', userId)
-                .eq('platform_id', platformId)
-                .eq('platform_game_id', gameTitle.platform_game_id);
+              userGameData.last_achievement_earned_at = mostRecentAchievementDate.toISOString();
             }
+            await finalizeGameImport(supabase, userGameData, { fetchedDefinitions: totalAchievementsFromAPI });
+            await cleanupDuplicatePlatformRows({
+              userId,
+              platformId,
+              platformGameId: gameTitle.platform_game_id,
+              gameName: title.name,
+            });
 
             processedGames++;
             const progress = Math.floor((processedGames / gamesWithProgress.length) * 100);
@@ -1680,6 +1649,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               await new Promise((r) => setTimeout(r, XBOX_GAME_YIELD_MS));
             }
           } catch (error) {
+            titlesFailed++;
             console.error(`❌ Error processing title ${title.name}:`, error);
             
             // If achievement fetch/processing failed, mark the game with sync_failed flag if we have gameTitle
@@ -1785,7 +1755,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 // Unlike PSN (trophy groups) and Steam (separate appIds), Xbox doesn't separate DLC
                 const isDLC = false;
                 const dlcName = null;
-                const rawGamerscore = Number(achievement.rewards?.[0]?.value ?? 0);
+                const rawGamerscore = Number(achievement.rewards?.find(reward => reward.type === 'Gamerscore')?.value ?? 0);
                 let sanitizedGamerscore = Number.isFinite(rawGamerscore) ? rawGamerscore : 0;
                 if (sanitizedGamerscore < 0 || sanitizedGamerscore > 200) {
                   sanitizedGamerscore = 0;
@@ -1854,17 +1824,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     }
 
     await refreshLeaderboardsAfterSync(supabase, userId, 'xbox');
+    if (titlesFailed > 0) throw new Error(`${titlesFailed} Xbox game imports are incomplete; saved progress is retained. Retry sync.`);
 
-    // Mark as completed with retry logic
-    const statusUpdated = await updateSyncStatus(userId, {
-      xbox_sync_status: 'success',
-      xbox_sync_progress: 100,
-      last_xbox_sync_at: new Date().toISOString(),
-    });
-    
-    if (!statusUpdated) {
-      console.error('🚨 WARNING: Sync completed but status update failed! User may see stuck sync.');
-    }
+    const terminalStatus = await finishSync(supabase, { userId, platform: 'xbox', logId: syncLogId, outcome: 'completed', games: processedGames, achievements: totalAchievements });
+    if (terminalStatus !== 'completed') return;
 
     // Generate activity feed stories if snapshot exists
     if (preSnapshot) {
@@ -1877,15 +1840,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       }
     }
 
-    await supabase
-      .from('xbox_sync_logs')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        games_processed: processedGames,
-        achievements_synced: totalAchievements,
-      })
-      .eq('id', syncLogId);
+
 
     console.log(`Xbox sync completed: ${processedGames} games, ${totalAchievements} achievements`);
     console.log(`Xbox sync duration: ${Math.round((Date.now() - syncStartedAtMs) / 1000)}s`);
@@ -1893,19 +1848,6 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
   } catch (error) {
     console.error('Xbox sync failed:', error);
     
-    await updateSyncStatus(userId, {
-      xbox_sync_status: 'error',
-      xbox_sync_progress: 0,
-      xbox_sync_error: error.message?.substring(0, 500) || 'Unknown error',
-    });
-
-    await supabase
-      .from('xbox_sync_logs')
-      .update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: error.message,
-      })
-      .eq('id', syncLogId);
+    await finishSync(supabase, { userId, platform: 'xbox', logId: syncLogId, outcome: 'failed', error: error.message?.substring(0, 500) || 'Unknown error' });
   }
 }

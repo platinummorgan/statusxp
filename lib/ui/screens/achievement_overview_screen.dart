@@ -7,6 +7,7 @@ import 'package:statusxp/domain/achievement_overview.dart';
 import 'package:statusxp/domain/game_ref.dart';
 import 'package:statusxp/services/analytics_service.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
+import 'package:statusxp/state/platinum_card_providers.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -136,6 +137,18 @@ class _AchievementBody extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              if (achievement.isPlatinum && achievement.isEarned)
+                Padding(padding:const EdgeInsets.only(bottom:16),child:FilledButton.icon(
+                  icon:const Icon(Icons.ios_share),label:const Text('Create platinum share card'),
+                  onPressed:()async{
+                    try{
+                      final card=await ref.read(platinumCardRepositoryProvider).get(achievement.ref);
+                      if(!context.mounted)return;
+                      if(card!=null){context.push('/platinum-cards',extra:[card]);}
+                      else{ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Only your own verified earned platinums can be shared.')));}
+                    }catch(_){if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Could not load the share card. Please try again.')));}
+                  },
+                )),
               Row(
                 children: [
                   Expanded(
@@ -333,7 +346,9 @@ class _Details extends StatelessWidget {
       const SizedBox(height: 16),
       Text(
         achievement.isEarned
-            ? 'Earned ${DateFormat.yMMMd().add_jm().format(achievement.earnedAt!.toLocal())}'
+            ? achievement.earnedAt == null
+                  ? 'Earned — date unavailable'
+                  : 'Earned ${DateFormat.yMMMd().add_jm().format(achievement.earnedAt!.toLocal())}'
             : 'Not earned yet',
         style: TextStyle(
           color: achievement.isEarned ? Colors.greenAccent : Colors.white54,

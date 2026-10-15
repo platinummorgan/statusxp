@@ -1,8 +1,14 @@
+require('dotenv').config();
+
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your environment.');
+}
+
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
-  'https://ksriqcmumjkemtfjuedm.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzcmlxY211bWprZW10Zmp1ZWRtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODkzNzgwMywiZXhwIjoyMDg0Mjk3ODAzfQ.fOvpjoLly2c-L_ujvfhLZX7OQjM3QO2qA9y4P2reSbE'
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 async function checkJedi() {

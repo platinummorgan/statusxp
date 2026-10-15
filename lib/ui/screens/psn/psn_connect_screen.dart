@@ -8,7 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Screen for connecting PlayStation Network account
 class PSNConnectScreen extends ConsumerStatefulWidget {
-  const PSNConnectScreen({super.key});
+  const PSNConnectScreen({super.key, this.securityReconnect = false});
+  final bool securityReconnect;
 
   @override
   ConsumerState<PSNConnectScreen> createState() => _PSNConnectScreenState();
@@ -145,7 +146,11 @@ class _PSNConnectScreenState extends ConsumerState<PSNConnectScreen> {
         // Navigate to sync screen after successful link
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
-            context.go('/psn-sync');
+            if (widget.securityReconnect) {
+              Navigator.of(context).pop(true);
+            } else {
+              context.go('/psn-sync');
+            }
           }
         });
       }

@@ -1,3 +1,4 @@
+import { finishSync, requestSyncCancellation } from './sync-lifecycle.js';
 import { startEntitlementReconciliationWorker } from './entitlement-reconciliation.js';
 import { admitRecoverySync } from './provider-quota.js';
 import 'dotenv/config';
@@ -169,7 +170,7 @@ async function resumeStuckSyncs() {
     // Steam
     const { data: steamUsers } = await supabase
       .from('profiles')
-      .select('id, steam_id, steam_sync_status, updated_at')
+      .select('id, steam_id, steam_api_key, steam_sync_status, updated_at')
       .eq('steam_sync_status', 'syncing')
       .lt('updated_at', cutoffIso)
       .not('steam_id', 'is', null);
@@ -196,7 +197,7 @@ async function resumeStuckSyncs() {
         syncSteamAchievements(
           user.id,
           user.steam_id,
-          undefined,
+          user.steam_api_key,
           logRow.id,
           { batchSize: process.env.BATCH_SIZE, maxConcurrent: process.env.MAX_CONCURRENT }
         ).catch((err) => {
@@ -385,18 +386,7 @@ app.post('/sync/psn', checkAuth, async (req, res) => {
       // Report error to sync log
       try {
         const supabase = createServiceClient();
-        await supabase
-          .from('psn_sync_logs')
-          .update({
-            status: 'failed',
-            error_message: normalizedError,
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', syncLogId);
-        await supabase
-          .from('profiles')
-          .update({ psn_sync_status: 'error', psn_sync_error: normalizedError })
-          .eq('id', userId);
+        await finishSync(supabase, { userId, platform:'psn', logId:syncLogId, outcome:'failed', error:normalizedError });
       } catch (reportErr) {
         console.error('Failed to report PSN sync error to DB:', reportErr);
       }
@@ -431,18 +421,7 @@ app.post('/sync/steam', checkAuth, async (req, res) => {
       // Report error to sync log
       try {
         const supabase = createServiceClient();
-        await supabase
-          .from('steam_sync_logs')
-          .update({
-            status: 'failed',
-            error_message: err.message || String(err),
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', syncLogId);
-        await supabase
-          .from('profiles')
-          .update({ steam_sync_status: 'error', steam_sync_error: err.message || String(err) })
-          .eq('id', userId);
+        await finishSync(supabase, { userId, platform:'steam', logId:syncLogId, outcome:'failed', error:err.message || String(err) });
       } catch (reportErr) {
         console.error('Failed to report Steam sync error to DB:', reportErr);
       }
@@ -461,10 +440,7 @@ app.post('/sync/xbox/stop', checkAuth, async (req, res) => {
   try {
     const supabase = createServiceClient();
 
-    await supabase
-      .from('profiles')
-      .update({ xbox_sync_status: 'cancelling' })
-      .eq('id', userId);
+    await requestSyncCancellation(supabase, userId, 'xbox');
 
     res.json({ success: true, message: 'Xbox sync cancellation requested' });
   } catch (err) {
@@ -483,10 +459,7 @@ app.post('/sync/psn/stop', checkAuth, async (req, res) => {
   try {
     const supabase = createServiceClient();
 
-    await supabase
-      .from('profiles')
-      .update({ psn_sync_status: 'cancelling' })
-      .eq('id', userId);
+    await requestSyncCancellation(supabase, userId, 'psn');
 
     res.json({ success: true, message: 'PSN sync cancellation requested' });
   } catch (err) {
@@ -505,10 +478,7 @@ app.post('/sync/steam/stop', checkAuth, async (req, res) => {
   try {
     const supabase = createServiceClient();
 
-    await supabase
-      .from('profiles')
-      .update({ steam_sync_status: 'cancelling' })
-      .eq('id', userId);
+    await requestSyncCancellation(supabase, userId, 'steam');
 
     res.json({ success: true, message: 'Steam sync cancellation requested' });
   } catch (err) {

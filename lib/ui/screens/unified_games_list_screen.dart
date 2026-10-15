@@ -1,3 +1,4 @@
+import 'package:statusxp/domain/achievement_progress.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/ui/widgets/basic_library.dart';
 import 'package:flutter/material.dart';
@@ -658,7 +659,11 @@ class UnifiedGamesListScreen extends ConsumerWidget {
       label = platform.platform.toUpperCase();
     }
 
-    final completion = platform.completion.toStringAsFixed(0);
+    final completion = achievementCompletionLabel(
+      platform.achievementsEarned,
+      platform.achievementsTotal,
+      platform.completion,
+    );
 
     // Build platform-specific display text
     String displayText;
@@ -669,7 +674,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
           ? '${platform.currentScore}/${platform.totalScore}'
           : '${platform.currentScore}';
       displayText =
-          '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion% Achievement Points $gamerscore';
+          '$label ${achievementCountLabel(platform.achievementsEarned, platform.achievementsTotal)} $completion Achievement Points $gamerscore';
     } else if (platformLower.contains('ps') || platformLower == 'playstation') {
       // PlayStation: Show trophy breakdown
       // Format: "PS5 10/30 30% 🥈 Platinum 1 | Gold 2 | Silver 3 | Bronze 4"
@@ -689,16 +694,16 @@ class UnifiedGamesListScreen extends ConsumerWidget {
           ? ' 🥈 ${trophyParts.join(' | ')}'
           : '';
       displayText =
-          '$label ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%$trophyBreakdown';
+          '$label ${achievementCountLabel(platform.achievementsEarned, platform.achievementsTotal)} $completion$trophyBreakdown';
     } else if (platformLower.contains('steam')) {
       // Steam: Show achievement count
       // Format: "Steam 10/30"
       displayText =
-          '$label ${platform.achievementsEarned}/${platform.achievementsTotal}';
+          '$label ${achievementCountLabel(platform.achievementsEarned, platform.achievementsTotal)}';
     } else {
       // Default: Standard display
       displayText =
-          '$label: ${platform.achievementsEarned}/${platform.achievementsTotal} $completion%';
+          '$label: ${achievementCountLabel(platform.achievementsEarned, platform.achievementsTotal)} $completion';
     }
 
     return Container(
@@ -820,7 +825,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '${platform.achievementsEarned}/${platform.achievementsTotal} • ${platform.completion.toStringAsFixed(0)}%',
+                                    '${achievementCountLabel(platform.achievementsEarned, platform.achievementsTotal)} • ${achievementCompletionLabel(platform.achievementsEarned, platform.achievementsTotal, platform.completion)}',
                                     style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 14,

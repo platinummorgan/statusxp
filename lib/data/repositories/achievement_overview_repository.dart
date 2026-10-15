@@ -33,7 +33,7 @@ class AchievementOverviewRepository {
     Map<String, dynamic>? earned;
     if (userId != null) {
       earned = await _client
-          .from('user_achievements')
+          .from('user_achievement_unlocks')
           .select('earned_at')
           .eq('user_id', userId)
           .eq('platform_id', ref.gameRef.platformId)
@@ -71,6 +71,7 @@ class AchievementOverviewRepository {
           _readBool(metadata['steam_hidden']) ||
           _readBool(metadata['xbox_is_secret']),
       earnedAt: earnedAt,
+      hasConfirmedUnlock: earned != null,
       metadata: metadata,
     );
   }

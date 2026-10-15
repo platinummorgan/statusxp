@@ -194,7 +194,7 @@ class AnalyticsRepository {
   Future<RarityDistribution> _getRarityDistribution(String userId) async {
     try {
       final countResponse = await _client
-          .from('user_achievements')
+          .from('user_achievement_unlocks')
           .select('user_id')
           .eq('user_id', userId)
           .count();
@@ -213,14 +213,13 @@ class AnalyticsRepository {
 
       while (offset < totalCount) {
         final batch = await _client
-            .from('user_achievements')
-            .select('achievements!inner(rarity_global)')
+            .from('user_achievement_unlocks')
+            .select('rarity_global')
             .eq('user_id', userId)
             .range(offset, offset + batchSize - 1);
 
         for (final row in batch as List) {
-          final achievement = row['achievements'] as Map<String, dynamic>?;
-          final rarity = (achievement?['rarity_global'] as num?)?.toDouble();
+          final rarity = (row['rarity_global'] as num?)?.toDouble();
           if (rarity == null) continue;
 
           if (rarity < 1) {

@@ -27,7 +27,8 @@ void main() {
 
       // Current dashboard section labels
       expect(find.text('MY GAMES'), findsOneWidget);
-      expect(find.text('More'), findsOneWidget);
+      expect(find.text('Menu'), findsOneWidget);
+      expect(find.text('More'), findsNothing);
     });
   });
 }

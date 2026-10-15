@@ -16,10 +16,11 @@ void main() {
 
       expect(find.text('StatusXP'), findsWidgets);
       expect(find.text('MY GAMES'), findsOneWidget);
-      expect(find.text('More'), findsOneWidget);
+      expect(find.text('Menu'), findsOneWidget);
+      expect(find.text('More'), findsNothing);
     });
 
-    testWidgets('More menu displays key actions', (tester) async {
+    testWidgets('Menu displays key actions', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -28,11 +29,12 @@ void main() {
       await tester.pumpWidget(getTestApp());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('More'));
+      await tester.tap(find.text('Menu'));
       await tester.pumpAndSettle();
 
       expect(find.text('Browse All Games'), findsOneWidget);
       expect(find.text('Status Poster'), findsOneWidget);
+      expect(find.text('Co-op Partners'), findsOneWidget);
       expect(find.text('Seasonal Leaderboards'), findsOneWidget);
     });
   });

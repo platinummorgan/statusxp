@@ -1,6 +1,8 @@
 # Delete all Twitch EventSub subscriptions
-$clientId = "wugdu8pbxckurjet128o523dll87f7"
-$clientSecret = "xgrzr7secgpc7v1y0hqq7vk58vjq1x"
+$clientId = $env:TWITCH_CLIENT_ID
+if ([string]::IsNullOrWhiteSpace($clientId)) { throw "Set TWITCH_CLIENT_ID in the environment before running this script." }
+$clientSecret = $env:TWITCH_CLIENT_SECRET
+if ([string]::IsNullOrWhiteSpace($clientSecret)) { throw "Set TWITCH_CLIENT_SECRET in the environment before running this script." }
 
 # Get token
 Write-Host "Getting access token..." -ForegroundColor Cyan

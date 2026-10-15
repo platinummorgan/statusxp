@@ -17,6 +17,8 @@ import 'package:statusxp/ui/screens/achievements_screen.dart';
 import 'package:statusxp/ui/screens/psn/psn_sync_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_sync_screen.dart';
 import 'package:statusxp/ui/screens/status_poster_screen.dart';
+import 'package:statusxp/ui/screens/platinum_cards_screen.dart';
+import 'package:statusxp/domain/platinum_card.dart';
 import 'package:statusxp/ui/screens/settings_screen.dart';
 import 'package:statusxp/ui/screens/landing_page_screen.dart';
 import 'package:statusxp/ui/screens/premium_success_screen.dart';
@@ -136,6 +138,10 @@ final GoRouter appRouter = GoRouter(
           path: '/weekly-recap',
           name: 'weekly-recap',
           builder: (context, state) => const WeeklyRecapScreen(),
+        ),
+        GoRoute(
+          path: '/platinum-cards',
+          builder: (context,state)=>PlatinumCardsScreen(initialItems:state.extra is List<PlatinumCardData>?state.extra as List<PlatinumCardData>:const []),
         ),
         GoRoute(
           path: '/invite',

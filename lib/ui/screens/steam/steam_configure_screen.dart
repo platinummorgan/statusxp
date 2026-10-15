@@ -4,7 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Screen for configuring Steam credentials
 class SteamConfigureScreen extends StatefulWidget {
-  const SteamConfigureScreen({super.key});
+  const SteamConfigureScreen({super.key, this.initialSteamId});
+  final String? initialSteamId;
 
   @override
   State<SteamConfigureScreen> createState() => _SteamConfigureScreenState();
@@ -15,6 +16,12 @@ class _SteamConfigureScreenState extends State<SteamConfigureScreen> {
   final _steamIdController = TextEditingController();
   final _apiKeyController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _steamIdController.text = widget.initialSteamId ?? '';
+  }
 
   @override
   void dispose() {

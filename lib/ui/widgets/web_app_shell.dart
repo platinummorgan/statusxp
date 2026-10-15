@@ -192,6 +192,29 @@ class _WebsiteHeader extends StatelessWidget {
             onSelected: (route) => context.go(route),
             itemBuilder: (_) => const [
               PopupMenuItem(value: '/games', child: Text('My games')),
+              PopupMenuItem(
+                value: '/games/browse',
+                child: Text('Browse All Games'),
+              ),
+              PopupMenuItem(
+                value: '/achievements',
+                child: Text('Achievements'),
+              ),
+              PopupMenuItem(value: '/poster', child: Text('Status Poster')),
+              PopupMenuItem(value: '/platinum-cards', child: Text('Platinum celebrations')),
+              PopupMenuItem(value: '/invite', child: Text('Invite & Earn')),
+              PopupMenuItem(
+                value: '/leaderboards',
+                child: Text('All-Time Leaderboards'),
+              ),
+              PopupMenuItem(
+                value: '/leaderboards/seasonal',
+                child: Text('Seasonal Leaderboards'),
+              ),
+              PopupMenuItem(
+                value: '/leaderboards/hall-of-fame',
+                child: Text('Hall of Fame'),
+              ),
               PopupMenuItem(value: '/flex-room', child: Text('Flex Room')),
               PopupMenuItem(
                 value: '/engagement-hub',

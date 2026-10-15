@@ -1,3 +1,7 @@
+import { assertPlatformSyncOwner } from './platform-sync-owner.js';
+import { steamOwnedGames } from './provider-library-response.js';
+import { finishSync } from './sync-lifecycle.js';
+import { finalizeGameImport } from './game-import-progress.js';
 import { refreshLeaderboardsAfterSync } from './leaderboard-refresh.js';
 import { createServiceClient } from './supabase-client.js';
 import { uploadExternalIcon, uploadGameCover } from './icon-proxy-utils.js';
@@ -173,6 +177,11 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     SHARED_STEAM_API_KEY;
   
   try {
+    const startupState = await assertPlatformSyncOwner(supabase, userId, 'steam', steamId, syncLogId);
+    if (startupState === 'cancelling') {
+      await finishSync(supabase, {userId, platform:'steam', logId:syncLogId, outcome:'cancelled'});
+      return;
+    }
     if (!effectiveApiKey) {
       throw new Error(
         'Steam API key is not configured on sync-service. Set STEAM_WEB_API_KEY in Railway.',
@@ -245,15 +254,17 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     }
 
     // Set initial status
-    await supabase
+    const startedProfile = await supabase
       .from('profiles')
       .update({ steam_sync_status: 'syncing', steam_sync_progress: 0 })
       .eq('id', userId);
 
-    await supabase
+    if (startedProfile.error) throw new Error('Could not record Steam sync startup.');
+    const startedLog = await supabase
       .from('steam_sync_logs')
       .update({ status: 'syncing' })
       .eq('id', syncLogId);
+    if (startedLog.error) throw new Error('Could not record Steam sync log startup.');
 
     // Create pre-sync snapshot for activity feed
     console.log('📸 Creating pre-sync snapshot for activity feed...');
@@ -267,30 +278,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${effectiveApiKey}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1&skip_unvetted_apps=false&language=english`
     );
     const gamesData = await ensureSteamJsonResponse(gamesResponse, 'owned games');
-    const ownedGames = gamesData.response?.games || [];
+    const ownedGames = steamOwnedGames(gamesData);
 
     console.log(`Found ${ownedGames.length} owned games`);
     
     if (ownedGames.length === 0) {
-      console.log('No Steam games found - marking sync as success with 0 games');
-      await supabase
-        .from('profiles')
-        .update({
-          steam_sync_status: 'success',
-          steam_sync_progress: 100,
-          last_steam_sync_at: new Date().toISOString(),
-        })
-        .eq('id', userId);
-
-      await supabase
-        .from('steam_sync_logs')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          games_processed: 0,
-          achievements_synced: 0,
-        })
-        .eq('id', syncLogId);
+      await refreshLeaderboardsAfterSync(supabase, userId, 'steam');
+      await finishSync(supabase, { userId, platform: 'steam', logId: syncLogId, outcome: 'completed', games: 0, achievements: 0 });
       return;
     }
 
@@ -357,30 +351,16 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     // Process in batches to limit memory use
     for (let i = 0; i < ownedGames.length; i += BATCH_SIZE) {
       // Check if sync was cancelled
-      const { data: profileCheck } = await supabase
+      const { data: profileCheck, error: profileCheckError } = await supabase
         .from('profiles')
         .select('steam_sync_status')
         .eq('id', userId)
         .maybeSingle();
       
+      if (profileCheckError) throw new Error(`Cancellation check failed: ${profileCheckError.message}`);
       if (profileCheck?.steam_sync_status === 'cancelling') {
         console.log('Steam sync cancelled by user');
-        await supabase
-          .from('profiles')
-          .update({ 
-            steam_sync_status: 'stopped',
-            steam_sync_progress: 0 
-          })
-          .eq('id', userId);
-        
-        await supabase
-          .from('steam_sync_logs')
-          .update({
-            status: 'cancelled',
-            completed_at: new Date().toISOString(),
-          })
-          .eq('id', syncLogId);
-        
+        await finishSync(supabase, { userId, platform: 'steam', logId: syncLogId, outcome: 'cancelled', games: processedGames, achievements: totalAchievements });
         return;
       }
       
@@ -393,30 +373,16 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
           
           // Check for cancellation every 5 games within batch
           if (batchIndex > 0 && batchIndex % 5 === 0) {
-            const { data: cancelCheck } = await supabase
+            const { data: cancelCheck, error: cancelCheckError } = await supabase
               .from('profiles')
               .select('steam_sync_status')
               .eq('id', userId)
               .maybeSingle();
             
+            if (cancelCheckError) throw new Error(`Cancellation check failed: ${cancelCheckError.message}`);
             if (cancelCheck?.steam_sync_status === 'cancelling') {
               console.log('Steam sync cancelled by user (mid-batch)');
-              await supabase
-                .from('profiles')
-                .update({ 
-                  steam_sync_status: 'stopped',
-                  steam_sync_progress: 0 
-                })
-                .eq('id', userId);
-              
-              await supabase
-                .from('steam_sync_logs')
-                .update({
-                  status: 'cancelled',
-                  completed_at: new Date().toISOString(),
-                })
-                .eq('id', syncLogId);
-              
+              await finishSync(supabase, { userId, platform: 'steam', logId: syncLogId, outcome: 'cancelled', games: processedGames, achievements: totalAchievements });
               return;
             }
           }
@@ -505,12 +471,11 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             // Check if response is JSON before parsing
             const contentType = schemaResponse.headers.get('content-type');
             if (!schemaResponse.ok || !contentType?.includes('application/json')) {
-              console.log(`⚠️ Schema fetch failed for ${game.appid} (status ${schemaResponse.status}, type ${contentType}) - skipping game`);
-              titlesSkipped++;
-              continue;
+              throw new Error(`Steam schema fetch failed (${schemaResponse.status})`);
             }
             
             const schemaData = await schemaResponse.json();
+            if (!schemaData.game) throw new Error('Steam schema response is missing game data');
             const achievements = schemaData.game?.availableGameStats?.achievements || [];
 
             if (achievements.length === 0) {
@@ -528,12 +493,13 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             // Check player achievements response is JSON
             const playerContentType = playerAchievementsResponse.headers.get('content-type');
             if (!playerAchievementsResponse.ok || !playerContentType?.includes('application/json')) {
-              console.log(`⚠️ Player achievements fetch failed for ${game.appid} (status ${playerAchievementsResponse.status}) - skipping game`);
-              titlesSkipped++;
-              continue;
+              throw new Error(`Steam player achievements fetch failed (${playerAchievementsResponse.status})`);
             }
             
             const playerAchievementsData = await playerAchievementsResponse.json();
+            if (playerAchievementsData.playerstats?.success !== true || !Array.isArray(playerAchievementsData.playerstats.achievements)) {
+              throw new Error('Steam player achievements response is incomplete');
+            }
             const playerAchievements = playerAchievementsData.playerstats?.achievements || [];
 
             // Quick count check
@@ -772,10 +738,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               }
             }
 
-            // Upsert user_progress with V2 fields
-            const { error: userProgressUpsertError } = await supabase
-              .from('user_progress')
-              .upsert({
+            const userGameProgress = {
                 user_id: userId,
                 platform_id: platformId,
                 platform_game_id: gameTitle.platform_game_id,
@@ -795,12 +758,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                   sync_error: null,
                   last_sync_attempt: new Date().toISOString(),
                 },
-              }, {
-                onConflict: 'user_id,platform_id,platform_game_id',
-              });
-            if (userProgressUpsertError) {
-              throw new Error(`Failed to upsert user_progress for ${game.name}: ${userProgressUpsertError.message}`);
-            }
+              };
 
             // Fetch existing achievements to check for valid proxied URLs
             const achievementNames = achievements.map(a => a.name);
@@ -949,7 +907,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                   });
                 if (rowError) {
                   console.error(`❌ Failed to upsert achievement ${row.platform_achievement_id}:`, rowError.message);
-                  continue;
+                  throw new Error(`Failed to upsert achievement ${row.platform_achievement_id}: ${rowError.message}`);
                 }
                 successfulAchievementIds.add(row.platform_achievement_id);
               }
@@ -987,6 +945,8 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
                 totalAchievements++;
               }
             }
+
+            await finalizeGameImport(supabase, userGameProgress, { fetchedDefinitions: achievements.length });
 
             titlesFullyProcessed++;
             processedGames++;
@@ -1053,16 +1013,10 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     );
 
     await refreshLeaderboardsAfterSync(supabase, userId, 'steam');
+    if (titlesFailed > 0 || titlesUnaccounted > 0) throw new Error(`${titlesFailed + titlesUnaccounted} Steam game imports are incomplete; saved progress is retained. Retry sync.`);
 
-    // Mark as completed
-    await supabase
-      .from('profiles')
-      .update({
-        steam_sync_status: 'success',
-        steam_sync_progress: 100,
-        last_steam_sync_at: new Date().toISOString(),
-      })
-      .eq('id', userId);
+    const terminalStatus = await finishSync(supabase, { userId, platform: 'steam', logId: syncLogId, outcome: 'completed', games: processedGames, achievements: totalAchievements });
+    if (terminalStatus !== 'completed') return;
 
     // Generate activity feed stories if snapshot exists
     if (preSnapshot) {
@@ -1075,16 +1029,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       }
     }
 
-    await supabase
-      .from('steam_sync_logs')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        games_processed: processedGames,
-        achievements_synced: totalAchievements,
-        error_message: null,
-      })
-      .eq('id', syncLogId);
+
 
     console.log(`Steam sync completed: ${processedGames} games, ${totalAchievements} achievements`);
     console.log(`Steam sync duration: ${Math.round((Date.now() - syncStartedAtMs) / 1000)}s`);
@@ -1093,21 +1038,6 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     console.error('Steam sync failed:', error);
     const normalizedError = normalizeSteamSyncError(error);
     
-    await supabase
-      .from('profiles')
-      .update({
-        steam_sync_status: 'error',
-        steam_sync_error: normalizedError,
-      })
-      .eq('id', userId);
-
-    await supabase
-      .from('steam_sync_logs')
-      .update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        error_message: normalizedError,
-      })
-      .eq('id', syncLogId);
+    await finishSync(supabase, { userId, platform: 'steam', logId: syncLogId, outcome: 'failed', error: normalizedError });
   }
 }

@@ -1,3 +1,6 @@
+import { assertPlatformSyncOwner } from './platform-sync-owner.js';
+import { psnTitlePage } from './provider-library-response.js';
+import { finishSync } from './sync-lifecycle.js';
 import { refreshLeaderboardsAfterSync, LeaderboardRefreshPendingError } from './leaderboard-refresh.js';
 // psn-sync.js (rewritten - drop-in replacement)
 // Fixes:
@@ -761,6 +764,11 @@ export async function syncPSNAchievements(
   let activityFeedGenerated = false;
 
   try {
+    const startupState = await assertPlatformSyncOwner(supabase, userId, 'psn', accountId, syncLogId);
+    if (startupState === 'cancelling') {
+      await finishSync(supabase, {userId, platform:'psn', logId:syncLogId, outcome:'cancelled'});
+      return;
+    }
     try {
       await initIGDBValidator();
       console.log('✅ IGDB validator initialized');
@@ -803,7 +811,7 @@ export async function syncPSNAchievements(
     let currentRefreshToken = authTokens.refreshToken;
 
     // Save tokens + start status
-    await updateSyncStatus(userId, {
+    const tokensSaved = await updateSyncStatus(userId, {
       psn_access_token: currentAccessToken,
       psn_refresh_token: currentRefreshToken,
       psn_sync_status: 'syncing',
@@ -811,7 +819,9 @@ export async function syncPSNAchievements(
       psn_sync_error: null,
     });
 
-    await supabase.from('psn_sync_logs').update({ status: 'syncing' }).eq('id', syncLogId);
+    if (!tokensSaved) throw new Error('Could not save refreshed PlayStation session. Try syncing again.');
+    const logStarted = await supabase.from('psn_sync_logs').update({ status: 'syncing' }).eq('id', syncLogId);
+    if (logStarted.error) throw new Error('Could not record PlayStation sync startup.');
 
     // Refresh PSN profile identity/avatar every sync:
     // - keeps avatars in sync when users change them
@@ -835,7 +845,7 @@ export async function syncPSNAchievements(
         accountId,
         { limit, offset, headerOverrides: PSN_ENGLISH_HEADERS }
       );
-      const batch = res?.trophyTitles ?? [];
+      const batch = psnTitlePage(res);
       if (!batch.length) break;
       allTitles = allTitles.concat(batch);
       offset += batch.length;
@@ -845,20 +855,8 @@ export async function syncPSNAchievements(
     console.log(`Total PSN titles fetched: ${allTitles.length}`);
 
     if (!allTitles.length) {
-      await updateSyncStatus(userId, {
-        psn_sync_status: 'success',
-        psn_sync_progress: 100,
-        last_psn_sync_at: new Date().toISOString(),
-      });
-      await supabase
-        .from('psn_sync_logs')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          games_processed: 0,
-          trophies_synced: 0,
-        })
-        .eq('id', syncLogId);
+      await refreshLeaderboardsAfterSync(supabase, userId, 'psn');
+      await finishSync(supabase, { userId, platform: 'psn', logId: syncLogId, outcome: 'completed', games: 0, achievements: 0 });
       return;
     }
 
@@ -1085,10 +1083,11 @@ export async function syncPSNAchievements(
         const t = await exchangeRefreshTokenForAuthTokens(currentRefreshToken);
         currentAccessToken = t.accessToken;
         currentRefreshToken = t.refreshToken;
-        await supabase
+        const refreshedSaved = await supabase
           .from('profiles')
           .update({ psn_access_token: t.accessToken, psn_refresh_token: t.refreshToken })
           .eq('id', userId);
+        if (refreshedSaved.error) throw new Error('Could not save refreshed PlayStation session.');
       }
 
       const { platformId, platformVersion } = mapPsnPlatformToPlatformId(title.trophyTitlePlatform);
@@ -1374,13 +1373,7 @@ export async function syncPSNAchievements(
     for (let i = 0; i < gamesToProcess.length; i += BATCH_SIZE) {
       if (await isCancelled(userId)) {
         console.log('PSN sync cancelled by user');
-        await updateSyncStatus(userId, { psn_sync_status: 'stopped', psn_sync_progress: 0 });
-
-        await supabase
-          .from('psn_sync_logs')
-          .update({ status: 'cancelled', error: 'Cancelled by user' })
-          .eq('id', syncLogId);
-
+        await finishSync(supabase, { userId, platform: 'psn', logId: syncLogId, outcome: 'cancelled', games: processedGames, achievements: totalEarnedTrophiesUpserted });
         return;
       }
 
@@ -1401,12 +1394,8 @@ export async function syncPSNAchievements(
 
     await refreshLeaderboardCachesAfterPsnSync(userId);
 
-    await updateSyncStatus(userId, {
-      psn_sync_status: 'success',
-      psn_sync_progress: 100,
-      last_psn_sync_at: new Date().toISOString(),
-      psn_sync_error: null,
-    });
+    const terminalStatus = await finishSync(supabase, { userId, platform: 'psn', logId: syncLogId, outcome: 'completed', games: processedGames, achievements: totalEarnedTrophiesUpserted });
+    if (terminalStatus !== 'completed') return;
 
     // Generate activity feed stories if snapshot exists
     if (preSnapshot) {
@@ -1420,15 +1409,7 @@ export async function syncPSNAchievements(
       }
     }
 
-    await supabase
-      .from('psn_sync_logs')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        games_processed: processedGames,
-        trophies_synced: totalEarnedTrophiesUpserted,
-      })
-      .eq('id', syncLogId);
+
 
     console.log(`✅ PSN sync completed: games=${processedGames}, earned trophies upserted=${totalEarnedTrophiesUpserted}`);
     return { success: true };
@@ -1456,22 +1437,7 @@ export async function syncPSNAchievements(
       }
     }
 
-    await updateSyncStatus(userId, {
-      psn_sync_status: 'error',
-      psn_sync_progress: 0,
-      psn_sync_error: normalizedError,
-    });
-
-    await supabase
-      .from('psn_sync_logs')
-      .update({
-        status: 'failed',
-        completed_at: new Date().toISOString(),
-        games_processed: processedGames,
-        trophies_synced: totalEarnedTrophiesUpserted,
-        error_message: normalizedError,
-      })
-      .eq('id', syncLogId);
+    await finishSync(supabase, { userId, platform: 'psn', logId: syncLogId, outcome: 'failed', error: normalizedError, games: processedGames, achievements: totalEarnedTrophiesUpserted });
 
     return { success: false, error: normalizedError };
   }

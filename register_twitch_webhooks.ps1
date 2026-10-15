@@ -1,10 +1,13 @@
 # Register Twitch EventSub Webhooks
 # This tells Twitch to notify StatusXP when users subscribe/unsubscribe
 
-$clientId = "wugdu8pbxckurjet128o523dll87f7"
-$clientSecret = "xgrzr7secgpc7v1y0hqq7vk58vjq1x"
+$clientId = $env:TWITCH_CLIENT_ID
+if ([string]::IsNullOrWhiteSpace($clientId)) { throw "Set TWITCH_CLIENT_ID in the environment before running this script." }
+$clientSecret = $env:TWITCH_CLIENT_SECRET
+if ([string]::IsNullOrWhiteSpace($clientSecret)) { throw "Set TWITCH_CLIENT_SECRET in the environment before running this script." }
 $broadcasterId = "47221283"  # Your Twitch user ID
-$eventsubSecret = "26f9ce51db40b258c63ebc5f3b2c3aad06f0c789b6b4"  # From Supabase secrets
+$eventsubSecret = $env:TWITCH_EVENTSUB_SECRET
+if ([string]::IsNullOrWhiteSpace($eventsubSecret)) { throw "Set TWITCH_EVENTSUB_SECRET in the environment before running this script." }  # From Supabase secrets
 
 Write-Host "Getting Twitch access token..." -ForegroundColor Cyan
 $tokenResponse = Invoke-RestMethod -Uri "https://id.twitch.tv/oauth2/token" -Method POST -Body @{

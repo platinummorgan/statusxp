@@ -1,3 +1,4 @@
+import 'package:statusxp/domain/achievement_progress.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -100,7 +101,7 @@ class BasicLibrary extends ConsumerWidget {
                     leading: const Icon(Icons.videogame_asset),
                     title: Text(basicGameName(row)),
                     subtitle: Text(
-                      '${game.platform?.label ?? 'Unknown platform'} · ${row['achievements_earned'] ?? '—'}/${row['total_achievements'] ?? '—'} achievements synced',
+                      '${game.platform?.label ?? 'Unknown platform'} · ${achievementCountLabel((row['achievements_earned'] as num?)?.toInt() ?? 0, (row['total_achievements'] as num?)?.toInt() ?? 0)} achievements synced',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: game.platform == null
