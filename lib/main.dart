@@ -52,76 +52,83 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
   }
 }
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-  FlutterError.onError = (details) {
-    unawaited(CrashReportingService.instance.recordFlutterFatalError(details));
-    _safeLog('FlutterError caught: ${_safeStr(details.exception)}');
-    _safeLog('Stack: ${_safeStr(details.stack)}');
+      FlutterError.onError = (details) {
+        unawaited(
+          CrashReportingService.instance.recordFlutterFatalError(details),
+        );
+        _safeLog('FlutterError caught: ${_safeStr(details.exception)}');
+        _safeLog('Stack: ${_safeStr(details.stack)}');
 
-    // Enhanced logging for null check operator errors
-    if (_safeStr(details.exception).contains('Null check operator')) {
-      _safeLog('🔍 NULL CHECK ERROR DETAILS:');
-      _safeLog('Exception type: ${details.exception.runtimeType}');
-      _safeLog('Library: ${details.library}');
-      _safeLog('Context: ${details.context}');
-      if (details.stack != null) {
-        final stackLines = details.stack.toString().split('\n');
-        _safeLog('Stack breakdown:');
-        for (int i = 0; i < stackLines.length && i < 10; i++) {
-          _safeLog('  Frame $i: ${stackLines[i]}');
+        // Enhanced logging for null check operator errors
+        if (_safeStr(details.exception).contains('Null check operator')) {
+          _safeLog('🔍 NULL CHECK ERROR DETAILS:');
+          _safeLog('Exception type: ${details.exception.runtimeType}');
+          _safeLog('Library: ${details.library}');
+          _safeLog('Context: ${details.context}');
+          if (details.stack != null) {
+            final stackLines = details.stack.toString().split('\n');
+            _safeLog('Stack breakdown:');
+            for (int i = 0; i < stackLines.length && i < 10; i++) {
+              _safeLog('  Frame $i: ${stackLines[i]}');
+            }
+          }
+        }
+      };
+
+      await _initializeApp();
+    },
+    (error, stack) async {
+      await CrashReportingService.instance.recordError(
+        error,
+        stack,
+        fatal: true,
+        reason: 'Uncaught application error',
+      );
+      // IMPORTANT: never let logging crash the error handler
+      final errStr = _safeStr(error);
+
+      // Enhanced null check error debugging
+      if (errStr.contains('Null check operator') ||
+          errStr.contains('null value')) {
+        _safeLog('🚨 CRITICAL NULL CHECK ERROR:');
+        _safeLog('Error: $errStr');
+        _safeLog('Error type: ${error.runtimeType}');
+        _safeLog('Stack trace:');
+        final stackLines = stack.toString().split('\n');
+        for (int i = 0; i < stackLines.length && i < 15; i++) {
+          _safeLog('  $i: ${stackLines[i]}');
+        }
+
+        // Try to capture additional runtime context
+        _safeLog('Runtime context:');
+        _safeLog('  - kIsWeb: $kIsWeb');
+        try {
+          _safeLog('  - Error occurred during app initialization');
+        } catch (e) {
+          _safeLog('  - Could not get additional context: ${_safeStr(e)}');
         }
       }
-    }
-  };
+      final stackStr = _safeStr(stack);
 
-  runZonedGuarded(() async => _initializeApp(), (error, stack) async {
-    await CrashReportingService.instance.recordError(
-      error,
-      stack,
-      fatal: true,
-      reason: 'Uncaught application error',
-    );
-    // IMPORTANT: never let logging crash the error handler
-    final errStr = _safeStr(error);
+      _safeLog('Uncaught error in zone: $errStr');
+      _safeLog('Stack: $stackStr');
 
-    // Enhanced null check error debugging
-    if (errStr.contains('Null check operator') ||
-        errStr.contains('null value')) {
-      _safeLog('🚨 CRITICAL NULL CHECK ERROR:');
-      _safeLog('Error: $errStr');
-      _safeLog('Error type: ${error.runtimeType}');
-      _safeLog('Stack trace:');
-      final stackLines = stack.toString().split('\n');
-      for (int i = 0; i < stackLines.length && i < 15; i++) {
-        _safeLog('  $i: ${stackLines[i]}');
-      }
+      if (!kIsWeb) return;
 
-      // Try to capture additional runtime context
-      _safeLog('Runtime context:');
-      _safeLog('  - kIsWeb: $kIsWeb');
-      try {
-        _safeLog('  - Error occurred during app initialization');
-      } catch (e) {
-        _safeLog('  - Could not get additional context: ${_safeStr(e)}');
-      }
-    }
-    final stackStr = _safeStr(stack);
+      // This is your current loop trigger. Try targeted cleanup before “nuke”.
+      final looksLikeNullCrash =
+          errStr.contains('Null check operator') ||
+          errStr.contains("reading 'toString'");
+      if (!looksLikeNullCrash) return;
 
-    _safeLog('Uncaught error in zone: $errStr');
-    _safeLog('Stack: $stackStr');
-
-    if (!kIsWeb) return;
-
-    // This is your current loop trigger. Try targeted cleanup before “nuke”.
-    final looksLikeNullCrash =
-        errStr.contains('Null check operator') ||
-        errStr.contains("reading 'toString'");
-    if (!looksLikeNullCrash) return;
-
-    await _attemptWebStorageRecovery();
-  });
+      await _attemptWebStorageRecovery();
+    },
+  );
 }
 
 Future<void> _initializeApp() async {
@@ -237,10 +244,33 @@ Future<void> _initializeApp() async {
   }
 
   if (!kIsWeb) {
-    await SubscriptionService().initialize();
-    await LocalReminderService.instance.initialize(
-      onTap: (route) => appRouter.go(route),
-    );
+    try {
+      await SubscriptionService().initialize();
+    } catch (e, stack) {
+      _safeLog('Subscription initialization error: ${_safeStr(e)}');
+      unawaited(
+        CrashReportingService.instance.recordError(
+          e,
+          stack,
+          reason: 'Optional subscription startup failed',
+        ),
+      );
+    }
+
+    try {
+      await LocalReminderService.instance.initialize(
+        onTap: (route) => appRouter.go(route),
+      );
+    } catch (e, stack) {
+      _safeLog('Local reminder initialization error: ${_safeStr(e)}');
+      unawaited(
+        CrashReportingService.instance.recordError(
+          e,
+          stack,
+          reason: 'Optional local reminder startup failed',
+        ),
+      );
+    }
   }
 
   WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
