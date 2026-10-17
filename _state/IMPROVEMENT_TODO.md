@@ -324,4 +324,6 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] Apply the production database fixes and archive the exact SQL; database regression checks passed.
 - [x] Full Flutter suite: 248 passed, nine existing skips. Targeted analysis clean; full analysis has one existing style info in the platinum preview test.
 - [x] User authorized GitHub publication and the next release. Candidate version: 1.1.21+104. See `RELEASE_NOTES_v1.1.21.md` for publication results.
+- [x] Built and verified the signed Android bundle with the existing upload certificate. Google accepted build 104 with matching SHA-256; submitted to production with review requested. A fresh Play API read confirms production build 104. Review approval/public availability remain controlled by Google.
+- [x] Pushed the release source to GitHub main. Vercel production deployment `dpl_9maNq9dKfRtdKUbbxKidY6nhqxc3` is ready; live domain reports 1.1.21/build 104 and serves the new dashboard and app achievement code. Local release web build also passed.
 - [ ] Build/archive iOS on a Mac and submit to App Store Connect.

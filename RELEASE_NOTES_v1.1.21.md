@@ -16,6 +16,7 @@ Get into StatusXP faster with quicker startup and dashboard loading. My Games no
 ## Validation
 
 - Full Flutter suite: 248 passed, nine existing skips.
+- Signed Android App Bundle and release web build passed. Android upload certificate matches build 103.
 - Targeted analysis: no issues. Full analysis reports one existing style info in `test/platinum_card_preview_test.dart:37`.
 - Database regression checks passed for all 133 app achievement rules, authorization, idempotence, and sync queue recovery.
 - Dashboard database checks passed for detailed response compatibility, owner access, and bounded results, including the two largest libraries.
@@ -24,5 +25,7 @@ Get into StatusXP faster with quicker startup and dashboard loading. My Games no
 ## Release status
 
 - Production database changes are applied and archived under `supabase/migrations/_manual_production_archive/`.
-- Android, web, and GitHub publication results will be recorded after verification.
+- Android submitted to Google Play production on October 17, 2026, with review requested. Google accepted build 104, verified its SHA-256, and validated the release. A fresh API read confirmed production references build 104; this does not establish review approval or public availability.
+- Bundle SHA-256: `3716fbf9f187c57bec57144e465b303926eaef038f2357a36d22477546874509`.
+- Source pushed to GitHub main. Production web deployment `dpl_9maNq9dKfRtdKUbbxKidY6nhqxc3` is ready. Live checks at `https://statusxp.com` returned version 1.1.21/build 104, HTTP 200 for the app and bootstrap, and the new dashboard and achievement RPCs in the compiled client.
 - iOS source is included; a Mac archive and App Store submission remain necessary.
