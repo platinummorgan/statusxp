@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 /// Used by PSN, Xbox, and Steam for consistent UI/UX
 class PlatformSyncWidget extends StatelessWidget {
   final String platformName;
+  final String achievementLabel;
   final Color platformColor;
   final Widget platformIcon;
   final String? syncStatus;
@@ -22,6 +23,7 @@ class PlatformSyncWidget extends StatelessWidget {
   const PlatformSyncWidget({
     super.key,
     required this.platformName,
+    this.achievementLabel = 'Achievements',
     required this.platformColor,
     required this.platformIcon,
     required this.syncStatus,
@@ -84,7 +86,8 @@ class PlatformSyncWidget extends StatelessWidget {
                               child: Text(
                                 entry.key,
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
@@ -110,7 +113,7 @@ class PlatformSyncWidget extends StatelessWidget {
 
           // Title
           Text(
-            'Sync $platformName Achievements',
+            'Sync $platformName $achievementLabel',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -120,9 +123,10 @@ class PlatformSyncWidget extends StatelessWidget {
           const SizedBox(height: 8),
 
           Text(
-            'Import your $platformName achievements and gaming stats.',
+            'Import your $platformName ${achievementLabel.toLowerCase()} and gaming stats.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[600],
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
           ),
@@ -138,7 +142,7 @@ class PlatformSyncWidget extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      _buildStatusIcon(),
+                      _buildStatusIcon(theme.colorScheme.primary),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -147,14 +151,17 @@ class PlatformSyncWidget extends StatelessWidget {
                             Text(
                               'Sync Status',
                               style: theme.textTheme.labelMedium?.copyWith(
-                                color: Colors.grey[600],
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _getStatusText(),
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: _getStatusColor(),
+                                color: _getStatusColor(
+                                  theme.colorScheme.primary,
+                                ),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -169,7 +176,9 @@ class PlatformSyncWidget extends StatelessWidget {
                     LinearProgressIndicator(
                       value: syncProgress / 100,
                       backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(platformColor),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.colorScheme.primary,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -295,13 +304,18 @@ class PlatformSyncWidget extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, color: platformColor),
+                      Icon(
+                        Icons.info_outline,
+                        color: theme.colorScheme.primary,
+                      ),
                       const SizedBox(width: 8),
-                      Text(
-                        'How $platformName Sync Works',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: platformColor,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Text(
+                          'How $platformName Sync Works',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
@@ -316,8 +330,9 @@ class PlatformSyncWidget extends StatelessWidget {
                           Text(
                             '• ',
                             style: TextStyle(
-                              color: platformColor,
-                              fontSize: 14,
+                              color: theme.colorScheme.onSurface,
+                              fontSize: 15,
+                              height: 1.5,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -325,9 +340,10 @@ class PlatformSyncWidget extends StatelessWidget {
                             child: Text(
                               desc,
                               style: TextStyle(
-                                color: Colors.grey[800],
-                                fontSize: 14,
-                                height: 1.4,
+                                color: theme.colorScheme.onSurface,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                height: 1.5,
                               ),
                             ),
                           ),
@@ -344,14 +360,14 @@ class PlatformSyncWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusIcon() {
+  Widget _buildStatusIcon(Color activeColor) {
     if (isSyncing) {
       return SizedBox(
         width: 24,
         height: 24,
         child: CircularProgressIndicator(
           strokeWidth: 3,
-          valueColor: AlwaysStoppedAnimation<Color>(platformColor),
+          valueColor: AlwaysStoppedAnimation<Color>(activeColor),
         ),
       );
     }
@@ -384,8 +400,8 @@ class PlatformSyncWidget extends StatelessWidget {
     return 'Not synced yet';
   }
 
-  Color _getStatusColor() {
-    if (isSyncing) return platformColor;
+  Color _getStatusColor(Color activeColor) {
+    if (isSyncing) return activeColor;
     if (warningMessage != null) return Colors.orange;
     if (syncStatus == 'success') return Colors.green;
     if (syncStatus == 'error') return Colors.red;

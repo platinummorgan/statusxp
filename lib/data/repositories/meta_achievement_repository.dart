@@ -1,17 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:statusxp/domain/meta_achievement.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:statusxp/state/statusxp_providers.dart';
 
 final metaAchievementRepositoryProvider = Provider<MetaAchievementRepository>((
   ref,
 ) {
-  return MetaAchievementRepository(Supabase.instance.client);
+  return MetaAchievementRepository(ref.watch(supabaseClientProvider));
 });
 
 class MetaAchievementRepository {
   final SupabaseClient _client;
 
-  MetaAchievementRepository(this._client);
+  MetaAchievementRepository(SupabaseClient client) : _client = client;
 
   /// Get all meta-achievements with unlock status for a user
   /// Optionally filter by connected platforms
@@ -19,70 +20,66 @@ class MetaAchievementRepository {
     String userId, {
     Set<String>? connectedPlatforms,
   }) async {
-    try {
-      // Get all meta-achievements
-      final achievementsResponse = await _client
-          .from('meta_achievements')
-          .select()
-          .order('sort_order', ascending: true);
+    // Get all meta-achievements
+    final achievementsResponse = await _client
+        .from('meta_achievements')
+        .select()
+        .order('sort_order', ascending: true);
 
-      // Get user's unlocked achievements
-      final unlockedResponse = await _client
-          .from('user_meta_achievements')
-          .select('achievement_id, unlocked_at, custom_title')
-          .eq('user_id', userId);
+    // Get user's unlocked achievements
+    final unlockedResponse = await _client
+        .from('user_meta_achievements')
+        .select('achievement_id, unlocked_at, custom_title')
+        .eq('user_id', userId);
 
-      // Create a map of unlocked achievements
-      final unlockedMap = <String, Map<String, dynamic>>{};
-      for (final item in unlockedResponse as List) {
-        unlockedMap[item['achievement_id'] as String] = item;
-      }
-
-      // Combine data
-      final achievements = <MetaAchievement>[];
-      for (final achievement in achievementsResponse as List) {
-        final id = achievement['id'] as String;
-        final unlocked = unlockedMap[id];
-
-        // Check platform requirements if filtering is enabled
-        if (connectedPlatforms != null) {
-          final requiredPlatforms = achievement['required_platforms'] as List?;
-
-          // If achievement has platform requirements, check if user meets them
-          if (requiredPlatforms != null && requiredPlatforms.isNotEmpty) {
-            // User must have ALL required platforms
-            final hasAllRequired = requiredPlatforms.every(
-              (platform) => connectedPlatforms.contains(platform as String),
-            );
-
-            // Skip this achievement if user doesn't have required platforms
-            if (!hasAllRequired) continue;
-          }
-        }
-
-        achievements.add(
-          MetaAchievement(
-            id: id,
-            category: achievement['category'] as String,
-            defaultTitle: achievement['default_title'] as String,
-            description: achievement['description'] as String,
-            iconEmoji: achievement['icon_emoji'] as String?,
-            sortOrder: achievement['sort_order'] as int? ?? 0,
-            unlockedAt: unlocked?['unlocked_at'] != null
-                ? DateTime.parse(unlocked!['unlocked_at'] as String)
-                : null,
-            customTitle: unlocked?['custom_title'] as String?,
-            requiredPlatforms: achievement['required_platforms'] != null
-                ? List<String>.from(achievement['required_platforms'] as List)
-                : null,
-          ),
-        );
-      }
-
-      return achievements;
-    } catch (e) {
-      return [];
+    // Create a map of unlocked achievements
+    final unlockedMap = <String, Map<String, dynamic>>{};
+    for (final item in unlockedResponse as List) {
+      unlockedMap[item['achievement_id'] as String] = item;
     }
+
+    // Combine data
+    final achievements = <MetaAchievement>[];
+    for (final achievement in achievementsResponse as List) {
+      final id = achievement['id'] as String;
+      final unlocked = unlockedMap[id];
+
+      // Check platform requirements if filtering is enabled
+      if (connectedPlatforms != null) {
+        final requiredPlatforms = achievement['required_platforms'] as List?;
+
+        // If achievement has platform requirements, check if user meets them
+        if (requiredPlatforms != null && requiredPlatforms.isNotEmpty) {
+          // User must have ALL required platforms
+          final hasAllRequired = requiredPlatforms.every(
+            (platform) => connectedPlatforms.contains(platform as String),
+          );
+
+          // Skip this achievement if user doesn't have required platforms
+          if (!hasAllRequired && unlocked == null) continue;
+        }
+      }
+
+      achievements.add(
+        MetaAchievement(
+          id: id,
+          category: achievement['category'] as String,
+          defaultTitle: achievement['default_title'] as String,
+          description: achievement['description'] as String,
+          iconEmoji: achievement['icon_emoji'] as String?,
+          sortOrder: achievement['sort_order'] as int? ?? 0,
+          unlockedAt: unlocked?['unlocked_at'] != null
+              ? DateTime.parse(unlocked!['unlocked_at'] as String)
+              : null,
+          customTitle: unlocked?['custom_title'] as String?,
+          requiredPlatforms: achievement['required_platforms'] != null
+              ? List<String>.from(achievement['required_platforms'] as List)
+              : null,
+        ),
+      );
+    }
+
+    return achievements;
   }
 
   /// Get only unlocked achievements for a user
@@ -105,11 +102,10 @@ class MetaAchievementRepository {
     }
   }
 
-  /// Manually unlock an achievement (for testing/admin)
-  /// Uses atomic database function to prevent race conditions
+  /// Compatibility helper: the server only awards a verified, eligible goal.
   Future<bool> unlockAchievement(String userId, String achievementId) async {
     try {
-      await _client.rpc(
+      final awarded = await _client.rpc(
         'unlock_achievement_if_new',
         params: {
           'p_user_id': userId,
@@ -118,8 +114,7 @@ class MetaAchievementRepository {
         },
       );
 
-      // Function always succeeds (inserts new or ignores existing)
-      return true;
+      return awarded == true;
     } catch (e) {
       return false;
     }

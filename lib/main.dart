@@ -36,22 +36,6 @@ late final AuthRefreshService authRefreshService;
 bool _isAuthRefreshReady = false;
 final BiometricAuthService _biometric = BiometricAuthService();
 
-class _AppLifecycleObserver extends WidgetsBindingObserver {
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) return;
-    if (!_isAuthRefreshReady) return;
-
-    Future.delayed(const Duration(seconds: 1), () {
-      authRefreshService.refreshIfNeededOnResume().catchError((e) {
-        _safeLog(
-          'Token refresh on resume failed (will retry later): ${_safeStr(e)}',
-        );
-      });
-    });
-  }
-}
-
 void main() {
   runZonedGuarded(
     () async {
@@ -144,19 +128,6 @@ Future<void> _initializeApp() async {
     _safeLog('dotenv load skipped: ${_safeStr(e)}');
   }
 
-  // Initialize Firebase for all platforms
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await CrashReportingService.instance.initialize();
-    await AnalyticsService().initialize();
-    _safeLog('🔥 Firebase Analytics initialized');
-  } catch (e) {
-    _safeLog('Firebase initialization error: ${_safeStr(e)}');
-    // Continue without analytics if it fails
-  }
-
   // Don't proactively clean storage - only clean on actual errors
   // This prevents interfering with active OAuth flows
 
@@ -178,25 +149,6 @@ Future<void> _initializeApp() async {
         }
       } catch (e) {
         _safeLog('Error clearing logout flag: ${_safeStr(e)}');
-      }
-    }
-
-    // Check if we have a session but it's invalid (corrupt refresh token)
-    if (Supabase.instance.client.auth.currentSession != null) {
-      try {
-        // Try to refresh to validate the session
-        await Supabase.instance.client.auth.refreshSession();
-      } catch (e) {
-        // If refresh fails with invalid token error, clear the corrupt session
-        if (e.toString().contains('refresh_token_not_found') ||
-            e.toString().contains('Invalid Refresh Token')) {
-          _safeLog('🔄 Detected corrupt refresh token, clearing session...');
-          try {
-            await Supabase.instance.client.auth.signOut();
-          } catch (signOutError) {
-            _safeLog('Error during forced sign out: ${_safeStr(signOutError)}');
-          }
-        }
       }
     }
 
@@ -243,6 +195,30 @@ Future<void> _initializeApp() async {
     _safeLog('App loading without session - user will need to login');
   }
 
+  runApp(const ProviderScope(child: StatusXPApp()));
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Render before optional platform services or network refreshes begin.
+    unawaited(_initializeOptionalServices());
+    if (_isAuthRefreshReady) {
+      unawaited(authRefreshService.refreshIfNeededOnResume());
+    }
+  });
+}
+
+Future<void> _initializeOptionalServices() async {
+  // Initialize Firebase for all platforms
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await CrashReportingService.instance.initialize();
+    await AnalyticsService().initialize();
+    _safeLog('🔥 Firebase Analytics initialized');
+  } catch (e) {
+    _safeLog('Firebase initialization error: ${_safeStr(e)}');
+    // Continue without analytics if it fails
+  }
+
   if (!kIsWeb) {
     try {
       await SubscriptionService().initialize();
@@ -256,26 +232,7 @@ Future<void> _initializeApp() async {
         ),
       );
     }
-
-    try {
-      await LocalReminderService.instance.initialize(
-        onTap: (route) => appRouter.go(route),
-      );
-    } catch (e, stack) {
-      _safeLog('Local reminder initialization error: ${_safeStr(e)}');
-      unawaited(
-        CrashReportingService.instance.recordError(
-          e,
-          stack,
-          reason: 'Optional local reminder startup failed',
-        ),
-      );
-    }
   }
-
-  WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
-
-  runApp(const ProviderScope(child: StatusXPApp()));
 }
 
 class StatusXPApp extends ConsumerStatefulWidget {
@@ -290,6 +247,7 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
   AppLinks? _appLinks;
   StreamSubscription<Uri>? _sub;
   bool _hasCheckedInterruptedSyncs = false;
+  SyncCompletionSnapshot? _lastSyncSnapshot;
 
   @override
   void initState() {
@@ -298,8 +256,17 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
 
     if (!kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final route = await LocalReminderService.instance.launchPayload();
-        if (route != null && route.startsWith('/')) appRouter.go(route);
+        try {
+          await LocalReminderService.instance.initialize(
+            onTap: (route) => appRouter.go(route),
+          );
+          final route = await LocalReminderService.instance.launchPayload();
+          if (mounted && route != null && route.startsWith('/')) {
+            appRouter.go(route);
+          }
+        } catch (e) {
+          _safeLog('Local reminder startup skipped: ${_safeStr(e)}');
+        }
       });
     }
 
@@ -352,6 +319,8 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
     ref.invalidate(syncCompletionProvider);
+    ref.refreshCoreData();
+    ref.invalidate(engagementSnapshotProvider);
 
     // Refresh tokens and resume any stale syncs without blocking UI
     Future.delayed(const Duration(seconds: 1), () {
@@ -465,9 +434,19 @@ class _StatusXPAppState extends ConsumerState<StatusXPApp>
   @override
   Widget build(BuildContext context) {
     ref.listen(syncCompletionProvider, (previous, next) {
+      if (next is AsyncData<SyncCompletionSnapshot?> && next.value == null) {
+        _lastSyncSnapshot = null;
+        return;
+      }
       final snapshot = next.asData?.value;
-      if (snapshot == null ||
-          !snapshot.shouldRefreshAfter(previous?.asData?.value)) {
+      if (snapshot == null) return;
+      final previousSnapshot = _lastSyncSnapshot;
+      _lastSyncSnapshot = snapshot;
+      // Startup/account changes already load fresh providers. Resume explicitly
+      // refreshes them; avoid repeating that work for the stream's first event.
+      if (previousSnapshot == null ||
+          previousSnapshot.userId != snapshot.userId ||
+          !snapshot.shouldRefreshAfter(previousSnapshot)) {
         return;
       }
       ref.refreshCoreData();

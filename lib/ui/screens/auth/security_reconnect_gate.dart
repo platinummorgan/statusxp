@@ -182,7 +182,9 @@ class _SecurityReconnectGateState extends ConsumerState<SecurityReconnectGate>
     return ref
         .watch(securityReconnectRequirementsProvider)
         .when(
-          skipLoadingOnRefresh: false,
+          // Keep the verified screen visible during same-account rechecks.
+          // Initial loads, account changes and failed checks still stay gated.
+          skipLoadingOnRefresh: true,
           loading: () => _retryScreen(loading: true),
           error: (_, _) => _retryScreen(loading: false),
           data: (requirements) {

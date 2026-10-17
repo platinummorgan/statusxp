@@ -165,7 +165,6 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     _shuffleSeed = DateTime.now().millisecondsSinceEpoch;
     // Refresh data when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.invalidate(dashboardStatsProvider);
       _checkAndTriggerAutoSync();
       // _checkAndShowSystemAnnouncement(); // Removed - maintenance complete
       // Start animations after a short delay
@@ -189,13 +188,6 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     _entranceController.dispose();
     _shimmerController.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Refresh data whenever we navigate back to this screen
-    ref.invalidate(dashboardStatsProvider);
   }
 
   Future<void> _checkIfShouldShowHint() async {
@@ -496,7 +488,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dashboardStatsAsync = ref.watch(dashboardStatsProvider);
+    final dashboardStatsAsync = ref.watch(dashboardDisplayStatsProvider);
     final engagementSnapshotAsync = ref.watch(engagementSnapshotProvider);
     final claimableChallengePoints = engagementSnapshotAsync.maybeWhen(
       data: (snapshot) => snapshot.availableRewardXp,
@@ -669,37 +661,18 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
         ],
       ),
       body: dashboardStatsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  'Dashboard is temporarily unavailable. Pull to refresh or tap retry.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '$error',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => ref.invalidate(dashboardStatsProvider),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
+        loading: () => const _DashboardLoadingPreview(),
+        error: (error, stack) => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'Your dashboard will update automatically when the connection returns.',
+              textAlign: TextAlign.center,
+            ),
           ),
         ),
         data: (stats) => stats == null
-            ? const Center(child: Text('No data available'))
+            ? const _DashboardLoadingPreview()
             : _buildDashboardContent(
                 context,
                 theme,
@@ -728,7 +701,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
     required int weeklyUnlocks,
     required EngagementSnapshot? engagementSnapshot,
   }) {
-    final gamesAsync = ref.watch(unifiedGamesProvider);
+    final recentGames = ref.watch(dashboardGamesDisplayProvider);
+    final savedLibrary = ref.watch(savedUnifiedGamesProvider).asData?.value;
+    final gamesAsync = savedLibrary == null
+        ? recentGames
+        : AsyncData(savedLibrary);
 
     return Stack(
       children: [
@@ -756,185 +733,170 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
               ],
             ),
           ),
-          child: RefreshIndicator(
-            onRefresh: () async {
-              // Generate new shuffle seed on manual refresh
-              if (_backgroundMode == 'shuffle') {
-                setState(() {
-                  _shuffleSeed = DateTime.now().millisecondsSinceEpoch;
-                });
-              }
-              ref.refreshCoreData();
-              await Future.delayed(const Duration(milliseconds: 500));
-            },
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 20),
+          child: SingleChildScrollView(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 20),
 
-                      if (_dashboardPromptsLoaded &&
-                          _dismissedNextActionDay ==
-                              _localDayKey(DateTime.now()))
-                        TextButton.icon(
-                          onPressed: _restoreNextAction,
-                          icon: const Icon(Icons.visibility_outlined),
-                          label: const Text('Show recommendations'),
-                        ),
-                      if (_dashboardPromptsLoaded &&
-                          _dismissedNextActionDay !=
-                              _localDayKey(DateTime.now())) ...[
-                        gamesAsync.maybeWhen(
-                          data: (games) => FutureBuilder<bool>(
-                            future: _premiumStatusFuture,
-                            builder: (context, premiumSnapshot) {
-                              final userId = ref.watch(currentUserIdProvider);
-                              final skippedProvider =
-                                  skippedRecommendationGamesProvider(
-                                    userId ?? 'guest',
-                                  );
-                              final skipped = ref.watch(skippedProvider);
-                              final goals = ref.watch(
-                                recommendationGoalsProvider(userId ?? 'guest'),
-                              );
-                              final action = chooseNextBestAction(
-                                games: games,
-                                skippedGameKeys: skipped,
-                                goals:
-                                    goals.asData?.value ??
-                                    const RecommendationGoals(),
-                                isPremium: premiumSnapshot.data ?? false,
-                                availableRewardXp: availableRewardXp,
-                                currentStreak: currentStreak,
-                                todayUnlocks: todayUnlocks,
-                              );
-                              _trackNextActionImpression(action);
-                              return NextBestActionCard(
-                                action: action,
-                                goalControls: userId == null
-                                    ? null
-                                    : RecommendationGoalControls(
-                                        userId: userId,
-                                        games: games,
-                                        selectedGame: action.game,
-                                      ),
-                                onAnother: userId == null || action.game == null
-                                    ? null
-                                    : () {
-                                        ref
-                                            .read(skippedProvider.notifier)
-                                            .state = {
-                                          ...skipped,
-                                          recommendationGameKey(action.game!),
-                                        };
-                                      },
-                                onReset: skipped.isEmpty
-                                    ? null
-                                    : () {
-                                        ref
-                                                .read(skippedProvider.notifier)
-                                                .state =
-                                            <String>{};
-                                      },
-                                onDismiss: _dismissNextActionForToday,
-                                onTap: () async {
-                                  await _dismissNextActionForToday();
-                                  if (mounted) _handleNextBestAction(action);
-                                },
-                              );
-                            },
-                          ),
-                          orElse: () => const SizedBox.shrink(),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-
-                      if (_dashboardPromptsLoaded &&
-                          _dismissedWeeklyRecapWeek !=
-                              _localWeekKey(DateTime.now())) ...[
-                        WeeklyRecapCard(
-                          weeklyUnlocks: weeklyUnlocks,
-                          currentStreak: currentStreak,
-                          onDismiss: _dismissWeeklyRecapForWeek,
-                          onTap: () async {
-                            await _dismissWeeklyRecapForWeek();
-                            AnalyticsService().logCustomEvent(
-                              eventName: 'weekly_recap_opened',
-                              parameters: {'source': 'dashboard'},
+                    if (_dashboardPromptsLoaded &&
+                        _dismissedNextActionDay == _localDayKey(DateTime.now()))
+                      TextButton.icon(
+                        onPressed: _restoreNextAction,
+                        icon: const Icon(Icons.visibility_outlined),
+                        label: const Text('Show recommendations'),
+                      ),
+                    if (_dashboardPromptsLoaded &&
+                        _dismissedNextActionDay !=
+                            _localDayKey(DateTime.now())) ...[
+                      gamesAsync.maybeWhen(
+                        data: (games) => FutureBuilder<bool>(
+                          future: _premiumStatusFuture,
+                          builder: (context, premiumSnapshot) {
+                            final userId = ref.watch(currentUserIdProvider);
+                            final skippedProvider =
+                                skippedRecommendationGamesProvider(
+                                  userId ?? 'guest',
+                                );
+                            final skipped = ref.watch(skippedProvider);
+                            final goals = ref.watch(
+                              recommendationGoalsProvider(userId ?? 'guest'),
                             );
-                            if (context.mounted) context.push('/weekly-recap');
+                            final action = chooseNextBestAction(
+                              games: games,
+                              skippedGameKeys: skipped,
+                              goals:
+                                  goals.asData?.value ??
+                                  const RecommendationGoals(),
+                              isPremium: premiumSnapshot.data ?? false,
+                              availableRewardXp: availableRewardXp,
+                              currentStreak: currentStreak,
+                              todayUnlocks: todayUnlocks,
+                            );
+                            _trackNextActionImpression(action);
+                            return NextBestActionCard(
+                              action: action,
+                              goalControls: userId == null
+                                  ? null
+                                  : RecommendationGoalControls(
+                                      userId: userId,
+                                      games: games,
+                                      selectedGame: action.game,
+                                    ),
+                              onAnother: userId == null || action.game == null
+                                  ? null
+                                  : () {
+                                      ref
+                                          .read(skippedProvider.notifier)
+                                          .state = {
+                                        ...skipped,
+                                        recommendationGameKey(action.game!),
+                                      };
+                                    },
+                              onReset: skipped.isEmpty
+                                  ? null
+                                  : () {
+                                      ref.read(skippedProvider.notifier).state =
+                                          <String>{};
+                                    },
+                              onDismiss: _dismissNextActionForToday,
+                              onTap: () async {
+                                await _dismissNextActionForToday();
+                                if (mounted) _handleNextBestAction(action);
+                              },
+                            );
                           },
                         ),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // StatusXP large circle (center top) - animated entrance
-                      SlideTransition(
-                        position: _statusXPCircleSlide,
-                        child: FadeTransition(
-                          opacity: _statusXPCircleAnimation,
-                          child: _buildStatusXPCircle(
-                            stats.totalStatusXP,
-                            claimablePoints: claimablePoints,
-                            challengesLoading: challengesLoading,
-                          ),
-                        ),
+                        orElse: () => const SizedBox.shrink(),
                       ),
-
-                      const SizedBox(height: 32),
-
-                      if (engagementSnapshot != null) ...[
-                        DailyMomentumCard(
-                          snapshot: engagementSnapshot,
-                          onTap: () {
-                            AnalyticsService().logCustomEvent(
-                              eventName: 'daily_momentum_opened',
-                            );
-                            context.push('/engagement-hub');
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // Platform circles row - animated entrance
-                      SlideTransition(
-                        position: _platformCirclesSlide,
-                        child: FadeTransition(
-                          opacity: _platformCirclesAnimation,
-                          child: _buildPlatformCircles(stats),
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // Activity Feed Widget
-                      const ActivityFeedWidget(),
-
-                      const SizedBox(height: 40),
-
-                      // My Games Section
-                      Text(
-                        'MY GAMES',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
-                          letterSpacing: 2.5,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      // Embedded Games List
-                      _buildEmbeddedGamesList(context),
+                      const SizedBox(height: 12),
                     ],
-                  ),
+
+                    if (_dashboardPromptsLoaded &&
+                        _dismissedWeeklyRecapWeek !=
+                            _localWeekKey(DateTime.now())) ...[
+                      WeeklyRecapCard(
+                        weeklyUnlocks: weeklyUnlocks,
+                        currentStreak: currentStreak,
+                        onDismiss: _dismissWeeklyRecapForWeek,
+                        onTap: () async {
+                          await _dismissWeeklyRecapForWeek();
+                          AnalyticsService().logCustomEvent(
+                            eventName: 'weekly_recap_opened',
+                            parameters: {'source': 'dashboard'},
+                          );
+                          if (context.mounted) context.push('/weekly-recap');
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // StatusXP large circle (center top) - animated entrance
+                    SlideTransition(
+                      position: _statusXPCircleSlide,
+                      child: FadeTransition(
+                        opacity: _statusXPCircleAnimation,
+                        child: _buildStatusXPCircle(
+                          stats.totalStatusXP,
+                          claimablePoints: claimablePoints,
+                          challengesLoading: challengesLoading,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    if (engagementSnapshot != null) ...[
+                      DailyMomentumCard(
+                        snapshot: engagementSnapshot,
+                        onTap: () {
+                          AnalyticsService().logCustomEvent(
+                            eventName: 'daily_momentum_opened',
+                          );
+                          context.push('/engagement-hub');
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Platform circles row - animated entrance
+                    SlideTransition(
+                      position: _platformCirclesSlide,
+                      child: FadeTransition(
+                        opacity: _platformCirclesAnimation,
+                        child: _buildPlatformCircles(stats),
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // Activity Feed Widget
+                    const ActivityFeedWidget(),
+
+                    const SizedBox(height: 40),
+
+                    // My Games Section
+                    Text(
+                      'MY GAMES',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        letterSpacing: 2.5,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // Embedded Games List
+                    _buildEmbeddedGamesList(context),
+                  ],
                 ),
               ),
             ),
@@ -1547,7 +1509,20 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
       ),
       const PopupMenuItem<String>(
         value: '/platinum-cards',
-        child: Row(children:[Icon(Icons.emoji_events_outlined,color:CyberpunkTheme.neonCyan,size:20),SizedBox(width:12),Text('Platinum celebrations',style:TextStyle(color:Colors.white))]),
+        child: Row(
+          children: [
+            Icon(
+              Icons.emoji_events_outlined,
+              color: CyberpunkTheme.neonCyan,
+              size: 20,
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Platinum celebrations',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
       ),
       const PopupMenuItem<String>(
         value: '/coop-partners',
@@ -1700,7 +1675,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
 
   Widget _buildEmbeddedGamesList(BuildContext context) {
     return DashboardGamesList(
-      games: ref.watch(unifiedGamesProvider),
+      games: ref.watch(dashboardGamesDisplayProvider),
       gameBuilder: (game) => _buildGameCard(context, game),
       onViewAll: () {
         HapticFeedback.lightImpact();
@@ -2389,148 +2364,180 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
   }
 
   void _showBackgroundPicker(BuildContext context) {
-    final gamesAsync = ref.read(unifiedGamesProvider);
-
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0A0E27),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
-        return gamesAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const Center(child: Text('Error loading games')),
-          data: (games) {
-            return Container(
-              padding: const EdgeInsets.all(20),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.wallpaper, color: CyberpunkTheme.neonPurple),
-                        SizedBox(width: 12),
-                        Text(
-                          'Choose Background',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final gamesAsync = ref.watch(unifiedGamesDisplayProvider);
+          return gamesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const Center(child: Text('Error loading games')),
+            data: (games) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(
+                            Icons.wallpaper,
+                            color: CyberpunkTheme.neonPurple,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _backgroundMode == 'none'
-                          ? 'Plain background'
-                          : _backgroundMode == 'custom'
-                          ? 'Custom image selected'
-                          : _backgroundMode == 'shuffle'
-                          ? 'Shuffling games randomly'
-                          : _backgroundMode == 'auto' || _backgroundMode == null
-                          ? 'Showing most recent game'
-                          : 'Specific game selected',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.6),
+                          SizedBox(width: 12),
+                          Text(
+                            'Choose Background',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Mode selection buttons - First row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildModeButton(
-                            icon: Icons.block,
-                            label: 'None',
-                            description: 'Plain',
-                            isSelected: _backgroundMode == 'none',
-                            onTap: () {
-                              _setBackgroundMode('none');
-                              Navigator.pop(context);
-                            },
-                          ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _backgroundMode == 'none'
+                            ? 'Plain background'
+                            : _backgroundMode == 'custom'
+                            ? 'Custom image selected'
+                            : _backgroundMode == 'shuffle'
+                            ? 'Shuffling games randomly'
+                            : _backgroundMode == 'auto' ||
+                                  _backgroundMode == null
+                            ? 'Showing most recent game'
+                            : 'Specific game selected',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.6),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildModeButton(
-                            icon: Icons.history,
-                            label: 'Auto',
-                            description: 'Most Recent',
-                            isSelected:
-                                _backgroundMode == 'auto' ||
-                                _backgroundMode == null,
-                            onTap: () {
-                              _setBackgroundMode('auto');
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildModeButton(
-                            icon: Icons.shuffle,
-                            label: 'Shuffle',
-                            description: 'Random',
-                            isSelected: _backgroundMode == 'shuffle',
-                            onTap: () {
-                              _setBackgroundMode('shuffle');
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Second row with Custom button
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildModeButton(
-                            icon: Icons.add_photo_alternate,
-                            label: 'Custom',
-                            description: 'Upload ⭐',
-                            isSelected: _backgroundMode == 'custom',
-                            onTap: () async {
-                              Navigator.pop(context);
-                              await _uploadCustomBackground(context);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(child: SizedBox()),
-                        const SizedBox(width: 12),
-                        const Expanded(child: SizedBox()),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Or pick a specific game:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white70,
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    DashboardBackgroundGameGrid(
-                      games: games,
-                      selectedTitle: _backgroundMode,
-                      onSelected: (game) {
-                        _setBackgroundMode(game.title);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      // Mode selection buttons - First row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildModeButton(
+                              icon: Icons.block,
+                              label: 'None',
+                              description: 'Plain',
+                              isSelected: _backgroundMode == 'none',
+                              onTap: () {
+                                _setBackgroundMode('none');
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildModeButton(
+                              icon: Icons.history,
+                              label: 'Auto',
+                              description: 'Most Recent',
+                              isSelected:
+                                  _backgroundMode == 'auto' ||
+                                  _backgroundMode == null,
+                              onTap: () {
+                                _setBackgroundMode('auto');
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildModeButton(
+                              icon: Icons.shuffle,
+                              label: 'Shuffle',
+                              description: 'Random',
+                              isSelected: _backgroundMode == 'shuffle',
+                              onTap: () {
+                                _setBackgroundMode('shuffle');
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Second row with Custom button
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildModeButton(
+                              icon: Icons.add_photo_alternate,
+                              label: 'Custom',
+                              description: 'Upload ⭐',
+                              isSelected: _backgroundMode == 'custom',
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await _uploadCustomBackground(context);
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(child: SizedBox()),
+                          const SizedBox(width: 12),
+                          const Expanded(child: SizedBox()),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Or pick a specific game:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white70,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      DashboardBackgroundGameGrid(
+                        games: games,
+                        selectedTitle: _backgroundMode,
+                        onSelected: (game) {
+                          _setBackgroundMode(game.title);
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
+              );
+            },
+          );
+        },
+      ),
     );
   }
+}
+
+/// The app shell is ready even when this account has no saved stats yet.
+class _DashboardLoadingPreview extends StatelessWidget {
+  const _DashboardLoadingPreview();
+
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(24),
+    children: [
+      Text('Your dashboard', style: Theme.of(context).textTheme.headlineSmall),
+      const SizedBox(height: 12),
+      const Text('Getting your latest stats…'),
+      const SizedBox(height: 20),
+      const LinearProgressIndicator(),
+      const SizedBox(height: 24),
+      for (final height in [180.0, 100.0, 100.0])
+        Container(
+          height: height,
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.04),
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+    ],
+  );
 }

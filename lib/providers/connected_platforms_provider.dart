@@ -14,29 +14,27 @@ final connectedPlatformsProvider = FutureProvider.autoDispose<Set<String>>((
   try {
     final profile = await supabase
         .from('profiles')
-        .select('psn_online_id, xbox_gamertag, steam_id, steam_display_name')
+        .select('psn_account_id, xbox_xuid, steam_id')
         .eq('id', userId)
         .single();
 
     final platforms = <String>{};
 
     // Check if PSN is connected (has PSN ID)
-    if (profile['psn_online_id'] != null &&
-        (profile['psn_online_id'] as String).isNotEmpty) {
+    if (profile['psn_account_id'] != null &&
+        (profile['psn_account_id'] as String).isNotEmpty) {
       platforms.add('psn');
     }
 
-    // Check if Xbox is connected (has gamertag)
-    if (profile['xbox_gamertag'] != null &&
-        (profile['xbox_gamertag'] as String).isNotEmpty) {
+    // Display names can be missing or stale; use the linked account identity.
+    if (profile['xbox_xuid'] != null &&
+        (profile['xbox_xuid'] as String).isNotEmpty) {
       platforms.add('xbox');
     }
 
-    // Check if Steam is connected (has Steam ID or display name)
-    if ((profile['steam_id'] != null &&
-            (profile['steam_id'] as String).isNotEmpty) ||
-        (profile['steam_display_name'] != null &&
-            (profile['steam_display_name'] as String).isNotEmpty)) {
+    // Check if Steam is connected (has Steam ID).
+    if (profile['steam_id'] != null &&
+        (profile['steam_id'] as String).isNotEmpty) {
       platforms.add('steam');
     }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,6 +21,7 @@ import 'package:statusxp/services/trophy_help_service.dart';
 import 'package:statusxp/services/achievement_comment_service.dart';
 import 'package:statusxp/domain/game.dart';
 import 'package:statusxp/domain/dashboard_stats.dart';
+import 'package:statusxp/data/dashboard_cache.dart';
 import 'package:statusxp/domain/trophy_room_data.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/domain/game_overview.dart';
@@ -236,6 +238,33 @@ final gamesProvider = FutureProvider<List<Game>>((ref) async {
 /// FutureProvider for loading unified cross-platform games.
 ///
 /// Groups games by title across all platforms (PSN/Xbox/Steam).
+final savedUnifiedGamesProvider = FutureProvider<List<UnifiedGame>?>((ref) {
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) return Future.value(null);
+  return ref.watch(unifiedGamesRepositoryProvider).readSavedGames(userId);
+});
+
+/// Keep a successful library visible during automatic refreshes and retries.
+final unifiedGamesDisplayProvider = Provider<AsyncValue<List<UnifiedGame>>>((
+  ref,
+) {
+  final fresh = ref.watch(unifiedGamesProvider);
+  final saved = ref.watch(savedUnifiedGamesProvider);
+  List<UnifiedGame>? currentValue(AsyncValue<List<UnifiedGame>?> value) =>
+      value.when(
+        skipLoadingOnReload: false,
+        data: (games) => games,
+        error: (_, _) => null,
+        loading: () => null,
+      );
+  final games = currentValue(fresh) ?? currentValue(saved);
+  if (games != null) return AsyncData(games);
+  if (fresh.isLoading || saved.isLoading) return const AsyncLoading();
+  return fresh.hasError
+      ? AsyncError(fresh.error!, fresh.stackTrace!)
+      : const AsyncData([]);
+});
+
 final unifiedGamesProvider = FutureProvider<List<UnifiedGame>>((ref) async {
   if (!isSupabaseInitialized()) {
     return [];
@@ -248,7 +277,85 @@ final unifiedGamesProvider = FutureProvider<List<UnifiedGame>>((ref) async {
     return [];
   }
 
-  return repository.getUnifiedGames(userId);
+  var disposed = false;
+  Timer? retry;
+  ref.onDispose(() {
+    disposed = true;
+    retry?.cancel();
+  });
+  try {
+    final games = await repository.getUnifiedGames(userId);
+    if (!disposed) ref.invalidate(savedUnifiedGamesProvider);
+    return games;
+  } catch (_) {
+    if (!disposed) {
+      retry = Timer(const Duration(seconds: 10), ref.invalidateSelf);
+    }
+    final saved = await repository.readSavedGames(userId);
+    if (saved != null) return saved;
+    rethrow;
+  }
+});
+
+final savedDashboardGamesProvider = FutureProvider<List<UnifiedGame>?>((ref) {
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) return Future.value(null);
+  return ref
+      .watch(unifiedGamesRepositoryProvider)
+      .readSavedDashboardGames(userId);
+});
+
+/// Keep a successful library visible during automatic refreshes and retries.
+final dashboardGamesDisplayProvider = Provider<AsyncValue<List<UnifiedGame>>>((
+  ref,
+) {
+  final fresh = ref.watch(dashboardGamesProvider);
+  final saved = ref.watch(savedDashboardGamesProvider);
+  List<UnifiedGame>? currentValue(AsyncValue<List<UnifiedGame>?> value) =>
+      value.when(
+        skipLoadingOnReload: false,
+        data: (games) => games,
+        error: (_, _) => null,
+        loading: () => null,
+      );
+  final games = currentValue(fresh) ?? currentValue(saved);
+  if (games != null) return AsyncData(games);
+  if (fresh.isLoading || saved.isLoading) return const AsyncLoading();
+  return fresh.hasError
+      ? AsyncError(fresh.error!, fresh.stackTrace!)
+      : const AsyncData([]);
+});
+
+final dashboardGamesProvider = FutureProvider<List<UnifiedGame>>((ref) async {
+  if (!isSupabaseInitialized()) {
+    return [];
+  }
+
+  final repository = ref.watch(unifiedGamesRepositoryProvider);
+  final userId = ref.watch(currentUserIdProvider);
+
+  if (userId == null) {
+    return [];
+  }
+
+  var disposed = false;
+  Timer? retry;
+  ref.onDispose(() {
+    disposed = true;
+    retry?.cancel();
+  });
+  try {
+    final games = await repository.getDashboardGames(userId);
+    if (!disposed) ref.invalidate(savedDashboardGamesProvider);
+    return games;
+  } catch (_) {
+    if (!disposed) {
+      retry = Timer(const Duration(seconds: 10), ref.invalidateSelf);
+    }
+    final saved = await repository.readSavedDashboardGames(userId);
+    if (saved != null) return saved;
+    rethrow;
+  }
 });
 
 /// FutureProvider for loading unified games for a public target user.
@@ -287,6 +394,38 @@ final userStatsProvider = FutureProvider<UserStats>((ref) async {
 ///
 /// This provider loads cross-platform dashboard stats including StatusXP score.
 /// Returns empty stats if no user is authenticated.
+final dashboardCacheProvider = Provider<DashboardCache>(
+  (ref) => DashboardCache(),
+);
+
+final savedDashboardStatsProvider = FutureProvider<DashboardStats?>((ref) {
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) return Future.value(null);
+  return ref.watch(dashboardCacheProvider).read(userId);
+});
+
+/// Fresh data always loads automatically; saved data keeps the screen usable.
+final dashboardDisplayStatsProvider = Provider<AsyncValue<DashboardStats?>>((
+  ref,
+) {
+  final fresh = ref.watch(dashboardStatsProvider);
+  final saved = ref.watch(savedDashboardStatsProvider);
+  // A dependency reload can mean a different account. Only retain previous
+  // values during same-account refreshes, never while switching identities.
+  DashboardStats? currentValue(AsyncValue<DashboardStats?> value) => value.when(
+    skipLoadingOnReload: false,
+    data: (stats) => stats,
+    error: (_, _) => null,
+    loading: () => null,
+  );
+  final stats = currentValue(fresh) ?? currentValue(saved);
+  if (stats != null) return AsyncData(stats);
+  if (fresh.isLoading || saved.isLoading) return const AsyncLoading();
+  return fresh.hasError
+      ? AsyncError(fresh.error!, fresh.stackTrace!)
+      : const AsyncData(null);
+});
+
 final dashboardStatsProvider = FutureProvider<DashboardStats?>((ref) async {
   if (!isSupabaseInitialized()) {
     return null;
@@ -299,9 +438,22 @@ final dashboardStatsProvider = FutureProvider<DashboardStats?>((ref) async {
     return null;
   }
 
+  var disposed = false;
+  Timer? retry;
+  ref.onDispose(() {
+    disposed = true;
+    retry?.cancel();
+  });
   try {
-    return await repository.getDashboardStats(userId);
+    final cache = ref.read(dashboardCacheProvider);
+    final stats = await repository.getDashboardStats(userId);
+    await cache.write(userId, stats);
+    if (!disposed) ref.invalidate(savedDashboardStatsProvider);
+    return stats;
   } catch (e) {
+    if (!disposed) {
+      retry = Timer(const Duration(seconds: 10), ref.invalidateSelf);
+    }
     // Silently return null on network/timeout errors to prevent hard error screens.
     if (e.toString().contains('SocketException') ||
         e.toString().contains('Failed host lookup') ||
@@ -446,6 +598,7 @@ extension StatusXPRefresh on WidgetRef {
   void refreshCoreData() {
     invalidate(gamesProvider);
     invalidate(unifiedGamesProvider);
+    invalidate(dashboardGamesProvider);
     invalidate(userStatsProvider);
     invalidate(dashboardStatsProvider);
   }

@@ -314,3 +314,14 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [ ] Build the Android 1.1.19+102 bundle only when the owner is ready. Do not use the existing build-100 AAB as the candidate.
 - [ ] Build/archive iOS on the Mac and complete Apple purchase/restore validation.
 - [x] Built and deployed the updated public web client to Vercel production. Deployment `dpl_2hshEugBeHKqFsMd2Cz2G5DFVLzE` is ready; `statusxp.com` returned HTTP 200 with the expected Flutter bootstrap and title.
+
+### October 17 startup, sync, and app achievement release
+- [x] Render the app before optional service initialization, preserve account-scoped dashboard and library snapshots, and retry temporary failures automatically.
+- [x] Add a bounded dashboard games RPC instead of computing the full library to display 20 games; verify detailed fields and owner authorization against the live database.
+- [x] Correct PlayStation trophy terminology and improve PlayStation, Xbox, and Steam instruction readability and flow.
+- [x] Audit reconnect requirements for accounts with only one platform; retain verified same-account access during background rechecks.
+- [x] Reconcile all 133 app achievement rules on the server, backfill eligible awards, and queue checks durably after completed platform syncs. Preserve earned dates and custom titles.
+- [x] Apply the production database fixes and archive the exact SQL; database regression checks passed.
+- [x] Full Flutter suite: 248 passed, nine existing skips. Targeted analysis clean; full analysis has one existing style info in the platinum preview test.
+- [x] User authorized GitHub publication and the next release. Candidate version: 1.1.21+104. See `RELEASE_NOTES_v1.1.21.md` for publication results.
+- [ ] Build/archive iOS on a Mac and submit to App Store Connect.

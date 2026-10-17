@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:statusxp/domain/unified_game.dart';
+import 'package:statusxp/data/unified_games_cache.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:statusxp/utils/statusxp_logger.dart';
@@ -7,20 +8,61 @@ import 'package:statusxp/utils/statusxp_logger.dart';
 /// Repository for fetching unified cross-platform game data
 class UnifiedGamesRepository {
   final SupabaseClient _client;
+  final UnifiedGamesCache _cache;
+  final _dashboardCache = UnifiedGamesCache(namespace: 'dashboard_games_v1');
+  final _loads = <String, int>{};
 
-  UnifiedGamesRepository(this._client);
+  UnifiedGamesRepository(SupabaseClient client, {UnifiedGamesCache? cache})
+    : _client = client,
+      _cache = cache ?? UnifiedGamesCache();
+
+  Future<List<UnifiedGame>?> readSavedDashboardGames(String userId) async {
+    try {
+      final response = await _dashboardCache.read(userId);
+      return response == null ? null : _mapUnifiedGames(response);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<UnifiedGame>> getDashboardGames(String userId) async {
+    final key = 'dashboard:$userId';
+    final load = (_loads[key] ?? 0) + 1;
+    _loads[key] = load;
+    final response = await _client.rpc(
+      'get_dashboard_games',
+      params: {'p_user_id': userId},
+    );
+    final games = _mapUnifiedGames(response);
+    if (_loads[key] == load) {
+      await _dashboardCache.write(userId, response as List<dynamic>);
+    }
+    return games;
+  }
+
+  Future<List<UnifiedGame>?> readSavedGames(String userId) async {
+    try {
+      final response = await _cache.read(userId);
+      return response == null ? null : _mapUnifiedGames(response);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Fetch all games for a user, grouped by achievement similarity (>90% match)
   Future<List<UnifiedGame>> getUnifiedGames(String userId) async {
-    try {
-      final response = await _client.rpc(
-        'get_user_grouped_games',
-        params: {'p_user_id': userId},
-      );
-      return _mapUnifiedGames(response);
-    } catch (e) {
-      rethrow;
+    final load = (_loads[userId] ?? 0) + 1;
+    _loads[userId] = load;
+    final response = await _client.rpc(
+      'get_user_grouped_games',
+      params: {'p_user_id': userId},
+    );
+    final games = _mapUnifiedGames(response);
+    // An older request finishing late must not replace a newer snapshot.
+    if (_loads[userId] == load) {
+      await _cache.write(userId, response as List<dynamic>);
     }
+    return games;
   }
 
   /// Fetch games for a public target profile (read-only).

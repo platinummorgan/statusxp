@@ -157,6 +157,19 @@ void main() {
     expect(find.text('Protected dashboard'), findsOneWidget);
   });
 
+  testWidgets('failed connection checks recover automatically', (tester) async {
+    final repo = FakeReconnectRepository()..failLoad = true;
+    await render(tester, repo);
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsNothing);
+    expect(repo.loads, 1);
+    repo.failLoad = false;
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(repo.loads, 2);
+    expect(find.text('Protected dashboard'), findsOneWidget);
+  });
+
   testWidgets('confirmation enables reconnect but does not unlock the app', (
     tester,
   ) async {
@@ -233,7 +246,7 @@ void main() {
     expect(find.text('Protected dashboard'), findsNothing);
   });
 
-  testWidgets('rechecking never exposes cached dashboard while offline', (
+  testWidgets('rechecking keeps the verified screen until a failure', (
     tester,
   ) async {
     final repo = FakeReconnectRepository();
@@ -248,7 +261,7 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(repo.loads, 2);
-    expect(find.text('Protected dashboard'), findsNothing);
+    expect(find.text('Protected dashboard'), findsOneWidget);
     repo.delayedLoad!.completeError(StateError('Offline'));
     await tester.pumpAndSettle();
     expect(find.text('Protected dashboard'), findsNothing);

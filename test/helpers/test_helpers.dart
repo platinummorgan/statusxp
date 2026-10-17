@@ -138,6 +138,9 @@ List<Override> getTestProviderOverrides() {
     userStatsProvider.overrideWith((ref) async => sampleStats),
     dashboardStatsProvider.overrideWith((ref) async => sampleDashboardStats),
     unifiedGamesProvider.overrideWith((ref) async => sampleUnifiedGames),
+    dashboardGamesProvider.overrideWith((ref) async => sampleUnifiedGames),
+    savedUnifiedGamesProvider.overrideWith((ref) async => null),
+    savedDashboardGamesProvider.overrideWith((ref) async => null),
   ];
 }
 
@@ -165,6 +168,9 @@ List<Override> getDemoModeProviderOverrides() {
     userStatsProvider.overrideWith((ref) async => sampleStats),
     dashboardStatsProvider.overrideWith((ref) async => sampleDashboardStats),
     unifiedGamesProvider.overrideWith((ref) async => sampleUnifiedGames),
+    dashboardGamesProvider.overrideWith((ref) async => sampleUnifiedGames),
+    savedUnifiedGamesProvider.overrideWith((ref) async => null),
+    savedDashboardGamesProvider.overrideWith((ref) async => null),
   ];
 }
 

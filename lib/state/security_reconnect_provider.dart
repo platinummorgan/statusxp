@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
@@ -88,8 +89,23 @@ final securityReconnectRepositoryProvider =
     });
 
 final securityReconnectRequirementsProvider =
-    FutureProvider.autoDispose<List<SecurityReconnectRequirement>>((ref) {
+    FutureProvider.autoDispose<List<SecurityReconnectRequirement>>((ref) async {
       final owner = ref.watch(currentUserIdProvider);
-      if (owner == null) return Future.value(const []);
-      return ref.watch(securityReconnectRepositoryProvider).load();
+      if (owner == null) return const [];
+      final repository = ref.watch(securityReconnectRepositoryProvider);
+      var disposed = false;
+      Timer? retry;
+      ref.onDispose(() {
+        disposed = true;
+        retry?.cancel();
+      });
+      try {
+        return await repository.load();
+      } catch (_) {
+        // A temporary network/auth refresh failure must recover without a tap.
+        if (!disposed) {
+          retry = Timer(const Duration(seconds: 5), ref.invalidateSelf);
+        }
+        rethrow;
+      }
     });

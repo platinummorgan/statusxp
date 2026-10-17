@@ -599,6 +599,7 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
               Expanded(
                 child: PlatformSyncWidget(
                   platformName: 'PlayStation',
+                  achievementLabel: 'Trophies',
                   platformColor: const Color(0xFF003791),
                   platformIcon: const Icon(
                     Icons.sports_esports,
@@ -628,19 +629,11 @@ class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
                   onSyncPressed: _startSync,
                   onStopPressed: _stopSync,
                   syncDescription: const [
-                    '📱 How to Sync PlayStation Network:',
-                    '',
-                    '1. Tap "Start Sync" button above',
-                    '2. Browser will open to PlayStation login page',
-                    '3. Sign in with your PSN account credentials',
-                    '4. After login, click "Click to continue" at the top of the page',
-                    '5. Return to StatusXP - sync will begin automatically',
-                    '',
-                    '✨ What gets synced:',
-                    '• All your PlayStation games with trophies',
-                    '• Trophy unlock dates and progress',
-                    '• Global trophy rarity percentages',
-                    '• Processes 5 games at a time (you can stop/resume anytime)',
+                    'Tap "Sync Now" to sync trophies from your linked PlayStation account.',
+                    'Your games, earned trophies, trophy unlock dates, progress and rarity are updated.',
+                    'Sync runs in the background. You can return to the dashboard while it finishes.',
+                    'If your PlayStation session has expired, reconnect PlayStation in Settings, then sync again.',
+                    'Tap "Stop Sync" to stop a running sync. Trophies already imported are kept.',
                   ],
                 ),
               ),

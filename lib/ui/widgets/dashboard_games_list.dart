@@ -24,17 +24,17 @@ class DashboardGamesList extends StatelessWidget {
           child: CircularProgressIndicator(),
         ),
       ),
-      error: (error, _) => Center(
+      error: (error, _) => const Center(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           child: Column(
             children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
+              Icon(Icons.cloud_off_outlined, size: 36, color: Colors.white70),
+              SizedBox(height: 16),
               Text(
-                'Error loading games: $error',
+                'Your games are temporarily unavailable. Reconnecting automatically…',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70),
+                style: TextStyle(color: Colors.white70),
               ),
             ],
           ),
@@ -57,13 +57,15 @@ class DashboardGamesList extends StatelessWidget {
         return Column(
           children: [
             ...items.take(20).map(gameBuilder),
-            if (items.length > 20)
+            if (items.length >= 20)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: TextButton(
                   onPressed: onViewAll,
                   child: Text(
-                    'View All ${items.length} Games →',
+                    items.length > 20
+                        ? 'View All ${items.length} Games →'
+                        : 'View All Games →',
                     style: const TextStyle(
                       color: CyberpunkTheme.neonCyan,
                       fontSize: 16,

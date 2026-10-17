@@ -6,7 +6,6 @@ import 'package:statusxp/domain/dashboard_stats.dart';
 import 'package:statusxp/domain/unified_game.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/theme/colors.dart';
-import 'package:statusxp/state/engagement_providers.dart';
 import 'package:statusxp/ui/widgets/desktop_engagement_section.dart';
 
 /// Content-dense dashboard designed specifically for a desktop browser.
@@ -17,39 +16,23 @@ class WebDesktopDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(dashboardStatsProvider);
-    final games = ref.watch(unifiedGamesProvider);
+    final stats = ref.watch(dashboardDisplayStatsProvider);
+    final games = ref.watch(unifiedGamesDisplayProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFF090D1D),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(dashboardStatsProvider);
-          ref.invalidate(unifiedGamesProvider);
-          ref.invalidate(engagementSnapshotProvider);
-          await Future.wait([
-            ref.read(dashboardStatsProvider.future),
-            ref.read(unifiedGamesProvider.future),
-          ]);
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(30, 28, 30, 60),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1240),
-              child: stats.when(
-                loading: () => const SizedBox(
-                  height: 500,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (error, _) => _ErrorPanel(
-                  onRetry: () => ref.invalidate(dashboardStatsProvider),
-                ),
-                data: (value) => value == null
-                    ? const _EmptyPanel()
-                    : _DashboardBody(stats: value, games: games),
-              ),
+      body: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(30, 28, 30, 60),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1240),
+            child: stats.when(
+              loading: () => const _LoadingPanel(),
+              error: (error, _) => const _ErrorPanel(),
+              data: (value) => value == null
+                  ? const _LoadingPanel()
+                  : _DashboardBody(stats: value, games: games),
             ),
           ),
         ),
@@ -625,35 +608,36 @@ class _Fact extends StatelessWidget {
 }
 
 class _ErrorPanel extends StatelessWidget {
-  const _ErrorPanel({required this.onRetry});
-  final VoidCallback onRetry;
+  const _ErrorPanel();
   @override
-  Widget build(BuildContext context) => _Panel(
+  Widget build(BuildContext context) => const _Panel(
     title: 'Dashboard unavailable',
     child: Padding(
-      padding: const EdgeInsets.all(28),
+      padding: EdgeInsets.all(28),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: OutlinedButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh),
-          label: const Text('Try again'),
+        child: Text(
+          'Your dashboard will update automatically when the connection returns.',
         ),
       ),
     ),
   );
 }
 
-class _EmptyPanel extends StatelessWidget {
-  const _EmptyPanel();
+class _LoadingPanel extends StatelessWidget {
+  const _LoadingPanel();
   @override
-  Widget build(BuildContext context) => _Panel(
-    title: 'Welcome to StatusXP',
+  Widget build(BuildContext context) => const _Panel(
+    title: 'Your dashboard',
     child: Padding(
-      padding: const EdgeInsets.all(28),
-      child: FilledButton(
-        onPressed: () => context.go('/get-started'),
-        child: const Text('Connect a gaming account'),
+      padding: EdgeInsets.all(28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Getting your latest stats…'),
+          SizedBox(height: 20),
+          LinearProgressIndicator(),
+        ],
       ),
     ),
   );

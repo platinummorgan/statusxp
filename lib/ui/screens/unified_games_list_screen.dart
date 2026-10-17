@@ -38,7 +38,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final gamesAsync = _isPublicMode
         ? ref.watch(publicUnifiedGamesProvider(targetUserId!))
-        : ref.watch(unifiedGamesProvider);
+        : ref.watch(unifiedGamesDisplayProvider);
     final timedOut =
         !_isPublicMode &&
         gamesAsync.error is PostgrestException &&

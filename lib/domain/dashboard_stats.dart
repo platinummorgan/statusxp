@@ -41,6 +41,32 @@ class DashboardStats extends Equatable {
     required this.steamStats,
   });
 
+  factory DashboardStats.fromJson(Map<String, dynamic> json) => DashboardStats(
+    displayName: json['displayName'] as String,
+    displayPlatform: json['displayPlatform'] as String,
+    avatarUrl: json['avatarUrl'] as String?,
+    isPsPlus: json['isPsPlus'] as bool? ?? false,
+    totalStatusXP: (json['totalStatusXP'] as num).toDouble(),
+    psnStats: PlatformStats.fromJson(json['psnStats'] as Map<String, dynamic>),
+    xboxStats: PlatformStats.fromJson(
+      json['xboxStats'] as Map<String, dynamic>,
+    ),
+    steamStats: PlatformStats.fromJson(
+      json['steamStats'] as Map<String, dynamic>,
+    ),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'displayName': displayName,
+    'displayPlatform': displayPlatform,
+    'avatarUrl': avatarUrl,
+    'isPsPlus': isPsPlus,
+    'totalStatusXP': totalStatusXP,
+    'psnStats': psnStats.toJson(),
+    'xboxStats': xboxStats.toJson(),
+    'steamStats': steamStats.toJson(),
+  };
+
   /// Creates a copy with the given fields replaced
   DashboardStats copyWith({
     String? displayName,
@@ -117,6 +143,22 @@ class PlatformStats extends Equatable {
       gamerscore = 0,
       gamesCount = 0,
       statusXP = 0;
+
+  factory PlatformStats.fromJson(Map<String, dynamic> json) => PlatformStats(
+    platinums: (json['platinums'] as num).toInt(),
+    achievementsUnlocked: (json['achievementsUnlocked'] as num).toInt(),
+    gamerscore: (json['gamerscore'] as num).toInt(),
+    gamesCount: (json['gamesCount'] as num).toInt(),
+    statusXP: (json['statusXP'] as num).toDouble(),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'platinums': platinums,
+    'achievementsUnlocked': achievementsUnlocked,
+    'gamerscore': gamerscore,
+    'gamesCount': gamesCount,
+    'statusXP': statusXP,
+  };
 
   @override
   List<Object?> get props => [

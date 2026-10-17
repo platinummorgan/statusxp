@@ -1,39 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/meta_achievement.dart';
-import 'package:statusxp/data/repositories/meta_achievement_repository.dart';
-import 'package:statusxp/services/achievement_checker_service.dart';
 import 'package:statusxp/theme/cyberpunk_theme.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
-import 'package:statusxp/providers/connected_platforms_provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
-
-final metaAchievementRepositoryProvider = Provider<MetaAchievementRepository>((
-  ref,
-) {
-  return MetaAchievementRepository(Supabase.instance.client);
-});
-
-final achievementCheckerServiceProvider = Provider<AchievementCheckerService>((
-  ref,
-) {
-  return AchievementCheckerService(Supabase.instance.client);
-});
-
-final allAchievementsProvider =
-    FutureProvider.family<List<MetaAchievement>, String>((ref, userId) async {
-      final repository = ref.read(metaAchievementRepositoryProvider);
-      // Get user's connected platforms for filtering
-      final connectedPlatforms = await ref.watch(
-        connectedPlatformsProvider.future,
-      );
-      return repository.getAllAchievements(
-        userId,
-        connectedPlatforms: connectedPlatforms,
-      );
-    });
+import 'package:statusxp/state/app_achievement_providers.dart';
 
 /// Achievements Screen - View all meta-achievements and track progress
 class AchievementsScreen extends ConsumerStatefulWidget {
@@ -44,6 +17,9 @@ class AchievementsScreen extends ConsumerStatefulWidget {
 }
 
 class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
+  Timer? _retryTimer;
+  String? _checkError;
+  bool _checking = false;
   String _selectedCategory = 'all';
   String _selectedPlatformFilter = 'all'; // all, psn, xbox, steam, cross
 
@@ -72,25 +48,28 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     final userId = ref.read(currentUserIdProvider);
     if (userId == null) return;
 
+    if (_checking) return;
+    _checking = true;
+    _retryTimer?.cancel();
     final checker = ref.read(achievementCheckerServiceProvider);
 
     try {
       final newlyUnlocked = await checker.checkAndUnlockAchievements(userId);
 
-      if (!mounted) return;
+      if (!mounted || ref.read(currentUserIdProvider) != userId) return;
+      setState(() => _checkError = null);
+      ref.invalidate(allAchievementsProvider(userId));
 
       if (newlyUnlocked.isNotEmpty) {
-        // Refresh the achievements list
-        ref.invalidate(allAchievementsProvider);
-
-        // Get the full achievement objects to show names
-        final allAchievements =
-            ref.read(allAchievementsProvider(userId)).asData?.value ?? [];
+        // Wait for the saved awards before building the names in the dialog.
+        final allAchievements = await ref.read(
+          allAchievementsProvider(userId).future,
+        );
         final unlockedAchievements = allAchievements
             .where((a) => newlyUnlocked.contains(a.id))
             .toList();
 
-        if (!mounted) return;
+        if (!mounted || ref.read(currentUserIdProvider) != userId) return;
 
         // Show success dialog with details
         showDialog(
@@ -131,8 +110,23 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
         );
       }
     } catch (e) {
-      // Silently fail on auto-check - user can still manually refresh
+      if (!mounted || ref.read(currentUserIdProvider) != userId) return;
+      setState(
+        () => _checkError =
+            'Achievement updates will retry automatically when your connection is ready.',
+      );
+      _retryTimer = Timer(const Duration(seconds: 10), () {
+        if (mounted) _checkAchievements();
+      });
+    } finally {
+      _checking = false;
     }
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
   }
 
   Color _getCategoryColor(String category) {
@@ -160,7 +154,14 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final userId = ref.watch(currentUserIdProvider) ?? '';
+    ref.listen(appAchievementUpdatesProvider, (previous, next) {
+      final before = previous?.asData?.value;
+      final after = next.asData?.value;
+      if (before != null && after != null && before != after) {
+        ref.invalidate(allAchievementsProvider(userId));
+      }
+    });
     final achievementsAsync = ref.watch(allAchievementsProvider(userId));
 
     return Scaffold(
@@ -179,10 +180,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
       ),
       body: achievementsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
+        error: (error, stack) => const Center(
           child: Text(
-            'Error loading achievements: $error',
-            style: const TextStyle(color: Colors.white),
+            'App achievements are temporarily unavailable. Retrying automatically…',
+            style: TextStyle(color: Colors.white),
           ),
         ),
         data: (achievements) {
@@ -198,11 +199,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
             filtered = filtered.where((a) {
               final requiredPlatforms = a.requiredPlatforms ?? [];
               if (_selectedPlatformFilter == 'cross') {
-                // Cross-platform: must have all 3 platforms
-                return requiredPlatforms.length == 3 &&
-                    requiredPlatforms.contains('psn') &&
-                    requiredPlatforms.contains('xbox') &&
-                    requiredPlatforms.contains('steam');
+                // Includes combined totals as well as multi-platform goals.
+                return a.id.startsWith('cross_');
               } else {
                 // Single platform: must have EXACTLY 1 platform and it must match
                 return requiredPlatforms.length == 1 &&
@@ -216,6 +214,14 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
 
           return Column(
             children: [
+              if (_checkError != null)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    _checkError!,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ),
               // Progress Header
               Container(
                 padding: const EdgeInsets.all(20),
@@ -246,7 +252,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
-                        value: unlockedCount / totalCount,
+                        value: totalCount == 0 ? 0 : unlockedCount / totalCount,
                         minHeight: 8,
                         backgroundColor: Colors.white10,
                         valueColor: const AlwaysStoppedAnimation<Color>(
@@ -438,12 +444,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
 
     for (final achievement in achievements) {
       final platforms = achievement.requiredPlatforms ?? [];
-      if (platforms.isEmpty) continue;
-
-      if (platforms.length == 3 &&
-          platforms.contains('psn') &&
-          platforms.contains('xbox') &&
-          platforms.contains('steam')) {
+      if (achievement.id.startsWith('cross_')) {
         crossCount++;
       } else if (platforms.contains('psn')) {
         psCount++;

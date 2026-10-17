@@ -169,7 +169,7 @@ void main() {
             profileQueries.add(id);
             return http.Response(
               jsonEncode(
-                id == 'eq.A' ? {'psn_online_id': 'A'} : {'xbox_gamertag': 'B'},
+                id == 'eq.A' ? {'psn_account_id': 'A'} : {'xbox_xuid': 'B'},
               ),
               200,
               headers: {'content-type': 'application/json'},

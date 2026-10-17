@@ -18,6 +18,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       var reads = 0;
+      var gameReads = 0;
       var total = 1234.0;
       final overrides = getTestProviderOverrides();
       appRouter.go('/');
@@ -26,6 +27,10 @@ void main() {
           overrides: [
             ...overrides,
             syncCompletionProvider.overrideWith((ref) => events.stream),
+            dashboardGamesProvider.overrideWith((ref) async {
+              gameReads++;
+              return sampleUnifiedGames;
+            }),
             dashboardStatsProvider.overrideWith((ref) async {
               reads++;
               return sampleDashboardStats.copyWith(totalStatusXP: total);
@@ -43,6 +48,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       final before = reads;
+      final gamesBefore = gameReads;
       total = 4321;
       events.add(
         SyncCompletionSnapshot({
@@ -53,6 +59,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(reads, greaterThan(before));
+      expect(gameReads, greaterThan(gamesBefore));
       final container = ProviderScope.containerOf(
         tester.element(find.byType(StatusXPApp)),
       );
