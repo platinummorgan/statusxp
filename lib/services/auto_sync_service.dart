@@ -58,6 +58,14 @@ class AutoSyncService {
       );
     }
 
+    // Check requirements before automatic admission. Pending platforms must
+    // not prevent the other linked platforms from refreshing.
+    final requirements =
+        await _client.rpc('activate_security_reconnect') as List;
+    final reconnectPlatforms = requirements
+        .map((row) => (row as Map)['platform'] as String)
+        .toSet();
+
     bool psnSynced = false;
     bool xboxSynced = false;
     bool steamSynced = false;
@@ -68,7 +76,9 @@ class AutoSyncService {
       // Check PSN first
       final psnLinked = await _isPlatformLinked('psn');
       debugPrint('🔍 PSN linked: $psnLinked');
-      if (psnLinked && await _shouldSync(_psnLastSyncKey)) {
+      if (psnLinked &&
+          !reconnectPlatforms.contains('psn') &&
+          await _shouldSync(_psnLastSyncKey)) {
         psnSynced = await _triggerPSNSync();
         if (psnSynced) {
           debugPrint('⏳ Waiting 5 seconds before checking next platform...');
@@ -87,7 +97,9 @@ class AutoSyncService {
       // Check Xbox second
       final xboxLinked = await _isPlatformLinked('xbox');
       debugPrint('🔍 Xbox linked: $xboxLinked');
-      if (xboxLinked && await _shouldSync(_xboxLastSyncKey)) {
+      if (xboxLinked &&
+          !reconnectPlatforms.contains('xbox') &&
+          await _shouldSync(_xboxLastSyncKey)) {
         xboxSynced = await _triggerXboxSync();
         if (xboxSynced) {
           debugPrint('⏳ Waiting 5 seconds before checking next platform...');
@@ -106,7 +118,9 @@ class AutoSyncService {
       // Check Steam last
       final steamLinked = await _isPlatformLinked('steam');
       debugPrint('🔍 Steam linked: $steamLinked');
-      if (steamLinked && await _shouldSync(_steamLastSyncKey)) {
+      if (steamLinked &&
+          !reconnectPlatforms.contains('steam') &&
+          await _shouldSync(_steamLastSyncKey)) {
         steamSynced = await _triggerSteamSync();
       } else {
         debugPrint(

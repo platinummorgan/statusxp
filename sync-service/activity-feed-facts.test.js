@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildVerifiedChange, readAllPages } from './activity-feed-facts.js';
+import { buildVerifiedChange, readAllPages, readSyncUnlockRows } from './activity-feed-facts.js';
 const before = { platinum_count: 4253, psn_gold_count: 10, psn_silver_count: 20, psn_bronze_count: 30, synced_at: '2026-09-20T08:00:00Z' };
 const after = { ...before, platinum_count: 4255, synced_at: '2026-09-20T09:00:00Z' };
 const games = [1, 2].map(id => ({ platform_id: 1, platform_game_id: String(id), name: 'PAINT BALL' }));
@@ -42,4 +42,38 @@ test('ordinary unlocks provide a named highlight and objective without requiring
  assert.equal(change.highlight.name, 'Guildmaster');
  assert.equal(change.highlight.description, 'Completed the guild questline');
  assert.deepEqual(change.rareTrophies, []);
+});
+
+
+test('Xbox feed includes confirmed undated imports, never fabricates dates or double counts promotion', async () => {
+ const dated = { platform_id: 10, platform_game_id: 'g', platform_achievement_id: 'a', earned_at: '2026-10-10T12:00:00Z', achievements: { name: 'First', score_value: 10 } };
+ const undated = { ...dated, platform_achievement_id: 'b', earned_at: undefined, achievements: { name: 'Second', score_value: 20 } };
+ const calls = [];
+ const client = { from(table) {
+  const q = { select(){ return q; }, eq(field,value){ assert.equal(field,'user_id'); assert.equal(value,'owner'); return q; },
+   in(field,value){ assert.equal(field,'platform_id'); assert.deepEqual(value,[10,11,12]); return q; },
+   gte(field,value){ calls.push([table,field,'start',value]); return q; },
+   lte(field,value){ calls.push([table,field,'end',value]); return q; }, order(){ return q; },
+   async range(){ return { data: table==='user_achievements' ? [dated] : [undated,{...dated,earned_at:undefined}] }; } };
+  return q;
+ } };
+ const result = await readSyncUnlockRows(client,{userId:'owner',platformIds:[10,11,12],start:'start',end:'end',includeUndated:true});
+ assert.equal(result.length,2);
+ assert.equal(result.find(r=>r.platform_achievement_id==='a').earned_at,dated.earned_at);
+ assert.equal(result.find(r=>r.platform_achievement_id==='b').earned_at,null);
+ assert.deepEqual(calls,[['user_achievements','synced_at','start','start'],['user_achievements','synced_at','end','end'],['user_undated_achievements','confirmed_at','start','start'],['user_undated_achievements','confirmed_at','end','end']]);
+ const namedGames=[{platform_id:10,platform_game_id:'g',name:'Example'}];
+ assert.equal(buildVerifiedChange('xbox',{gamerscore:0},{gamerscore:30,synced_at:'2026-10-18T12:00:00Z'},[dated],namedGames),null);
+ const change=buildVerifiedChange('xbox',{gamerscore:0},{gamerscore:30,synced_at:'2026-10-18T12:00:00Z'},result,namedGames);
+ assert.equal(change.change,30); assert.equal(change.isImport,true); assert.equal(change.changeType,'import');
+ assert.equal(buildVerifiedChange('xbox',{gamerscore:30},{gamerscore:30},result,namedGames),null);
+});
+
+test('PSN and Steam feed queries do not read undated Xbox data; failed undated reads reject', async () => {
+ const makeClient = fail => ({from(table){
+  if (!fail) assert.equal(table,'user_achievements');
+  const q={select(){return q;},eq(){return q;},in(){return q;},gte(){return q;},lte(){return q;},order(){return q;},async range(){return table==='user_undated_achievements'?{error:{message:'timeout'}}:{data:[]};}};return q;
+ }});
+ assert.deepEqual(await readSyncUnlockRows(makeClient(false),{userId:'owner',platformIds:[4],start:'start',end:'end'}),[]);
+ await assert.rejects(readSyncUnlockRows(makeClient(true),{userId:'owner',platformIds:[10],start:'start',end:'end',includeUndated:true}),/timeout/);
 });

@@ -15,6 +15,22 @@ const key = row => `${row.platform_id}:${row.platform_game_id}`;
 const definition = row => Array.isArray(row.achievements) ? row.achievements[0] : row.achievements;
 const validCount = value => value !== null && value !== undefined && Number.isSafeInteger(Number(value)) && Number(value) >= 0;
 
+export async function readSyncUnlockRows(client, { userId, platformIds, start, end, includeUndated = false }) {
+  const fields = 'platform_id,platform_game_id,platform_achievement_id,achievements(name,description,is_platinum,rarity_global,score_value,metadata)';
+  const query = (table, timestamp, selection) => client.from(table).select(selection)
+    .eq('user_id', userId).in('platform_id', platformIds).gte(timestamp, start).lte(timestamp, end)
+    .order('platform_id').order('platform_game_id').order('platform_achievement_id');
+  const [dated, undated] = await Promise.all([
+    readAllPages(() => query('user_achievements', 'synced_at', `${fields},earned_at`)),
+    includeUndated ? readAllPages(() => query('user_undated_achievements', 'confirmed_at', fields)) : [],
+  ]);
+  // Date promotion may overlap the two reads; prefer the dated record and count
+  // the same verified unlock once. Confirmation time is never an earned date.
+  return [...new Map([
+    ...undated.map(row => ({ ...row, earned_at: null })), ...dated,
+  ].map(row => [`${key(row)}:${row.platform_achievement_id}`, row])).values()];
+}
+
 export function buildVerifiedChange(source, before, after, rows, games) {
   const fields = source === 'psn' ? trophyFields : [source === 'xbox' ? 'gamerscore' : 'steam_achievement_count'];
   if (!fields.every(field => validCount(before[field]) && validCount(after[field]))) return null;

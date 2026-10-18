@@ -2,16 +2,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/security_reconnect_provider.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/screens/psn/psn_connect_screen.dart';
 import 'package:statusxp/ui/screens/xbox/xbox_connect_screen.dart';
 import 'package:statusxp/ui/screens/steam/steam_configure_screen.dart';
 
-/// Every authenticated route waits for the server's reconnect requirements.
-/// Connection forms are opened over this gate; closing a form never unlocks it.
+/// Reconnect checks run in the background for the app, and gate only a
+/// specified platform's sync controls. Saved data remains accessible.
 class SecurityReconnectGate extends ConsumerStatefulWidget {
-  const SecurityReconnectGate({super.key, required this.child, this.onConnect});
+  const SecurityReconnectGate({
+    super.key,
+    required this.child,
+    this.platform,
+    this.onConnect,
+    this.onContinue,
+  });
+  final String? platform;
+  final VoidCallback? onContinue;
   final Widget child;
   final Future<bool?> Function(SecurityReconnectRequirement)? onConnect;
 
@@ -149,6 +158,14 @@ class _SecurityReconnectGateState extends ConsumerState<SecurityReconnectGate>
     }
   }
 
+  void _leaveSync() {
+    if (widget.onContinue != null) {
+      widget.onContinue!();
+    } else {
+      context.go('/');
+    }
+  }
+
   Widget _retryScreen({required bool loading}) => Scaffold(
     body: Center(
       child: Padding(
@@ -171,6 +188,10 @@ class _SecurityReconnectGateState extends ConsumerState<SecurityReconnectGate>
                 child: const Text('Sign out'),
               ),
             ],
+            TextButton(
+              onPressed: _leaveSync,
+              child: const Text('Back to dashboard'),
+            ),
           ],
         ),
       ),
@@ -179,81 +200,91 @@ class _SecurityReconnectGateState extends ConsumerState<SecurityReconnectGate>
 
   @override
   Widget build(BuildContext context) {
-    return ref
-        .watch(securityReconnectRequirementsProvider)
-        .when(
-          // Keep the verified screen visible during same-account rechecks.
-          // Initial loads, account changes and failed checks still stay gated.
-          skipLoadingOnRefresh: true,
-          loading: () => _retryScreen(loading: true),
-          error: (_, _) => _retryScreen(loading: false),
-          data: (requirements) {
-            if (requirements.any((r) => r.syncActive)) {
-              _syncPoller ??= Timer.periodic(const Duration(seconds: 4), (_) {
-                if (mounted && _busyPlatform == null) {
-                  ref.invalidate(securityReconnectRequirementsProvider);
-                }
-              });
-            } else {
-              _syncPoller?.cancel();
-              _syncPoller = null;
+    final checks = ref.watch(securityReconnectRequirementsProvider);
+    // The app must remain usable while checks load, fail, or need attention.
+    if (widget.platform == null) return widget.child;
+    return checks.when(
+      // Keep the verified screen visible during same-account rechecks.
+      // Initial loads, account changes and failed checks still stay gated.
+      skipLoadingOnRefresh: true,
+      loading: () => _retryScreen(loading: true),
+      error: (_, _) => _retryScreen(loading: false),
+      data: (allRequirements) {
+        final requirements = allRequirements
+            .where((r) => r.platform == widget.platform)
+            .toList();
+        if (requirements.any((r) => r.syncActive)) {
+          _syncPoller ??= Timer.periodic(const Duration(seconds: 4), (_) {
+            if (mounted && _busyPlatform == null) {
+              ref.invalidate(securityReconnectRequirementsProvider);
             }
-            if (requirements.isEmpty) return widget.child;
-            return PopScope(
-              canPop: false,
-              child: Scaffold(
-                appBar: AppBar(
-                  automaticallyImplyLeading: false,
-                  title: const Text('Reconnect your accounts'),
-                ),
-                body: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 640),
-                    child: ListView(
-                      padding: const EdgeInsets.all(24),
-                      children: [
-                        const Text(
-                          'A security update requires you to reconnect your gaming accounts before continuing.',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Your saved games, achievements and stats will stay. Reconnect the same accounts.',
-                        ),
-                        if (_error != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16),
-                            child: Text(
-                              _error!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        for (final requirement in requirements)
-                          _card(requirement),
-                        const SizedBox(height: 16),
-                        TextButton(
-                          onPressed: _busyPlatform == null
-                              ? () => ref.invalidate(
-                                  securityReconnectRequirementsProvider,
-                                )
-                              : null,
-                          child: const Text('Check progress'),
-                        ),
-                        TextButton(
-                          onPressed: _busyPlatform == null
-                              ? () => ref.read(authServiceProvider).signOut()
-                              : null,
-                          child: const Text('Sign out'),
-                        ),
-                      ],
+          });
+        } else {
+          _syncPoller?.cancel();
+          _syncPoller = null;
+        }
+        if (requirements.isEmpty) return widget.child;
+        return PopScope(
+          canPop: true,
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                onPressed: _leaveSync,
+                icon: const Icon(Icons.arrow_back),
+              ),
+              title: const Text('Reconnect to sync'),
+            ),
+            body: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    Text(
+                      'Reconnect ${requirements.first.label} before syncing. You can keep using StatusXP and view your saved games.',
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Your saved games, achievements and stats will stay. Reconnect the same accounts.',
+                    ),
+                    if (_error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    for (final requirement in requirements) _card(requirement),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: _leaveSync,
+                      child: const Text('Back to dashboard'),
+                    ),
+                    TextButton(
+                      onPressed: _busyPlatform == null
+                          ? () => ref.invalidate(
+                              securityReconnectRequirementsProvider,
+                            )
+                          : null,
+                      child: const Text('Check progress'),
+                    ),
+                    TextButton(
+                      onPressed: _busyPlatform == null
+                          ? () => ref.read(authServiceProvider).signOut()
+                          : null,
+                      child: const Text('Sign out'),
+                    ),
+                  ],
                 ),
               ),
-            );
-          },
+            ),
+          ),
         );
+      },
+    );
   }
 
   Widget _card(SecurityReconnectRequirement requirement) {

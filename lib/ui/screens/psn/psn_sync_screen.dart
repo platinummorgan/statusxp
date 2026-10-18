@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:statusxp/ui/screens/auth/security_reconnect_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,14 +18,21 @@ import 'package:statusxp/utils/statusxp_logger.dart';
 import 'package:statusxp/utils/sync_issue_classifier.dart';
 
 /// Screen for managing PSN sync
-class PSNSyncScreen extends ConsumerStatefulWidget {
+class PSNSyncScreen extends StatelessWidget {
   const PSNSyncScreen({super.key});
-
   @override
-  ConsumerState<PSNSyncScreen> createState() => _PSNSyncScreenState();
+  Widget build(BuildContext context) =>
+      const SecurityReconnectGate(platform: 'psn', child: _PSNSyncContent());
 }
 
-class _PSNSyncScreenState extends ConsumerState<PSNSyncScreen> {
+class _PSNSyncContent extends ConsumerStatefulWidget {
+  const _PSNSyncContent();
+
+  @override
+  ConsumerState<_PSNSyncContent> createState() => _PSNSyncScreenState();
+}
+
+class _PSNSyncScreenState extends ConsumerState<_PSNSyncContent> {
   bool _isSyncing = false;
   String? _errorMessage;
   bool _relinkDialogShown = false;

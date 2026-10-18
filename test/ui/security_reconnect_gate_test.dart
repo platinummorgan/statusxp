@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:statusxp/state/security_reconnect_provider.dart';
 import 'package:statusxp/state/statusxp_providers.dart';
 import 'package:statusxp/ui/screens/auth/security_reconnect_gate.dart';
@@ -80,6 +81,8 @@ Future<void> render(
   WidgetTester tester,
   FakeReconnectRepository repo, {
   Future<bool?> Function(SecurityReconnectRequirement)? onConnect,
+  String? platform = 'steam',
+  VoidCallback? onContinue,
 }) async {
   tester.view.physicalSize = const Size(1000, 1400);
   tester.view.devicePixelRatio = 1;
@@ -93,6 +96,8 @@ Future<void> render(
       child: MaterialApp(
         home: SecurityReconnectGate(
           onConnect: onConnect,
+          platform: platform,
+          onContinue: onContinue,
           child: const Scaffold(body: Text('Protected dashboard')),
         ),
       ),
@@ -101,6 +106,90 @@ Future<void> render(
 }
 
 void main() {
+  testWidgets(
+    'app remains accessible during pending and failed reconnect checks',
+    (tester) async {
+      final repo = FakeReconnectRepository()..delayedLoad = Completer();
+      await render(tester, repo, platform: null);
+      await tester.pump();
+      expect(find.text('Protected dashboard'), findsOneWidget);
+      repo.delayedLoad!.complete([psn, readySteam]);
+      await tester.pumpAndSettle();
+      expect(find.text('Protected dashboard'), findsOneWidget);
+      expect(find.text('Reconnect PlayStation'), findsNothing);
+      repo.delayedLoad = null;
+      repo.failLoad = true;
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(SecurityReconnectGate)),
+      );
+      container.invalidate(securityReconnectRequirementsProvider);
+      await tester.pumpAndSettle();
+      expect(find.text('Protected dashboard'), findsOneWidget);
+    },
+  );
+
+  testWidgets('PS-only reconnect leaves Steam sync available', (tester) async {
+    final repo = FakeReconnectRepository()..pending = [psn];
+    await render(tester, repo);
+    await tester.pumpAndSettle();
+    expect(find.text('Protected dashboard'), findsOneWidget);
+    expect(find.text('Reconnect PlayStation'), findsNothing);
+    expect(repo.pending, [psn]);
+  });
+
+  testWidgets(
+    'sync reconnect lists only the selected platform and can return to dashboard',
+    (tester) async {
+      final repo = FakeReconnectRepository()..pending = [psn, readySteam];
+      final router = GoRouter(
+        initialLocation: '/sync',
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const Scaffold(body: Text('Saved games')),
+          ),
+          GoRoute(
+            path: '/sync',
+            builder: (_, _) => const SecurityReconnectGate(
+              platform: 'psn',
+              child: Scaffold(body: Text('Sync controls')),
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            currentUserIdProvider.overrideWithValue('owner'),
+            securityReconnectRepositoryProvider.overrideWithValue(repo),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Reconnect PlayStation'), findsOneWidget);
+      expect(find.text('Reconnect Steam'), findsNothing);
+      expect(find.text('Sync controls'), findsNothing);
+      await tester.tap(find.text('Back to dashboard'));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved games'), findsOneWidget);
+      expect(repo.pending.length, 2);
+    },
+  );
+
+  testWidgets('sync connection check failure still allows leaving', (
+    tester,
+  ) async {
+    var left = false;
+    final repo = FakeReconnectRepository()..failLoad = true;
+    await render(tester, repo, onContinue: () => left = true);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Back to dashboard'));
+    expect(left, isTrue);
+    expect(find.text('Protected dashboard'), findsNothing);
+  });
+
   testWidgets('switching signed-in users discards cached unlocked state', (
     tester,
   ) async {
@@ -120,6 +209,7 @@ void main() {
             builder: (context, ref, _) {
               return SecurityReconnectGate(
                 key: ValueKey(ref.watch(owner)),
+                platform: 'steam',
                 child: const Scaffold(body: Text('Protected dashboard')),
               );
             },
@@ -136,7 +226,7 @@ void main() {
     expect(find.text('Reconnect Steam'), findsOneWidget);
   });
 
-  testWidgets('loading and network failure never expose the dashboard', (
+  testWidgets('loading and network failure never expose sync controls', (
     tester,
   ) async {
     final repo = FakeReconnectRepository()..delayedLoad = Completer();
@@ -170,7 +260,7 @@ void main() {
     expect(find.text('Protected dashboard'), findsOneWidget);
   });
 
-  testWidgets('confirmation enables reconnect but does not unlock the app', (
+  testWidgets('confirmation enables reconnect but does not enable sync', (
     tester,
   ) async {
     final repo = FakeReconnectRepository()..pending = [steam];
@@ -217,14 +307,16 @@ void main() {
     },
   );
 
-  testWidgets('every required platform must finish', (tester) async {
+  testWidgets('another pending platform does not block a verified sync', (
+    tester,
+  ) async {
     final repo = FakeReconnectRepository()..pending = [psn, readySteam];
     await render(tester, repo, onConnect: (_) async => true);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Reconnect Steam'));
     await tester.pumpAndSettle();
-    expect(find.text('Protected dashboard'), findsNothing);
-    expect(find.text('Reconnect PlayStation'), findsOneWidget);
+    expect(find.text('Protected dashboard'), findsOneWidget);
+    expect(find.text('Reconnect PlayStation'), findsNothing);
   });
 
   testWidgets('active sync must stop before reconnecting', (tester) async {

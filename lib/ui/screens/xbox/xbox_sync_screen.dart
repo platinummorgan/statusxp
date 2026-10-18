@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:statusxp/ui/screens/auth/security_reconnect_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,14 +20,21 @@ import 'package:statusxp/utils/statusxp_logger.dart';
 import 'package:statusxp/utils/sync_issue_classifier.dart';
 
 /// Screen for syncing Xbox achievements
-class XboxSyncScreen extends ConsumerStatefulWidget {
+class XboxSyncScreen extends StatelessWidget {
   const XboxSyncScreen({super.key});
-
   @override
-  ConsumerState<XboxSyncScreen> createState() => _XboxSyncScreenState();
+  Widget build(BuildContext context) =>
+      const SecurityReconnectGate(platform: 'xbox', child: _XboxSyncContent());
 }
 
-class _XboxSyncScreenState extends ConsumerState<XboxSyncScreen> {
+class _XboxSyncContent extends ConsumerStatefulWidget {
+  const _XboxSyncContent();
+
+  @override
+  ConsumerState<_XboxSyncContent> createState() => _XboxSyncScreenState();
+}
+
+class _XboxSyncScreenState extends ConsumerState<_XboxSyncContent> {
   bool _isSyncing = false;
   String? _errorMessage;
   final SyncLimitService _syncLimitService = SyncLimitService();

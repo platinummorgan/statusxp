@@ -5,7 +5,7 @@
  */
 
 import { createServiceClient } from './supabase-client.js';
-import { buildVerifiedChange, readAllPages } from './activity-feed-facts.js';
+import { buildVerifiedChange, readAllPages, readSyncUnlockRows } from './activity-feed-facts.js';
 import { generateActivityStory } from './activity-feed-generator.js';
 
 const supabase = createServiceClient();
@@ -131,11 +131,11 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot, optio
   const source = options.syncSource;
   if (!SOURCE_PLATFORM_IDS[source]) return;
   try {
-    const rows = await readAllPages(() => supabase.from('user_achievements')
-      .select('platform_id,platform_game_id,platform_achievement_id,earned_at,synced_at,achievements(name,description,is_platinum,rarity_global,score_value,metadata)')
-      .eq('user_id', userId).in('platform_id', SOURCE_PLATFORM_IDS[source])
-      .gte('synced_at', preSnapshot.synced_at).lte('synced_at', postSnapshot.synced_at)
-      .order('platform_id').order('platform_game_id').order('platform_achievement_id'));
+    const rows = await readSyncUnlockRows(supabase, {
+      userId, platformIds: SOURCE_PLATFORM_IDS[source],
+      start: preSnapshot.synced_at, end: postSnapshot.synced_at,
+      includeUndated: source === 'xbox',
+    });
     if (!rows.length) return;
     const gameIds = [...new Set(rows.map(row => row.platform_game_id))];
     const games = [];

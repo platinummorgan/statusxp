@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:statusxp/ui/screens/auth/security_reconnect_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,14 +18,23 @@ import 'package:statusxp/utils/statusxp_logger.dart';
 import 'package:statusxp/utils/sync_issue_classifier.dart';
 
 /// Steam Sync Screen - Manage Steam achievement syncing
-class SteamSyncScreen extends ConsumerStatefulWidget {
+class SteamSyncScreen extends StatelessWidget {
   const SteamSyncScreen({super.key});
-
   @override
-  ConsumerState<SteamSyncScreen> createState() => _SteamSyncScreenState();
+  Widget build(BuildContext context) => const SecurityReconnectGate(
+    platform: 'steam',
+    child: _SteamSyncContent(),
+  );
 }
 
-class _SteamSyncScreenState extends ConsumerState<SteamSyncScreen> {
+class _SteamSyncContent extends ConsumerStatefulWidget {
+  const _SteamSyncContent();
+
+  @override
+  ConsumerState<_SteamSyncContent> createState() => _SteamSyncScreenState();
+}
+
+class _SteamSyncScreenState extends ConsumerState<_SteamSyncContent> {
   bool _isLoading = true;
   bool _isSyncing = false;
   String? _steamId;

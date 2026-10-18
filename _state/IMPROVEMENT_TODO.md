@@ -327,3 +327,11 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] Built and verified the signed Android bundle with the existing upload certificate. Google accepted build 104 with matching SHA-256; submitted to production with review requested. A fresh Play API read confirms production build 104. Review approval/public availability remain controlled by Google.
 - [x] Pushed the release source to GitHub main. Vercel production deployment `dpl_9maNq9dKfRtdKUbbxKidY6nhqxc3` is ready; live domain reports 1.1.21/build 104 and serves the new dashboard and app achievement code. Local release web build also passed.
 - [ ] Build/archive iOS on a Mac and submit to App Store Connect.
+
+### October 18 reconnect access and missing Xbox feed stories
+- [x] Confirmed two PS-only users had activated reconnect requirements and no sync attempts afterward; no Xbox/Steam requirement existed for those users.
+- [x] User approved allowing app access while reconnecting only before an affected platform sync. The app now remains accessible while checks are pending/offline; each sync screen gates only its platform and provides a dashboard exit. Automatic syncing skips pending platforms independently; server checks remain enforced.
+- [x] Traced two missing Xbox import stories to dated-only feed verification: the missing confirmed undated rows exactly explained the 20 and 6,640 Gamerscore mismatches. Include window-scoped confirmed undated rows, deduplicate date promotion, and retain import classification without substituting dates.
+- [x] Read-only replay verified both original imports. Restored two missing stories as verified imports, retaining duplicate protection.
+- [x] Full Flutter suite: 254 passed, nine existing skips. Targeted analysis clean. Sync service: 72 passed. Production SQL security reconnect regression passed with rollback.
+- [ ] Publish follow-up version 1.1.22+105. See `RELEASE_NOTES_v1.1.22.md` for publication results.
