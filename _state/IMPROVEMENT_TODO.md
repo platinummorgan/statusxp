@@ -334,4 +334,5 @@ Progress log — add a row when a task starts, becomes blocked, is implemented, 
 - [x] Traced two missing Xbox import stories to dated-only feed verification: the missing confirmed undated rows exactly explained the 20 and 6,640 Gamerscore mismatches. Include window-scoped confirmed undated rows, deduplicate date promotion, and retain import classification without substituting dates.
 - [x] Read-only replay verified both original imports. Restored two missing stories as verified imports, retaining duplicate protection.
 - [x] Full Flutter suite: 254 passed, nine existing skips. Targeted analysis clean. Sync service: 72 passed. Production SQL security reconnect regression passed with rollback.
-- [ ] Publish follow-up version 1.1.22+105. See `RELEASE_NOTES_v1.1.22.md` for publication results.
+- [x] Published follow-up source for 1.1.22+105 to GitHub main. Web production serves build 105; Railway deployed the feed fix successfully and health is OK. Both missing feed stories were restored and verified as imports.
+- [x] Built/signed Android 105 with the existing upload certificate. Google accepted the bundle, verified its SHA-256, and validated the production release; submitted with review requested and fresh production API read confirmed 105. Review approval remains pending external confirmation. See `RELEASE_NOTES_v1.1.22.md`.

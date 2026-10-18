@@ -19,4 +19,9 @@ Keep using StatusXP while a gaming account needs reconnection. Your dashboard, s
 - Sync-service suite: 72 passed, including undated feed facts, timestamp filters, date promotion, failed reads, and unchanged resyncs.
 - Existing production SQL reconnect regression passed in a rollback-only transaction; no credential requirement was cleared or bypassed.
 - Restored and verified the two missing Xbox stories as imports, using their original persisted baselines and confirmed unlocks; existing-story matching prevents duplicate posts.
-- Publication results will be recorded after verification. iOS requires a Mac build and App Store submission.
+- Signed Android App Bundle and release web builds passed; the upload signing certificate matches build 104.
+- Google Play production submission completed October 18, 2026, with review requested. Google accepted and validated build 105; a fresh API read confirms production references that build. Review approval and availability remain controlled by Google.
+- Android bundle SHA-256: `8313a8edebd5c1346306c4b82e9590ff79a21be6a57e76f71effede1b0a0ebfa`.
+- Source pushed to GitHub main. Web production deployment `dpl_3VsSoVAef1QiRQkbfgmxEBEW7NJh` is ready; `https://statusxp.com` returned version 1.1.22/build 105 and the platform-specific reconnect messaging in the compiled client.
+- Railway deployment `ec012cd6-5ee6-431f-903f-c5515807bc43` succeeded for source commit `705de1c916403bafe79eb38c01288e950424edfa`; the sync service health endpoint returned HTTP 200/OK.
+- iOS requires a Mac build and App Store submission. Installed Android clients require the new app build to receive the app-entry change; server credential requirements have not been cleared.
