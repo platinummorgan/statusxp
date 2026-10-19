@@ -1,3 +1,4 @@
+import { extractErrorText, classifyRetryableWriteError, computeRetryBackoffMs, retryPsnWrite } from './psn-write-retry.js';
 import { assertPlatformSyncOwner } from './platform-sync-owner.js';
 import { psnTitlePage } from './provider-library-response.js';
 import { finishSync } from './sync-lifecycle.js';
@@ -23,45 +24,6 @@ const PSN_RELINK_ERROR_MESSAGE =
   'PlayStation session expired. Disconnect and reconnect PlayStation in Settings, then sync again.';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-function extractErrorText(error) {
-  if (!error) return '';
-  if (typeof error === 'string') return error;
-
-  const parts = [];
-
-  if (error.message) parts.push(String(error.message));
-  if (error.code) parts.push(String(error.code));
-  if (error.status) parts.push(String(error.status));
-  if (error.statusCode) parts.push(String(error.statusCode));
-
-  const responseData = error.response?.data;
-  if (responseData) {
-    if (typeof responseData === 'string') parts.push(responseData);
-    else {
-      try {
-        parts.push(JSON.stringify(responseData));
-      } catch (_) {
-        // Ignore serialization issues and continue with what we have.
-      }
-    }
-  }
-
-  if (error.cause) {
-    const causeText = extractErrorText(error.cause);
-    if (causeText) parts.push(causeText);
-  }
-
-  if (parts.length === 0) {
-    try {
-      parts.push(JSON.stringify(error));
-    } catch (_) {
-      parts.push(String(error));
-    }
-  }
-
-  return parts.join(' | ');
-}
 
 function isPsnAuthExpiredError(error) {
   const text = extractErrorText(error).toLowerCase();
@@ -108,56 +70,6 @@ function compactErrorText(error, maxLength = 320) {
   const text = extractErrorText(error).replace(/\s+/g, ' ').trim();
   if (!text) return 'Unknown error';
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
-}
-
-function classifyRetryableWriteError(error) {
-  const text = extractErrorText(error).toLowerCase();
-  const statusTextMatch = text.match(/\b(502|503|504|520|522|524)\b/);
-  const statusFromText = statusTextMatch ? Number(statusTextMatch[1]) : null;
-  const statusFromError = Number(error?.status || error?.statusCode || NaN);
-  const status = Number.isFinite(statusFromError) ? statusFromError : statusFromText;
-
-  const isTimeoutLike =
-    text.includes('statement timeout') ||
-    text.includes('canceling statement') ||
-    text.includes('deadlock') ||
-    text.includes('could not serialize') ||
-    text.includes('lock timeout');
-
-  const isGatewayLike =
-    [502, 503, 504, 520, 522, 524].includes(status) ||
-    text.includes('bad gateway') ||
-    text.includes('gateway timeout') ||
-    (text.includes('cloudflare') && (text.includes('502') || text.includes('503') || text.includes('504'))) ||
-    (text.includes('<html') && (text.includes('502') || text.includes('503') || text.includes('504')));
-
-  const isNetworkLike =
-    text.includes('fetch failed') ||
-    text.includes('network') ||
-    text.includes('socket hang up') ||
-    text.includes('ecconnreset') ||
-    text.includes('econnreset') ||
-    text.includes('etimedout') ||
-    text.includes('connection terminated unexpectedly') ||
-    text.includes('connection reset');
-
-  if (isTimeoutLike) {
-    return { retryable: true, splitPreferred: true, reason: 'timeout/lock contention' };
-  }
-  if (isGatewayLike) {
-    return { retryable: true, splitPreferred: false, reason: 'upstream gateway' };
-  }
-  if (isNetworkLike) {
-    return { retryable: true, splitPreferred: false, reason: 'network/transient transport' };
-  }
-
-  return { retryable: false, splitPreferred: false, reason: 'non-retryable' };
-}
-
-function computeRetryBackoffMs(attempt, { baseMs = 300, capMs = 8000 } = {}) {
-  const exp = Math.min(capMs, baseMs * (2 ** Math.max(0, attempt - 1)));
-  const jitter = Math.floor(Math.random() * 250);
-  return exp + jitter;
 }
 
 function toBooleanLike(value) {
@@ -477,13 +389,12 @@ async function upsertGame({ platformId, platformVersion, title }) {
     payload.cover_url = newCoverUrl;
   }
 
-  const { data, error } = await supabase
+  const { data } = await retryPsnWrite(() => supabase
     .from('games')
     .upsert(payload, { onConflict: 'platform_id,platform_game_id' })
     .select('platform_id, platform_game_id, name')
-    .single();
+    .single(), { label: `Failed to upsert game "${trimmedTitle}"` });
 
-  if (error) throw new Error(`Failed to upsert game "${trimmedTitle}": ${error.message}`);
   return data;
 }
 
@@ -742,11 +653,10 @@ async function upsertUserProgress({
     },
   };
 
-  const { error } = await supabase
+  await retryPsnWrite(() => supabase
     .from('user_progress')
-    .upsert(payload, { onConflict: 'user_id,platform_id,platform_game_id' });
-
-  if (error) throw new Error(`Failed to upsert user_progress: ${error.message}`);
+    .upsert(payload, { onConflict: 'user_id,platform_id,platform_game_id' }),
+  { label: 'Failed to upsert user_progress' });
 }
 
 export async function syncPSNAchievements(
