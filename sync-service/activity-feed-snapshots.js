@@ -160,7 +160,7 @@ export async function detectChangesAndGenerateStories(userId, preSnapshot, optio
 /**
  * Generate AI story and insert into activity_feed
  */
-async function generateAndInsertStory(userId, change, snapshot) {
+export async function generateAndInsertStory(userId, change, snapshot) {
   try {
     // Get display name
     const username = await getDisplayName(userId, change.type);

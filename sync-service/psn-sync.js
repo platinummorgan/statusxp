@@ -1,3 +1,4 @@
+import { preservePsnImportTimes } from './psn-platform-migration.js';
 import { extractErrorText, classifyRetryableWriteError, computeRetryBackoffMs, retryPsnWrite } from './psn-write-retry.js';
 import { assertPlatformSyncOwner } from './platform-sync-owner.js';
 import { psnTitlePage } from './provider-library-response.js';
@@ -531,7 +532,7 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
   await upsertAchievementRowsWithRetry(rows);
 }
 
-async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTrophies }) {
+async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTrophies, previousImports = [] }) {
   const MAX_UPSERT_RETRIES = 8;
 
   async function upsertChunkWithRetry(chunk, attempt = 1) {
@@ -603,7 +604,7 @@ async function upsertUserAchievementsBatch({ userId, platformId, gameId, userTro
       : 100;
     const BATCH_SIZE = Math.max(1, configuredBatchSize);
     for (let i = 0; i < earnedRows.length; i += BATCH_SIZE) {
-      const chunk = earnedRows.slice(i, i + BATCH_SIZE);
+      const chunk = preservePsnImportTimes(earnedRows.slice(i, i + BATCH_SIZE), previousImports);
       await upsertChunkWithRetry(chunk);
     }
   }
@@ -853,7 +854,7 @@ export async function syncPSNAchievements(
       userGamesMap.set(`${ug.platform_id}_${ug.platform_game_id}`, ug);
     }
 
-    async function cleanupDuplicatePlatformRows({ userId, platformId, platformGameId, gameName }) {
+    async function cleanupDuplicatePlatformRows({ userId, platformId, platformGameId, gameName, previousImports = [] }) {
       try {
         let removedAchievements = null;
         const { data: bulkRemovedAchievements, error: deleteAchievementsError } = await supabase
@@ -863,7 +864,7 @@ export async function syncPSNAchievements(
           .eq('platform_game_id', platformGameId)
           .in('platform_id', [1, 2, 5, 9])
           .neq('platform_id', platformId)
-          .select('platform_id');
+          .select('user_id,platform_id,platform_game_id,platform_achievement_id,synced_at');
 
         if (deleteAchievementsError) {
           const transient = classifyRetryableWriteError(deleteAchievementsError);
@@ -902,7 +903,7 @@ export async function syncPSNAchievements(
               .eq('platform_game_id', platformGameId)
               .eq('platform_id', row.platform_id)
               .eq('platform_achievement_id', row.platform_achievement_id)
-              .select('platform_id');
+              .select('user_id,platform_id,platform_game_id,platform_achievement_id,synced_at');
 
             if (rowDeleteError) {
               console.warn(
@@ -919,6 +920,9 @@ export async function syncPSNAchievements(
           removedAchievements = bulkRemovedAchievements;
         }
 
+        // A platform correction is not a new trophy import. Preserve the first
+        // import time on replacement rows so feed verification excludes old wins.
+        previousImports.push(...(removedAchievements || []));
         const removedCount = removedAchievements?.length || 0;
         if (removedCount > 0) {
           const removedPlatforms = [...new Set(removedAchievements.map((row) => row.platform_id))].sort((a, b) => a - b);
@@ -1239,7 +1243,9 @@ export async function syncPSNAchievements(
         trophyGroupMap,
       });
 
+      const previousImports = [];
       await cleanupDuplicatePlatformRows({
+        previousImports,
         userId,
         platformId,
         platformGameId: game.platform_game_id,
@@ -1252,6 +1258,7 @@ export async function syncPSNAchievements(
         platformId,
         gameId: game.platform_game_id,
         userTrophies,
+        previousImports,
       });
 
       totalEarnedTrophiesUpserted += earnedCount;
