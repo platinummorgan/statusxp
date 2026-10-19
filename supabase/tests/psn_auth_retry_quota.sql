@@ -1,0 +1,20 @@
+BEGIN;
+INSERT INTO public.provider_quota_policy(provider,free_daily,premium_daily,global_daily,free_cooldown,premium_cooldown) VALUES('psn_auth',30,120,20000,10,5) ON CONFLICT DO NOTHING;
+INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES('00000000-0000-4000-8000-000000009981','psn-auth-retry-9981@statusxp.invalid','{}');
+DO $$ DECLARE u uuid:='00000000-0000-4000-8000-000000009981'; r jsonb; BEGIN
+ ASSERT NOT has_function_privilege('authenticated','public.admit_provider_request(uuid,text,boolean)','execute');
+ ASSERT (public.admit_provider_request(u,'sync_psn',false)->>'allowed')::boolean;
+ ASSERT NOT EXISTS(SELECT 1 FROM public.provider_quota_usage WHERE provider='sync_psn' AND subject=u::text);
+ ASSERT (public.admit_provider_request(u,'psn_auth')->>'allowed')::boolean;
+ r:=public.admit_provider_request(u,'psn_auth');
+ ASSERT NOT (r->>'allowed')::boolean;
+ ASSERT (r->>'retry_after')::integer BETWEEN 1 AND 10;
+ ASSERT (public.admit_provider_request(u,'sync_psn',false)->>'allowed')::boolean;
+ ASSERT NOT EXISTS(SELECT 1 FROM public.provider_quota_usage WHERE provider='sync_psn' AND subject=u::text);
+ ASSERT (public.admit_provider_request(u,'sync_psn')->>'allowed')::boolean;
+ r:=public.admit_provider_request(u,'sync_psn',false);
+ ASSERT NOT (r->>'allowed')::boolean;
+ ASSERT (r->>'retry_after')::integer BETWEEN 7190 AND 7200;
+ ASSERT (SELECT used=1 FROM public.provider_quota_usage WHERE provider='sync_psn' AND subject=u::text);
+END $$;
+ROLLBACK;

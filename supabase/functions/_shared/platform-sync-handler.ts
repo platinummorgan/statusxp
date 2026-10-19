@@ -1,6 +1,6 @@
 import { XboxHandlerDeps, xboxClients, xboxCorsHeaders as cors, xboxJson as json } from './xbox-handler.ts';
 export interface PlatformSyncDeps extends XboxHandlerDeps {
-  quotaResponse: (owner: string, provider: string, headers: Record<string,string>) => Promise<Response|null>;
+  quotaResponse: (owner: string, provider: string, headers: Record<string,string>, consume?: boolean) => Promise<Response|null>;
   refreshPsn?: (token: string) => Promise<{accessToken: string;refreshToken?: string}>;
 }
 export function createPlatformStartHandler(platform: 'psn'|'steam', deps: PlatformSyncDeps) {
@@ -19,7 +19,12 @@ export function createPlatformStartHandler(platform: 'psn'|'steam', deps: Platfo
    const p=result.data; const account=platform==='psn'?p?.psn_account_id:p?.steam_id;
    if(!account || (platform==='psn'&&!p.psn_refresh_token)) return json({error:'Reconnect your account to sync.',requiresRelink:true},400);
    if(['syncing','cancelling'].includes(p[`${platform}_sync_status`])) return json({error:'Sync already in progress.'},409);
-   const denied=await deps.quotaResponse(owner!,`sync_${platform}`,cors); if(denied) return denied;
+   // Check the long sync cooldown without charging an attempt that may never
+   // authenticate or pass reconnect admission. Throttle Sony auth separately.
+   const denied=await deps.quotaResponse(owner!,`sync_${platform}`,cors,false); if(denied) return denied;
+   if(platform==='psn') {
+    const authDenied=await deps.quotaResponse(owner!,'psn_auth',cors); if(authDenied) return authDenied;
+   }
    const started=await admin.rpc('begin_verified_platform_sync',{p_user_id:owner,p_platform:platform,p_expected_account_id:account});
    if(started.error) return json({error:started.error.code==='55000'?started.error.message:'Could not start sync. Try again.'},started.error.code==='55000'?409:503);
    logId=started.data;
@@ -40,6 +45,12 @@ export function createPlatformStartHandler(platform: 'psn'|'steam', deps: Platfo
     payload={...payload,accountId:account,accessToken:tokens.accessToken,refreshToken:refresh};
    } else payload={...payload,steamId:account,...(p.steam_api_key?{apiKey:p.steam_api_key}:{})};
    const secret=deps.env('SYNC_SERVICE_SECRET'); if(!secret) throw new Error('Service authentication unavailable');
+   const syncDenied=await deps.quotaResponse(owner!,`sync_${platform}`,cors);
+   if(syncDenied) {
+    const finished=await admin.rpc('finish_platform_sync',{p_user_id:owner,p_platform:platform,p_log_id:logId,p_outcome:'failed',p_error:'Sync did not start: request limit reached. Try again after the cooldown.'});
+    if(finished.error) throw new Error('Could not finish rejected sync');
+    return syncDenied;
+   }
    const sent=await deps.fetch(`https://statusxp-production.up.railway.app/sync/${platform}`,{
     method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${secret}`},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
    if(!sent.ok) throw new Error('Dispatch failed');

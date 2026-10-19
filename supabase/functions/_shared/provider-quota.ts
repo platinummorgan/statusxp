@@ -8,6 +8,7 @@ export class QuotaDenied extends Error {
 export async function admitProvider(
   userId: string,
   provider: string,
+  consume = true,
 ): Promise<void> {
   const client = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -19,6 +20,7 @@ export async function admitProvider(
   const { data, error } = await client.rpc("admit_provider_request", {
     p_user_id: userId,
     p_provider: provider,
+    p_consume: consume,
   });
   if (error || !data || typeof data.allowed !== "boolean") {
     throw new Error("Quota service unavailable");
@@ -31,9 +33,10 @@ export async function quotaResponse(
   userId: string,
   provider: string,
   headers: Record<string, string>,
+  consume = true,
 ): Promise<Response | null> {
   try {
-    await admitProvider(userId, provider);
+    await admitProvider(userId, provider, consume);
     return null;
   } catch (error) {
     const denied = error instanceof QuotaDenied;
