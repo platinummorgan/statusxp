@@ -38,11 +38,19 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
     ref.invalidate(socialTargetsProvider);
     ref.invalidate(socialHighlightsProvider);
     ref.invalidate(playNextRecommendationsProvider);
-    await Future.wait([
-      ref.read(engagementSnapshotProvider.future),
-      ref.read(socialTargetsProvider.future),
-      ref.read(socialHighlightsProvider.future),
-      ref.read(playNextRecommendationsProvider.future),
+    await Future.wait<void>([
+      ref
+          .read(engagementSnapshotProvider.future)
+          .then<void>((_) {}, onError: (Object _, StackTrace __) {}),
+      ref
+          .read(socialTargetsProvider.future)
+          .then<void>((_) {}, onError: (Object _, StackTrace __) {}),
+      ref
+          .read(socialHighlightsProvider.future)
+          .then<void>((_) {}, onError: (Object _, StackTrace __) {}),
+      ref
+          .read(playNextRecommendationsProvider.future)
+          .then<void>((_) {}, onError: (Object _, StackTrace __) {}),
     ]);
   }
 
@@ -232,18 +240,6 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
     final highlightsAsync = ref.watch(socialHighlightsProvider);
     final recommendationsAsync = ref.watch(playNextRecommendationsProvider);
 
-    final isLoading =
-        snapshotAsync.isLoading ||
-        targetsAsync.isLoading ||
-        highlightsAsync.isLoading ||
-        recommendationsAsync.isLoading;
-
-    final error =
-        snapshotAsync.error ??
-        targetsAsync.error ??
-        highlightsAsync.error ??
-        recommendationsAsync.error;
-
     return Scaffold(
       backgroundColor: backgroundDark,
       appBar: AppBar(
@@ -253,45 +249,65 @@ class _EngagementHubScreenState extends ConsumerState<EngagementHubScreen> {
           onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  'Failed to load Engagement Hub\n$error',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: textSecondary),
-                ),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _refreshAll,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
+      body: RefreshIndicator(
+        onRefresh: _refreshAll,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          children: [
+            _buildSectionTitle('1) Social Loop'),
+            const SizedBox(height: 8),
+            _section(targetsAsync, _buildSocialTargets),
+            const SizedBox(height: 10),
+            _section(highlightsAsync, _buildSocialHighlights),
+            const SizedBox(height: 20),
+            _buildSectionTitle('2) Challenges + Streaks'),
+            const SizedBox(height: 8),
+            _section(
+              snapshotAsync,
+              (snapshot) => Column(
                 children: [
-                  _buildSectionTitle('1) Social Loop'),
-                  const SizedBox(height: 8),
-                  _buildSocialTargets(targetsAsync.value ?? const []),
+                  _buildChallengeSummary(snapshot),
                   const SizedBox(height: 10),
-                  _buildSocialHighlights(highlightsAsync.value ?? const []),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle('2) Challenges + Streaks'),
-                  const SizedBox(height: 8),
-                  _buildChallengeSummary(snapshotAsync.value!),
+                  _buildChallenges(snapshot),
                   const SizedBox(height: 10),
-                  _buildChallenges(snapshotAsync.value!),
-                  const SizedBox(height: 10),
-                  _buildNotificationPreferences(snapshotAsync.value!),
-                  const SizedBox(height: 20),
-                  _buildSectionTitle('3) What To Play Next'),
-                  const SizedBox(height: 8),
-                  _buildRecommendations(recommendationsAsync.value ?? const []),
-                  const SizedBox(height: 20),
+                  _buildNotificationPreferences(snapshot),
                 ],
               ),
             ),
+            const SizedBox(height: 20),
+            _buildSectionTitle('3) What To Play Next'),
+            const SizedBox(height: 8),
+            _section(recommendationsAsync, _buildRecommendations),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _section<T>(AsyncValue<T> state, Widget Function(T) build) {
+    // A dependency reload may be a different signed-in account. Do not display
+    // previous-account values while that dependency is being replaced.
+    return state.when(
+      skipLoadingOnReload: false,
+      data: build,
+      loading: () => _panel(
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            LinearProgressIndicator(),
+            SizedBox(height: 8),
+            Text('Loading…'),
+          ],
+        ),
+      ),
+      error: (_, _) => _panel(
+        child: const Text(
+          'This section is unavailable right now.',
+          style: TextStyle(color: textSecondary),
+        ),
+      ),
     );
   }
 
