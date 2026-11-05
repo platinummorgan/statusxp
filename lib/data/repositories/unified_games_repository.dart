@@ -69,7 +69,7 @@ class UnifiedGamesRepository {
   Future<List<UnifiedGame>> getPublicUnifiedGames(String targetUserId) async {
     try {
       final response = await _client.rpc(
-        'get_public_user_grouped_games',
+        'get_public_user_grouped_games_snapshot',
         params: {'p_target_user_id': targetUserId},
       );
       return _mapUnifiedGames(response);

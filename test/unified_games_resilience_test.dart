@@ -67,6 +67,9 @@ class RecoveringLibrary extends UnifiedGamesRepository {
   Future<List<UnifiedGame>> getUnifiedGames(String userId) =>
       load(userId, ++calls);
   @override
+  Future<List<UnifiedGame>> getPublicUnifiedGames(String targetUserId) =>
+      load(targetUserId, ++calls);
+  @override
   Future<List<UnifiedGame>> getDashboardGames(String userId) =>
       load(userId, ++calls);
   @override
@@ -92,6 +95,65 @@ void main() {
   });
   tearDownAll(() async => Supabase.instance.dispose());
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  test(
+    'public snapshot maps more than 1000 games in one guarded request',
+    () async {
+      var requests = 0;
+      final client = mockClient((request) async {
+        requests++;
+        expect(
+          request.url.path.endsWith('/get_public_user_grouped_games_snapshot'),
+          isTrue,
+        );
+        expect(jsonDecode(request.body), {'p_target_user_id': 'target'});
+        return List.generate(1005, (i) => gameRow('Game $i'));
+      });
+      addTearDown(client.dispose);
+      final games = await UnifiedGamesRepository(
+        client,
+      ).getPublicUnifiedGames('target');
+      expect(games.length, 1005);
+      expect(games.last.title, 'Game 1004');
+      expect(requests, 1);
+    },
+  );
+
+  testWidgets(
+    'public history retries a timeout without navigation or manual refresh',
+    (tester) async {
+      final requestedUsers = <String>[];
+      final repo = RecoveringLibrary((user, call) async {
+        requestedUsers.add(user);
+        if (call == 1) {
+          throw const PostgrestException(
+            message: 'statement timeout',
+            code: '57014',
+          );
+        }
+        return [freshGame];
+      });
+      final container = ProviderContainer(
+        overrides: [
+          currentUserIdProvider.overrideWithValue('viewer'),
+          unifiedGamesRepositoryProvider.overrideWithValue(repo),
+        ],
+      );
+      addTearDown(container.dispose);
+      final provider = publicUnifiedGamesProvider('target');
+      final subscription = container.listen(provider, (_, _) {});
+      addTearDown(subscription.close);
+      await expectLater(
+        container.read(provider.future),
+        throwsA(isA<PostgrestException>()),
+      );
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+      expect(await container.read(provider.future), [freshGame]);
+      expect(repo.calls, 2);
+      expect(requestedUsers, ['target', 'target']);
+    },
+  );
 
   test(
     'dashboard, full library and public requests keep separate private caches',

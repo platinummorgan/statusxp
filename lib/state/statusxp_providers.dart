@@ -362,13 +362,29 @@ final dashboardGamesProvider = FutureProvider<List<UnifiedGame>>((ref) async {
 ///
 /// Uses public visibility constraints in the underlying RPC and returns
 /// an empty list when inaccessible.
-final publicUnifiedGamesProvider =
-    FutureProvider.family<List<UnifiedGame>, String>((ref, targetUserId) async {
-      ref.watch(
-        currentUserIdProvider,
-      ); // Public visibility depends on the viewer.
+final publicUnifiedGamesProvider = FutureProvider.autoDispose
+    .family<List<UnifiedGame>, String>((ref, targetUserId) async {
+      ref.watch(currentUserIdProvider); // Visibility depends on the viewer.
       final repository = ref.watch(unifiedGamesRepositoryProvider);
-      return repository.getPublicUnifiedGames(targetUserId);
+      var disposed = false;
+      Timer? retry;
+      ref.onDispose(() {
+        disposed = true;
+        retry?.cancel();
+      });
+      try {
+        return await repository.getPublicUnifiedGames(targetUserId);
+      } catch (error) {
+        final temporary =
+            error is TimeoutException ||
+            (error is PostgrestException &&
+                ['57014', '502', '503', '504'].contains(error.code)) ||
+            error.toString().contains('SocketException');
+        if (!disposed && temporary) {
+          retry = Timer(const Duration(seconds: 10), ref.invalidateSelf);
+        }
+        rethrow;
+      }
     });
 
 /// FutureProvider for loading user statistics for the current user.

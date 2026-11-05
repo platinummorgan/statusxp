@@ -354,8 +354,9 @@ class FlexRoomRepository {
         }
       }
 
-      // Fill missing superlative categories while preserving saved choices
-      if (superlativesJson.length < 12) {
+      // Populate an empty room, but never make a saved showcase wait for
+      // suggestions. Some users legitimately have fewer than 12 categories.
+      if (superlativesJson.isEmpty) {
         statusxpLog('🎯 Superlatives mostly empty, auto-filling...');
         final autoFilled = await autofillSuperlatives(userId);
         if (autoFilled.isNotEmpty) {

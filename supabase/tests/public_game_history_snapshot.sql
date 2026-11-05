@@ -1,0 +1,35 @@
+BEGIN;
+SET LOCAL statement_timeout='30s';
+CREATE TEMP TABLE snapshot_check(elapsed_ms numeric,games integer);
+DO $$
+DECLARE target uuid:='c6bfed69-3aa0-463e-99f8-4aceae89a7f4';
+ viewer uuid:='84b60ad6-cb2c-484f-8953-bf814551fd7a'; payload jsonb; started timestamptz; elapsed numeric; expected int;
+BEGIN
+ SELECT count(*) INTO expected FROM public.user_progress up JOIN public.games g USING(platform_id,platform_game_id) WHERE up.user_id=target;
+ PERFORM set_config('request.jwt.claim.sub',viewer::text,true);
+ PERFORM set_config('request.jwt.claim.role','authenticated',true);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ started:=clock_timestamp();
+ payload:=public.get_public_user_grouped_games_snapshot(target);
+ elapsed:=extract(epoch FROM clock_timestamp()-started)*1000;
+ ASSERT jsonb_array_length(payload)=expected AND expected>1000,'Snapshot must bypass API row truncation without omitting games';
+ ASSERT elapsed<8000,'Snapshot exceeds application timeout: '||elapsed;
+ EXECUTE 'RESET ROLE';
+ INSERT INTO snapshot_check VALUES(elapsed,expected);
+ UPDATE public.profiles_private SET show_on_leaderboard=false WHERE id=target;
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ ASSERT public.get_public_user_grouped_games_snapshot(target)='[]'::jsonb,'Other viewers cannot read hidden histories';
+ EXECUTE 'RESET ROLE';
+ PERFORM set_config('request.jwt.claim.sub',target::text,true);
+ EXECUTE 'SET LOCAL ROLE authenticated';
+ ASSERT jsonb_array_length(public.get_public_user_grouped_games_snapshot(target))=expected,'Owners keep access to their hidden history';
+ EXECUTE 'RESET ROLE';
+ PERFORM set_config('request.jwt.claim.sub','',true);
+ PERFORM set_config('request.jwt.claim.role','anon',true);
+ EXECUTE 'SET LOCAL ROLE anon';
+ ASSERT public.get_public_user_grouped_games_snapshot(target)='[]'::jsonb,'Anonymous callers cannot read hidden histories';
+ EXECUTE 'RESET ROLE';
+ ASSERT NOT (SELECT prosecdef FROM pg_proc WHERE oid='public.get_public_user_grouped_games_snapshot(uuid)'::regprocedure),'Snapshot must delegate visibility through the guarded RPC';
+END $$;
+SELECT * FROM snapshot_check;
+ROLLBACK;

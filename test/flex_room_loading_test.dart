@@ -172,6 +172,65 @@ void main() {
     },
   );
 
+  test(
+    'saved partial showcases load without rerunning twelve suggestion queries',
+    () async {
+      final calls = <http.Request>[];
+      final key = {
+        'platform_id': 1,
+        'platform_game_id': 'game',
+        'platform_achievement_id': '0',
+      };
+      final config = <String, dynamic>{
+        'last_updated': '2026-09-01T00:00:00Z',
+        'superlatives': {'hardest': key},
+        for (final slot in [
+          'flex_of_all_time',
+          'rarest_flex',
+          'most_time_sunk',
+          'sweatiest_platinum',
+        ]) ...{
+          for (final entry in key.entries) '${slot}_${entry.key}': entry.value,
+        },
+      };
+      final client = SupabaseClient(
+        'https://test.invalid',
+        'test',
+        httpClient: MockClient((r) async {
+          calls.add(r);
+          if (r.url.path.endsWith('/flex_room_data')) {
+            return response(config, r);
+          }
+          if (r.url.path.endsWith('/user_achievements')) {
+            return response([earned(0)], r);
+          }
+          if (r.url.path.endsWith('/achievements')) {
+            return response([
+              {...earned(0), 'name': 'Saved choice', 'rarity_global': 1.0},
+            ], r);
+          }
+          if (r.url.path.endsWith('/games')) {
+            return response([
+              {
+                'platform_id': 1,
+                'platform_game_id': 'game',
+                'name': 'Saved game',
+              },
+            ], r);
+          }
+          throw StateError('Unexpected request: ${r.url.path}');
+        }),
+      );
+      addTearDown(client.dispose);
+      final room = await FlexRoomRepository(
+        client,
+      ).getFlexRoomData('viewer', includeRecent: false);
+      expect(room?.superlatives['hardest']?.achievementName, 'Saved choice');
+      expect(room?.superlatives.length, 1);
+      expect(calls.where((r) => r.url.path.contains('/rpc/')), isEmpty);
+      expect(calls.length, 4);
+    },
+  );
   for (final emptyConfig in [false, true]) {
     test(
       '${emptyConfig ? 'Saved empty' : 'New'} room automatically fills from earned achievements',

@@ -72,6 +72,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
         child: Column(
           children: [
             gamesAsync.when(
+              skipLoadingOnReload: false,
               loading: () => const SizedBox.shrink(),
               error: (_, __) => const SizedBox.shrink(),
               data: (games) =>
@@ -91,6 +92,7 @@ class UnifiedGamesListScreen extends ConsumerWidget {
               _buildSearchBar(context, ref, sortOption),
             Expanded(
               child: gamesAsync.when(
+                skipLoadingOnReload: false,
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => timedOut
                     ? BasicLibrary(query: searchQuery, onRetry: retry)
