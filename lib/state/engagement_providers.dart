@@ -55,7 +55,8 @@ Future<T> _loadSection<T extends Object>(
   });
   final elapsed = Stopwatch()..start();
   try {
-    final value = await load().timeout(const Duration(seconds: 12));
+    // Allow the affected RPCs' 15-second database limit plus transport time.
+    final value = await load().timeout(const Duration(seconds: 20));
     if (!disposed) cache[key] = value;
     return value;
   } catch (error, stack) {

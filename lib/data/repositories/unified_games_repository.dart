@@ -68,10 +68,12 @@ class UnifiedGamesRepository {
   /// Fetch games for a public target profile (read-only).
   Future<List<UnifiedGame>> getPublicUnifiedGames(String targetUserId) async {
     try {
-      final response = await _client.rpc(
-        'get_public_user_grouped_games_snapshot',
-        params: {'p_target_user_id': targetUserId},
-      );
+      final response = await _client
+          .rpc(
+            'get_public_user_grouped_games_snapshot',
+            params: {'p_target_user_id': targetUserId},
+          )
+          .timeout(const Duration(seconds: 20));
       return _mapUnifiedGames(response);
     } catch (e) {
       rethrow;

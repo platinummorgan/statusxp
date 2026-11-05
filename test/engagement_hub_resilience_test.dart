@@ -64,6 +64,22 @@ void main() {
     return container;
   }
 
+  testWidgets('a slow successful read survives the previous client deadline', (
+    tester,
+  ) async {
+    final pending = Completer<List<SocialTarget>>();
+    final repo = TestRepository((_, __) => pending.future);
+    final container = containerFor(repo);
+    final result = container.read(socialTargetsProvider.future);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 16));
+    expect(container.read(socialTargetsProvider).isLoading, isTrue);
+    pending.complete([player]);
+    await tester.pump();
+    expect(await result, [player]);
+    expect(repo.reads, 1);
+  });
+
   testWidgets(
     'a timeout retries automatically without navigating or refreshing',
     (tester) async {
