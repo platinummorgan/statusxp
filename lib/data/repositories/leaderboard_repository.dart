@@ -173,7 +173,7 @@ class LeaderboardRepository {
     try {
       // Use new RPC function that includes rank movement tracking
       final response = await _client.rpc(
-        'get_xbox_leaderboard_with_movement',
+        'get_xbox_mythic_leaderboard',
         params: {'limit_count': limit, 'offset_count': 0},
       );
 
@@ -191,8 +191,7 @@ class LeaderboardRepository {
         final userId = row['user_id'] as String;
         final displayName = row['display_name'] as String? ?? 'Unknown';
         final avatarUrl = row['avatar_url'] as String?;
-        final gamerscore = (row['gamerscore'] as int?) ?? 0;
-        final potentialGamerscore = (row['potential_gamerscore'] as int?) ?? 0;
+        final mythics = (row['mythic_count'] as num?)?.toInt() ?? 0;
         final gameCount = (row['total_games'] as int?) ?? 0;
         final previousRank = row['previous_rank'] as int?;
         final rankChange = (row['rank_change'] as int?) ?? 0;
@@ -203,8 +202,8 @@ class LeaderboardRepository {
             'user_id': userId,
             'display_name': displayName,
             'avatar_url': avatarUrl,
-            'score': gamerscore,
-            'potential_score': potentialGamerscore,
+            'score': mythics,
+            'mythic_count': mythics,
             'games_count': gameCount,
             'previous_rank': previousRank,
             'rank_change': rankChange,
@@ -226,12 +225,13 @@ class LeaderboardRepository {
   }) async {
     try {
       final response = await _client
-          .from('xbox_leaderboard_cache')
+          .from('xbox_mythic_leaderboard')
           .select(
-            'user_id,display_name,avatar_url,gamerscore,potential_gamerscore,achievement_count,total_games',
+            'user_id,display_name,avatar_url,mythic_count,achievement_count,total_games',
           )
-          .order('gamerscore', ascending: false)
+          .order('mythic_count', ascending: false)
           .order('achievement_count', ascending: false)
+          .order('user_id', ascending: true)
           .limit(limit);
 
       if ((response as List).isEmpty) {
@@ -243,9 +243,8 @@ class LeaderboardRepository {
           'user_id': row['user_id'],
           'display_name': row['display_name'],
           'avatar_url': row['avatar_url'],
-          'score': (row['gamerscore'] as num?)?.toInt() ?? 0,
-          'potential_score':
-              (row['potential_gamerscore'] as num?)?.toInt() ?? 0,
+          'score': (row['mythic_count'] as num?)?.toInt() ?? 0,
+          'mythic_count': (row['mythic_count'] as num?)?.toInt() ?? 0,
           'games_count': (row['total_games'] as num?)?.toInt() ?? 0,
         });
       }).toList();
@@ -261,7 +260,7 @@ class LeaderboardRepository {
     try {
       // Use new RPC function that includes rank movement tracking
       final response = await _client.rpc(
-        'get_steam_leaderboard_with_movement',
+        'get_steam_completion_leaderboard',
         params: {'limit_count': limit, 'offset_count': 0},
       );
 
@@ -276,9 +275,7 @@ class LeaderboardRepository {
         final userId = row['user_id'] as String;
         final displayName = row['display_name'] as String? ?? 'Unknown';
         final avatarUrl = row['avatar_url'] as String?;
-        final achievementCount = (row['achievement_count'] as int?) ?? 0;
-        final potentialAchievements =
-            (row['potential_achievements'] as int?) ?? 0;
+        final completionCount = (row['completion_count'] as num?)?.toInt() ?? 0;
         final gameCount = (row['total_games'] as int?) ?? 0;
         final previousRank = row['previous_rank'] as int?;
         final rankChange = (row['rank_change'] as int?) ?? 0;
@@ -289,8 +286,8 @@ class LeaderboardRepository {
             'user_id': userId,
             'display_name': displayName,
             'avatar_url': avatarUrl,
-            'score': achievementCount,
-            'potential_score': potentialAchievements,
+            'score': completionCount,
+            'completion_count': completionCount,
             'games_count': gameCount,
             'previous_rank': previousRank,
             'rank_change': rankChange,
@@ -311,12 +308,13 @@ class LeaderboardRepository {
   }) async {
     try {
       final response = await _client
-          .from('steam_leaderboard_cache')
+          .from('steam_completion_leaderboard')
           .select(
-            'user_id,display_name,avatar_url,achievement_count,total_games',
+            'user_id,display_name,avatar_url,completion_count,achievement_count,total_games',
           )
+          .order('completion_count', ascending: false)
           .order('achievement_count', ascending: false)
-          .order('total_games', ascending: false)
+          .order('user_id', ascending: true)
           .limit(limit);
 
       if ((response as List).isEmpty) {
@@ -328,7 +326,7 @@ class LeaderboardRepository {
           'user_id': row['user_id'],
           'display_name': row['display_name'],
           'avatar_url': row['avatar_url'],
-          'score': (row['achievement_count'] as num?)?.toInt() ?? 0,
+          'score': (row['completion_count'] as num?)?.toInt() ?? 0,
           'games_count': (row['total_games'] as num?)?.toInt() ?? 0,
         });
       }).toList();
@@ -406,7 +404,7 @@ class LeaderboardRepository {
     int offset = 0,
   }) async {
     final response = await _client.rpc(
-      'get_xbox_period_leaderboard',
+      'get_xbox_mythic_period_leaderboard',
       params: {
         'p_period_type': _periodTypeToSql(periodType),
         'limit_count': limit,
@@ -415,17 +413,16 @@ class LeaderboardRepository {
     );
 
     return (response as List).map((row) {
-      final gamerscore = (row['gamerscore'] as num?)?.toInt() ?? 0;
+      final mythics = (row['mythic_count'] as num?)?.toInt() ?? 0;
       final gain = (row['period_gain'] as num?)?.toInt() ?? 0;
       return SeasonalLeaderboardEntry(
         userId: row['user_id'] as String,
         displayName: row['display_name'] as String? ?? 'Player',
         avatarUrl: row['avatar_url'] as String?,
         periodGain: gain,
-        currentScore: gamerscore,
-        baselineScore: gamerscore - gain,
+        currentScore: mythics,
+        baselineScore: mythics - gain,
         gamesCount: (row['total_games'] as num?)?.toInt() ?? 0,
-        potentialScore: (row['potential_gamerscore'] as num?)?.toInt() ?? 0,
       );
     }).toList();
   }
@@ -436,7 +433,7 @@ class LeaderboardRepository {
     int offset = 0,
   }) async {
     final response = await _client.rpc(
-      'get_steam_period_leaderboard',
+      'get_steam_completion_period_leaderboard',
       params: {
         'p_period_type': _periodTypeToSql(periodType),
         'limit_count': limit,
@@ -445,17 +442,16 @@ class LeaderboardRepository {
     );
 
     return (response as List).map((row) {
-      final achievements = (row['achievement_count'] as num?)?.toInt() ?? 0;
+      final completions = (row['completion_count'] as num?)?.toInt() ?? 0;
       final gain = (row['period_gain'] as num?)?.toInt() ?? 0;
       return SeasonalLeaderboardEntry(
         userId: row['user_id'] as String,
         displayName: row['display_name'] as String? ?? 'Player',
         avatarUrl: row['avatar_url'] as String?,
         periodGain: gain,
-        currentScore: achievements,
-        baselineScore: achievements - gain,
+        currentScore: completions,
+        baselineScore: completions - gain,
         gamesCount: (row['total_games'] as num?)?.toInt() ?? 0,
-        potentialScore: (row['potential_achievements'] as num?)?.toInt() ?? 0,
       );
     }).toList();
   }

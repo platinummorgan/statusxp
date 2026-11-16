@@ -1,0 +1,37 @@
+{
+  "score": {
+    "total_statusxp": 78645,
+    "potential_statusxp": 165008
+  },
+  "game": [
+    {
+      "platform_id": 4,
+      "platform_game_id": "5037510",
+      "game_name": "Playrooms",
+      "achievements_earned": 30,
+      "statusxp_raw": 107,
+      "stack_index": 1,
+      "stack_multiplier": 1,
+      "statusxp_effective": 107
+    }
+  ],
+  "stats": [
+    {
+      "completion_count": 1,
+      "pending_review_count": 34,
+      "completions_synced": true
+    }
+  ],
+  "award": {
+    "estimated_rarity": 8.5,
+    "base_status_xp": 44.55,
+    "earned_date_known": true
+  },
+  "progress": {
+    "required_count": 30,
+    "earned_count": 30,
+    "is_complete": true
+  },
+  "score_increase": 45,
+  "game_score_increase": 45
+}

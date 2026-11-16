@@ -175,6 +175,9 @@ void main() {
     network.complete(sampleDashboardStats);
     await tester.pumpAndSettle();
     expect(find.text('MY GAMES'), findsOneWidget);
+    expect(find.text('—'), findsNWidgets(2));
+    expect(find.text('SYNC XBOX'), findsOneWidget);
+    expect(find.text('SYNC STEAM'), findsOneWidget);
     expect(reads, 1);
     expect(tester.takeException(), isNull);
   });

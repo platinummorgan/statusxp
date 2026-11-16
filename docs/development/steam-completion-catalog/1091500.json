@@ -1,0 +1,423 @@
+{
+  "app_id": "1091500",
+  "name": "Cyberpunk 2077",
+  "required_ids": [
+    "Bladerunner",
+    "BornToBeWild",
+    "BushidoAndChill",
+    "Cyberjunkie",
+    "Denied",
+    "FollowingTheRiver",
+    "Fortuneteller",
+    "Gearhead",
+    "GetMeThereScottie",
+    "GunKata",
+    "Gunslinger",
+    "HandyMan",
+    "IAmMaxTac",
+    "LikeFatherLikeSon",
+    "LittleTokyo",
+    "MasterRunner",
+    "MaxPain",
+    "MustBeTheRats",
+    "NeverFadeAway",
+    "NoMansLand",
+    "NotTheMobile",
+    "QueenOfTheHighway",
+    "Roleplayer",
+    "Specialist",
+    "Temperance",
+    "ThatIsSoHardForTheKnees",
+    "TheDevil",
+    "TheFool",
+    "TheHermit",
+    "TheHightPriestess",
+    "TheLovers",
+    "TheStar",
+    "TheSun",
+    "TheWheelOfFortune",
+    "TheWorld",
+    "ThisIsPacifica",
+    "TradeUnion",
+    "TrueSoldier",
+    "TrueWarrior",
+    "TwoHeadsOneBullet",
+    "UnderPressure",
+    "VForVendetta",
+    "YipMan",
+    "YouKnowWhoIAm"
+  ],
+  "excluded_ids": [
+    "AllThePresidentsMen",
+    "DirtyWork",
+    "DogtownLaw",
+    "EasyComeEasyGo",
+    "HydraIsDead",
+    "IHateSpider",
+    "Kingmaker",
+    "KingOfTheCups",
+    "KingOfThePentacles",
+    "KingOfTheSwords",
+    "KingOfTheWands",
+    "RelicMaster",
+    "TheTower"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/stats/1091500/achievements/?l=english",
+      "PSN native trophy groups: platform 1, list NPWR24695_00",
+      "https://www.cyberpunk.net/en/news/49060/update-2-0"
+    ],
+    "review_method": "Complete unique achievement-name mapping to original PlayStation base/add-on groups for this Steam edition. No unmatched Steam entries.",
+    "reference_platform_id": 1,
+    "reference_game_id": "NPWR24695_00",
+    "description_review": "Missing Steam hidden descriptions do not change content membership. Native Steam unlocks determine completion; platform-specific requirement wording is not substituted.",
+    "reviewed_date": "2026-11-15",
+    "requirement_note": "Master Crafter is an original base achievement; Legendary/Tier 5 wording reflects version terminology, not a later achievement addition."
+  },
+  "mapping": [
+    {
+      "steam_api_name": "AllThePresidentsMen",
+      "name": "All the President's Men",
+      "reference_achievement_id": "51",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "Bladerunner",
+      "name": "City Lights",
+      "reference_achievement_id": "24",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "BornToBeWild",
+      "name": "To Bad Decisions!",
+      "reference_achievement_id": "12",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "BushidoAndChill",
+      "name": "Bushido and Chill",
+      "reference_achievement_id": "15",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "Cyberjunkie",
+      "name": "Full Body Conversion",
+      "reference_achievement_id": "25",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "Denied",
+      "name": "Right Back At Ya",
+      "reference_achievement_id": "41",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "DirtyWork",
+      "name": "Dirty Deeds",
+      "reference_achievement_id": "52",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "DogtownLaw",
+      "name": "The APB is Not Enough",
+      "reference_achievement_id": "57",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EasyComeEasyGo",
+      "name": "Easy Come, Easy Go",
+      "reference_achievement_id": "54",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "FollowingTheRiver",
+      "name": "To Protect and Serve",
+      "reference_achievement_id": "11",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "Fortuneteller",
+      "name": "The Wandering Fool",
+      "reference_achievement_id": "42",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "Gearhead",
+      "name": "Autojock",
+      "reference_achievement_id": "33",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "GetMeThereScottie",
+      "name": "Frequent Flyer",
+      "reference_achievement_id": "43",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "GunKata",
+      "name": "Gun Fu",
+      "reference_achievement_id": "26",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "Gunslinger",
+      "name": "Gunslinger",
+      "reference_achievement_id": "29",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "HandyMan",
+      "name": "Master Crafter",
+      "reference_achievement_id": "34",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "HydraIsDead",
+      "name": "Judgement Day",
+      "reference_achievement_id": "53",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "IAmMaxTac",
+      "name": "I Am The Law",
+      "reference_achievement_id": "18",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "IHateSpider",
+      "name": "Arachnophobia",
+      "reference_achievement_id": "55",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "Kingmaker",
+      "name": "Spin Doctor",
+      "reference_achievement_id": "50",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "KingOfTheCups",
+      "name": "King of Cups",
+      "reference_achievement_id": "45",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "KingOfThePentacles",
+      "name": "King of Pentacles",
+      "reference_achievement_id": "46",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "KingOfTheSwords",
+      "name": "King of Swords",
+      "reference_achievement_id": "48",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "KingOfTheWands",
+      "name": "King of Wands",
+      "reference_achievement_id": "47",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "LikeFatherLikeSon",
+      "name": "Mean Streets",
+      "reference_achievement_id": "22",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "LittleTokyo",
+      "name": "Little Tokyo",
+      "reference_achievement_id": "21",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "MasterRunner",
+      "name": "Christmas Tree Attack",
+      "reference_achievement_id": "27",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "MaxPain",
+      "name": "The Quick and the Dead",
+      "reference_achievement_id": "36",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "MustBeTheRats",
+      "name": "Must Be Rats",
+      "reference_achievement_id": "37",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "NeverFadeAway",
+      "name": "Breathtaking",
+      "reference_achievement_id": "16",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "NoMansLand",
+      "name": "The Wasteland",
+      "reference_achievement_id": "20",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "NotTheMobile",
+      "name": "Daemon In The Shell",
+      "reference_achievement_id": "35",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "QueenOfTheHighway",
+      "name": "Life of the Road",
+      "reference_achievement_id": "14",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "RelicMaster",
+      "name": "Relic Ruler",
+      "reference_achievement_id": "56",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "Roleplayer",
+      "name": "Stanislavski's Method",
+      "reference_achievement_id": "32",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "Specialist",
+      "name": "Ten out of Ten",
+      "reference_achievement_id": "28",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "Temperance",
+      "name": "Temperance",
+      "reference_achievement_id": "10",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "ThatIsSoHardForTheKnees",
+      "name": "Rough Landing",
+      "reference_achievement_id": "31",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheDevil",
+      "name": "The Devil",
+      "reference_achievement_id": "7",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheFool",
+      "name": "The Fool",
+      "reference_achievement_id": "1",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheHermit",
+      "name": "The Hermit",
+      "reference_achievement_id": "3",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheHightPriestess",
+      "name": "The High Priestess",
+      "reference_achievement_id": "5",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheLovers",
+      "name": "The Lovers",
+      "reference_achievement_id": "2",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheStar",
+      "name": "The Star",
+      "reference_achievement_id": "8",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheSun",
+      "name": "The Sun",
+      "reference_achievement_id": "9",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheTower",
+      "name": "The Tower",
+      "reference_achievement_id": "49",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "TheWheelOfFortune",
+      "name": "The Wheel of Fortune",
+      "reference_achievement_id": "4",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TheWorld",
+      "name": "The World",
+      "reference_achievement_id": "6",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "ThisIsPacifica",
+      "name": "Greetings from Pacifica!",
+      "reference_achievement_id": "19",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TradeUnion",
+      "name": "The Jungle",
+      "reference_achievement_id": "23",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TrueSoldier",
+      "name": "True Soldier",
+      "reference_achievement_id": "39",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TrueWarrior",
+      "name": "True Warrior",
+      "reference_achievement_id": "40",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TwoHeadsOneBullet",
+      "name": "Two Heads, One Bullet",
+      "reference_achievement_id": "30",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "UnderPressure",
+      "name": "Judy vs Night City",
+      "reference_achievement_id": "13",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "VForVendetta",
+      "name": "V for Vendetta",
+      "reference_achievement_id": "38",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "YipMan",
+      "name": "It's Elementary",
+      "reference_achievement_id": "17",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "YouKnowWhoIAm",
+      "name": "Legend of The Afterlife",
+      "reference_achievement_id": "44",
+      "reference_group": "default"
+    }
+  ]
+}

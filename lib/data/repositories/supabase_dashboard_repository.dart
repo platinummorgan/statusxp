@@ -91,17 +91,21 @@ class SupabaseDashboardRepository {
 
   Future<List<Map<String, dynamic>>> _getStatusXpRows(String userId) async {
     try {
-      final response = await _client.rpc(
-        'calculate_statusxp_with_stacks',
-        params: {'p_user_id': userId},
-      );
-      if (response is List) {
-        return response
-            .whereType<Map>()
-            .map((row) => Map<String, dynamic>.from(row))
-            .toList();
+      const pageSize = 1000;
+      final rows = <Map<String, dynamic>>[];
+      for (var offset = 0; ; offset += pageSize) {
+        final response = await _client
+            .rpc(
+              'calculate_statusxp_with_stacks',
+              params: {'p_user_id': userId},
+            )
+            .order('platform_id', ascending: true)
+            .order('platform_game_id', ascending: true)
+            .range(offset, offset + pageSize - 1);
+        if (response is! List) return const <Map<String, dynamic>>[];
+        rows.addAll(response.whereType<Map>().map(Map<String, dynamic>.from));
+        if (response.length < pageSize) return rows;
       }
-      return const <Map<String, dynamic>>[];
     } catch (_) {
       return const <Map<String, dynamic>>[];
     }
@@ -152,6 +156,14 @@ class SupabaseDashboardRepository {
     int achievementsCount = 0;
     int platinums = 0;
     int gamerscore = 0;
+    final mythics = xboxPlatforms != null
+        ? await _getMythicCount(userId)
+        : null;
+
+    final steamCompletionStats =
+        platformId == 4 && xboxPlatforms == null && psnPlatforms == null
+        ? await _getSteamCompletionStats(userId)
+        : null;
 
     // Cache-first path for stability and performance.
     try {
@@ -195,6 +207,7 @@ class SupabaseDashboardRepository {
           return PlatformStats(
             platinums: 0,
             achievementsUnlocked: achievementsCount,
+            mythics: mythics,
             gamerscore: gamerscore,
             gamesCount: gamesCount,
             statusXP: platformStatusXP,
@@ -211,6 +224,9 @@ class SupabaseDashboardRepository {
           achievementsCount = _toInt(steamCache['achievement_count']) ?? 0;
           gamesCount = _toInt(steamCache['total_games']) ?? 0;
           return PlatformStats(
+            completions: _toInt(steamCompletionStats?['completion_count']),
+            pendingCompletionReviews:
+                _toInt(steamCompletionStats?['pending_review_count']) ?? 0,
             platinums: 0,
             achievementsUnlocked: achievementsCount,
             gamerscore: 0,
@@ -262,10 +278,46 @@ class SupabaseDashboardRepository {
     return PlatformStats(
       platinums: platinums,
       achievementsUnlocked: achievementsCount,
+      mythics: mythics,
+      completions: _toInt(steamCompletionStats?['completion_count']),
+      pendingCompletionReviews:
+          _toInt(steamCompletionStats?['pending_review_count']) ?? 0,
       gamerscore: gamerscore,
       gamesCount: gamesCount,
       statusXP: platformStatusXP,
     );
+  }
+
+  Future<Map<String, dynamic>?> _getSteamCompletionStats(String userId) async {
+    try {
+      final response = await _client.rpc(
+        'get_steam_completion_stats',
+        params: {'p_user_id': userId},
+      );
+      if (response is List &&
+          response.isNotEmpty &&
+          response.first['completions_synced'] == true) {
+        return Map<String, dynamic>.from(response.first as Map);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<int?> _getMythicCount(String userId) async {
+    try {
+      final response = await _client.rpc(
+        'get_xbox_mythic_stats',
+        params: {'p_user_id': userId},
+      );
+      if (response is List &&
+          response.isNotEmpty &&
+          response.first['mythics_synced'] == true) {
+        return _toInt(response.first['mythic_count']);
+      }
+    } catch (_) {
+      // Missing data stays unknown until an authoritative Xbox sync completes.
+    }
+    return null;
   }
 
   int? _toInt(dynamic value) {

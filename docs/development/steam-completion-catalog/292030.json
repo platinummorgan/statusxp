@@ -1,0 +1,569 @@
+{
+  "app_id": "292030",
+  "name": "The Witcher 3",
+  "required_ids": [
+    "ALL_IN",
+    "ARMED_AND_DANGEROUS",
+    "ASHES_TO_ASHES",
+    "ASSASSIN",
+    "BOMBARDIER",
+    "BOOKWORM",
+    "BRAWL_MASTER",
+    "BRAWLER",
+    "BUTCHER_OF_BLAVIKEN",
+    "CANT_TOUCH_THIS",
+    "CARD_COLLECTOR",
+    "DENDROLOGIST",
+    "ENEMY_OF_MY_ENEMY",
+    "ENVIRONMENTALLY_UNFRIENDLY",
+    "EVEN_ODDS",
+    "FAMILY_COUNSELOR",
+    "FAST_AND_FURIOUS",
+    "FEARLESS_VAMPIRE_SLAYER",
+    "FIEND_OR_FOE",
+    "FIRE_IN_THE_HOLE",
+    "FIST_OF_THE_SOUTH_STAR",
+    "FRIEND_IN_NEED",
+    "FRIENDS_WITH_BENEFITS",
+    "FULL_CREW",
+    "GERALT_AND_FRIENDS",
+    "GLOBETROTTER",
+    "GWENT_MASTER",
+    "HUMPTY_DUMPTY",
+    "KAER_MORHEN_TRAINED",
+    "LETS_COOK",
+    "LILAC",
+    "MAKER",
+    "MASTER_MARKSMAN",
+    "MUNCHKIN",
+    "MUTANT",
+    "NECROMANCER",
+    "OVERKILL",
+    "PASSED_THE_TRIAL",
+    "PEST_CONTROL",
+    "POWER_OVERWHELMING",
+    "RAN_THE_GAUNTLET",
+    "SHRIEKER",
+    "SOMETHING_MORE",
+    "THE_DOPPLER_EFFECT",
+    "THE_EVILEST_THING",
+    "THE_KING",
+    "THE_PROFESSIONAL",
+    "TRIPLE_THREAT",
+    "WALKED_THE_PATH",
+    "WHAT_WAS_THAT",
+    "WOODLAND_SPIRIT",
+    "XENONAUT"
+  ],
+  "excluded_ids": [
+    "EP1_1",
+    "EP1_10",
+    "EP1_11",
+    "EP1_12",
+    "EP1_13",
+    "EP1_2",
+    "EP1_3",
+    "EP1_4",
+    "EP1_5",
+    "EP1_6",
+    "EP1_7",
+    "EP1_8",
+    "EP1_9",
+    "EP2_1",
+    "EP2_10",
+    "EP2_11",
+    "EP2_12",
+    "EP2_13",
+    "EP2_2",
+    "EP2_3",
+    "EP2_4",
+    "EP2_5",
+    "EP2_6",
+    "EP2_7",
+    "EP2_8",
+    "EP2_9"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/stats/292030/achievements/?l=english",
+      "PSN native trophy groups: platform 2, list NPWR07895_00",
+      "https://www.thewitcher.com/us/en/news/991/hearts-of-stone-blood-and-wine-two-massive-expansions-for-the-witcher-3-wild-hunt"
+    ],
+    "review_method": "Complete unique achievement-name mapping to original PlayStation base/add-on groups for this Steam edition. No unmatched Steam entries.",
+    "reference_platform_id": 2,
+    "reference_game_id": "NPWR07895_00",
+    "description_review": "Missing Steam hidden descriptions do not change content membership. Native Steam unlocks determine completion; platform-specific requirement wording is not substituted.",
+    "reviewed_date": "2026-11-15"
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ALL_IN",
+      "name": "All In",
+      "reference_achievement_id": "46",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "ARMED_AND_DANGEROUS",
+      "name": "Armed and Dangerous",
+      "reference_achievement_id": "38",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "ASHES_TO_ASHES",
+      "name": "Ashes to Ashes",
+      "reference_achievement_id": "51",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "ASSASSIN",
+      "name": "Assassin of Kings",
+      "reference_achievement_id": "13",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "BOMBARDIER",
+      "name": "Bombardier",
+      "reference_achievement_id": "36",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "BOOKWORM",
+      "name": "Bookworm",
+      "reference_achievement_id": "37",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "BRAWL_MASTER",
+      "name": "Brawl Master",
+      "reference_achievement_id": "40",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "BRAWLER",
+      "name": "Brawler",
+      "reference_achievement_id": "26",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "BUTCHER_OF_BLAVIKEN",
+      "name": "Butcher of Blaviken",
+      "reference_achievement_id": "24",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "CANT_TOUCH_THIS",
+      "name": "Can't Touch This!",
+      "reference_achievement_id": "21",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "CARD_COLLECTOR",
+      "name": "Card Collector",
+      "reference_achievement_id": "33",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "DENDROLOGIST",
+      "name": "Dendrologist",
+      "reference_achievement_id": "16",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "ENEMY_OF_MY_ENEMY",
+      "name": "The Enemy of My Enemy",
+      "reference_achievement_id": "17",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "ENVIRONMENTALLY_UNFRIENDLY",
+      "name": "Environmentally Unfriendly",
+      "reference_achievement_id": "19",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "EP1_1",
+      "name": "I'm Not Kissing That",
+      "reference_achievement_id": "53",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_10",
+      "name": "I Wore Ofieri Before It Was Cool",
+      "reference_achievement_id": "62",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_11",
+      "name": "Moo-rderer",
+      "reference_achievement_id": "63",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_12",
+      "name": "Rad Steez, Bro!",
+      "reference_achievement_id": "64",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_13",
+      "name": "Killed It",
+      "reference_achievement_id": "65",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_2",
+      "name": "Let the Good Times Roll!",
+      "reference_achievement_id": "54",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_3",
+      "name": "Shopaholic",
+      "reference_achievement_id": "55",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_4",
+      "name": "Curator of Nightmares",
+      "reference_achievement_id": "56",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_5",
+      "name": "Pacta Sunt Servanda",
+      "reference_achievement_id": "57",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_6",
+      "name": "When It's Many Against One…",
+      "reference_achievement_id": "58",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_7",
+      "name": "Return to Sender",
+      "reference_achievement_id": "59",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_8",
+      "name": "Can Quit Anytime I Want",
+      "reference_achievement_id": "60",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP1_9",
+      "name": "Wild Rose Dethorned",
+      "reference_achievement_id": "61",
+      "reference_group": "001"
+    },
+    {
+      "steam_api_name": "EP2_1",
+      "name": "The Witcher's Gone South",
+      "reference_achievement_id": "66",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_10",
+      "name": "Dressed to Kill",
+      "reference_achievement_id": "75",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_11",
+      "name": "Weapon \"W\"",
+      "reference_achievement_id": "76",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_12",
+      "name": "Hasta la Vista™",
+      "reference_achievement_id": "77",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_13",
+      "name": "David and Golyat",
+      "reference_achievement_id": "78",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_2",
+      "name": "Last Action Hero",
+      "reference_achievement_id": "67",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_3",
+      "name": "Kling of the Clink",
+      "reference_achievement_id": "68",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_4",
+      "name": "A Knight to Remember",
+      "reference_achievement_id": "69",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_5",
+      "name": "Embodiment of the Five Virtues",
+      "reference_achievement_id": "70",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_6",
+      "name": "Playing House",
+      "reference_achievement_id": "71",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_7",
+      "name": "Turned Every Stone",
+      "reference_achievement_id": "72",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_8",
+      "name": "I Have a Gwent Problem",
+      "reference_achievement_id": "73",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EP2_9",
+      "name": "The Grapes of Wrath Stomped",
+      "reference_achievement_id": "74",
+      "reference_group": "002"
+    },
+    {
+      "steam_api_name": "EVEN_ODDS",
+      "name": "Even Odds",
+      "reference_achievement_id": "30",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FAMILY_COUNSELOR",
+      "name": "Family Counselor",
+      "reference_achievement_id": "4",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FAST_AND_FURIOUS",
+      "name": "Fast and Furious",
+      "reference_achievement_id": "41",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FEARLESS_VAMPIRE_SLAYER",
+      "name": "Fearless Vampire Slayer",
+      "reference_achievement_id": "48",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FIEND_OR_FOE",
+      "name": "Fiend or Foe?",
+      "reference_achievement_id": "50",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FIRE_IN_THE_HOLE",
+      "name": "Fire in the Hole",
+      "reference_achievement_id": "43",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FIST_OF_THE_SOUTH_STAR",
+      "name": "Fist of the South Star",
+      "reference_achievement_id": "44",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FRIEND_IN_NEED",
+      "name": "A Friend in Need",
+      "reference_achievement_id": "2",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FRIENDS_WITH_BENEFITS",
+      "name": "Friends With Benefits",
+      "reference_achievement_id": "14",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "FULL_CREW",
+      "name": "Full Crew",
+      "reference_achievement_id": "15",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "GERALT_AND_FRIENDS",
+      "name": "Geralt and Friends",
+      "reference_achievement_id": "45",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "GLOBETROTTER",
+      "name": "Globetrotter",
+      "reference_achievement_id": "31",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "GWENT_MASTER",
+      "name": "Gwent Master",
+      "reference_achievement_id": "34",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "HUMPTY_DUMPTY",
+      "name": "Humpty Dumpty",
+      "reference_achievement_id": "18",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "KAER_MORHEN_TRAINED",
+      "name": "Kaer Morhen Trained",
+      "reference_achievement_id": "20",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "LETS_COOK",
+      "name": "Let's Cook!",
+      "reference_achievement_id": "35",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "LILAC",
+      "name": "Lilac and Gooseberries",
+      "reference_achievement_id": "1",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "MAKER",
+      "name": "Kingmaker",
+      "reference_achievement_id": "12",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "MASTER_MARKSMAN",
+      "name": "Master Marksman",
+      "reference_achievement_id": "28",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "MUNCHKIN",
+      "name": "Munchkin",
+      "reference_achievement_id": "42",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "MUTANT",
+      "name": "Mutant",
+      "reference_achievement_id": "23",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "NECROMANCER",
+      "name": "Necromancer",
+      "reference_achievement_id": "3",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "OVERKILL",
+      "name": "Overkill",
+      "reference_achievement_id": "27",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "PASSED_THE_TRIAL",
+      "name": "Passed the Trial",
+      "reference_achievement_id": "8",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "PEST_CONTROL",
+      "name": "Pest Control",
+      "reference_achievement_id": "32",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "POWER_OVERWHELMING",
+      "name": "Power Overwhelming",
+      "reference_achievement_id": "39",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "RAN_THE_GAUNTLET",
+      "name": "Ran the Gauntlet",
+      "reference_achievement_id": "9",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "SHRIEKER",
+      "name": "Shrieker",
+      "reference_achievement_id": "47",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "SOMETHING_MORE",
+      "name": "Something More",
+      "reference_achievement_id": "5",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "THE_DOPPLER_EFFECT",
+      "name": "The Doppler Effect",
+      "reference_achievement_id": "52",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "THE_EVILEST_THING",
+      "name": "That Is the Evilest Thing",
+      "reference_achievement_id": "22",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "THE_KING",
+      "name": "The King is Dead",
+      "reference_achievement_id": "7",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "THE_PROFESSIONAL",
+      "name": "Geralt: The Professional",
+      "reference_achievement_id": "11",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "TRIPLE_THREAT",
+      "name": "Triple Threat",
+      "reference_achievement_id": "25",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "WALKED_THE_PATH",
+      "name": "Walked the Path",
+      "reference_achievement_id": "10",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "WHAT_WAS_THAT",
+      "name": "What Was That?",
+      "reference_achievement_id": "29",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "WOODLAND_SPIRIT",
+      "name": "Woodland Spirit",
+      "reference_achievement_id": "49",
+      "reference_group": "default"
+    },
+    {
+      "steam_api_name": "XENONAUT",
+      "name": "Xenonaut",
+      "reference_achievement_id": "6",
+      "reference_group": "default"
+    }
+  ]
+}

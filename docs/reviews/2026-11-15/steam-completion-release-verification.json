@@ -1,0 +1,27 @@
+{
+  "cache_source_mismatches": 0,
+  "completion_records": 0,
+  "earned_completions": 0,
+  "fixture_games_left": 0,
+  "fixture_users_left": 0,
+  "reviewed_sets": [
+    {
+      "appid": "1091500",
+      "excluded": 13,
+      "required": 44,
+      "state": "verified"
+    },
+    {
+      "appid": "292030",
+      "excluded": 26,
+      "required": 52,
+      "state": "verified"
+    }
+  ],
+  "synced_accounts": 0,
+  "verified_at": "2026-11-15T19:34:39.677949+00:00",
+  "players": 101,
+  "earned_scores_changed": 0,
+  "potential_scores_changed": 5,
+  "additional_potential_xp": 372
+}

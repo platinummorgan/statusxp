@@ -1,0 +1,364 @@
+{
+  "app_id": "814380",
+  "name": "Sekiro™: Shadows Die Twice",
+  "required_ids": [
+    "ACH00",
+    "ACH01",
+    "ACH02",
+    "ACH03",
+    "ACH04",
+    "ACH05",
+    "ACH06",
+    "ACH07",
+    "ACH08",
+    "ACH09",
+    "ACH10",
+    "ACH11",
+    "ACH12",
+    "ACH13",
+    "ACH14",
+    "ACH15",
+    "ACH16",
+    "ACH17",
+    "ACH18",
+    "ACH19",
+    "ACH20",
+    "ACH21",
+    "ACH22",
+    "ACH23",
+    "ACH24",
+    "ACH25",
+    "ACH26",
+    "ACH27",
+    "ACH28",
+    "ACH29",
+    "ACH30",
+    "ACH31",
+    "ACH32",
+    "ACH33"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/814380/?l=english",
+      "https://store.steampowered.com/app/814380/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=814380&count=100&maxlength=0&enddate=1561780800",
+      "psn:2:NPWR15587_00"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Mar 21, 2019",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "All 34 Steam achievements map uniquely to the original PS4 base list, including the native Steam all-achievements award. Later boss gauntlets/reflections add no Steam requirements.",
+    "steam_schema_hash": 1062062761,
+    "steam_schema_version": 6
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACH00",
+      "name": "Sekiro",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "0",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH01",
+      "name": "Man Without Equal",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "1",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH02",
+      "name": "Ashina Traveler",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "2",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH03",
+      "name": "Master of the Prosthetic",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "3",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH04",
+      "name": "Height of Technique",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "4",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH05",
+      "name": "All Prosthetic Tools",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "5",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH06",
+      "name": "All Ninjutsu Techniques",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "6",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH07",
+      "name": "Peak Physical Strength",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "7",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH08",
+      "name": "Ultimate Healing Gourd",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "8",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH09",
+      "name": "Immortal Severance",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "9",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH10",
+      "name": "Purification",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "10",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH11",
+      "name": "Dragon's Homecoming",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "11",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH12",
+      "name": "Shura",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "12",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH13",
+      "name": "Sword Saint, Isshin Ashina",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "13",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH14",
+      "name": "Master of the Arts",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "14",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH15",
+      "name": "Lazuline Upgrade",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "15",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH16",
+      "name": "Revered Blade",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "16",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH17",
+      "name": "Shinobi Prosthetic",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "17",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH18",
+      "name": "Memorial Mob",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "18",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH19",
+      "name": "Resurrection",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "19",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH20",
+      "name": "Gyoubu Masataka Oniwa",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "20",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH21",
+      "name": "The Phantom Lady Butterfly",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "21",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH22",
+      "name": "Genichiro Ashina",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "22",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH23",
+      "name": "Guardian Ape",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "23",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH24",
+      "name": "Guardian Ape Immortality Severed",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "24",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH25",
+      "name": "Folding Screen Monkeys",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "25",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH26",
+      "name": "Great Shinobi - Owl",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "26",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH27",
+      "name": "Father Surpassed",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "27",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH28",
+      "name": "Corrupted Monk",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "28",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH29",
+      "name": "Gracious Gift of Tears",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "29",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH30",
+      "name": "Isshin Ashina",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "30",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH31",
+      "name": "Demon of Hatred",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "31",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH32",
+      "name": "Great Serpent",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "32",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH33",
+      "name": "Great Colored Carp",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR15587_00",
+      "reference_achievement_id": "33",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    }
+  ]
+}

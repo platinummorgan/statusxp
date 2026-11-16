@@ -1,3 +1,4 @@
+import { extractXboxMythicDetails, needsXboxMythicRefresh, saveXboxMythic } from './xbox-mythics.js';
 import { assertXboxIdentity, assertXboxSyncJob } from './xbox-account-binding.js';
 import { partitionXboxUnlockRows, saveUndatedXboxUnlocks } from './undated-xbox-unlocks.js';
 import { OPENXBL_API_BASE, unwrapOpenXblResponse, openXblPlayerAchievementsUrl, normalizeXboxAchievement, fetchOpenXblAchievementList, fetchOpenXblLegacyAchievements, fetchXboxLegacyAchievements, needsXboxAchievementFallback, mergeXboxAchievementSources } from './openxbl-achievements.js';
@@ -697,6 +698,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     const seenTitleIds = new Set();
     let continuationToken = null;
     let titleHistoryPage = 0;
+    let mythicHistoryAvailable = false;
 
     do {
       const url = continuationToken
@@ -713,6 +715,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       }
 
       const pageTitles = historyResult.data?.titles || [];
+      mythicHistoryAvailable ||= Number.isInteger(historyResult.data?.achievementSummary?.mythicsUnlocked)
+        || pageTitles.some(title => typeof title.achievement?.isMythic === 'boolean');
       for (const pageTitle of pageTitles) {
         const key = String(pageTitle?.titleId || '');
         if (!key || seenTitleIds.has(key)) continue;
@@ -731,15 +735,20 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
         `deduped total=${dedupedTitles.length}, nextToken=${continuationToken ? 'yes' : 'no'}`
       );
 
-      if (titleHistoryPage >= XBOX_TITLE_HISTORY_MAX_PAGES) {
-        console.warn(`[XBOX TITLE HISTORY] Reached page safety limit (${XBOX_TITLE_HISTORY_MAX_PAGES}).`);
-        break;
+      if (titleHistoryPage >= XBOX_TITLE_HISTORY_MAX_PAGES && continuationToken) {
+        throw new Error('Xbox title history is incomplete; retry sync.');
       }
     } while (continuationToken);
 
     console.log('Fetched title history - deduped titles length:', dedupedTitles.length);
     
     if (dedupedTitles.length === 0) {
+      if (mythicHistoryAvailable) {
+        const { error } = await supabase.rpc('mark_xbox_mythics_synced', {
+          p_user_id: userId, p_xuid: String(xuid), p_sync_log_id: syncLogId,
+        });
+        if (error) throw new Error('Xbox Mythic sync status could not be saved.');
+      }
       await finishSync(supabase, { userId, platform: 'xbox', logId: syncLogId, outcome: 'completed', games: 0, achievements: 0 });
       return;
     }
@@ -747,7 +756,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
     const gamesWithProgress = dedupedTitles.filter(t => {
       const currentGamerscore = t.achievement?.currentGamerscore || 0;
       const currentAchievements = t.achievement?.currentAchievements || 0;
-      if (currentGamerscore > 0 || currentAchievements > 0) return true;
+      if (t.achievement?.isMythic === true || currentGamerscore > 0 || currentAchievements > 0) return true;
 
       const devices = (t.devices || []).map(d => d.toLowerCase());
       const isXbox360 = devices.includes('xbox360');
@@ -1129,6 +1138,9 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Log the achievement data from Xbox API
             console.log(`[XBOX ACHIEVEMENTS] ${title.name}: currentAchievements=${title.achievement.currentAchievements}, totalAchievements=${title.achievement.totalAchievements}, currentGamerscore=${title.achievement.currentGamerscore}, totalGamerscore=${title.achievement.totalGamerscore}`);
 
+            // Preserve native Mythics even when catalogue/group retrieval fails.
+            await saveXboxMythic(supabase, { userId, xuid, logId: syncLogId, platformId, title, details: null });
+
             const existingUserGame = userGamesMap.get(`${gameTitle.platform_game_id}_${platformId}`);
             const isNewGame = !existingUserGame;
             const syncFailed = existingUserGame && existingUserGame.metadata?.sync_failed === true;
@@ -1186,7 +1198,7 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             }
             
             const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
-            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements || !hasAchievementDefs || suspiciousZeroAchievements;
+            const needsProcessing = needsXboxMythicRefresh(title, existingUserGame?.metadata) || forceFullSync || isNewGame || countsChanged || needRarityRefresh || syncFailed || missingAchievements || !hasAchievementDefs || suspiciousZeroAchievements;
             
             if (!needsProcessing) {
               await cleanupDuplicatePlatformRows({
@@ -1218,16 +1230,18 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
             // Validate every page and unique catalogue count before saving.
             // Complete fallbacks may recover a failed or truncated primary fetch.
             const achievementsForTitle = [];
+            let completionGroups = [];
             let firstPageFetchError = null;
             try {
               const result = await fetchOpenXblAchievementList(
                 (url) => fetchXboxJsonWithRetry(url, { headers: {
-                  'x-xbl-contract-version': '2', 'Accept-Language': 'en-US',
+                  'x-xbl-contract-version': '6', 'Accept-Language': 'en-US',
                   Authorization: `XBL3.0 x=${userHash};${accessToken}`,
                 } }, `achievements for ${title.name}`),
                 `https://achievements.xboxlive.com/users/xuid(${encodeURIComponent(xuid)})/achievements?titleId=${encodeURIComponent(title.titleId)}&maxItems=1000`);
               if (!result.ok) throw new Error(`Xbox achievement fetch failed (${result.status})`);
               achievementsForTitle.push(...result.data.achievements);
+              completionGroups = result.data.completion ?? [];
             } catch (error) {
               firstPageFetchError = error;
               console.warn(`Xbox achievement fetch needs fallback for ${title.name}: ${error.message}`);
@@ -1368,6 +1382,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               console.log(`[OPENXBL] Skipping rarity fetch - last updated within 30 days`);
             }
 
+            const mythicDetails = extractXboxMythicDetails(title.titleId, completionGroups,
+              achievementsForTitle.map(achievement => ({ ...achievement, rarity: { currentPercentage:
+                achievement.rarity?.currentPercentage ?? openXBLRarityMap.get(String(achievement.id)) ?? null } })));
+
             // Upsert user_games
             // Update user_progress with game progress
             // Use totalAchievementsFromAPI (the count we actually fetched) since we now paginate and get all achievements
@@ -1381,6 +1399,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               achievements_earned: title.achievement.currentAchievements,
               current_score: title.achievement.currentGamerscore,
               metadata: {
+                ...existingUserGame?.metadata,
+                mythic_schema_version: typeof title.achievement?.isMythic === 'boolean' ? 1 : null,
+                mythic_last_reported: title.achievement?.isMythic ?? null,
+                mythic_rarity_pending: !mythicDetails || mythicDetails.estimated_rarity === null,
                 xbox_source_xuid: xuid,
                 current_gamerscore: title.achievement.currentGamerscore, // Store actual Gamerscore for display
                 max_gamerscore: title.achievement.totalGamerscore,
@@ -1519,15 +1541,10 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                 }
               }
               
-              // Xbox DLC detection: Xbox Live API does not provide DLC indicators
-              // Research conducted 2026-02: Tested OpenXBL marketplace & achievement APIs
-              // - No titleAssociations, category, or grouping fields in achievements
-              // - Marketplace API returns empty for titleIds
-              // - All achievements returned in flat list under single titleId
-              // Unlike PSN (trophy groups) and Steam (separate appIds), Xbox doesn't separate DLC
-              const isDLC = false;
+              // Original membership comes from the authoritative contract-6 BaseGame group.
+              const isDLC = mythicDetails ? !mythicDetails.required_ids.includes(String(achievement.id)) : null;
               const dlcName = null;
-              
+
               // Get rarity from OpenXBL (falls back to null if not available)
               const rarityPercent = achievement.rarity?.currentPercentage ?? openXBLRarityMap.get(String(achievement.id)) ?? null;
               
@@ -1578,6 +1595,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
                   display_order: achievementIndex,
                   platform_version: platformVersion,
                   is_dlc: isDLC,
+                  xbox_group_ids: achievement.groupIds ?? null,
+                  xbox_base_game: mythicDetails ? !isDLC : null,
                   dlc_name: null,
                 },
               };
@@ -1607,6 +1626,8 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
               const chunk = achievementsToUpsert.slice(i, i + XBOX_UPSERT_CHUNK_SIZE);
               await upsertAchievementRowsWithRetry(chunk);
             }
+
+            await saveXboxMythic(supabase, { userId, xuid, logId: syncLogId, platformId, title, details: mythicDetails });
 
             // Only write unlocked rows whose achievement definition exists.
             const userAchievementsToUpsert = unlockedUserAchievementCandidates.filter((row) =>
@@ -1823,6 +1844,12 @@ export async function syncXboxAchievements(userId, xuid, userHash, accessToken, 
       logMemory(`After processing batch ${i / BATCH_SIZE + 1}`);
     }
 
+    if (mythicHistoryAvailable && gamesWithProgress.every(title => typeof title.achievement?.isMythic === 'boolean') && titlesFailed === 0) {
+      const { error: mythicSyncError } = await supabase.rpc('mark_xbox_mythics_synced', {
+        p_user_id: userId, p_xuid: String(xuid), p_sync_log_id: syncLogId,
+      });
+      if (mythicSyncError) throw new Error('Xbox Mythic sync status could not be saved.');
+    }
     await refreshLeaderboardsAfterSync(supabase, userId, 'xbox');
     if (titlesFailed > 0) throw new Error(`${titlesFailed} Xbox game imports are incomplete; saved progress is retained. Retry sync.`);
 

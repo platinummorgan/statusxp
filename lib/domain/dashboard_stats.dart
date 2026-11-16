@@ -67,6 +67,16 @@ class DashboardStats extends Equatable {
     'steamStats': steamStats.toJson(),
   };
 
+  /// Completions counted independently on each platform.
+  int get totalCompletions =>
+      psnStats.platinums +
+      (xboxStats.mythics ?? 0) +
+      (steamStats.completions ?? 0);
+  bool get completionCountsPending =>
+      (xboxStats.gamesCount > 0 && xboxStats.mythics == null) ||
+      (steamStats.gamesCount > 0 && steamStats.completions == null) ||
+      steamStats.pendingCompletionReviews > 0;
+
   /// Creates a copy with the given fields replaced
   DashboardStats copyWith({
     String? displayName,
@@ -115,6 +125,13 @@ class PlatformStats extends Equatable {
   /// Total achievements/trophies unlocked on this platform
   final int achievementsUnlocked;
 
+  /// Confirmed Xbox Mythics. Null until a Mythic-aware sync completes.
+  final int? mythics;
+
+  /// Steam base-game completions; null before a completion-aware sync.
+  final int? completions;
+  final int pendingCompletionReviews;
+
   /// Xbox Gamerscore (Xbox only, 0 for other platforms)
   final int gamerscore;
 
@@ -131,6 +148,9 @@ class PlatformStats extends Equatable {
   const PlatformStats({
     this.platinums = 0,
     required this.achievementsUnlocked,
+    this.mythics,
+    this.completions,
+    this.pendingCompletionReviews = 0,
     this.gamerscore = 0,
     required this.gamesCount,
     this.statusXP = 0,
@@ -138,7 +158,10 @@ class PlatformStats extends Equatable {
 
   /// Creates empty platform stats
   const PlatformStats.empty()
-    : platinums = 0,
+    : completions = null,
+      pendingCompletionReviews = 0,
+      mythics = null,
+      platinums = 0,
       achievementsUnlocked = 0,
       gamerscore = 0,
       gamesCount = 0,
@@ -147,6 +170,10 @@ class PlatformStats extends Equatable {
   factory PlatformStats.fromJson(Map<String, dynamic> json) => PlatformStats(
     platinums: (json['platinums'] as num).toInt(),
     achievementsUnlocked: (json['achievementsUnlocked'] as num).toInt(),
+    mythics: (json['mythics'] as num?)?.toInt(),
+    completions: (json['completions'] as num?)?.toInt(),
+    pendingCompletionReviews:
+        (json['pendingCompletionReviews'] as num?)?.toInt() ?? 0,
     gamerscore: (json['gamerscore'] as num).toInt(),
     gamesCount: (json['gamesCount'] as num).toInt(),
     statusXP: (json['statusXP'] as num).toDouble(),
@@ -155,6 +182,9 @@ class PlatformStats extends Equatable {
   Map<String, dynamic> toJson() => {
     'platinums': platinums,
     'achievementsUnlocked': achievementsUnlocked,
+    'mythics': mythics,
+    'completions': completions,
+    'pendingCompletionReviews': pendingCompletionReviews,
     'gamerscore': gamerscore,
     'gamesCount': gamesCount,
     'statusXP': statusXP,
@@ -164,6 +194,9 @@ class PlatformStats extends Equatable {
   List<Object?> get props => [
     platinums,
     achievementsUnlocked,
+    mythics,
+    completions,
+    pendingCompletionReviews,
     gamerscore,
     gamesCount,
     statusXP,

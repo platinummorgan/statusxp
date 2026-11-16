@@ -1,0 +1,257 @@
+{
+  "app_id": "252330",
+  "name": "Slender: The Arrival",
+  "required_ids": [
+    "COLLECTOR_ACHIEVEMENT_1",
+    "COLLECTOR_ACHIEVEMENT_2",
+    "CRYBABY_ACHIEVEMENT_1",
+    "FEARLESS_ACHIEVEMENT_1",
+    "FIREPROOF_ACHIEVEMENT_1",
+    "ILLTAKEIT_ACHIEVEMENT_1",
+    "IMFREE_ACHIEVEMENT_1",
+    "INSTAKILLED_ACHIEVEMENT_1",
+    "MARATHON_ACHIEVEMENT_1",
+    "PAUSE_ACHIEVEMENT_1",
+    "PAUSE_ACHIEVEMENT_2",
+    "PIANO_ACHIEVEMENT_1",
+    "RADIO_ACHIEVEMENT_1",
+    "RETRO_ACHIEVEMENT_1",
+    "SLIDE_ACHIEVEMENT_1",
+    "SPEED_ACHIEVEMENT_1",
+    "SPEED_ACHIEVEMENT_2",
+    "SPEED_ACHIEVEMENT_3",
+    "TANGLED_ACHIEVEMENT_1",
+    "YOUTRIED_ACHIEVEMENT_1"
+  ],
+  "excluded_ids": [
+    "ESCAPED_ACHIEVEMENT_1"
+  ],
+  "evidence": {
+    "scope": "console_equivalent_base_game",
+    "membership_policy": "verified_console_completion_equivalent",
+    "reviewed_date": "2026-11-16",
+    "reference_platform_id": 1,
+    "reference_game_id": "NPWR38903_00",
+    "reference_regular_trophy_count": 20,
+    "reference_platinum_included_in_count": false,
+    "sources": [
+      "psn:1:NPWR38903_00",
+      "https://steamcommunity.com/achievements/252330/?l=english",
+      "https://psnprofiles.com/guide/18583-slender-the-arrival-trophy-guide"
+    ],
+    "review_method": "User confirmed that earning the equivalent PS5 Platinum requirements qualifies Steam base completion. Twenty regular PS5 trophies map to Steam IDs; the PS5 Platinum itself is the completion award. Steam-only I Escaped? is excluded from eligibility and estimated rarity even if original to Steam.",
+    "source_access": "PSNProfiles returned HTTP 403 to automated retrieval. The native synced PS5 definitions and earned Platinum were verified in the database.",
+    "requirement_review": "Four renamed requirements map by unique equivalent descriptions. Tangled differs only by the tenticles/tentacles spelling error; its name, action and base grouping agree.",
+    "excluded_reason": "ESCAPED_ACHIEVEMENT_1 has no PS5 Platinum requirement counterpart.",
+    "schema_hash": 877310804,
+    "schema_version": 15
+  },
+  "mapping": [
+    {
+      "steam_api_name": "SPEED_ACHIEVEMENT_1",
+      "name": "Speed Runner I",
+      "match_method": "unique_description",
+      "reference_achievement_id": "20",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "SPEED_ACHIEVEMENT_2",
+      "name": "Speed Runner II",
+      "match_method": "name",
+      "reference_achievement_id": "1",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "SPEED_ACHIEVEMENT_3",
+      "name": "Speed Runner III",
+      "match_method": "name",
+      "reference_achievement_id": "2",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "COLLECTOR_ACHIEVEMENT_1",
+      "name": "The Collector I",
+      "match_method": "name",
+      "reference_achievement_id": "3",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "COLLECTOR_ACHIEVEMENT_2",
+      "name": "The Collector II",
+      "match_method": "name",
+      "reference_achievement_id": "4",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "SLIDE_ACHIEVEMENT_1",
+      "name": "Fearless Fun",
+      "match_method": "name",
+      "reference_achievement_id": "5",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "PAUSE_ACHIEVEMENT_1",
+      "name": "Get Me Out of Here!",
+      "match_method": "name",
+      "reference_achievement_id": "6",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "PAUSE_ACHIEVEMENT_2",
+      "name": "Why Am I Still Playing This Game?",
+      "match_method": "unique_description",
+      "reference_achievement_id": "7",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "YOUTRIED_ACHIEVEMENT_1",
+      "name": "Well At Least You Tried",
+      "match_method": "name",
+      "reference_achievement_id": "8",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "RADIO_ACHIEVEMENT_1",
+      "name": "I Love Radio",
+      "match_method": "name",
+      "reference_achievement_id": "9",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "PIANO_ACHIEVEMENT_1",
+      "name": "Master Pianist",
+      "match_method": "name",
+      "reference_achievement_id": "10",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "TANGLED_ACHIEVEMENT_1",
+      "name": "Tangled",
+      "match_method": "name",
+      "reference_achievement_id": "11",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": false
+    },
+    {
+      "steam_api_name": "CRYBABY_ACHIEVEMENT_1",
+      "name": "Cry Baby",
+      "match_method": "name",
+      "reference_achievement_id": "12",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "RETRO_ACHIEVEMENT_1",
+      "name": "Retro Fan",
+      "match_method": "name",
+      "reference_achievement_id": "13",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "IMFREE_ACHIEVEMENT_1",
+      "name": "I'm Free!",
+      "match_method": "name",
+      "reference_achievement_id": "14",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "FEARLESS_ACHIEVEMENT_1",
+      "name": "Fearless",
+      "match_method": "name",
+      "reference_achievement_id": "15",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "FIREPROOF_ACHIEVEMENT_1",
+      "name": "Fire Proof",
+      "match_method": "name",
+      "reference_achievement_id": "16",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "MARATHON_ACHIEVEMENT_1",
+      "name": "Marathon Runner",
+      "match_method": "unique_description",
+      "reference_achievement_id": "17",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "INSTAKILLED_ACHIEVEMENT_1",
+      "name": "Insta-Killed",
+      "match_method": "name",
+      "reference_achievement_id": "18",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "ILLTAKEIT_ACHIEVEMENT_1",
+      "name": "I...I'll just...take this..I guess?",
+      "match_method": "unique_description",
+      "reference_achievement_id": "19",
+      "reference_group_id": "default",
+      "classification": "console_base_requirement",
+      "native_all_achievements_award": false,
+      "same_description": true
+    },
+    {
+      "steam_api_name": "ESCAPED_ACHIEVEMENT_1",
+      "name": "I Escaped?",
+      "classification": "excluded_steam_only",
+      "reason": "Outside the PS5 Platinum requirement set"
+    }
+  ]
+}

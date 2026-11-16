@@ -1,0 +1,26 @@
+{
+  "checks": [
+    {
+      "name": "get_steam_completion_leaderboard",
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "name": "get_steam_completion_period_leaderboard",
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "name": "get_steam_completion_stats",
+      "status": 200,
+      "rows": 0
+    },
+    {
+      "name": "calculate_statusxp_with_stacks",
+      "status": 200,
+      "rows": 0
+    }
+  ],
+  "public_reviewed_sets": 2,
+  "private_provider_data_denied": true
+}

@@ -1,0 +1,130 @@
+{
+  "app_id": "400",
+  "name": "Portal",
+  "required_ids": [
+    "PORTAL_BEAT_2ADVANCEDMAPS",
+    "PORTAL_BEAT_4ADVANCEDMAPS",
+    "PORTAL_BEAT_6ADVANCEDMAPS",
+    "PORTAL_BEAT_GAME",
+    "PORTAL_DETACH_ALL_CAMERAS",
+    "PORTAL_ESCAPE_TESTCHAMBERS",
+    "PORTAL_GET_ALLBRONZE",
+    "PORTAL_GET_ALLGOLD",
+    "PORTAL_GET_ALLSILVER",
+    "PORTAL_GET_PORTALGUNS",
+    "PORTAL_HIT_TURRET_WITH_TURRET",
+    "PORTAL_INFINITEFALL",
+    "PORTAL_KILL_COMPANIONCUBE",
+    "PORTAL_LONGJUMP"
+  ],
+  "excluded_ids": [
+    "PORTAL_TRANSMISSION_RECEIVED"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/400/?l=english",
+      "https://store.steampowered.com/app/400/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=400&count=100&maxlength=0&enddate=1200628800",
+      "https://store.steampowered.com/oldnews/?appids=400&feed=steam_updates"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Oct 10, 2007",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "14 original 2007 achievements. Exclude Transmission Received, tied to the March 1, 2010 radio-transmission ARG update, rather than treating its Steam-exclusive status as proof of original membership.",
+    "steam_schema_hash": 324021597,
+    "steam_schema_version": 34
+  },
+  "mapping": [
+    {
+      "steam_api_name": "PORTAL_BEAT_2ADVANCEDMAPS",
+      "name": "Cupcake",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_BEAT_4ADVANCEDMAPS",
+      "name": "Fruitcake",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_BEAT_6ADVANCEDMAPS",
+      "name": "Vanilla Crazy Cake",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_BEAT_GAME",
+      "name": "Heartbreaker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_DETACH_ALL_CAMERAS",
+      "name": "Camera Shy",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_ESCAPE_TESTCHAMBERS",
+      "name": "Partygoer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_GET_ALLBRONZE",
+      "name": "Basic Science",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_GET_ALLGOLD",
+      "name": "Aperture Science",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_GET_ALLSILVER",
+      "name": "Rocket Science",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_GET_PORTALGUNS",
+      "name": "Lab Rat",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_HIT_TURRET_WITH_TURRET",
+      "name": "Friendly Fire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_INFINITEFALL",
+      "name": "Terminal Velocity",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_KILL_COMPANIONCUBE",
+      "name": "Fratricide",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_LONGJUMP",
+      "name": "Long Jump",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PORTAL_TRANSMISSION_RECEIVED",
+      "name": "Transmission Received",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    }
+  ]
+}

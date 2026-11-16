@@ -1,0 +1,376 @@
+{
+  "app_id": "1604030",
+  "name": "V Rising",
+  "required_ids": [
+    "ACreatureOfManyForms",
+    "AFirstTaste",
+    "AFoxInTheHenHouse",
+    "APerfectTestSubject",
+    "AVampireWithAHobby",
+    "AWeaponFromAMoreCivilizedAge",
+    "AWholeNewWorld",
+    "AnEyeForQuality",
+    "BloodDonor",
+    "BrutalCompleteAct1",
+    "BrutalCompleteAct2",
+    "BrutalCompleteAct3",
+    "BrutalCompleteAct4",
+    "BrutalSlayerOfTheImmortalKing",
+    "CollectorOfForgottenLoreI",
+    "CollectorOfForgottenLoreII",
+    "CollectorOfForgottenLoreIII",
+    "CompleteAct1",
+    "CompleteAct2",
+    "CompleteAct3",
+    "CompleteAct4",
+    "DontDrinkTheWater",
+    "DressedToImpress",
+    "EveryCornerOfTheWorld",
+    "ExquisiteBlood",
+    "FirstOfMany",
+    "FootstepsInTheSnow",
+    "ForbiddenFootsteps",
+    "GodlessIntrusion",
+    "GoneFishing",
+    "InstantGratification",
+    "ItsATightSqueeze",
+    "LargerPockets",
+    "LordOfTheLand",
+    "MarchOfTheMachines",
+    "MasterOfAll",
+    "MasterOfDisguise",
+    "OhNo",
+    "Riftslayer",
+    "SlayerOfTheImmortalKing",
+    "SymphonyOfTheNight",
+    "TheAllureOfCoin",
+    "TheForgottenReaches",
+    "ToTheSkies",
+    "UltimatePower",
+    "UponAPaleHorse",
+    "VampireRising",
+    "WorkSmartNotHard",
+    "YourNumberOneFan"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1604030/?l=english",
+      "https://store.steampowered.com/app/1604030/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1604030&count=100&maxlength=0&enddate=1723780800",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847286114045809",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847286114036262",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1843481262694634",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1832065502811939",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1827626365770452",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1816849002020983",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1816307528915535",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1813674388936865",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1813674388897625",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1811772772607010"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "May 8, 2024",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "49 original 1.0 achievements, including five Steam Brutal-difficulty achievements. All requirements concern original 1.0 regions, acts, systems and Dracula. Preserve Steam-only Brutal awards; do not reduce the list to the console subset.",
+    "steam_schema_hash": 1062062761,
+    "steam_schema_version": 6
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACreatureOfManyForms",
+      "name": "A Creature of Many Forms",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AFirstTaste",
+      "name": "A First Taste",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AFoxInTheHenHouse",
+      "name": "A Fox in the Hen House",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AnEyeForQuality",
+      "name": "An Eye for Quality",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "APerfectTestSubject",
+      "name": "A Perfect Test Subject",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AVampireWithAHobby",
+      "name": "A Vampire with a Hobby",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AWeaponFromAMoreCivilizedAge",
+      "name": "A Weapon From a More Civilized Age",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AWholeNewWorld",
+      "name": "A Whole New World",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BloodDonor",
+      "name": "Blood Donor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BrutalCompleteAct1",
+      "name": "Completed Act 1 on Brutal Difficulty",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BrutalCompleteAct2",
+      "name": "Completed Act 2 on Brutal Difficulty",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BrutalCompleteAct3",
+      "name": "Completed Act 3 on Brutal Difficulty",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BrutalCompleteAct4",
+      "name": "Completed Act 4 on Brutal Difficulty",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BrutalSlayerOfTheImmortalKing",
+      "name": "Brutal Slayer of the Immortal King",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CollectorOfForgottenLoreI",
+      "name": "Collector of Forgotten Lore I",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CollectorOfForgottenLoreII",
+      "name": "Collector of Forgotten Lore II",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CollectorOfForgottenLoreIII",
+      "name": "Collector of Forgotten Lore III",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CompleteAct1",
+      "name": "Completed Act 1",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CompleteAct2",
+      "name": "Completed Act 2",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CompleteAct3",
+      "name": "Completed Act 3",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CompleteAct4",
+      "name": "Completed Act 4",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DontDrinkTheWater",
+      "name": "Don't Drink the Water",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DressedToImpress",
+      "name": "Dressed to Impress",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EveryCornerOfTheWorld",
+      "name": "Every Corner of the World",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ExquisiteBlood",
+      "name": "Exquisite Blood",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FirstOfMany",
+      "name": "First of Many",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FootstepsInTheSnow",
+      "name": "Footsteps in the Snow",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ForbiddenFootsteps",
+      "name": "Forbidden Footsteps",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GodlessIntrusion",
+      "name": "Godless Intrusion",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GoneFishing",
+      "name": "Gone Fishing",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "InstantGratification",
+      "name": "Instant Gratification",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ItsATightSqueeze",
+      "name": "It's a Tight Squeeze",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LargerPockets",
+      "name": "Larger Pockets!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LordOfTheLand",
+      "name": "Lord of the Land",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MarchOfTheMachines",
+      "name": "March of the Machines",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MasterOfAll",
+      "name": "Master of All",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MasterOfDisguise",
+      "name": "Master of Disguise",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "OhNo",
+      "name": "Oh No!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Riftslayer",
+      "name": "Riftslayer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SlayerOfTheImmortalKing",
+      "name": "Slayer of the Immortal King",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SymphonyOfTheNight",
+      "name": " Symphony of the Night",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TheAllureOfCoin",
+      "name": "The Allure of Coin",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TheForgottenReaches",
+      "name": "The Forgotten Reaches",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ToTheSkies",
+      "name": "To the Skies",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "UltimatePower",
+      "name": "Ultimate Power",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "UponAPaleHorse",
+      "name": "Upon a Pale Horse",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VampireRising",
+      "name": "Vampire Rising",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "WorkSmartNotHard",
+      "name": "Work Smart, Not Hard",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "YourNumberOneFan",
+      "name": "Your Number One Fan",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import 'package:statusxp/ui/widgets/steam_completion_award_card.dart';
+import 'package:statusxp/ui/widgets/xbox_mythic_award_card.dart';
 import 'package:statusxp/ui/widgets/game_achievement_card.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +36,7 @@ class _GameAchievementsScreenState
     extends ConsumerState<GameAchievementsScreen> {
   List<Map<String, dynamic>> _achievements = [];
   bool _isLoading = true;
+  Map<String, dynamic>? _completionAward;
   String? _error;
   bool _showHiddenAchievements = false;
   bool _showRemainingOnly = false;
@@ -79,6 +82,25 @@ class _GameAchievementsScreenState
         throw Exception(
           'Missing platform_id or platform_game_id for V2 schema',
         );
+      }
+
+      Map<String, dynamic>? completionAward;
+      if ([4, 10, 11, 12].contains(widget.platformId)) {
+        try {
+          completionAward = await supabase
+              .from(
+                widget.platformId == 4
+                    ? 'steam_completion_awards'
+                    : 'xbox_mythic_awards',
+              )
+              .select('estimated_rarity,base_status_xp,rarity_source')
+              .eq('user_id', userId)
+              .eq('platform_id', widget.platformId!)
+              .eq('platform_game_id', widget.platformGameId!)
+              .maybeSingle();
+        } catch (_) {
+          // Ordinary achievements remain available if completion metadata cannot load.
+        }
       }
 
       // Loading achievements
@@ -256,6 +278,7 @@ class _GameAchievementsScreenState
       }
 
       setState(() {
+        _completionAward = completionAward;
         _achievements = achievements;
         _isLoading = false;
       });
@@ -435,6 +458,26 @@ class _GameAchievementsScreenState
                 )
               : Column(
                   children: [
+                    if (_completionAward != null)
+                      if (widget.platformId == 4)
+                        SteamCompletionAwardCard(
+                          points: (_completionAward!['base_status_xp'] as num?)
+                              ?.toDouble(),
+                          allAchievements:
+                              _completionAward!['rarity_source'] ==
+                              'estimated_minimum_all_achievements',
+                          estimatedRarity:
+                              (_completionAward!['estimated_rarity'] as num?)
+                                  ?.toDouble(),
+                        )
+                      else
+                        XboxMythicAwardCard(
+                          points: (_completionAward!['base_status_xp'] as num)
+                              .toDouble(),
+                          estimatedRarity:
+                              (_completionAward!['estimated_rarity'] as num?)
+                                  ?.toDouble(),
+                        ),
                     _buildAchievementFilterBar(platformColor),
                     Expanded(
                       child: displayedAchievements.isEmpty

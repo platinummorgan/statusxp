@@ -1,4 +1,5 @@
 import { preservePsnImportTimes } from './psn-platform-migration.js';
+import { computePsnStatusXpFields } from './psn-statusxp.js';
 import { extractErrorText, classifyRetryableWriteError, computeRetryBackoffMs, retryPsnWrite } from './psn-write-retry.js';
 import { assertPlatformSyncOwner } from './platform-sync-owner.js';
 import { psnTitlePage } from './provider-library-response.js';
@@ -332,33 +333,6 @@ async function isCancelled(userId) {
   return data?.psn_sync_status === 'cancelling';
 }
 
-function computeStatusXpFields({ rarityPercent, isPlatinum }) {
-  const includeInScore = !isPlatinum;
-
-  if (!includeInScore) {
-    return { base_status_xp: 0, include_in_score: false, is_platinum: true };
-  }
-
-  // Default for NULL rarity (treat as common)
-  let baseStatusXP = 0.5;
-
-  if (rarityPercent != null && !Number.isNaN(Number(rarityPercent))) {
-    const r = Number(rarityPercent);
-    const floor = 0.5;
-    const cap = 12;
-    const p = 3;
-    
-    // Exponential curve: base = floor + (cap - floor) * (1 - r/100)^p
-    const inv = Math.max(0, Math.min(1, 1 - (r / 100)));
-    baseStatusXP = floor + (cap - floor) * Math.pow(inv, p);
-    
-    // Clamp to range
-    baseStatusXP = Math.max(floor, Math.min(cap, baseStatusXP));
-  }
-
-  return { base_status_xp: baseStatusXP, include_in_score: true, is_platinum: false };
-}
-
 async function upsertGame({ platformId, platformVersion, title }) {
   const trimmedTitle = (title.trophyTitleName || '').trim();
 
@@ -459,7 +433,7 @@ async function upsertAchievementsBatch({ platformId, platformVersion, gameId, tr
       proxiedIconUrl = await uploadExternalIcon(iconUrl, trophyIdStr, gameId, 'psn', supabase);
     }
 
-    const statusFields = computeStatusXpFields({ rarityPercent, isPlatinum });
+    const statusFields = computePsnStatusXpFields({ rarityPercent, isPlatinum });
     const isPsnHidden = resolvePsnHiddenFlag(trophyMeta, userTrophy);
 
     const trophyGroupId = trophyMeta.trophyGroupId ?? 'default';

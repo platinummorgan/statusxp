@@ -1,0 +1,283 @@
+{
+  "app_id": "578080",
+  "name": "PUBG: BATTLEGROUNDS",
+  "required_ids": [
+    "ACHIVE000",
+    "ACHIVE001",
+    "ACHIVE002",
+    "ACHIVE003",
+    "ACHIVE004",
+    "ACHIVE005",
+    "ACHIVE006",
+    "ACHIVE007",
+    "ACHIVE008",
+    "ACHIVE009",
+    "ACHIVE010",
+    "ACHIVE011",
+    "ACHIVE012",
+    "ACHIVE013",
+    "ACHIVE014",
+    "ACHIVE015",
+    "ACHIVE016",
+    "ACHIVE017",
+    "ACHIVE018",
+    "ACHIVE019",
+    "ACHIVE020",
+    "ACHIVE021",
+    "ACHIVE022",
+    "ACHIVE023",
+    "ACHIVE024",
+    "ACHIVE025",
+    "ACHIVE026",
+    "ACHIVE027",
+    "ACHIVE028",
+    "ACHIVE029",
+    "ACHIVE030",
+    "ACHIVE031",
+    "ACHIVE032",
+    "ACHIVE033",
+    "ACHIVE034",
+    "ACHIVE035",
+    "ACHIVE036"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "membership_policy": "first_official_set_when_no_launch_achievements",
+    "policy_confirmation_date": "2026-11-15",
+    "achievement_set_introduced_at": "2018-03-09",
+    "reviewed_date": "2026-11-15",
+    "sources": [
+      "https://steamcommunity.com/achievements/578080/?l=english",
+      "https://store.steampowered.com/app/578080/",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/2363699913372977024"
+    ],
+    "review_method": "User-confirmed exception: no Steam achievements at full release, so the first official 37-achievement set is the base completion set. March Update (PC 1.0 Update #7) introduces this set on 2018-03-09. All 37 current stable IDs belong to that initial set; subsequent new IDs remain excluded by the existing reviewed-snapshot behavior.",
+    "steam_schema_hash": 3825814976,
+    "steam_schema_version": 5
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACHIVE000",
+      "name": "Last Survivor",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE001",
+      "name": "Winner Winner Chicken Dinner!",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE002",
+      "name": "Dynamic Duo",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE003",
+      "name": "Fantastic Four",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE004",
+      "name": "Top 10",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE005",
+      "name": "Pacifist",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE006",
+      "name": "CQB Master",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE007",
+      "name": "CQB Expert",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE008",
+      "name": "CQB Novice",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE009",
+      "name": "Marksman Master",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE010",
+      "name": "Marksman Expert",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE011",
+      "name": "Marksman Novice",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE012",
+      "name": "Nade King Master",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE013",
+      "name": "Nade King Expert",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE014",
+      "name": "Nade King Novice",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE015",
+      "name": "Long and Winding Road",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE016",
+      "name": "Collateral Damage",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE017",
+      "name": "Devil Inside Me",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE018",
+      "name": "Blood on My Hands",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE019",
+      "name": "The First Rule Is…",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE020",
+      "name": "Killing Spree",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE021",
+      "name": "Trigonometry Involved",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE022",
+      "name": "Okay, Now I'm Ready",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE023",
+      "name": "First Blood",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE024",
+      "name": "Shoot the Knee",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE025",
+      "name": "First Come, First Served",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE026",
+      "name": "Agent 48",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE027",
+      "name": "Now You See Me, Now You Don't",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE028",
+      "name": "Airborne",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE029",
+      "name": "Fury Road",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE030",
+      "name": "Guardian Angel",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE031",
+      "name": "Ghost",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE032",
+      "name": "Don't Pan Me Bro!",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE033",
+      "name": "Fast and Furious",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE034",
+      "name": "You Complete Me",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE035",
+      "name": "Cruising with the Enemy",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIVE036",
+      "name": "Health Junkie",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

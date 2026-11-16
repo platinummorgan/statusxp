@@ -1,0 +1,964 @@
+{
+  "app_id": "1063730",
+  "name": "New World: Aeternum",
+  "required_ids": [
+    "META_CHAR_PROGRESS1",
+    "META_CHAR_PROGRESS2",
+    "META_CHAR_PROGRESS3",
+    "META_CHAR_PROGRESS4",
+    "META_CHAR_PROGRESS5",
+    "META_CHAR_PROGRESS6",
+    "META_CRAFTCOUNT_ARCANA1",
+    "META_CRAFTCOUNT_ARCANA5",
+    "META_CRAFTCOUNT_ARMOR1",
+    "META_CRAFTCOUNT_ARMOR5",
+    "META_CRAFTCOUNT_COOK1",
+    "META_CRAFTCOUNT_COOK5",
+    "META_CRAFTCOUNT_ENGINEER1",
+    "META_CRAFTCOUNT_ENGINEER5",
+    "META_CRAFTCOUNT_FURNISH1",
+    "META_CRAFTCOUNT_FURNISH5",
+    "META_CRAFTCOUNT_JEWEL1",
+    "META_CRAFTCOUNT_JEWEL5",
+    "META_CRAFTCOUNT_WEAPON1",
+    "META_CRAFTCOUNT_WEAPON5",
+    "META_FACRANK_COVENENT1",
+    "META_FACRANK_COVENENT5",
+    "META_FACRANK_MARAUDER1",
+    "META_FACRANK_MARAUDER5",
+    "META_FACRANK_SYNDICATE1",
+    "META_FACRANK_SYNDICATE5",
+    "META_FACTIONMISSIONS_COMPLETE1",
+    "META_FACTIONMISSIONS_COMPLETE2",
+    "META_FACTIONMISSIONS_COMPLETE3",
+    "META_FACTIONMISSIONS_COMPLETE4",
+    "META_FACTIONMISSIONS_COMPLETE5",
+    "META_GATHER_TOTAL5",
+    "META_HOUSECOUNT1",
+    "META_HOUSECOUNT3",
+    "META_MASTERY_BOW3",
+    "META_MASTERY_FIRESTAFF3",
+    "META_MASTERY_GREATAXE3",
+    "META_MASTERY_HAMMER3",
+    "META_MASTERY_HATCHET3",
+    "META_MASTERY_ICEGAUNTLET3",
+    "META_MASTERY_LIFESTAFF3",
+    "META_MASTERY_MUSKET3",
+    "META_MASTERY_RAPIER3",
+    "META_MASTERY_SPEAR3",
+    "META_MASTERY_SWORD3",
+    "META_PLAYER_DEATHS1",
+    "META_PLAYER_DEATHS3",
+    "META_PLAYER_REVIVES5",
+    "META_PVE_BREACH_WIN1",
+    "META_PVE_BREACH_WIN3",
+    "META_PVE_BREACH_WIN5",
+    "META_PVE_DUNGEON_GENESIS",
+    "META_PVE_DUNGEON_LAZARUS",
+    "META_PVE_DUNGEON_OBELISK",
+    "META_PVE_DUNGEON_SHIPYARD",
+    "META_PVE_DUNGEON_THE_DEPTHS",
+    "META_PVE_GATHER_HARVESTING1",
+    "META_PVE_GATHER_HARVESTING5",
+    "META_PVE_GATHER_LOGGING1",
+    "META_PVE_GATHER_LOGGING5",
+    "META_PVE_GATHER_MINING1",
+    "META_PVE_GATHER_MINING5",
+    "META_PVE_GATHER_SKINNING1",
+    "META_PVE_GATHER_SKINNING5",
+    "META_PVE_INVASION_WIN1",
+    "META_PVE_INVASION_WIN3",
+    "META_PVE_INVASION_WIN5",
+    "META_PVE_INVASION_WIN6",
+    "META_PVE_KILL_IN_GROUP5",
+    "META_PVE_PREYKILLS_BOARS",
+    "META_PVE_PREYKILLS_COWS",
+    "META_PVE_PREYKILLS_RABBITS",
+    "META_PVE_PREYKILLS_TURKEYS",
+    "META_PVP_OUTPOSTRUSH1",
+    "META_PVP_OUTPOSTRUSH3",
+    "META_PVP_OUTPOSTRUSH5",
+    "META_PVP_OUTPOSTRUSH6",
+    "META_PVP_TOTAL_KILLS2",
+    "META_PVP_TOTAL_KILLS4",
+    "META_PVP_TOTAL_KILLS5",
+    "META_PVP_WAR_FACTIONWINS1",
+    "META_PVP_WAR_FACTIONWINS3",
+    "META_PVP_WAR_FACTIONWINS5",
+    "META_PVP_WAR_FACTIONWINS6",
+    "META_QUEST_COUNT3",
+    "META_QUEST_COUNT5",
+    "META_QUEST_FISHINGCOUNT",
+    "META_REFINING_LEATHERCOUNT1",
+    "META_REFINING_LEATHERCOUNT5",
+    "META_REFINING_SMELTINGCOUNT1",
+    "META_REFINING_SMELTINGCOUNT5",
+    "META_REFINING_STONECOUNT1",
+    "META_REFINING_STONECOUNT5",
+    "META_REFINING_WEAVING1",
+    "META_REFINING_WEAVING5",
+    "META_REFINING_WOOD1",
+    "META_REFINING_WOOD5",
+    "META_REPAIRS_COUNT1",
+    "META_SKILL_ARCANA5",
+    "META_SKILL_ARMORING5",
+    "META_SKILL_COOKING5",
+    "META_SKILL_ENGINEERING5",
+    "META_SKILL_EXPERT5",
+    "META_SKILL_FISHING5",
+    "META_SKILL_FURNISHING5",
+    "META_SKILL_HARVEST5",
+    "META_SKILL_JEWELCRAFT5",
+    "META_SKILL_LEATHERWORK5",
+    "META_SKILL_LOGGING5",
+    "META_SKILL_MINING5",
+    "META_SKILL_SMELTER5",
+    "META_SKILL_STONECUTTING5",
+    "META_SKILL_TRACKING5",
+    "META_SKILL_WEAPONSMITH5",
+    "META_SKILL_WEAVING5",
+    "META_SKILL_WOODWORK5",
+    "META_SUPPLIES_LOOTED1",
+    "META_SUPPLIES_LOOTED6",
+    "META_TOTAL_TIME2",
+    "META_TOTAL_TIME3",
+    "META_TOTAL_TIME4",
+    "META_TOTAL_TIME5",
+    "META_TS_BRIGHTWOOD",
+    "META_TS_CUTLASS",
+    "META_TS_EBONSCALE",
+    "META_TS_EVERFALL",
+    "META_TS_FIRSTLIGHT",
+    "META_TS_MONARCH",
+    "META_TS_MOURNINGDALE",
+    "META_TS_REEKWATER",
+    "META_TS_RESTLESS",
+    "META_TS_WEAVER",
+    "META_TS_WINDSWARD"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1063730/?l=english",
+      "https://store.steampowered.com/app/1063730/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1063730&count=100&maxlength=0&enddate=1641441600",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1815034433043929",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1813041031247366",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1813041031246857",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1811772772516353",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1810503566586815",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1803527891711043",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1803527891491925",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1802893906862831",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1799088287968545",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/6146943657173871470"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "28 Sep, 2021",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "133 original Steam requirements all concern the original 2021 launch regions, weapon types, skills, crafting, faction missions and original progression milestones. Later Aeternum/expansion systems do not contribute Steam IDs to this snapshot. Original achievement IDs and native changed requirements are retained.",
+    "steam_schema_hash": 2166937363,
+    "steam_schema_version": 32
+  },
+  "mapping": [
+    {
+      "steam_api_name": "META_CHAR_PROGRESS1",
+      "name": "Progress I: Getting To Know My Way Around",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CHAR_PROGRESS2",
+      "name": "Progress II: Coming Into My Own",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CHAR_PROGRESS3",
+      "name": "Progress III: Showing What I'm Made Of",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CHAR_PROGRESS4",
+      "name": "Progress IV: Making A Name For Myself",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CHAR_PROGRESS5",
+      "name": "Progress V: No One Is Pushing Me Around",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CHAR_PROGRESS6",
+      "name": "Progress VI: That It? What Else You Got?!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_ARCANA1",
+      "name": "Arcana I: Making Potions And Prods",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_ARCANA5",
+      "name": "Arcana II: A Mastery Over Magic",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_ARMOR1",
+      "name": "Armoring I: Patching Parts Together",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_ARMOR5",
+      "name": "Armoring II: This Is Amazing Work",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_COOK1",
+      "name": "Cooking I: Well, It's No Cheese Sandwich",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_COOK5",
+      "name": "Cooking II: This Bread Is So Flaky And Buttery!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_ENGINEER1",
+      "name": "Engineering I: Tools Of The Trade",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_ENGINEER5",
+      "name": "Engineering II: An Hourglass With A Garrote Wire?",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_FURNISH1",
+      "name": "Furnishing I: Basic, Functional Items For The Home",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_FURNISH5",
+      "name": "Furnishing II: It All Starts With Using Good Wood",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_JEWEL1",
+      "name": "Jewelcrafting I: A Little Crude, But It's Real Silver",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_JEWEL5",
+      "name": "Jewelcrafting II: Crafting The Best In Enhancement Jewelry",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_WEAPON1",
+      "name": "Weaponsmithing I: For Your Cutting And Smashing Needs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_CRAFTCOUNT_WEAPON5",
+      "name": "Weaponsmithing II: Making The Best Of The Best",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACRANK_COVENENT1",
+      "name": "Covenant Initiate: It Starts",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACRANK_COVENENT5",
+      "name": "Covenant Adjudicator: An Arm Of The Spark",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACRANK_MARAUDER1",
+      "name": "Marauder Soldier: Recognized Prowess",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACRANK_MARAUDER5",
+      "name": "Marauder Commander: Dealing In Hope",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACRANK_SYNDICATE1",
+      "name": "Syndicate Adept: Embracing Science",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACRANK_SYNDICATE5",
+      "name": "Syndicate Alchemist: Universal Solvents",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACTIONMISSIONS_COMPLETE1",
+      "name": "Faction Missions I: On My Way Up",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACTIONMISSIONS_COMPLETE2",
+      "name": "Faction Missions II: Help Thy Neighbor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACTIONMISSIONS_COMPLETE3",
+      "name": "Faction Missions III: Adding The 'I' Into Team",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACTIONMISSIONS_COMPLETE4",
+      "name": "Faction Missions IV: Working Class Hero",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_FACTIONMISSIONS_COMPLETE5",
+      "name": "Faction Missions V: Don't Say I'm Not A Team Player",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_GATHER_TOTAL5",
+      "name": "Just Trying To Keep Things Tidy",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_HOUSECOUNT1",
+      "name": "House I: First Time Homeowner",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_HOUSECOUNT3",
+      "name": "House II: Houses For All My Stuff",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_BOW3",
+      "name": "Through The Eye Of A Needle",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_FIRESTAFF3",
+      "name": "Char-Broiling",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_GREATAXE3",
+      "name": "Where The Offense Is, Let The Great Axe Fall",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_HAMMER3",
+      "name": "Oh, I'm More Than Worthy Of Any Hammer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_HATCHET3",
+      "name": "Toss It, Dice It, Any Way You Slice It",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_ICEGAUNTLET3",
+      "name": "The Coldest Steel",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_LIFESTAFF3",
+      "name": "A Staff Of Near Immortality",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_MUSKET3",
+      "name": "And Now: Shooting Blindfolded!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_RAPIER3",
+      "name": "Inconceivable!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_SPEAR3",
+      "name": "With The Blessing Of Horus",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_MASTERY_SWORD3",
+      "name": "And Then A Step To the Right",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PLAYER_DEATHS1",
+      "name": "Death I: Now, What Have We Learned?",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PLAYER_DEATHS3",
+      "name": "Death II: Destroyed But Not Defeated",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PLAYER_REVIVES5",
+      "name": "Teamwork!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_BREACH_WIN1",
+      "name": "Breach I: Into The Breach!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_BREACH_WIN3",
+      "name": "Breach II: Quarantine Breach",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_BREACH_WIN5",
+      "name": "Breach III: Local Renovations",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_DUNGEON_GENESIS",
+      "name": "Problem Child",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_DUNGEON_LAZARUS",
+      "name": "Bullseye",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_DUNGEON_OBELISK",
+      "name": "I Was Expecting More Of A Menhir",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_DUNGEON_SHIPYARD",
+      "name": "Dynasty Demolition",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_DUNGEON_THE_DEPTHS",
+      "name": "Master And Commander",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_GATHER_HARVESTING1",
+      "name": "Harvesting I: I Sickle",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_GATHER_HARVESTING5",
+      "name": "Harvesting II: Aeternian Harvester",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_GATHER_LOGGING1",
+      "name": "Logging I: Increased Skill Means Faster Speed",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_GATHER_LOGGING5",
+      "name": "Logging II: Ready For The Logging Festival",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_GATHER_MINING1",
+      "name": "Mining I: So Many To Pick",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_GATHER_MINING5",
+      "name": "Mining II: I Can Smell The Ore, At This Point",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_GATHER_SKINNING1",
+      "name": "Tracking & Skinning I: Following The Beaten Path",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_GATHER_SKINNING5",
+      "name": "Tracking & Skinning II: I Can Also Make Pelt Rugs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_INVASION_WIN1",
+      "name": "Invasion I: Invasion Defender",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_INVASION_WIN3",
+      "name": "Invasion II: Home Turf",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_INVASION_WIN5",
+      "name": "Invasion III: Official Deniability",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_INVASION_WIN6",
+      "name": "Invasion IV: Invasion Aeternum",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_KILL_IN_GROUP5",
+      "name": "Quad Squad",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_PREYKILLS_BOARS",
+      "name": "Breakfasting With Some Boars",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_PREYKILLS_COWS",
+      "name": "Udderly Brutal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_PREYKILLS_RABBITS",
+      "name": "Be Very, Very Quiet!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVE_PREYKILLS_TURKEYS",
+      "name": "Gobble Gobble",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_OUTPOSTRUSH1",
+      "name": "Rush I: One Little Victory",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_OUTPOSTRUSH3",
+      "name": "Rush II: Finding My Way",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_OUTPOSTRUSH5",
+      "name": "Rush III: Marathon",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_OUTPOSTRUSH6",
+      "name": "Rush IV: Rush Tactician",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_TOTAL_KILLS2",
+      "name": "PvP Kills I: Vengeance Granted",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_TOTAL_KILLS4",
+      "name": "PvP Kills II: Target-rich Environment",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_TOTAL_KILLS5",
+      "name": "PvP Kills III: No Hard Feelings, I Hope",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_WAR_FACTIONWINS1",
+      "name": "War Wins I: My First Rodeo",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_WAR_FACTIONWINS3",
+      "name": "War Wins II: Gets Tiring, All This Winning",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_WAR_FACTIONWINS5",
+      "name": "War Wins III: Winning Streak",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_PVP_WAR_FACTIONWINS6",
+      "name": "War Wins IV: We Will Be Legends",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_QUEST_COUNT3",
+      "name": "Quests I: On A Quest To Do Quests",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_QUEST_COUNT5",
+      "name": "Quests II: I Was Totally Expecting A Grail Quest",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_QUEST_FISHINGCOUNT",
+      "name": "I Be A Fisherman, I Be",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_LEATHERCOUNT1",
+      "name": "Leatherworking I: Of Course It's Coarse",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_LEATHERCOUNT5",
+      "name": "Leatherworking II: Imbuing The Leather",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_SMELTINGCOUNT1",
+      "name": "Smelter I: Learning To Stand The Heat",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_SMELTINGCOUNT5",
+      "name": "Smelter II: Using Dangerous Metals",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_STONECOUNT1",
+      "name": "Stonecutting I: Grasping The Basic Facets",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_STONECOUNT5",
+      "name": "Stonecutting II: Competitive Gemwork",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_WEAVING1",
+      "name": "Weaving I: Learning The Warp And The Weft",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_WEAVING5",
+      "name": "Weaving II: Arachne Approved",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_WOOD1",
+      "name": "Woodworking I: Know My Way Around A Woodshop",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REFINING_WOOD5",
+      "name": "Woodworking II: Working With Enchantments",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_REPAIRS_COUNT1",
+      "name": "Repairs I: Handy With A Bit Of Tape",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_ARCANA5",
+      "name": "Master Arcanist",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_ARMORING5",
+      "name": "Master Armorer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_COOKING5",
+      "name": "Master Cook",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_ENGINEERING5",
+      "name": "Master Engineer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_EXPERT5",
+      "name": "Maximum Caliber",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_FISHING5",
+      "name": "Fishing Master",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_FURNISHING5",
+      "name": "Master Woodworker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_HARVEST5",
+      "name": "Master Reaper",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_JEWELCRAFT5",
+      "name": "Master Jeweler",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_LEATHERWORK5",
+      "name": "Master Tanner",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_LOGGING5",
+      "name": "Master Lumberjack",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_MINING5",
+      "name": "Master Miner",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_SMELTER5",
+      "name": "Master Metallurgist",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_STONECUTTING5",
+      "name": "Master Stonemason",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_TRACKING5",
+      "name": "Master Hunter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_WEAPONSMITH5",
+      "name": "Master Weaponsmith",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_WEAVING5",
+      "name": "Master Weaver",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SKILL_WOODWORK5",
+      "name": "Master Carpenter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SUPPLIES_LOOTED1",
+      "name": "Supplies Looted I: These Look Lonely. I'll Take Them With Me",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_SUPPLIES_LOOTED6",
+      "name": "Supplies Looted II: Aeternum Is Truly A Land Of Opportunities",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TOTAL_TIME2",
+      "name": "Time Played I: Time Well Spent",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TOTAL_TIME3",
+      "name": "Time Played II: Just Another 15 Minutes...",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TOTAL_TIME4",
+      "name": "Time Played III: It's Morning? Already?!!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TOTAL_TIME5",
+      "name": "Time Played IV: I'll Sleep Next Week",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_BRIGHTWOOD",
+      "name": "Brightwood: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_CUTLASS",
+      "name": "Cutlass Keys: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_EBONSCALE",
+      "name": "Ebonscale Reach: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_EVERFALL",
+      "name": "Everfall: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_FIRSTLIGHT",
+      "name": "First Light: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_MONARCH",
+      "name": "Monarch's Bluffs: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_MOURNINGDALE",
+      "name": "Mourningdale: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_REEKWATER",
+      "name": "Reekwater: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_RESTLESS",
+      "name": "Restless Shores: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_WEAVER",
+      "name": "Weaver's Fen: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "META_TS_WINDSWARD",
+      "name": "Windsward: When Everyone Knows Your Name",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

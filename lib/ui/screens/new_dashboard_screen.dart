@@ -1346,12 +1346,11 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   AnimatedBuilder(
                     animation: _platformsAnimation,
                     builder: (context, child) {
-                      final numValue =
-                          int.tryParse(value.replaceAll(',', '')) ?? 0;
+                      final numValue = int.tryParse(value.replaceAll(',', ''));
                       final animatedValue =
-                          (numValue * _platformsAnimation.value).toInt();
+                          ((numValue ?? 0) * _platformsAnimation.value).toInt();
                       return Text(
-                        _formatNumber(animatedValue),
+                        numValue == null ? value : _formatNumber(animatedValue),
                         style: TextStyle(
                           color: color,
                           fontSize: 28,
@@ -1384,7 +1383,7 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
           ],
         ),
         const SizedBox(height: 12),
-        // AVG/GAME label below circle with shimmer
+        // Display the platform-provided statistic or completion coverage state.
         Stack(
           children: [
             Container(
@@ -1404,35 +1403,15 @@ class _NewDashboardScreenState extends ConsumerState<NewDashboardScreen>
                   ),
                 ],
               ),
-              child: Column(
-                children: [
-                  Text(
-                    'AVG/GAME',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 8,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  AnimatedBuilder(
-                    animation: _platformsAnimation,
-                    builder: (context, child) {
-                      final numValue =
-                          int.tryParse(bottomLabel.split(' ')[0]) ?? 0;
-                      final animatedValue =
-                          (numValue * _platformsAnimation.value).toInt();
-                      return Text(
-                        animatedValue.toString(),
-                        style: TextStyle(
-                          color: color,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      );
-                    },
-                  ),
-                ],
+              constraints: const BoxConstraints(maxWidth: 110),
+              child: Text(
+                bottomLabel,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             // Shimmer effect on the box

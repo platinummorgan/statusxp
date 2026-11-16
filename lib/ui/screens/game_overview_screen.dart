@@ -4,6 +4,7 @@ import 'package:statusxp/ui/widgets/game_achievement_card.dart';
 import 'package:statusxp/ui/screens/ai_credit_shop_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:statusxp/ui/widgets/game_catalog_summary.dart';
+import 'package:statusxp/ui/widgets/game_completion_award.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:statusxp/domain/game_overview.dart';
@@ -155,6 +156,7 @@ class _GameOverviewScreenState extends ConsumerState<GameOverviewScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         if (game.isOwned) _InlineGameProgress(game: game),
+                        GameCompletionAward(game: game.ref),
                         GameAchievementSection(
                           key: ValueKey(game.ref),
                           game: game.ref,

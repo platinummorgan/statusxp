@@ -1,0 +1,601 @@
+{
+  "app_id": "2062430",
+  "name": "BALL x PIT",
+  "required_ids": [
+    "100000_kills",
+    "1000_gold_harvest",
+    "1000_stone",
+    "1000_wheat",
+    "1000_wood",
+    "100_stone_harvest",
+    "100_wheat_harvest",
+    "100_wood_harvest",
+    "5000_gold",
+    "brickhead_all_levels",
+    "cogitator_all_levels",
+    "cohabitants_all_levels",
+    "collect_all_blueprints",
+    "complete_desert",
+    "complete_desert10",
+    "complete_encyclopedia",
+    "complete_fiery",
+    "complete_fiery10",
+    "complete_game",
+    "complete_graveyards",
+    "complete_graveyards10",
+    "complete_heaven",
+    "complete_heaven10",
+    "complete_savanna",
+    "complete_savanna10",
+    "complete_shroom",
+    "complete_shroom10",
+    "complete_snowy",
+    "complete_snowy10",
+    "complete_void",
+    "complete_void10",
+    "construct_bagmaker",
+    "construct_carpenter",
+    "construct_evochamber",
+    "construct_monument",
+    "construct_reliccollector",
+    "construct_trophy",
+    "construct_workersguild",
+    "create_deadeyescross",
+    "create_nosferatu",
+    "create_nuclearbomb",
+    "create_satan",
+    "create_soulreaver",
+    "embedded_all_levels",
+    "emptynester_all_levels",
+    "expand5",
+    "first_evo",
+    "first_fusion",
+    "flagellant_all_levels",
+    "fuse_evolved_balls",
+    "itchyfinger_all_levels",
+    "physicist_all_levels",
+    "place_15_houses",
+    "radicalai_all_levels",
+    "recaller_all_levels",
+    "shade_all_levels",
+    "sisyphus_all_levels",
+    "spendthrift_all_levels",
+    "stat_building_full_upgrade",
+    "stat_scaling_full_upgrade",
+    "tactician_all_levels",
+    "warrior_all_levels",
+    "wimp_all_levels"
+  ],
+  "excluded_ids": [
+    "1000_crystals",
+    "complete_alleys",
+    "complete_alleys30",
+    "complete_castle",
+    "complete_castle30",
+    "complete_desert30",
+    "complete_dlc",
+    "complete_dlc_encyclopedia",
+    "complete_fiery30",
+    "complete_graveyard30",
+    "complete_heaven30",
+    "complete_savanna30",
+    "complete_sewers",
+    "complete_sewers30",
+    "complete_shroom30",
+    "complete_snowy30",
+    "complete_spire",
+    "complete_spire30",
+    "complete_void30"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/2062430/?l=english",
+      "https://store.steampowered.com/app/2062430/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=2062430&count=100&maxlength=0&enddate=1769140800",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1849192144183737",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1844115010499209",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1802354289696628"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Oct 15, 2025",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "63 original achievements; exclude the 19 Risen Ballbylon expansion achievements. Official November 12, 2026 expansion launch explicitly introduces new achievements; intervening free updates do not add platform achievement IDs.",
+    "steam_schema_hash": 855403735,
+    "steam_schema_version": 27
+  },
+  "mapping": [
+    {
+      "steam_api_name": "100_stone_harvest",
+      "name": "Boulder Breaker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "100_wheat_harvest",
+      "name": "Bountiful Harvest",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "100_wood_harvest",
+      "name": "Deforestation",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "1000_crystals",
+      "name": "Crystalline",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "1000_gold_harvest",
+      "name": "Gold Miner",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "1000_stone",
+      "name": "Stone Miner",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "1000_wheat",
+      "name": "Wheat Farmer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "1000_wood",
+      "name": "Woodcutter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "100000_kills",
+      "name": "Legion Slayer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "5000_gold",
+      "name": "Riches",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "brickhead_all_levels",
+      "name": "Brick Breaker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "cogitator_all_levels",
+      "name": "Cogitated",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "cohabitants_all_levels",
+      "name": "Unpacked",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "collect_all_blueprints",
+      "name": "City Planner",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_alleys",
+      "name": "SHADOWEDxALLEYS",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_alleys30",
+      "name": "SHADOWEDxALLEYS Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_castle",
+      "name": "CASTLExRAMPARTS",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_castle30",
+      "name": "CASTLExRAMPARTS Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_desert",
+      "name": "LIMINALxDESERT",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_desert10",
+      "name": "LIMINALxDESERT Conquered",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_desert30",
+      "name": "LIMINALxDESERT Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_dlc",
+      "name": "Ballbylon Falls Again",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_dlc_encyclopedia",
+      "name": "Risen Scholar",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_encyclopedia",
+      "name": "Scholar",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_fiery",
+      "name": "SMOLDERINGxDEPTHS",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_fiery10",
+      "name": "SMOLDERINGxDEPTHS Conquered",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_fiery30",
+      "name": "SMOLDERINGxDEPTHS Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_game",
+      "name": "Ballbylon Has Risen",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_graveyard30",
+      "name": "BONExYARD Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_graveyards",
+      "name": "BONExYARD",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_graveyards10",
+      "name": "BONExYARD Conquered",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_heaven",
+      "name": "HEAVENLYxGATES",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_heaven10",
+      "name": "HEAVENLYxGATES Conquered",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_heaven30",
+      "name": "HEAVENLYxGATES Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_savanna",
+      "name": "GORYxGRASSLANDS",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_savanna10",
+      "name": "GORYxGRASSLANDS Conquered",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_savanna30",
+      "name": "GORYxGRASSLANDS Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_sewers",
+      "name": "FLOODEDxSEWERS",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_sewers30",
+      "name": "FLOODEDxSEWERS Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_shroom",
+      "name": "FUNGALxFOREST",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_shroom10",
+      "name": "FUNGALxFOREST Conquered",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_shroom30",
+      "name": "FUNGALxFOREST Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_snowy",
+      "name": "SNOWYxSHORES",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_snowy10",
+      "name": "SNOWYxSHORES Conquered",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_snowy30",
+      "name": "SNOWYxSHORES Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_spire",
+      "name": "OUTSTRETCHEDxSPIRE",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_spire30",
+      "name": "OUTSTRETCHEDxSPIRE Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "complete_void",
+      "name": "VASTxVOID",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_void10",
+      "name": "VASTxVOID Conquered",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "complete_void30",
+      "name": "VASTxVOID Dominated",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "construct_bagmaker",
+      "name": "Bag Maker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "construct_carpenter",
+      "name": "Carpenter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "construct_evochamber",
+      "name": "Evolution Chamber",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "construct_monument",
+      "name": "Monument",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "construct_reliccollector",
+      "name": "Relic Collector",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "construct_trophy",
+      "name": "Trophy",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "construct_workersguild",
+      "name": "Worker's Guild",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "create_deadeyescross",
+      "name": "Deadeye's Cross",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "create_nosferatu",
+      "name": "Nosferatu",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "create_nuclearbomb",
+      "name": "Nuclear Bomb",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "create_satan",
+      "name": "Satan",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "create_soulreaver",
+      "name": "Soul Reaver",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "embedded_all_levels",
+      "name": "Embedder",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "emptynester_all_levels",
+      "name": "Golden Years",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "expand5",
+      "name": "Land Grabber",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "first_evo",
+      "name": "Evolution",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "first_fusion",
+      "name": "Fusion",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "flagellant_all_levels",
+      "name": "Masochist",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "fuse_evolved_balls",
+      "name": "Fusion Evolution",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "itchyfinger_all_levels",
+      "name": "Itch Scratched",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "physicist_all_levels",
+      "name": "Gravity's Rainbow",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "place_15_houses",
+      "name": "Neighborhood",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "radicalai_all_levels",
+      "name": "Radicalized",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "recaller_all_levels",
+      "name": "Repentance",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "shade_all_levels",
+      "name": "Long Shadow",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "sisyphus_all_levels",
+      "name": "Herculean",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "spendthrift_all_levels",
+      "name": "All Spent",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "stat_building_full_upgrade",
+      "name": "Structural Power",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "stat_scaling_full_upgrade",
+      "name": "S Rank",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "tactician_all_levels",
+      "name": "Master General",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "warrior_all_levels",
+      "name": "True Warrior",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "wimp_all_levels",
+      "name": "Entertainer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

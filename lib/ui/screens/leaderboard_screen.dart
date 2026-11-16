@@ -222,7 +222,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         if (entries.isEmpty) {
           return Center(
             child: Text(
-              'No rankings available yet',
+              type == LeaderboardType.xboxAchievements
+                  ? 'Mythic rankings will appear as players sync Xbox.'
+                  : type == LeaderboardType.steamAchievements
+                  ? 'Steam Completions will appear as games are reviewed and players sync.'
+                  : 'No rankings available yet',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
                 fontSize: 16,
@@ -440,7 +444,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                         ],
                       )
                     else if (type == LeaderboardType.xboxAchievements)
-                      _buildXboxGamerscoreRow(entry, accentColor)
+                      _buildXboxMythicRow(entry, accentColor)
                     else if (type == LeaderboardType.steamAchievements)
                       _buildSteamAchievementsRow(entry, accentColor)
                     else if (type == LeaderboardType.statusXP)
@@ -472,17 +476,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
         }
         return '${entry.gamesCount} games';
       case LeaderboardType.xboxAchievements:
-        // Show current | potential gamerscore (compact)
-        if (entry.potentialScore != null && entry.potentialScore! > 0) {
-          return '${_formatCompact(entry.score)} | ${_formatCompact(entry.potentialScore!)} GS';
-        }
-        return '${entry.gamesCount} games';
+        return '${_formatNumber(entry.score)} Mythics · ${entry.gamesCount} games';
       case LeaderboardType.steamAchievements:
-        // Show current | potential achievements (compact)
-        if (entry.potentialScore != null && entry.potentialScore! > 0) {
-          return '${_formatCompact(entry.score)} | ${_formatCompact(entry.potentialScore!)}';
-        }
-        return '${entry.gamesCount} games';
+        return '${_formatNumber(entry.score)} Steam Completions';
     }
   }
 
@@ -515,9 +511,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       case LeaderboardType.platinums:
         return 'Platinums';
       case LeaderboardType.xboxAchievements:
-        return 'Gamerscore';
+        return 'Mythics';
       case LeaderboardType.steamAchievements:
-        return 'Achievements';
+        return 'Steam Completions';
     }
   }
 
@@ -676,111 +672,46 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
     );
   }
 
-  Widget _buildXboxGamerscoreRow(LeaderboardEntry entry, Color accentColor) {
+  Widget _buildXboxMythicRow(LeaderboardEntry entry, Color accentColor) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Image.asset(
-          'assets/images/gamerscore_img.png',
-          width: 44,
-          height: 44,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(
-              Icons.emoji_events,
-              size: 44,
-              color: accentColor.withValues(alpha: 0.6),
-            );
-          },
-        ),
-        const SizedBox(width: 6),
-        Text(
-          _formatNumber(entry.score),
-          style: TextStyle(
-            color: accentColor,
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
-            shadows: [
-              Shadow(color: accentColor.withValues(alpha: 0.6), blurRadius: 6),
-            ],
-          ),
-        ),
-        const SizedBox(width: 3),
-        Text(
-          '|',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.3),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 3),
-        Text(
-          entry.potentialScore != null && entry.potentialScore! > 0
-              ? _formatNumber(entry.potentialScore!)
-              : '0',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        Icon(Icons.diamond_outlined, size: 30, color: accentColor),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            '${_formatNumber(entry.score)} Mythics',
+            style: TextStyle(
+              color: accentColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSteamAchievementsRow(LeaderboardEntry entry, Color accentColor) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset(
-          'assets/images/steam_img.png',
-          width: 44,
-          height: 44,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return Icon(
-              Icons.emoji_events,
-              size: 44,
-              color: accentColor.withValues(alpha: 0.6),
-            );
-          },
-        ),
-        const SizedBox(width: 6),
-        Text(
-          _formatNumber(entry.score),
+  Widget _buildSteamAchievementsRow(
+    LeaderboardEntry entry,
+    Color accentColor,
+  ) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(Icons.verified_outlined, color: accentColor, size: 30),
+      const SizedBox(width: 8),
+      Flexible(
+        child: Text(
+          '${_formatNumber(entry.score)} Completions',
           style: TextStyle(
             color: accentColor,
             fontSize: 16,
             fontWeight: FontWeight.w900,
-            shadows: [
-              Shadow(color: accentColor.withValues(alpha: 0.6), blurRadius: 6),
-            ],
           ),
         ),
-        const SizedBox(width: 3),
-        Text(
-          '|',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.3),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(width: 3),
-        Text(
-          entry.potentialScore != null && entry.potentialScore! > 0
-              ? _formatNumber(entry.potentialScore!)
-              : '0',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 
   Widget _buildStatusXPRow(LeaderboardEntry entry, Color accentColor) {
     return Row(

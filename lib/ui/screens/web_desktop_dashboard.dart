@@ -227,18 +227,32 @@ class _SummaryStrip extends StatelessWidget {
           color: accentPrimary,
         ),
         _Stat(
+          label: 'TOTAL COMPLETIONS',
+          value: WebDesktopDashboard._number.format(stats.totalCompletions),
+          detail: stats.completionCountsPending ? 'Verified so far' : null,
+        ),
+        _Stat(
           label: 'PLATINUMS',
           value: WebDesktopDashboard._number.format(stats.psnStats.platinums),
         ),
         _Stat(
-          label: 'XBOX GAMERSCORE',
-          value: WebDesktopDashboard._number.format(stats.xboxStats.gamerscore),
+          label: 'XBOX MYTHICS',
+          value: stats.xboxStats.mythics == null
+              ? 'Sync Xbox'
+              : WebDesktopDashboard._number.format(stats.xboxStats.mythics),
         ),
         _Stat(
-          label: 'STEAM ACHIEVEMENTS',
-          value: WebDesktopDashboard._number.format(
-            stats.steamStats.achievementsUnlocked,
-          ),
+          label: 'STEAM COMPLETIONS',
+          value: stats.steamStats.completions == null
+              ? 'Sync Steam'
+              : WebDesktopDashboard._number.format(
+                  stats.steamStats.completions,
+                ),
+          tooltip:
+              'Complete the verified Steam base-game set, or all available achievements when the base set cannot be separated.',
+          detail: stats.steamStats.pendingCompletionReviews > 0
+              ? '${stats.steamStats.pendingCompletionReviews} games awaiting completion sync'
+              : null,
         ),
       ],
     ),
@@ -250,10 +264,14 @@ class _Stat extends StatelessWidget {
     required this.label,
     required this.value,
     this.color = Colors.white,
+    this.tooltip,
+    this.detail,
   });
   final String label;
   final String value;
   final Color color;
+  final String? tooltip;
+  final String? detail;
   @override
   Widget build(BuildContext context) => Expanded(
     child: Container(
@@ -276,14 +294,22 @@ class _Stat extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 25,
-              fontWeight: FontWeight.w800,
+          Tooltip(
+            message: tooltip ?? label,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 25,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
+          if (detail != null)
+            Text(
+              detail!,
+              style: const TextStyle(color: textMuted, fontSize: 10),
+            ),
         ],
       ),
     ),

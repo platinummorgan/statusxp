@@ -7,6 +7,7 @@ import cors from 'cors';
 import { createServiceClient } from './supabase-client.js';
 import { createSyncAuth } from './auth.js';
 import { startLeaderboardRefreshWorker } from './leaderboard-refresh.js';
+import { startSteamCompletionPolicyWorker } from './steam-achievement-sets.js';
 // Lazy-load sync handlers on-demand to avoid boot-time module errors
 // (psn-api & other ESM/CJS modules can crash startup when required at top-level)
 
@@ -490,6 +491,7 @@ app.post('/sync/steam/stop', checkAuth, async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Sync service running on port ${PORT}`);
   startLeaderboardRefreshWorker(createServiceClient);
+  startSteamCompletionPolicyWorker(createServiceClient);
   startEntitlementReconciliationWorker({
     enabled: process.env.ENTITLEMENT_RECONCILIATION_ENABLED === 'true',
     supabaseUrl: process.env.SUPABASE_URL,

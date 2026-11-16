@@ -366,9 +366,9 @@ class SeasonalUserBreakdownScreen extends ConsumerWidget {
       case SeasonalBoardType.platinums:
         return 'plats';
       case SeasonalBoardType.xbox:
-        return 'GS';
+        return 'Mythics';
       case SeasonalBoardType.steam:
-        return 'ach';
+        return 'completions';
     }
   }
 

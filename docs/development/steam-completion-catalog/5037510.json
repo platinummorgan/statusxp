@@ -1,0 +1,207 @@
+{
+  "app_id": "5037510",
+  "name": "Playrooms",
+  "required_ids": [
+    "ALL_BALLPITS",
+    "ALL_ITEMS_FOUND",
+    "ALL_ROOMS",
+    "ALL_SPARROWS",
+    "ALL_UPGRADES",
+    "BALLS_100K",
+    "BALLS_10K",
+    "FIND_WHALE",
+    "FIRST_BALLPIT",
+    "FIRST_ROBOT",
+    "FIRST_SPARROW",
+    "FREE_LEXI",
+    "GAME_END",
+    "HAND_FULL",
+    "HARDCORE_CLEAR",
+    "MONOCHROME_PIT",
+    "ROOM_CLEAR_BACKROOM",
+    "ROOM_CLEAR_HOTEL",
+    "ROOM_CLEAR_OFFICE",
+    "ROOM_CLEAR_PLAYROOM",
+    "ROOM_CLEAR_POOLROOM",
+    "ROOM_CLEAR_SCHOOL",
+    "ROOM_CLEAR_WAITINGAREA",
+    "ROOM_ENTER_BACKROOM",
+    "ROOM_ENTER_HOTEL",
+    "ROOM_ENTER_OFFICE",
+    "ROOM_ENTER_PLAYROOM",
+    "ROOM_ENTER_POOLROOM",
+    "ROOM_ENTER_SCHOOL",
+    "ROOM_ENTER_WAITINGAREA"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/5037510/?l=english",
+      "https://store.steampowered.com/app/5037510/Playrooms/",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1848557880480393",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=5037510&count=100&maxlength=0",
+      "https://store.steampowered.com/app/5318320/Playrooms_Support_DLC/"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "2026-11-04",
+    "review_method": "Steam-only original membership review: all 30 stable API IDs match the current official base set, the stored catalog and the player unlock list. Developer launch/update history was reviewed for later additions.",
+    "launch_evidence": "The November 4 launch announcement includes Steam achievements and specifically introduces the color-sorting achievement at release; MONOCHROME_PIT is therefore an original requirement, not a later update addition.",
+    "addon_review": "The Support DLC supplies a separate Ballsweeper computer minigame. None of the 30 achievement requirements concern that minigame; all are base-room, story, equipment, collectible or original mode requirements. Subsequent developer notes through November 12 describe fixes and community goals, with no achievement additions.",
+    "future_content": "Developer announcement on November 7 schedules Chapter 2 for January 2027. New achievement IDs added after this reviewed snapshot are later additions, not original completion requirements.",
+    "steam_schema_hash": 140426046,
+    "steam_schema_version": 16
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ALL_BALLPITS",
+      "name": "Model employee",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ALL_ITEMS_FOUND",
+      "name": "Eagle Eye",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ALL_ROOMS",
+      "name": "Door Operator",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ALL_SPARROWS",
+      "name": "All the chirps",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ALL_UPGRADES",
+      "name": "Fully equipped",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "BALLS_100K",
+      "name": "And they keep coming",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "BALLS_10K",
+      "name": "10.000 reasons to quit",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "FIND_WHALE",
+      "name": "Out of water",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "FIRST_BALLPIT",
+      "name": "Hooray",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "FIRST_ROBOT",
+      "name": "A new colleague",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "FIRST_SPARROW",
+      "name": "First sparrow",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "FREE_LEXI",
+      "name": "Free Lexi",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "GAME_END",
+      "name": "Clock out",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "HAND_FULL",
+      "name": "Mighty Hand",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "HARDCORE_CLEAR",
+      "name": "No re-hires needed",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "MONOCHROME_PIT",
+      "name": "Colour is a distraction",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_CLEAR_BACKROOM",
+      "name": "Clean Backrooms",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_CLEAR_HOTEL",
+      "name": "Clean Hotel",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_CLEAR_OFFICE",
+      "name": "Clean Office",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_CLEAR_PLAYROOM",
+      "name": "Clean Playroom",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_CLEAR_POOLROOM",
+      "name": "Clean Poolroom",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_CLEAR_SCHOOL",
+      "name": "Clean School",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_CLEAR_WAITINGAREA",
+      "name": "Clean Waitingroom",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_ENTER_BACKROOM",
+      "name": "Level 0",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_ENTER_HOTEL",
+      "name": "Housekeeping",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_ENTER_OFFICE",
+      "name": "Overtime",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_ENTER_PLAYROOM",
+      "name": "Clocking in",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_ENTER_POOLROOM",
+      "name": "Splash splash",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_ENTER_SCHOOL",
+      "name": "Back to School",
+      "classification": "day_one_base_game"
+    },
+    {
+      "steam_api_name": "ROOM_ENTER_WAITINGAREA",
+      "name": "Please take a number",
+      "classification": "day_one_base_game"
+    }
+  ]
+}

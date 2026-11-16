@@ -1,0 +1,74 @@
+{
+  "app_id": "425580",
+  "name": "The Room Two",
+  "required_ids": [
+    "BOAT_COMPLETE",
+    "GAME_COMPLETE",
+    "LAB_COMPLETE",
+    "SEANCE_COMPLETE",
+    "SHIP_COMPLETE",
+    "TEMPLE_COMPLETE",
+    "TUTORIAL_COMPLETE"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/425580/?l=english",
+      "https://store.steampowered.com/app/425580/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=425580&count=100&maxlength=0&enddate=1476331200",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1799088287995392",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4703417046214588725"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Jul 5, 2016",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "Seven original chapter/completion achievements cover the six chapters and original ending. Developer launch and subsequent patch history contain no new achievement content.",
+    "steam_schema_hash": 3825814976,
+    "steam_schema_version": 5
+  },
+  "mapping": [
+    {
+      "steam_api_name": "BOAT_COMPLETE",
+      "name": "The Other Side",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GAME_COMPLETE",
+      "name": "Master of The Room",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LAB_COMPLETE",
+      "name": "Wonders of Science",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SEANCE_COMPLETE",
+      "name": "Anybody There?",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SHIP_COMPLETE",
+      "name": "Lost at Sea",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TEMPLE_COMPLETE",
+      "name": "Entombed Raider",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TUTORIAL_COMPLETE",
+      "name": "Grave Robber",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

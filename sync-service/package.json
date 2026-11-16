@@ -5,10 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "node --test psn-platform-migration.test.js psn-write-retry.test.js auth.test.js activity-feed-generator.test.js activity-feed-facts.test.js leaderboard-refresh.test.js dependency-compatibility.test.js provider-quota.test.js entitlement-reconciliation.test.js game-import-progress.test.js sync-lifecycle.test.js openxbl-achievements.test.js undated-xbox-unlocks.test.js xbox-account-binding.test.js",
+    "test": "node --test psn-platform-migration.test.js psn-statusxp.test.js psn-write-retry.test.js auth.test.js activity-feed-generator.test.js activity-feed-facts.test.js leaderboard-refresh.test.js dependency-compatibility.test.js provider-quota.test.js entitlement-reconciliation.test.js game-import-progress.test.js sync-lifecycle.test.js openxbl-achievements.test.js undated-xbox-unlocks.test.js xbox-account-binding.test.js xbox-mythics.test.js steam-completions.test.js steam-completion-review.test.js steam-achievement-sets.test.js research/steam-achievement-sets-poc.test.js",
     "start": "node --max-old-space-size=4096 --expose-gc index.js",
     "dev": "node --watch index.js",
-    "repair:psn-avatars": "node repair-psn-avatars.js"
+    "repair:psn-avatars": "node repair-psn-avatars.js",
+    "review:steam:export": "node export-steam-completion-review.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

@@ -1,0 +1,497 @@
+{
+  "app_id": "2427430",
+  "name": "S.T.A.L.K.E.R.: Call of Prypiat - Enhanced Edition",
+  "required_ids": [
+    "agent_f1",
+    "alpha_predator",
+    "arkless",
+    "balance_advocate",
+    "battle_systems_master",
+    "coffee_reactor",
+    "detective",
+    "detectortive",
+    "diplomat",
+    "evacuation",
+    "forgotten_paths",
+    "friend_of_duty",
+    "friend_of_freedom",
+    "friend_of_stalkers",
+    "ghostbuster",
+    "gifts_of_nature",
+    "herald_of_justice",
+    "high_tech_master",
+    "imperfect_plans",
+    "information_dealer",
+    "intelligence_agent",
+    "irresistable_call",
+    "item_62",
+    "its_all_fake",
+    "keeper_of_secrets",
+    "kingpin",
+    "leader",
+    "librarian",
+    "marked_by_zone",
+    "mirone_is_it_you",
+    "mutant_hunter",
+    "natural_disaster",
+    "old_acquaintance",
+    "one_of_the_lads",
+    "pinocchio",
+    "pioneer",
+    "purgatory",
+    "research_man",
+    "seeker",
+    "skilled_stalker",
+    "stalker_by_blood",
+    "the_zone_will_remember_us",
+    "train_to_yanov",
+    "under_every_rock",
+    "unsinkable",
+    "wealthy",
+    "welltimed_backup"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/2427430/?l=english",
+      "https://store.steampowered.com/app/2427430/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=2427430&count=100&maxlength=0&enddate=1756353600",
+      "psn:1:NPWR42888_00",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1810503566451345",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1800357164540468",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1800357164434621"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "May 20, 2025",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "All 47 achievements map uniquely to the corresponding Enhanced Edition PS5 base list excluding its Platinum; do not substitute the original 2009 edition.",
+    "steam_schema_hash": 1550535710,
+    "steam_schema_version": 10
+  },
+  "mapping": [
+    {
+      "steam_api_name": "agent_f1",
+      "name": "Agent F-1",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "42",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "alpha_predator",
+      "name": "Alpha predator",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "23",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "arkless",
+      "name": "Arkless",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "31",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "balance_advocate",
+      "name": "A Man of Balance",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "16",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "battle_systems_master",
+      "name": "Weapon Systems Expert",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "8",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "coffee_reactor",
+      "name": "Coffee reactor",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "24",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "detective",
+      "name": "Detective",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "3",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "detectortive",
+      "name": "Detectortive",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "26",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "diplomat",
+      "name": "Diplomat",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "12",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "evacuation",
+      "name": "Evacuation",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "38",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "forgotten_paths",
+      "name": "Forgotten paths",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "34",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "friend_of_duty",
+      "name": "A Friend of Duty",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "14",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "friend_of_freedom",
+      "name": "A Friend of Freedom",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "15",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "friend_of_stalkers",
+      "name": "A Friend of Stalkers",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "21",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ghostbuster",
+      "name": "Ghostbuster",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "29",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "gifts_of_nature",
+      "name": "Gifts of nature",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "22",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "herald_of_justice",
+      "name": "Courier of Justice",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "6",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "high_tech_master",
+      "name": "Hi-Tech Expert",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "9",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "imperfect_plans",
+      "name": "Imperfect plans",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "33",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "information_dealer",
+      "name": "Trafficker of Information",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "20",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "intelligence_agent",
+      "name": "Intelligence agent",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "45",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "irresistable_call",
+      "name": "Irresistable call",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "47",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "item_62",
+      "name": "Item 62",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "36",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "its_all_fake",
+      "name": "It's all fake",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "44",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "keeper_of_secrets",
+      "name": "A Keeper of Secrets",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "18",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "kingpin",
+      "name": "Boss",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "5",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "leader",
+      "name": "Leader",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "11",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "librarian",
+      "name": "Librarian",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "37",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "marked_by_zone",
+      "name": "Marked by the Zone",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "19",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "mirone_is_it_you",
+      "name": "Mirone, is it you?",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "40",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "mutant_hunter",
+      "name": "Mutant Hunter",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "2",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "natural_disaster",
+      "name": "Natural disaster",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "43",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "old_acquaintance",
+      "name": "Old acquaintance",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "41",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "one_of_the_lads",
+      "name": "One of Ours",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "4",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "pinocchio",
+      "name": "Pinocchio",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "25",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "pioneer",
+      "name": "Pioneer",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "1",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "purgatory",
+      "name": "Purgatory",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "35",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "research_man",
+      "name": "Research Assistant",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "13",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "seeker",
+      "name": "Artifact Hunter",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "7",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "skilled_stalker",
+      "name": "Seasoned Stalker",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "10",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "stalker_by_blood",
+      "name": "Stalker by blood",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "39",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "the_zone_will_remember_us",
+      "name": "The Zone will remember us",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "46",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "train_to_yanov",
+      "name": "Train to Yaniv",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "32",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "under_every_rock",
+      "name": "Under every rock",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "28",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "unsinkable",
+      "name": "Unsinkable",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "30",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "wealthy",
+      "name": "A Wealthy Client",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "17",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "welltimed_backup",
+      "name": "Well-timed backup",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR42888_00",
+      "reference_achievement_id": "27",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    }
+  ]
+}

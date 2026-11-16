@@ -1,0 +1,535 @@
+{
+  "app_id": "1174180",
+  "name": "Red Dead Redemption 2",
+  "required_ids": [
+    "Achievement1",
+    "Achievement10",
+    "Achievement11",
+    "Achievement12",
+    "Achievement13",
+    "Achievement14",
+    "Achievement15",
+    "Achievement16",
+    "Achievement17",
+    "Achievement18",
+    "Achievement19",
+    "Achievement2",
+    "Achievement20",
+    "Achievement21",
+    "Achievement22",
+    "Achievement23",
+    "Achievement24",
+    "Achievement25",
+    "Achievement26",
+    "Achievement27",
+    "Achievement28",
+    "Achievement29",
+    "Achievement3",
+    "Achievement30",
+    "Achievement31",
+    "Achievement32",
+    "Achievement33",
+    "Achievement34",
+    "Achievement35",
+    "Achievement36",
+    "Achievement37",
+    "Achievement38",
+    "Achievement39",
+    "Achievement4",
+    "Achievement40",
+    "Achievement41",
+    "Achievement42",
+    "Achievement43",
+    "Achievement44",
+    "Achievement45",
+    "Achievement46",
+    "Achievement47",
+    "Achievement48",
+    "Achievement49",
+    "Achievement5",
+    "Achievement50",
+    "Achievement51",
+    "Achievement6",
+    "Achievement7",
+    "Achievement8",
+    "Achievement9"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1174180/?l=english",
+      "https://store.steampowered.com/app/1174180/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1174180&count=100&maxlength=0&enddate=1584162000",
+      "psn:2:NPWR09412_00",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/3370312875252993793"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "5 Dec, 2019",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "All 51 Steam achievements map uniquely to the original PS4 base list excluding its Platinum. Original Red Dead Online requirements remain included.",
+    "steam_schema_hash": 1466709475,
+    "steam_schema_version": 3
+  },
+  "mapping": [
+    {
+      "steam_api_name": "Achievement1",
+      "name": "Back in the Mud",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "1",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement10",
+      "name": "Endless Summer",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "10",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement11",
+      "name": "Lending a Hand",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "11",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement12",
+      "name": "Best in the West",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "12",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement13",
+      "name": "Gold Rush",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "13",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement14",
+      "name": "Friends With Benefits",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "14",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement15",
+      "name": "Hobby Horse",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "15",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement16",
+      "name": "Breaking and Entering",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "16",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement17",
+      "name": "Artificial Intelligence",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "17",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement18",
+      "name": "Take From the Rich",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "18",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement19",
+      "name": "Give to the Poor",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "19",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement2",
+      "name": "Just a Scratch",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "2",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement20",
+      "name": "Pony Up",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "20",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement21",
+      "name": "Extreme Personality",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "21",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement22",
+      "name": "Western Stranger",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "22",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement23",
+      "name": "Bountiful",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "23",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement24",
+      "name": "Collector's Item",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "24",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement25",
+      "name": "Paying Respects",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "25",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement26",
+      "name": "Errand Boy",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "26",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement27",
+      "name": "It's Art",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "27",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement28",
+      "name": "Self Sufficient",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "28",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement29",
+      "name": "Skin Deep",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "29",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement3",
+      "name": "To Greener Pastures",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "3",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement30",
+      "name": "Zoologist",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "30",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement31",
+      "name": "It was THIS Big!",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "31",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement32",
+      "name": "Locked and Loaded",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "32",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement33",
+      "name": "Grin and Bear it",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "33",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement34",
+      "name": "Trusty Steed",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "34",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement35",
+      "name": "Breakout",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "35",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement36",
+      "name": "Series Major",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "36",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement37",
+      "name": "Gun For Hire",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "37",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement38",
+      "name": "Eventful",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "38",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement39",
+      "name": "Buckle Up",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "39",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement4",
+      "name": "Settling Feuds",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "4",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement40",
+      "name": "The Real Deal",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "40",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement41",
+      "name": "Horses for Courses",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "41",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement42",
+      "name": "Getting Started",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "42",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement43",
+      "name": "Notorious",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "43",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement44",
+      "name": "All's Fair",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "44",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement45",
+      "name": "Home Comforts",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "45",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement46",
+      "name": "Non-Regulation",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "46",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement47",
+      "name": "Posse Up",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "47",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement48",
+      "name": "Master Craftsman",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "48",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement49",
+      "name": "Butchered",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "49",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement5",
+      "name": "Washed Ashore",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "5",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement50",
+      "name": "Picked to Perfection",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "50",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement51",
+      "name": "Strength in Numbers",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "51",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement6",
+      "name": "No Traitors",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "6",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement7",
+      "name": "Third Time Lucky",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "7",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement8",
+      "name": "Redemption",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "8",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Achievement9",
+      "name": "Cowboy Builder",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR09412_00",
+      "reference_achievement_id": "9",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    }
+  ]
+}

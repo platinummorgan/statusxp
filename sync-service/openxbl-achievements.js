@@ -71,12 +71,18 @@ export function mergeXboxAchievementSources(primary, fallback) {
 
 export async function fetchOpenXblAchievementList(fetchPage, initialUrl) {
   const rows = new Map();
+  const completions = new Map();
   let url = initialUrl;
   const seenTokens = new Set();
   for (let page = 0; page < 20; page++) {
     const result = await fetchPage(url);
     if (!result.ok) return result;
     const data = result.data;
+    for (const entry of data?.completion ?? []) {
+      const key = String(entry.titleId);
+      const previous = completions.get(key);
+      completions.set(key, { ...entry, groups: { ...previous?.groups, ...entry.groups } });
+    }
     if (!Array.isArray(data?.achievements)) throw new Error('OpenXBL achievement response is incomplete');
     for (const achievement of data.achievements) {
       if (achievement.id == null) throw new Error('OpenXBL achievement is missing its ID');
@@ -86,7 +92,7 @@ export async function fetchOpenXblAchievementList(fetchPage, initialUrl) {
     if (!token) {
       const expected = Number(data.pagingInfo?.totalRecords);
       if (Number.isFinite(expected) && expected > rows.size) throw new Error('OpenXBL achievement catalogue is truncated');
-      return { ...result, data: { ...data, achievements: [...rows.values()] } };
+      return { ...result, data: { ...data, achievements: [...rows.values()], completion: [...completions.values()] } };
     }
     if (seenTokens.has(token)) throw new Error('OpenXBL achievement pagination repeated a token');
     seenTokens.add(token);

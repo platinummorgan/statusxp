@@ -1,0 +1,2162 @@
+{
+  "assumptions": "Illustrative completion weight of 5 or 10 on the existing rarity component. The 0.5 XP floor is unchanged. New Platinum score = round(0.5 + 11.5 * weight * (1 - rarity/100)^3, 2). Increment replaces the current 1x Platinum points inside the game total.",
+  "examples": [
+    {
+      "current_points": 11.97,
+      "illustrative_10x_total": 115.16,
+      "illustrative_5x_total": 57.83,
+      "rarity": 0.1
+    },
+    {
+      "current_points": 11.93,
+      "illustrative_10x_total": 114.81,
+      "illustrative_5x_total": 57.66,
+      "rarity": 0.2
+    },
+    {
+      "current_points": 11.83,
+      "illustrative_10x_total": 113.78,
+      "illustrative_5x_total": 57.14,
+      "rarity": 0.5
+    },
+    {
+      "current_points": 11.66,
+      "illustrative_10x_total": 112.08,
+      "illustrative_5x_total": 56.29,
+      "rarity": 1
+    },
+    {
+      "current_points": 11.32,
+      "illustrative_10x_total": 108.74,
+      "illustrative_5x_total": 54.62,
+      "rarity": 2
+    },
+    {
+      "current_points": 10.36,
+      "illustrative_10x_total": 99.1,
+      "illustrative_5x_total": 49.8,
+      "rarity": 5
+    },
+    {
+      "current_points": 8.88,
+      "illustrative_10x_total": 84.34,
+      "illustrative_5x_total": 42.42,
+      "rarity": 10
+    },
+    {
+      "current_points": 1.94,
+      "illustrative_10x_total": 14.88,
+      "illustrative_5x_total": 7.69,
+      "rarity": 50
+    },
+    {
+      "current_points": 0.51,
+      "illustrative_10x_total": 0.62,
+      "illustrative_5x_total": 0.56,
+      "rarity": 90
+    },
+    {
+      "current_points": 0.5,
+      "illustrative_10x_total": 0.5,
+      "illustrative_5x_total": 0.5,
+      "rarity": 99
+    }
+  ],
+  "players": [
+    {
+      "common_at_least_90": 3402,
+      "completions": 4956,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 1,
+      "original_rank": 1,
+      "rare_at_most_1": 83,
+      "score_gain": 34180,
+      "total_statusxp": 184468
+    },
+    {
+      "common_at_least_90": 3394,
+      "completions": 4787,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 2,
+      "original_rank": 2,
+      "rare_at_most_1": 47,
+      "score_gain": 22447,
+      "total_statusxp": 120319
+    },
+    {
+      "common_at_least_90": 546,
+      "completions": 941,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 3,
+      "original_rank": 3,
+      "rare_at_most_1": 40,
+      "score_gain": 10932,
+      "total_statusxp": 108479
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 7,
+      "original_rank": 4,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 92110
+    },
+    {
+      "common_at_least_90": 392,
+      "completions": 605,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 6,
+      "original_rank": 5,
+      "rare_at_most_1": 6,
+      "score_gain": 3915,
+      "total_statusxp": 91724
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 140,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 5,
+      "original_rank": 6,
+      "rare_at_most_1": 25,
+      "score_gain": 12116,
+      "total_statusxp": 89353
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 9,
+      "original_rank": 7,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 88380
+    },
+    {
+      "common_at_least_90": 16,
+      "completions": 308,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 4,
+      "original_rank": 8,
+      "rare_at_most_1": 42,
+      "score_gain": 21995,
+      "total_statusxp": 81971
+    },
+    {
+      "common_at_least_90": 13,
+      "completions": 135,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 10,
+      "original_rank": 9,
+      "rare_at_most_1": 13,
+      "score_gain": 6819,
+      "total_statusxp": 78354
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 201,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 8,
+      "original_rank": 10,
+      "rare_at_most_1": 31,
+      "score_gain": 18364,
+      "total_statusxp": 70446
+    },
+    {
+      "common_at_least_90": 1,
+      "completions": 177,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 11,
+      "original_rank": 11,
+      "rare_at_most_1": 10,
+      "score_gain": 14686,
+      "total_statusxp": 68930
+    },
+    {
+      "common_at_least_90": 14,
+      "completions": 141,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 12,
+      "original_rank": 12,
+      "rare_at_most_1": 31,
+      "score_gain": 10765,
+      "total_statusxp": 52192
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 17,
+      "original_rank": 13,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 46556
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 55,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 14,
+      "original_rank": 14,
+      "rare_at_most_1": 15,
+      "score_gain": 5054,
+      "total_statusxp": 44812
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 6,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 18,
+      "original_rank": 15,
+      "rare_at_most_1": 0,
+      "score_gain": 454,
+      "total_statusxp": 44518
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 115,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 13,
+      "original_rank": 16,
+      "rare_at_most_1": 11,
+      "score_gain": 10564,
+      "total_statusxp": 41084
+    },
+    {
+      "common_at_least_90": 12,
+      "completions": 145,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 15,
+      "original_rank": 17,
+      "rare_at_most_1": 16,
+      "score_gain": 8075,
+      "total_statusxp": 40869
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 73,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 16,
+      "original_rank": 18,
+      "rare_at_most_1": 14,
+      "score_gain": 6730,
+      "total_statusxp": 40866
+    },
+    {
+      "common_at_least_90": 1,
+      "completions": 32,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 20,
+      "original_rank": 19,
+      "rare_at_most_1": 3,
+      "score_gain": 2815,
+      "total_statusxp": 39939
+    },
+    {
+      "common_at_least_90": 4,
+      "completions": 25,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 22,
+      "original_rank": 20,
+      "rare_at_most_1": 1,
+      "score_gain": 1506,
+      "total_statusxp": 38652
+    },
+    {
+      "common_at_least_90": 12,
+      "completions": 81,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 19,
+      "original_rank": 21,
+      "rare_at_most_1": 14,
+      "score_gain": 5473,
+      "total_statusxp": 37740
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 77,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 21,
+      "original_rank": 22,
+      "rare_at_most_1": 16,
+      "score_gain": 6939,
+      "total_statusxp": 34640
+    },
+    {
+      "common_at_least_90": 3,
+      "completions": 47,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 25,
+      "original_rank": 23,
+      "rare_at_most_1": 6,
+      "score_gain": 3575,
+      "total_statusxp": 32576
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 75,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 23,
+      "original_rank": 24,
+      "rare_at_most_1": 7,
+      "score_gain": 6468,
+      "total_statusxp": 31981
+    },
+    {
+      "common_at_least_90": 5,
+      "completions": 34,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 26,
+      "original_rank": 25,
+      "rare_at_most_1": 3,
+      "score_gain": 1982,
+      "total_statusxp": 30960
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 16,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 27,
+      "original_rank": 26,
+      "rare_at_most_1": 0,
+      "score_gain": 1327,
+      "total_statusxp": 30898
+    },
+    {
+      "common_at_least_90": 12,
+      "completions": 104,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 24,
+      "original_rank": 27,
+      "rare_at_most_1": 12,
+      "score_gain": 7443,
+      "total_statusxp": 30477
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 29,
+      "original_rank": 28,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 29974
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 32,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 28,
+      "original_rank": 29,
+      "rare_at_most_1": 6,
+      "score_gain": 2616,
+      "total_statusxp": 28115
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 32,
+      "original_rank": 30,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 25060
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 51,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 30,
+      "original_rank": 31,
+      "rare_at_most_1": 8,
+      "score_gain": 4635,
+      "total_statusxp": 22709
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 35,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 31,
+      "original_rank": 32,
+      "rare_at_most_1": 5,
+      "score_gain": 2918,
+      "total_statusxp": 22627
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 42,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 33,
+      "original_rank": 33,
+      "rare_at_most_1": 1,
+      "score_gain": 3199,
+      "total_statusxp": 21278
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 35,
+      "original_rank": 34,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 19360
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 25,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 34,
+      "original_rank": 35,
+      "rare_at_most_1": 5,
+      "score_gain": 2240,
+      "total_statusxp": 18583
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 10,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 36,
+      "original_rank": 36,
+      "rare_at_most_1": 1,
+      "score_gain": 917,
+      "total_statusxp": 18097
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 8,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 37,
+      "original_rank": 37,
+      "rare_at_most_1": 0,
+      "score_gain": 656,
+      "total_statusxp": 17340
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 38,
+      "original_rank": 38,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 16602
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 40,
+      "original_rank": 39,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 16072
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 7,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 39,
+      "original_rank": 40,
+      "rare_at_most_1": 0,
+      "score_gain": 480,
+      "total_statusxp": 16012
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 1,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 41,
+      "original_rank": 41,
+      "rare_at_most_1": 1,
+      "score_gain": 101,
+      "total_statusxp": 15667
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 43,
+      "original_rank": 42,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 14947
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 45,
+      "original_rank": 43,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 14611
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 2,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 44,
+      "original_rank": 44,
+      "rare_at_most_1": 0,
+      "score_gain": 141,
+      "total_statusxp": 14519
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 12,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 42,
+      "original_rank": 45,
+      "rare_at_most_1": 0,
+      "score_gain": 973,
+      "total_statusxp": 14074
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 6,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 47,
+      "original_rank": 46,
+      "rare_at_most_1": 0,
+      "score_gain": 433,
+      "total_statusxp": 13466
+    },
+    {
+      "common_at_least_90": 1,
+      "completions": 1,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 50,
+      "original_rank": 47,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 12340
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 3,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 49,
+      "original_rank": 48,
+      "rare_at_most_1": 0,
+      "score_gain": 263,
+      "total_statusxp": 12173
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 23,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 46,
+      "original_rank": 49,
+      "rare_at_most_1": 6,
+      "score_gain": 2106,
+      "total_statusxp": 12171
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 51,
+      "original_rank": 50,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 12031
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 52,
+      "original_rank": 51,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 11778
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 53,
+      "original_rank": 52,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 11129
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 54,
+      "original_rank": 53,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 11078
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 8,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 56,
+      "original_rank": 54,
+      "rare_at_most_1": 0,
+      "score_gain": 638,
+      "total_statusxp": 10082
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 11,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 55,
+      "original_rank": 55,
+      "rare_at_most_1": 0,
+      "score_gain": 964,
+      "total_statusxp": 10022
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 33,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 48,
+      "original_rank": 56,
+      "rare_at_most_1": 4,
+      "score_gain": 2833,
+      "total_statusxp": 9822
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 58,
+      "original_rank": 57,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 9514
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 59,
+      "original_rank": 58,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 9192
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 14,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 57,
+      "original_rank": 59,
+      "rare_at_most_1": 0,
+      "score_gain": 1125,
+      "total_statusxp": 9154
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 3,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 61,
+      "original_rank": 60,
+      "rare_at_most_1": 0,
+      "score_gain": 243,
+      "total_statusxp": 8759
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 62,
+      "original_rank": 61,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 8133
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 12,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 60,
+      "original_rank": 62,
+      "rare_at_most_1": 0,
+      "score_gain": 1119,
+      "total_statusxp": 7985
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 5,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 63,
+      "original_rank": 63,
+      "rare_at_most_1": 0,
+      "score_gain": 399,
+      "total_statusxp": 7409
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 65,
+      "original_rank": 64,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 7242
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 66,
+      "original_rank": 65,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 7166
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 1,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 67,
+      "original_rank": 66,
+      "rare_at_most_1": 0,
+      "score_gain": 63,
+      "total_statusxp": 7006
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 68,
+      "original_rank": 67,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 6535
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 10,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 64,
+      "original_rank": 68,
+      "rare_at_most_1": 0,
+      "score_gain": 842,
+      "total_statusxp": 6495
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 69,
+      "original_rank": 69,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 5781
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 70,
+      "original_rank": 70,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 5238
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 71,
+      "original_rank": 71,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 5085
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 2,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 72,
+      "original_rank": 72,
+      "rare_at_most_1": 0,
+      "score_gain": 151,
+      "total_statusxp": 4685
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 73,
+      "original_rank": 73,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 3908
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 2,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 74,
+      "original_rank": 74,
+      "rare_at_most_1": 1,
+      "score_gain": 197,
+      "total_statusxp": 3468
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 1,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 75,
+      "original_rank": 75,
+      "rare_at_most_1": 0,
+      "score_gain": 89,
+      "total_statusxp": 3372
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 1,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 77,
+      "original_rank": 76,
+      "rare_at_most_1": 0,
+      "score_gain": 92,
+      "total_statusxp": 3194
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 78,
+      "original_rank": 77,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 3010
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 6,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 76,
+      "original_rank": 78,
+      "rare_at_most_1": 1,
+      "score_gain": 574,
+      "total_statusxp": 2818
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 79,
+      "original_rank": 79,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 2391
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 80,
+      "original_rank": 80,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 2323
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 81,
+      "original_rank": 81,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 2242
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 83,
+      "original_rank": 82,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 1893
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 84,
+      "original_rank": 83,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 1830
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 3,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 82,
+      "original_rank": 84,
+      "rare_at_most_1": 0,
+      "score_gain": 245,
+      "total_statusxp": 1716
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 3,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 85,
+      "original_rank": 85,
+      "rare_at_most_1": 0,
+      "score_gain": 215,
+      "total_statusxp": 1598
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 86,
+      "original_rank": 86,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 1348
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 87,
+      "original_rank": 87,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 928
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 89,
+      "original_rank": 88,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 772
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 2,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 88,
+      "original_rank": 89,
+      "rare_at_most_1": 0,
+      "score_gain": 76,
+      "total_statusxp": 762
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 90,
+      "original_rank": 90,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 546
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 91,
+      "original_rank": 91,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 514
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 92,
+      "original_rank": 92,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 512
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 93,
+      "original_rank": 93,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 500
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 94,
+      "original_rank": 94,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 431
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 95,
+      "original_rank": 95,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 372
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 96,
+      "original_rank": 96,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 208
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 97,
+      "original_rank": 97,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 149
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 98,
+      "original_rank": 98,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 109
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 99,
+      "original_rank": 99,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 49
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 100,
+      "original_rank": 100,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 45
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_10x_rarity_component",
+      "new_rank": 101,
+      "original_rank": 101,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 34
+    },
+    {
+      "common_at_least_90": 3402,
+      "completions": 4956,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 1,
+      "original_rank": 1,
+      "rare_at_most_1": 83,
+      "score_gain": 15191,
+      "total_statusxp": 184468
+    },
+    {
+      "common_at_least_90": 3394,
+      "completions": 4787,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 2,
+      "original_rank": 2,
+      "rare_at_most_1": 47,
+      "score_gain": 9971,
+      "total_statusxp": 120319
+    },
+    {
+      "common_at_least_90": 546,
+      "completions": 941,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 3,
+      "original_rank": 3,
+      "rare_at_most_1": 40,
+      "score_gain": 4855,
+      "total_statusxp": 108479
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 6,
+      "original_rank": 4,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 92110
+    },
+    {
+      "common_at_least_90": 392,
+      "completions": 605,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 5,
+      "original_rank": 5,
+      "rare_at_most_1": 6,
+      "score_gain": 1741,
+      "total_statusxp": 91724
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 140,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 4,
+      "original_rank": 6,
+      "rare_at_most_1": 25,
+      "score_gain": 5384,
+      "total_statusxp": 89353
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 8,
+      "original_rank": 7,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 88380
+    },
+    {
+      "common_at_least_90": 16,
+      "completions": 308,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 7,
+      "original_rank": 8,
+      "rare_at_most_1": 42,
+      "score_gain": 9775,
+      "total_statusxp": 81971
+    },
+    {
+      "common_at_least_90": 13,
+      "completions": 135,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 9,
+      "original_rank": 9,
+      "rare_at_most_1": 13,
+      "score_gain": 3030,
+      "total_statusxp": 78354
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 201,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 10,
+      "original_rank": 10,
+      "rare_at_most_1": 31,
+      "score_gain": 8159,
+      "total_statusxp": 70446
+    },
+    {
+      "common_at_least_90": 1,
+      "completions": 177,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 11,
+      "original_rank": 11,
+      "rare_at_most_1": 10,
+      "score_gain": 6516,
+      "total_statusxp": 68930
+    },
+    {
+      "common_at_least_90": 14,
+      "completions": 141,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 12,
+      "original_rank": 12,
+      "rare_at_most_1": 31,
+      "score_gain": 4785,
+      "total_statusxp": 52192
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 14,
+      "original_rank": 13,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 46556
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 55,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 13,
+      "original_rank": 14,
+      "rare_at_most_1": 15,
+      "score_gain": 2245,
+      "total_statusxp": 44812
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 6,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 16,
+      "original_rank": 15,
+      "rare_at_most_1": 0,
+      "score_gain": 201,
+      "total_statusxp": 44518
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 115,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 15,
+      "original_rank": 16,
+      "rare_at_most_1": 11,
+      "score_gain": 4694,
+      "total_statusxp": 41084
+    },
+    {
+      "common_at_least_90": 12,
+      "completions": 145,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 17,
+      "original_rank": 17,
+      "rare_at_most_1": 16,
+      "score_gain": 3587,
+      "total_statusxp": 40869
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 73,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 18,
+      "original_rank": 18,
+      "rare_at_most_1": 14,
+      "score_gain": 2991,
+      "total_statusxp": 40866
+    },
+    {
+      "common_at_least_90": 1,
+      "completions": 32,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 19,
+      "original_rank": 19,
+      "rare_at_most_1": 3,
+      "score_gain": 1254,
+      "total_statusxp": 39939
+    },
+    {
+      "common_at_least_90": 4,
+      "completions": 25,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 21,
+      "original_rank": 20,
+      "rare_at_most_1": 1,
+      "score_gain": 668,
+      "total_statusxp": 38652
+    },
+    {
+      "common_at_least_90": 12,
+      "completions": 81,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 20,
+      "original_rank": 21,
+      "rare_at_most_1": 14,
+      "score_gain": 2431,
+      "total_statusxp": 37740
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 77,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 22,
+      "original_rank": 22,
+      "rare_at_most_1": 16,
+      "score_gain": 3078,
+      "total_statusxp": 34640
+    },
+    {
+      "common_at_least_90": 3,
+      "completions": 47,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 24,
+      "original_rank": 23,
+      "rare_at_most_1": 6,
+      "score_gain": 1589,
+      "total_statusxp": 32576
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 75,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 23,
+      "original_rank": 24,
+      "rare_at_most_1": 7,
+      "score_gain": 2878,
+      "total_statusxp": 31981
+    },
+    {
+      "common_at_least_90": 5,
+      "completions": 34,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 26,
+      "original_rank": 25,
+      "rare_at_most_1": 3,
+      "score_gain": 879,
+      "total_statusxp": 30960
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 16,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 27,
+      "original_rank": 26,
+      "rare_at_most_1": 0,
+      "score_gain": 589,
+      "total_statusxp": 30898
+    },
+    {
+      "common_at_least_90": 12,
+      "completions": 104,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 25,
+      "original_rank": 27,
+      "rare_at_most_1": 12,
+      "score_gain": 3308,
+      "total_statusxp": 30477
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 28,
+      "original_rank": 28,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 29974
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 32,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 29,
+      "original_rank": 29,
+      "rare_at_most_1": 6,
+      "score_gain": 1163,
+      "total_statusxp": 28115
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 30,
+      "original_rank": 30,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 25060
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 51,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 31,
+      "original_rank": 31,
+      "rare_at_most_1": 8,
+      "score_gain": 2061,
+      "total_statusxp": 22709
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 35,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 32,
+      "original_rank": 32,
+      "rare_at_most_1": 5,
+      "score_gain": 1294,
+      "total_statusxp": 22627
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 42,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 33,
+      "original_rank": 33,
+      "rare_at_most_1": 1,
+      "score_gain": 1421,
+      "total_statusxp": 21278
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 35,
+      "original_rank": 34,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 19360
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 25,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 34,
+      "original_rank": 35,
+      "rare_at_most_1": 5,
+      "score_gain": 993,
+      "total_statusxp": 18583
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 10,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 36,
+      "original_rank": 36,
+      "rare_at_most_1": 1,
+      "score_gain": 408,
+      "total_statusxp": 18097
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 8,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 37,
+      "original_rank": 37,
+      "rare_at_most_1": 0,
+      "score_gain": 291,
+      "total_statusxp": 17340
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 38,
+      "original_rank": 38,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 16602
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 40,
+      "original_rank": 39,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 16072
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 7,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 39,
+      "original_rank": 40,
+      "rare_at_most_1": 0,
+      "score_gain": 212,
+      "total_statusxp": 16012
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 1,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 41,
+      "original_rank": 41,
+      "rare_at_most_1": 1,
+      "score_gain": 45,
+      "total_statusxp": 15667
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 42,
+      "original_rank": 42,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 14947
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 43,
+      "original_rank": 43,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 14611
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 2,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 44,
+      "original_rank": 44,
+      "rare_at_most_1": 0,
+      "score_gain": 63,
+      "total_statusxp": 14519
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 12,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 45,
+      "original_rank": 45,
+      "rare_at_most_1": 0,
+      "score_gain": 431,
+      "total_statusxp": 14074
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 6,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 46,
+      "original_rank": 46,
+      "rare_at_most_1": 0,
+      "score_gain": 193,
+      "total_statusxp": 13466
+    },
+    {
+      "common_at_least_90": 1,
+      "completions": 1,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 48,
+      "original_rank": 47,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 12340
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 3,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 49,
+      "original_rank": 48,
+      "rare_at_most_1": 0,
+      "score_gain": 116,
+      "total_statusxp": 12173
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 23,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 47,
+      "original_rank": 49,
+      "rare_at_most_1": 6,
+      "score_gain": 936,
+      "total_statusxp": 12171
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 50,
+      "original_rank": 50,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 12031
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 51,
+      "original_rank": 51,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 11778
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 52,
+      "original_rank": 52,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 11129
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 54,
+      "original_rank": 53,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 11078
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 8,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 56,
+      "original_rank": 54,
+      "rare_at_most_1": 0,
+      "score_gain": 284,
+      "total_statusxp": 10082
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 11,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 55,
+      "original_rank": 55,
+      "rare_at_most_1": 0,
+      "score_gain": 429,
+      "total_statusxp": 10022
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 33,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 53,
+      "original_rank": 56,
+      "rare_at_most_1": 4,
+      "score_gain": 1256,
+      "total_statusxp": 9822
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 58,
+      "original_rank": 57,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 9514
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 59,
+      "original_rank": 58,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 9192
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 14,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 57,
+      "original_rank": 59,
+      "rare_at_most_1": 0,
+      "score_gain": 499,
+      "total_statusxp": 9154
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 3,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 60,
+      "original_rank": 60,
+      "rare_at_most_1": 0,
+      "score_gain": 107,
+      "total_statusxp": 8759
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 62,
+      "original_rank": 61,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 8133
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 12,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 61,
+      "original_rank": 62,
+      "rare_at_most_1": 0,
+      "score_gain": 498,
+      "total_statusxp": 7985
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 5,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 63,
+      "original_rank": 63,
+      "rare_at_most_1": 0,
+      "score_gain": 177,
+      "total_statusxp": 7409
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 64,
+      "original_rank": 64,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 7242
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 65,
+      "original_rank": 65,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 7166
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 1,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 66,
+      "original_rank": 66,
+      "rare_at_most_1": 0,
+      "score_gain": 28,
+      "total_statusxp": 7006
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 68,
+      "original_rank": 67,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 6535
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 10,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 67,
+      "original_rank": 68,
+      "rare_at_most_1": 0,
+      "score_gain": 374,
+      "total_statusxp": 6495
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 69,
+      "original_rank": 69,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 5781
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 70,
+      "original_rank": 70,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 5238
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 71,
+      "original_rank": 71,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 5085
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 2,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 72,
+      "original_rank": 72,
+      "rare_at_most_1": 0,
+      "score_gain": 67,
+      "total_statusxp": 4685
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 73,
+      "original_rank": 73,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 3908
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 2,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 74,
+      "original_rank": 74,
+      "rare_at_most_1": 1,
+      "score_gain": 87,
+      "total_statusxp": 3468
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 1,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 75,
+      "original_rank": 75,
+      "rare_at_most_1": 0,
+      "score_gain": 40,
+      "total_statusxp": 3372
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 1,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 76,
+      "original_rank": 76,
+      "rare_at_most_1": 0,
+      "score_gain": 41,
+      "total_statusxp": 3194
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 78,
+      "original_rank": 77,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 3010
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 6,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 77,
+      "original_rank": 78,
+      "rare_at_most_1": 1,
+      "score_gain": 254,
+      "total_statusxp": 2818
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 79,
+      "original_rank": 79,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 2391
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 80,
+      "original_rank": 80,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 2323
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 81,
+      "original_rank": 81,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 2242
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 82,
+      "original_rank": 82,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 1893
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 83,
+      "original_rank": 83,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 1830
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 3,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 84,
+      "original_rank": 84,
+      "rare_at_most_1": 0,
+      "score_gain": 109,
+      "total_statusxp": 1716
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 3,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 85,
+      "original_rank": 85,
+      "rare_at_most_1": 0,
+      "score_gain": 95,
+      "total_statusxp": 1598
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 86,
+      "original_rank": 86,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 1348
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 87,
+      "original_rank": 87,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 928
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 89,
+      "original_rank": 88,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 772
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 2,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 88,
+      "original_rank": 89,
+      "rare_at_most_1": 0,
+      "score_gain": 34,
+      "total_statusxp": 762
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 90,
+      "original_rank": 90,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 546
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 91,
+      "original_rank": 91,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 514
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 92,
+      "original_rank": 92,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 512
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 93,
+      "original_rank": 93,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 500
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 94,
+      "original_rank": 94,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 431
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 95,
+      "original_rank": 95,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 372
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 96,
+      "original_rank": 96,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 208
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 97,
+      "original_rank": 97,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 149
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 98,
+      "original_rank": 98,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 109
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 99,
+      "original_rank": 99,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 49
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 100,
+      "original_rank": 100,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 45
+    },
+    {
+      "common_at_least_90": 0,
+      "completions": 0,
+      "name": "illustrative_5x_rarity_component",
+      "new_rank": 101,
+      "original_rank": 101,
+      "rare_at_most_1": 0,
+      "score_gain": 0,
+      "total_statusxp": 34
+    }
+  ],
+  "read_only": "on",
+  "statistics": [
+    {
+      "gaining_players": 55,
+      "largest_player_bonus": 34180,
+      "largest_rank_change": 8,
+      "name": "illustrative_10x_rarity_component",
+      "players": 101,
+      "positions_changed": 62,
+      "total_bonus": 256167
+    },
+    {
+      "gaining_players": 55,
+      "largest_player_bonus": 15191,
+      "largest_rank_change": 3,
+      "name": "illustrative_5x_rarity_component",
+      "players": 101,
+      "positions_changed": 36,
+      "total_bonus": 113805
+    }
+  ],
+  "time": "2026-11-15T18:29:47.635178+00:00",
+  "sourceComparison": [
+    {
+      "weight": 1,
+      "all": {
+        "lists": 8833,
+        "medianLoss": 0,
+        "p95Loss": 0.4,
+        "maxLoss": 4.13,
+        "meanLoss": 0.07708026717989323
+      },
+      "below1": {
+        "lists": 1240,
+        "medianLoss": 0.03,
+        "p95Loss": 0.31,
+        "maxLoss": 1.12,
+        "meanLoss": 0.07340322580645174
+      }
+    },
+    {
+      "weight": 5,
+      "all": {
+        "lists": 8833,
+        "medianLoss": 0,
+        "p95Loss": 1.99,
+        "maxLoss": 20.63,
+        "meanLoss": 0.3851149099966035
+      },
+      "below1": {
+        "lists": 1240,
+        "medianLoss": 0.17,
+        "p95Loss": 1.52,
+        "maxLoss": 5.6,
+        "meanLoss": 0.363540322580646
+      }
+    },
+    {
+      "weight": 10,
+      "all": {
+        "lists": 8833,
+        "medianLoss": 0,
+        "p95Loss": 3.9839999999999964,
+        "maxLoss": 41.26,
+        "meanLoss": 0.770104154873768
+      },
+      "below1": {
+        "lists": 1240,
+        "medianLoss": 0.34,
+        "p95Loss": 3.04,
+        "maxLoss": 11.2,
+        "meanLoss": 0.7270161290322579
+      }
+    }
+  ]
+}

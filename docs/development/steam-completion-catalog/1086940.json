@@ -1,0 +1,567 @@
+{
+  "app_id": "1086940",
+  "name": "Baldur's Gate 3",
+  "required_ids": [
+    "BG3_Quest01",
+    "BG3_Quest02",
+    "BG3_Quest03",
+    "BG3_Quest04",
+    "BG3_Quest05",
+    "BG3_Quest06",
+    "BG3_Quest07",
+    "BG3_Quest08",
+    "BG3_Quest09",
+    "BG3_Quest10",
+    "BG3_Quest11",
+    "BG3_Quest12",
+    "BG3_Quest13",
+    "BG3_Quest14",
+    "BG3_Quest15",
+    "BG3_Quest16",
+    "BG3_Quest17",
+    "BG3_Quest18",
+    "BG3_Quest19",
+    "BG3_Quest20",
+    "BG3_Quest21",
+    "BG3_Quest22",
+    "BG3_Quest23",
+    "BG3_Quest24",
+    "BG3_Quest25",
+    "BG3_Quest26",
+    "BG3_Quest27",
+    "BG3_Quest28",
+    "BG3_Quest29",
+    "BG3_Quest30",
+    "BG3_Quest31",
+    "BG3_Quest32",
+    "BG3_Quest33",
+    "BG3_Quest34",
+    "BG3_Quest35",
+    "BG3_Quest36",
+    "BG3_Quest37",
+    "BG3_Quest38",
+    "BG3_Quest39",
+    "BG3_Quest40",
+    "BG3_Quest41",
+    "BG3_Quest42",
+    "BG3_Quest43",
+    "BG3_Quest44",
+    "BG3_Quest45",
+    "BG3_Quest46",
+    "BG3_Quest47",
+    "BG3_Quest48",
+    "BG3_Quest49",
+    "BG3_Quest50",
+    "BG3_Quest51",
+    "BG3_Quest52",
+    "BG3_Quest53"
+  ],
+  "excluded_ids": [
+    "BG3_Quest54"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1086940/?l=english",
+      "https://store.steampowered.com/app/1086940/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1086940&count=100&maxlength=0&enddate=1699675200",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/5395937983661612086",
+      "psn:1:NPWR36088_00",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/5288974951206071308"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "3 Aug, 2023",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "53 original base achievements; Foehammer is excluded because Honour Mode arrived with Patch 5 on November 30, 2023, after full release. Original scope includes the full 1.0 release, not Early Access.",
+    "steam_schema_hash": 2788313370,
+    "steam_schema_version": 13
+  },
+  "mapping": [
+    {
+      "steam_api_name": "BG3_Quest01",
+      "name": "Descent From Avernus",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "1",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest02",
+      "name": "The Plot Thickens",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "2",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest03",
+      "name": "The City Awaits",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "3",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest04",
+      "name": "All's Well That Ends Well",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "4",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest05",
+      "name": "Absolute Power Corrupts",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "5",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest06",
+      "name": "Hero of the Forgotten Realms",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "6",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest07",
+      "name": "Sins of the Father",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "7",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest08",
+      "name": "Ceremorphosis",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "8",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest09",
+      "name": "Roleplayer",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "9",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest10",
+      "name": "Bedrolls and Breakfast",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "10",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest11",
+      "name": "Expand Your Mind",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "11",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest12",
+      "name": "Dig for Victory",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "12",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest13",
+      "name": "No Penny Required",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "13",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest14",
+      "name": "Escapologist",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "14",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest15",
+      "name": "Outsourcing",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "15",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest16",
+      "name": "Jack-of-all-Trades",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "16",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest17",
+      "name": "Homebrewer",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "17",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest18",
+      "name": "You Have Two Hands for a Reason",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "18",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest19",
+      "name": "Rude, Crude, and Full of Attitude",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "19",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest20",
+      "name": "Forged in Blood and Fire",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "20",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest21",
+      "name": "Under Lock and Key",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "21",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest22",
+      "name": "She Cannot Be Caged!",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "22",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest23",
+      "name": "Taking Blood",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "23",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest24",
+      "name": "Leave No One Behind",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "24",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest25",
+      "name": "Murder in Baldur's Gate",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "25",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest26",
+      "name": "Mind Blown",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "26",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest27",
+      "name": "Kill Two Birds With One Gnome",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "27",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest28",
+      "name": "Busker",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "28",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest29",
+      "name": "Action Surge",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "29",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest30",
+      "name": "Fists of Fury",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "30",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest31",
+      "name": "Devil's in the Details ",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "31",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest32",
+      "name": "Pest Control",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "32",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest33",
+      "name": "A Grym Fate",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "33",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest34",
+      "name": "Non-Invasive Procedure",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "34",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest35",
+      "name": "Penny Pincher",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "35",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest36",
+      "name": "No Free Lunches",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "36",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest37",
+      "name": "Fancy Footwork",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "37",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest38",
+      "name": "First Blood",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "38",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest39",
+      "name": "Interfectorem Draconis",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "39",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest40",
+      "name": "Crash Landing",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "40",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest41",
+      "name": "Bottoms Up",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "41",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest42",
+      "name": "Shove Off",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "42",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest43",
+      "name": "Bookworm",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "43",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest44",
+      "name": "Punch Drunk",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "44",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest45",
+      "name": "Fetch Quest",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "45",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest46",
+      "name": "Repairing the Weave",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "46",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest47",
+      "name": "The Lich-Queen's Wrath",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "47",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest48",
+      "name": "To Bloom in Darkest Night",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "48",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest49",
+      "name": "Hot Date",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "49",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest50",
+      "name": "Just a Nibble",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "50",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest51",
+      "name": "Loophole",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "51",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest52",
+      "name": "Embrace Your Urge",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "52",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest53",
+      "name": "Critical Hit",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "53",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BG3_Quest54",
+      "name": "Foehammer",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR36088_00",
+      "reference_achievement_id": "54",
+      "reference_group_id": "001",
+      "steam_group_id": 0
+    }
+  ]
+}

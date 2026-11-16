@@ -1,0 +1,412 @@
+{
+  "app_id": "3981100",
+  "name": "Leaf it Alone",
+  "required_ids": [
+    "ACH_ACQUIRE_ABILITIES",
+    "ACH_BUY_ALL_UPGRADES",
+    "ACH_CLEAN_UP_ALL_LEAVES",
+    "ACH_COMPLETE_ALL_OBJECTIVES",
+    "ACH_EARN_BIG_MONEY",
+    "ACH_FIND_ALL_COLLECTABLES",
+    "ACH_INLETLESS_RUN",
+    "ACH_JUMP_INTO_LEAF_PILE",
+    "ACH_OBTAIN_ANY_ITEM",
+    "ACH_SCORE_BASKETBALL",
+    "ACH_SEAL_BAGS",
+    "ACH_SPEEDRUN",
+    "ACH_THROW_LEAF_BAG",
+    "ACH_UNLOCK_GARAGE",
+    "ACH_UNLOCK_GREENHOUSE",
+    "ACH_UNLOCK_GRILL",
+    "ACH_UNLOCK_SECRET_ROOM",
+    "ACH_UNLOCK_SHED"
+  ],
+  "excluded_ids": [
+    "ACH_ACCUMULATE_MONEY",
+    "ACH_ASSEMBLE_ALL_MOSAICS",
+    "ACH_ASSEMBLE_BROKEN_MOSAIC",
+    "ACH_BUY_TRACTOR",
+    "ACH_CLEAN_UP_ALL_LEAVES_CASTLE",
+    "ACH_CLEAN_UP_ALL_LEAVES_SAKURA",
+    "ACH_COLLECT_LEAVES_AT_DRIVING_SPEED",
+    "ACH_COMPLETE_ALL_OBJECTIVES_CASTLE",
+    "ACH_COMPLETE_ALL_OBJECTIVES_SAKURA",
+    "ACH_COMPLETE_CROSSBOW_ACTIVITY",
+    "ACH_COMPLETE_MEMORY_ACTIVITY",
+    "ACH_COMPLETE_PETAL_SORT_ACTIVITY",
+    "ACH_COMPLETE_SLIDING_PUZZLE_ACTIVITY",
+    "ACH_COMPLETE_STORY_MODE",
+    "ACH_DUMP_PRESET_LEAF_BAGS",
+    "ACH_FIND_ALL_COLLECTABLES_CASTLE",
+    "ACH_FIND_ALL_COLLECTABLES_SAKURA",
+    "ACH_FULLY_UPGRADE_TRACTOR",
+    "ACH_LIGHT_UP_LANTERNS",
+    "ACH_PUT_BOOKS_ON_BOOKSHELF",
+    "ACH_RING_BELL",
+    "ACH_SELL_WORTHY_LEAF_BAG",
+    "ACH_SIXTY_SEVEN",
+    "ACH_SPIN_ALL_PINWHEELS",
+    "ACH_SUCK_UP_LEAVES",
+    "ACH_UNLOCK_ANCIENT_TREE",
+    "ACH_UNLOCK_COURTYARD",
+    "ACH_UNLOCK_DINETTE",
+    "ACH_UNLOCK_DOG_RUN",
+    "ACH_UNLOCK_HALLWAY",
+    "ACH_UNLOCK_LANTERNS",
+    "ACH_UNLOCK_LOVE_GARDEN",
+    "ACH_UNLOCK_PARK",
+    "ACH_UNLOCK_SHRINES",
+    "ACH_UNLOCK_TEMPLE",
+    "ACH_UNLOCK_THRONE_ROOM"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/3981100/?l=english",
+      "https://store.steampowered.com/app/3981100/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=3981100&count=100&maxlength=0&enddate=1770436800",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1849192144181992",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1848664643359179",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1848664643340877",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847920302239524",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1838407329259308",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1835236783565563",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1832065502809524",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1821922921813175",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1819386365089369",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1819386365088021"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Oct 30, 2025",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "18 original Hometown achievements. Exclude the 36 Castle/Sakura achievements added in the October 30, 2026 version 1.1 update; developer announcement explicitly identifies these as two new maps and achievement sets.",
+    "steam_schema_hash": 1696138327,
+    "steam_schema_version": 28
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACH_ACCUMULATE_MONEY",
+      "name": "Big Fish",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_ACQUIRE_ABILITIES",
+      "name": "Almighty",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_ASSEMBLE_ALL_MOSAICS",
+      "name": "Piece by piece",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_ASSEMBLE_BROKEN_MOSAIC",
+      "name": "Sisyphus",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_BUY_ALL_UPGRADES",
+      "name": "Senior Investor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_BUY_TRACTOR",
+      "name": "They see me rollin'",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_CLEAN_UP_ALL_LEAVES",
+      "name": "Leaf No Leaf Behind",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_CLEAN_UP_ALL_LEAVES_CASTLE",
+      "name": "Here we go again...",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_CLEAN_UP_ALL_LEAVES_SAKURA",
+      "name": "Reaching Zen",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_COLLECT_LEAVES_AT_DRIVING_SPEED",
+      "name": "Drive-by cleaning",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_COMPLETE_ALL_OBJECTIVES",
+      "name": "Perfectionist",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_COMPLETE_ALL_OBJECTIVES_CASTLE",
+      "name": "Castle Conquered",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_COMPLETE_ALL_OBJECTIVES_SAKURA",
+      "name": "Like a Monk",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_COMPLETE_CROSSBOW_ACTIVITY",
+      "name": "Bullseye",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_COMPLETE_MEMORY_ACTIVITY",
+      "name": "No Peeking!",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_COMPLETE_PETAL_SORT_ACTIVITY",
+      "name": "Know your place",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_COMPLETE_SLIDING_PUZZLE_ACTIVITY",
+      "name": "A Little to the Right",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_COMPLETE_STORY_MODE",
+      "name": "500k leaves later...",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_DUMP_PRESET_LEAF_BAGS",
+      "name": "Bag to Basics",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_EARN_BIG_MONEY",
+      "name": "Work smart, not hard",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_FIND_ALL_COLLECTABLES",
+      "name": "Say Leaf!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_FIND_ALL_COLLECTABLES_CASTLE",
+      "name": "Poker Hand",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_FIND_ALL_COLLECTABLES_SAKURA",
+      "name": "Gotta Find 'em All",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_FULLY_UPGRADE_TRACTOR",
+      "name": "Pimp My Tractor",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_INLETLESS_RUN",
+      "name": "Craftsman",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_JUMP_INTO_LEAF_PILE",
+      "name": "Leaf of Faith",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_LIGHT_UP_LANTERNS",
+      "name": "Bright Idea",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_OBTAIN_ANY_ITEM",
+      "name": "Novice Investor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_PUT_BOOKS_ON_BOOKSHELF",
+      "name": "Librarian",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_RING_BELL",
+      "name": "Ring My Bell",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_SCORE_BASKETBALL",
+      "name": "Dunk like you're drunk",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_SEAL_BAGS",
+      "name": "Seal the Deal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_SELL_WORTHY_LEAF_BAG",
+      "name": "Trade Master",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_SIXTY_SEVEN",
+      "name": "The 67 Club",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_SPEEDRUN",
+      "name": "Need for Sweep",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_SPIN_ALL_PINWHEELS",
+      "name": "Spin Me Round",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_SUCK_UP_LEAVES",
+      "name": "Herbivore",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_THROW_LEAF_BAG",
+      "name": "Trashketball",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_ANCIENT_TREE",
+      "name": "Ancient Acorn",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_COURTYARD",
+      "name": "Parole",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_DINETTE",
+      "name": "Bon Appétit!",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_DOG_RUN",
+      "name": "Pawsome!",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_GARAGE",
+      "name": "I am speed",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_GREENHOUSE",
+      "name": "King of the Jungle",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_GRILL",
+      "name": "Vacationist",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_HALLWAY",
+      "name": "Castle or Museum?",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_LANTERNS",
+      "name": "Lightkeeper",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_LOVE_GARDEN",
+      "name": "Carefree Corner",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_PARK",
+      "name": "Touch the Grass",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_SECRET_ROOM",
+      "name": "Infiltrator",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_SHED",
+      "name": "Shed Happens",
+      "classification": "day_one_base_game",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_SHRINES",
+      "name": "Your time to shrine",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_TEMPLE",
+      "name": "Indiana Brooms",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "ACH_UNLOCK_THRONE_ROOM",
+      "name": "Your Excellency!",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    }
+  ]
+}

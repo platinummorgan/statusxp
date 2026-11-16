@@ -1,0 +1,89 @@
+{
+  "app_id": "1361320",
+  "name": "The Room 4: Old Sins",
+  "required_ids": [
+    "ART_COMPLETE",
+    "CUR_COMPLETE",
+    "FIN_COMPLETE",
+    "FOY_COMPLETE",
+    "GAR_COMPLETE",
+    "JPN_COMPLETE",
+    "KIT_COMPLETE",
+    "MAR_COMPLETE",
+    "STU_COMPLETE"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1361320/?l=english",
+      "https://store.steampowered.com/app/1361320/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1361320&count=100&maxlength=0&enddate=1621659600",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1799088287995393",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4059402835310007306",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4703417046214588723"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Feb 11, 2021",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "Nine original room/completion achievements. Developer February 18, 2021 Patch 2 fixes achievement popups rather than adding achievements.",
+    "steam_schema_hash": 2905944295,
+    "steam_schema_version": 4
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ART_COMPLETE",
+      "name": "Art Studio Complete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CUR_COMPLETE",
+      "name": "Curiosity Room Complete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FIN_COMPLETE",
+      "name": "The Room: Old Sins Complete ",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FOY_COMPLETE",
+      "name": "Foyer Complete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GAR_COMPLETE",
+      "name": "Garden Complete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "JPN_COMPLETE",
+      "name": "Japanese Gallery Complete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KIT_COMPLETE",
+      "name": "Kitchen Complete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MAR_COMPLETE",
+      "name": "Maritime Room Complete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "STU_COMPLETE",
+      "name": "Study Complete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

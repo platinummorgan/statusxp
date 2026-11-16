@@ -1,0 +1,296 @@
+{
+  "app_id": "2782500",
+  "name": "逆水寒",
+  "required_ids": [
+    "490001",
+    "490002",
+    "490003",
+    "490004",
+    "490005",
+    "490006",
+    "490007",
+    "490008",
+    "490009",
+    "490010",
+    "490012",
+    "490013",
+    "490014",
+    "490015",
+    "490016",
+    "490017",
+    "490018",
+    "490019",
+    "490020",
+    "490021",
+    "490022",
+    "490023",
+    "490024",
+    "490025",
+    "490026",
+    "490027",
+    "490028",
+    "490029",
+    "490030",
+    "490031",
+    "490032",
+    "490033",
+    "490034",
+    "490035",
+    "490036",
+    "490037",
+    "490038",
+    "490039",
+    "490040"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/2782500/?l=english",
+      "https://store.steampowered.com/app/2782500/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=2782500&count=100&maxlength=0&enddate=1770958800"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Nov 5, 2025",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "39 original Steam/global-release achievements. Official server opening was November 7, 2025 after November 5 preload/character creation. Requirements concern original progression, social/story and martial systems; later developer announcements contain no achievement additions.",
+    "steam_schema_hash": 4060593722,
+    "steam_schema_version": 23
+  },
+  "mapping": [
+    {
+      "steam_api_name": "490001",
+      "name": "Complete Mastery",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490002",
+      "name": "Divine Strategy",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490003",
+      "name": "Forged - Refined",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490004",
+      "name": "Relic - Transcend",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490005",
+      "name": "Martial Mastery",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490006",
+      "name": "Practice Makes Perfect",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490007",
+      "name": "Gear Enhance - Perfection",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490008",
+      "name": "Silken Attire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490009",
+      "name": "Blade's Bloom",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490010",
+      "name": "Golden Legend",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490012",
+      "name": "Radiant Light",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490013",
+      "name": "Path of the Beggar",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490014",
+      "name": "Mindless Vow",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490015",
+      "name": "Horizon Chaser",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490016",
+      "name": "Shape of Yearning",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490017",
+      "name": "Dual Elements",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490018",
+      "name": "Free Wanderer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490019",
+      "name": "Social Butterfly",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490020",
+      "name": "Chirping Phoenix Chick",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490021",
+      "name": "A Rare Confidant",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490022",
+      "name": "Rebirth from the Cocoon",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490023",
+      "name": "Dreams of Sanqing",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490024",
+      "name": "Dreams of Splendor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490025",
+      "name": "Once Bound by Trust",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490026",
+      "name": "Sundance City - First Visit",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490027",
+      "name": "Stormy Martial World",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490028",
+      "name": "Become a Legend",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490029",
+      "name": "[Supreme Strength]",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490030",
+      "name": "[Bowl of Cold Noodles]",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490031",
+      "name": " [Unmatched Sword]",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490032",
+      "name": "A Lifetime Together",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490033",
+      "name": "Through Storm and Snow",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490034",
+      "name": "Processing Master",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490035",
+      "name": "Roasted Lovebirds",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490036",
+      "name": "Devoted Hearts",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490037",
+      "name": "Double Blessing",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490038",
+      "name": "Double Whammy",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490039",
+      "name": "Rare Martial Arts",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "490040",
+      "name": "Fortune's Favorite",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

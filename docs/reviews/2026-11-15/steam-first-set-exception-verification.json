@@ -1,0 +1,25 @@
+{
+  "reviewed_sets": 30,
+  "pending_sets": 4,
+  "required_ids": 1439,
+  "excluded_ids": 326,
+  "first_set_exception_reviews": [
+    {
+      "app_id": "578080",
+      "review_state": "verified",
+      "required_count": 37,
+      "excluded_count": 0,
+      "membership_policy": "first_official_set_when_no_launch_achievements"
+    },
+    {
+      "app_id": "1995330",
+      "review_state": "verified",
+      "required_count": 25,
+      "excluded_count": 0,
+      "membership_policy": "first_official_set_when_no_launch_achievements"
+    }
+  ],
+  "live_membership_matches_files": true,
+  "sql_rollback_rehearsal_passed": true,
+  "normal_sync_required": true
+}

@@ -1,0 +1,637 @@
+{
+  "app_id": "18500",
+  "name": "Defense Grid: The Awakening",
+  "required_ids": [
+    "ALIENTEARS",
+    "ANNIHILATOR",
+    "ARSENAL",
+    "BASEDEFENDER",
+    "BOOTCAMP",
+    "BURNBABYBURN",
+    "CLOSECALL",
+    "CONFIDENT",
+    "DEATHFROMABOVE",
+    "DIVERSITY",
+    "ERADICATOR",
+    "EXTERMINATOR",
+    "FIELDPROMOTION",
+    "FILTHYRICH",
+    "FIREBUG",
+    "FIRSTBLOOD",
+    "FLAWLESSVICTORY",
+    "FULLDEFENSE",
+    "FULLHOUSE",
+    "FULLPOTENTIAL",
+    "GREATBALLOFFIRE",
+    "GUNCRAZY",
+    "HAPPYRETURNS",
+    "HEADTRAUMA",
+    "HEYTHATSMINE",
+    "HIGHVOLTAGE",
+    "INDECISIVE",
+    "ISPY",
+    "KABOOM",
+    "LEADHEAD",
+    "LIQUIDATOR",
+    "MASTERSTRATEGIST",
+    "MINIMALIST",
+    "NAILBITER",
+    "NOSALE",
+    "NOTSOFAST",
+    "OVERSEER",
+    "PENNYPINCHER",
+    "PEWPEW",
+    "PLANETDEFENDER",
+    "POWERBUILDER",
+    "PYRRHICVICTORY",
+    "RELAYRACE",
+    "RETRY",
+    "SALVAGERIGHTS",
+    "SHARPSHOOTER",
+    "SHELLSHOCKED",
+    "SIEGEBREAKER",
+    "SURPLUS",
+    "THELONGROAD",
+    "THENOTSOFRIENDLYSKIES",
+    "TOWEREXPERT",
+    "UNTOUCHABLE",
+    "WELLINVESTED",
+    "WHATISTHAT",
+    "XENOCIDE",
+    "YELLOWBEATSGREEN"
+  ],
+  "excluded_ids": [
+    "BEATINGADEADPOTATO",
+    "BESTFRIENDSFOREVER",
+    "CHAS",
+    "CIRCULARHAZARD",
+    "CIVILDIVERGENCE",
+    "CLEANGETAWAY",
+    "COMBATTURMOIL",
+    "CORECONTAINER",
+    "FAITHFULCOMPANION",
+    "FLURRY",
+    "FORESIGHT",
+    "FULLYCONTAINED",
+    "KICKSTARTER",
+    "MAJESTICPONY",
+    "MASTERSIEGEBREAKER",
+    "MOSTLYDEAD",
+    "OUTOFBULLETS",
+    "OUTOFMANDMTOWERS",
+    "OVERFLOWING",
+    "PLANETARYSERVICE",
+    "REGIONALDELUGE",
+    "RETRYAGAIN",
+    "SAVANTGENIUS",
+    "SOMANYSPACES",
+    "SUPREMESTRATEGIST",
+    "TEMPORALWOULDHAVEBEENNICE",
+    "THECONTAINER",
+    "THISISSPARTAN",
+    "TRACEAMOUNTSOFGOLD",
+    "YOUMONSTER"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/18500/?l=english",
+      "https://store.steampowered.com/app/18500/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=18500&count=100&maxlength=0&enddate=1237352400",
+      "http://store.steampowered.com/news/6940/",
+      "http://store.steampowered.com/news/3538/",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/3819571572127239910",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1478591723589504286"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Dec 8, 2008",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "57 original Steam achievements through Full Defense cover The Awakening campaign and original tower/core/medal challenges. Exclude the subsequent 30 IDs for Resurgence, Borderlands, You Monster, Containment and later challenge modes. Scope is the original Steam release, not the smaller Xbox arcade list.",
+    "steam_schema_hash": 1181452076,
+    "steam_schema_version": 74
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ALIENTEARS",
+      "name": "Alien Tears",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ANNIHILATOR",
+      "name": "Annihilator",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ARSENAL",
+      "name": "Arsenal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BASEDEFENDER",
+      "name": "Base Defender",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BEATINGADEADPOTATO",
+      "name": "Beating A Dead Potato",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BESTFRIENDSFOREVER",
+      "name": "Best Friends Forever",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BOOTCAMP",
+      "name": "Boot Camp",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BURNBABYBURN",
+      "name": "Burn Baby Burn",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CHAS",
+      "name": "Top of the Class",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CIRCULARHAZARD",
+      "name": "Circular Hazard",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CIVILDIVERGENCE",
+      "name": "Civil Divergence",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CLEANGETAWAY",
+      "name": "Clean Getaway",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CLOSECALL",
+      "name": "Close Call",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COMBATTURMOIL",
+      "name": "Combat Turmoil",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CONFIDENT",
+      "name": "Confident",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CORECONTAINER",
+      "name": "Core Container",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DEATHFROMABOVE",
+      "name": "Death From Above",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DIVERSITY",
+      "name": "Diversity",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ERADICATOR",
+      "name": "Eradicator",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EXTERMINATOR",
+      "name": "Exterminator",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FAITHFULCOMPANION",
+      "name": "Faithful Companion",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FIELDPROMOTION",
+      "name": "Field Promotion",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FILTHYRICH",
+      "name": "Filthy Rich",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FIREBUG",
+      "name": "Firebug",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FIRSTBLOOD",
+      "name": "First Blood",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FLAWLESSVICTORY",
+      "name": "Flawless Victory",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FLURRY",
+      "name": "Flurry",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FORESIGHT",
+      "name": "Foresight is 20/20",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FULLDEFENSE",
+      "name": "Full Defense",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FULLHOUSE",
+      "name": "Full House",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FULLPOTENTIAL",
+      "name": "Full Potential",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FULLYCONTAINED",
+      "name": "Fully Contained",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GREATBALLOFFIRE",
+      "name": "Great Ball of Fire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GUNCRAZY",
+      "name": "Gun Crazy",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HAPPYRETURNS",
+      "name": "Happy Returns",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HEADTRAUMA",
+      "name": "Head Trauma",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HEYTHATSMINE",
+      "name": "Hey! That's mine!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HIGHVOLTAGE",
+      "name": "High Voltage",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "INDECISIVE",
+      "name": "Indecisive",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ISPY",
+      "name": "I Spy",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KABOOM",
+      "name": "Kaboom!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KICKSTARTER",
+      "name": "Kickstarter",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LEADHEAD",
+      "name": "Leadhead",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LIQUIDATOR",
+      "name": "Liquidator",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MAJESTICPONY",
+      "name": "Majestic Pony",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MASTERSIEGEBREAKER",
+      "name": "Master Siege Breaker",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MASTERSTRATEGIST",
+      "name": "Master Strategist",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MINIMALIST",
+      "name": "Minimalist",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MOSTLYDEAD",
+      "name": "Mostly Dead",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "NAILBITER",
+      "name": "Nail Biter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "NOSALE",
+      "name": "No Sale",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "NOTSOFAST",
+      "name": "Not So Fast",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "OUTOFBULLETS",
+      "name": "Out of Bullets",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "OUTOFMANDMTOWERS",
+      "name": "Clear Skies",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "OVERFLOWING",
+      "name": "Overflowing",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "OVERSEER",
+      "name": "Overseer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PENNYPINCHER",
+      "name": "Penny Pincher",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PEWPEW",
+      "name": "Pew Pew",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLANETARYSERVICE",
+      "name": "Few and Proud",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLANETDEFENDER",
+      "name": "Planet Defender",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "POWERBUILDER",
+      "name": "Power Builder",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PYRRHICVICTORY",
+      "name": "Pyrrhic Victory",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "REGIONALDELUGE",
+      "name": "Regional Deluge",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "RELAYRACE",
+      "name": "Relay Race",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "RETRY",
+      "name": "Retry",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "RETRYAGAIN",
+      "name": "If At First You Don't Succeed, Retry Again",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SALVAGERIGHTS",
+      "name": "Salvage Rights",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SAVANTGENIUS",
+      "name": "Savant Genius",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SHARPSHOOTER",
+      "name": "Sharpshooter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SHELLSHOCKED",
+      "name": "Shell-shocked",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SIEGEBREAKER",
+      "name": "Siege Breaker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SOMANYSPACES",
+      "name": "So Many Spaces to Build On, So Little Time",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUPREMESTRATEGIST",
+      "name": "Supreme Strategist",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SURPLUS",
+      "name": "Surplus",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TEMPORALWOULDHAVEBEENNICE",
+      "name": "A Temporal Would've Been Nice",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "THECONTAINER",
+      "name": "The Container",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "THELONGROAD",
+      "name": "The Long Road",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "THENOTSOFRIENDLYSKIES",
+      "name": "The Not-So-Friendly Skies",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "THISISSPARTAN",
+      "name": "This is…spartan.",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TOWEREXPERT",
+      "name": "Tower Expert",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TRACEAMOUNTSOFGOLD",
+      "name": "Contains Trace Amounts of Gold",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "UNTOUCHABLE",
+      "name": "Untouchable",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "WELLINVESTED",
+      "name": "Well Invested",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "WHATISTHAT",
+      "name": "What IS that?",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "XENOCIDE",
+      "name": "Xenocide",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "YELLOWBEATSGREEN",
+      "name": "Yellow Beats Green",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "YOUMONSTER",
+      "name": "You Monster",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    }
+  ]
+}

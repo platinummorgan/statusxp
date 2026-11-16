@@ -1,0 +1,453 @@
+{
+  "app_id": "293220",
+  "name": "H-Hour: World's Elite",
+  "required_ids": [
+    "ACH_AR_KILLS_BNZ",
+    "ACH_AR_KILLS_GLD",
+    "ACH_AR_KILLS_SLV",
+    "ACH_ASSISTS_LVL1",
+    "ACH_ASSISTS_LVL2",
+    "ACH_ASSISTS_LVL3",
+    "ACH_BOMB_DEFUSE_BNZ",
+    "ACH_BOMB_DEFUSE_GLD",
+    "ACH_BOMB_DEFUSE_SLV",
+    "ACH_BOMB_PLANT_BNZ",
+    "ACH_BOMB_PLANT_GLD",
+    "ACH_BOMB_PLANT_SLV",
+    "ACH_C4_KILLS_BNZ",
+    "ACH_C4_KILLS_GLD",
+    "ACH_C4_KILLS_SLV",
+    "ACH_CLAYMORE_KILLS_BNZ",
+    "ACH_CLAYMORE_KILLS_GLD",
+    "ACH_CLAYMORE_KILLS_SLV",
+    "ACH_EXTRACT_BNZ",
+    "ACH_EXTRACT_GLD",
+    "ACH_EXTRACT_SLV",
+    "ACH_FLASH_LVL1",
+    "ACH_FLASH_LVL2",
+    "ACH_FLASH_LVL3",
+    "ACH_HEADSHOTS_BNZ",
+    "ACH_HEADSHOTS_GLD",
+    "ACH_HEADSHOTS_SLV",
+    "ACH_LMG_KILLS_BNZ",
+    "ACH_LMG_KILLS_GLD",
+    "ACH_LMG_KILLS_SLV",
+    "ACH_MELEE_KILLS_BNZ",
+    "ACH_MELEE_KILLS_GLD",
+    "ACH_MELEE_KILLS_SLV",
+    "ACH_MVP_BNZ",
+    "ACH_MVP_GLD",
+    "ACH_MVP_SLV",
+    "ACH_NADE_KILLS_BNZ",
+    "ACH_NADE_KILLS_GLD",
+    "ACH_NADE_KILLS_SLV",
+    "ACH_PISTOL_KILLS_BNZ",
+    "ACH_PISTOL_KILLS_GLD",
+    "ACH_PISTOL_KILLS_SLV",
+    "ACH_PMN_KILLS_BNZ",
+    "ACH_PMN_KILLS_GLD",
+    "ACH_PMN_KILLS_SLV",
+    "ACH_SG_KILLS_BNZ",
+    "ACH_SG_KILLS_GLD",
+    "ACH_SG_KILLS_SLV",
+    "ACH_SMG_KILLS_BNZ",
+    "ACH_SMG_KILLS_GLD",
+    "ACH_SMG_KILLS_SLV",
+    "ACH_SMOKE_LVL1",
+    "ACH_SMOKE_LVL2",
+    "ACH_SMOKE_LVL3",
+    "ACH_SNIPER_KILLS_BNZ",
+    "ACH_SNIPER_KILLS_GLD",
+    "ACH_SNIPER_KILLS_SLV",
+    "ACH_SUICIDE_LVL1",
+    "ACH_SUICIDE_LVL2",
+    "ACH_SUICIDE_LVL3"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/293220/?l=english",
+      "https://store.steampowered.com/app/293220/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=293220&count=100&maxlength=0&enddate=1590555600",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/3183419193842148609",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/2578810848680343984",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/2404285581875618130",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/3556075649733768641",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/2417769111284561614",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/2447035533301471979",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/2462791699377320006",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/2383968106573091360",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4249665521680660642",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/2356940080951294308"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Feb 17, 2020",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "60 original achievements were released during Early Access in October 2019 before the February 17, 2020 full release. All requirements concern original multiplayer weapon/objective/stat tiers; later cosmetic/workshop releases introduce no matching achievement additions.",
+    "steam_schema_hash": 4060593722,
+    "steam_schema_version": 23
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACH_AR_KILLS_BNZ",
+      "name": "100 Assault Rifle Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_AR_KILLS_GLD",
+      "name": "1500 Assault Rifle Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_AR_KILLS_SLV",
+      "name": "750 Assault Rifle Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_ASSISTS_LVL1",
+      "name": "Helping Hand",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_ASSISTS_LVL2",
+      "name": "Team Player",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_ASSISTS_LVL3",
+      "name": "Guardian",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_BOMB_DEFUSE_BNZ",
+      "name": "Defuse 50 Bombs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_BOMB_DEFUSE_GLD",
+      "name": "Defuse 500 Bombs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_BOMB_DEFUSE_SLV",
+      "name": "Defuse 250 Bombs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_BOMB_PLANT_BNZ",
+      "name": "Plant 50 Bombs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_BOMB_PLANT_GLD",
+      "name": "Plant 500 Bombs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_BOMB_PLANT_SLV",
+      "name": "Plant 250 Bombs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_C4_KILLS_BNZ",
+      "name": "25 C4 Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_C4_KILLS_GLD",
+      "name": "150 C4 Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_C4_KILLS_SLV",
+      "name": "75 C4 Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_CLAYMORE_KILLS_BNZ",
+      "name": "50 Claymore Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_CLAYMORE_KILLS_GLD",
+      "name": "200 Claymore Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_CLAYMORE_KILLS_SLV",
+      "name": "100 Claymore Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_EXTRACT_BNZ",
+      "name": "Extract 50 Hostages",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_EXTRACT_GLD",
+      "name": "Extract 200 Hostages",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_EXTRACT_SLV",
+      "name": "Extract 100 Hostages",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_FLASH_LVL1",
+      "name": "Blinded By the Light",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_FLASH_LVL2",
+      "name": "Double Vision",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_FLASH_LVL3",
+      "name": "Keep 'em Ringing",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_HEADSHOTS_BNZ",
+      "name": "75 Headshots",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_HEADSHOTS_GLD",
+      "name": "500 Headshots",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_HEADSHOTS_SLV",
+      "name": "250 Headshots",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_LMG_KILLS_BNZ",
+      "name": "100 Large Machine Gun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_LMG_KILLS_GLD",
+      "name": "1000 Large Machine Gun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_LMG_KILLS_SLV",
+      "name": "500 Large Machine Gun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_MELEE_KILLS_BNZ",
+      "name": "50 Melee Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_MELEE_KILLS_GLD",
+      "name": "200 Melee Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_MELEE_KILLS_SLV",
+      "name": "100 Melee Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_MVP_BNZ",
+      "name": "50 MVPs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_MVP_GLD",
+      "name": "200 MVPs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_MVP_SLV",
+      "name": "100 MVPs",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_NADE_KILLS_BNZ",
+      "name": "75 Grenade Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_NADE_KILLS_GLD",
+      "name": "400 Grenade Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_NADE_KILLS_SLV",
+      "name": "200 Grenade Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_PISTOL_KILLS_BNZ",
+      "name": "50 Pistol Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_PISTOL_KILLS_GLD",
+      "name": "500 Pistol Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_PISTOL_KILLS_SLV",
+      "name": "200 Pistol Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_PMN_KILLS_BNZ",
+      "name": "50 PMN Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_PMN_KILLS_GLD",
+      "name": "400 PMN Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_PMN_KILLS_SLV",
+      "name": "200 PMN Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SG_KILLS_BNZ",
+      "name": "100 Shotgun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SG_KILLS_GLD",
+      "name": "600 Shotgun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SG_KILLS_SLV",
+      "name": "300 Shotgun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SMG_KILLS_BNZ",
+      "name": "100 Small Machine Gun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SMG_KILLS_GLD",
+      "name": "1000 Small Machine Gun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SMG_KILLS_SLV",
+      "name": "500 Small Machine Gun Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SMOKE_LVL1",
+      "name": "Cough",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SMOKE_LVL2",
+      "name": "Where's the Fire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SMOKE_LVL3",
+      "name": "Now its a Party",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SNIPER_KILLS_BNZ",
+      "name": "100 Sniper Rifle Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SNIPER_KILLS_GLD",
+      "name": "600 Sniper Rifle Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SNIPER_KILLS_SLV",
+      "name": "300 Sniper Rifle Kills",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SUICIDE_LVL1",
+      "name": "Safety Training",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SUICIDE_LVL2",
+      "name": "Hazardous Workplace",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SUICIDE_LVL3",
+      "name": "Call OSHA",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

@@ -393,9 +393,9 @@ class _SeasonalLeaderboardScreenState
     final subtitle = switch (_selectedBoard) {
       SeasonalBoardType.statusXP => 'Current: ${_fmt(entry.currentScore)} XP',
       SeasonalBoardType.platinums => 'Current: ${entry.currentScore} platinums',
-      SeasonalBoardType.xbox => 'Current: ${_fmt(entry.currentScore)} GS',
+      SeasonalBoardType.xbox => 'Current: ${_fmt(entry.currentScore)} Mythics',
       SeasonalBoardType.steam =>
-        'Current: ${_fmt(entry.currentScore)} achievements',
+        'Current: ${_fmt(entry.currentScore)} Steam Completions',
     };
 
     return InkWell(

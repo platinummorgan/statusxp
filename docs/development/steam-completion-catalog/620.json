@@ -1,0 +1,533 @@
+{
+  "app_id": "620",
+  "name": "Portal 2",
+  "required_ids": [
+    "ACH.A3_DOORS",
+    "ACH.ADDICTED_TO_SPUDS",
+    "ACH.BLUE_GEL",
+    "ACH.BOX_HOLE_IN_ONE",
+    "ACH.BREAK_MONITORS",
+    "ACH.BREAK_OUT",
+    "ACH.BRIDGE",
+    "ACH.CATCH_CRAZY_BOX",
+    "ACH.CLEAN_UP",
+    "ACH.COMPLIANT",
+    "ACH.DEFIANT",
+    "ACH.EXCURSION_FUNNELS",
+    "ACH.FOUR_PORTALS",
+    "ACH.HI_FIVE_YOUR_PARTNER",
+    "ACH.HUG_NAME",
+    "ACH.LASER",
+    "ACH.LAUNCH_TURRET",
+    "ACH.LIMITED_PORTALS",
+    "ACH.MASS_AND_VELOCITY",
+    "ACH.NEW_BLOOD",
+    "ACH.NICE_CATCH",
+    "ACH.NOT_THE_DROID",
+    "ACH.NO_BOAT",
+    "ACH.ORANGE_GEL",
+    "ACH.PARTNER_DROP",
+    "ACH.PARTY_OF_THREE",
+    "ACH.PORTAL_TAUNT",
+    "ACH.PORTRAIT",
+    "ACH.REENTER_TEST_CHAMBERS",
+    "ACH.ROCK_CRUSHES_ROBOT",
+    "ACH.SAVE_CUBE",
+    "ACH.SAVE_REDEMPTION_TURRET",
+    "ACH.SHOOT_THE_MOON",
+    "ACH.SPEED_RUN_COOP",
+    "ACH.SPEED_RUN_LEVEL",
+    "ACH.SPREAD_THE_LOVE",
+    "ACH.STALEMATE_ASSOCIATE",
+    "ACH.STAYING_ALIVE",
+    "ACH.SURVIVE_CONTAINER_RIDE",
+    "ACH.TAUNTS",
+    "ACH.TAUNT_CAMERA",
+    "ACH.TEACHER",
+    "ACH.TEAM_BUILDING",
+    "ACH.TRACTOR_BEAM",
+    "ACH.TRIVIAL_TEST",
+    "ACH.WAKE_UP",
+    "ACH.WHEATLEY_TRIES_TO",
+    "ACH.WHITE_GEL",
+    "ACH.WITH_STYLE",
+    "ACH.YOU_MONSTER"
+  ],
+  "excluded_ids": [
+    "ACH.SUMMER_SALE"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/620/?l=english",
+      "https://store.steampowered.com/app/620/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=620&count=100&maxlength=0&enddate=1311739200",
+      "https://store.steampowered.com/news/5786/",
+      "psn:5:NPWR01719_00"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Apr 18, 2011",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "50 original April 2011 achievements. Exclude Talent Show (stable API name ACH.SUMMER_SALE), a later Steam Summer Sale addition; July 2011 summer content postdates launch. Single-player/cooperative grouping does not establish original membership. All 50 required IDs additionally map uniquely to the original PS3 non-Platinum trophies.",
+    "steam_schema_hash": 3207947195,
+    "steam_schema_version": 1108170007
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACH.A3_DOORS",
+      "name": "Door Prize",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "26",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.ADDICTED_TO_SPUDS",
+      "name": "Tater Tote",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "7",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.BLUE_GEL",
+      "name": "Vertically Unchallenged",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "8",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.BOX_HOLE_IN_ONE",
+      "name": "Drop Box",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "15",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.BREAK_MONITORS",
+      "name": "Smash TV",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "29",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.BREAK_OUT",
+      "name": "SaBOTour",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "5",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.BRIDGE",
+      "name": "Bridge Over Troubling Water",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "4",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.CATCH_CRAZY_BOX",
+      "name": "Schrodinger's Catch",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "24",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.CLEAN_UP",
+      "name": "Final Transmission",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "20",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.COMPLIANT",
+      "name": "Pit Boss",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "17",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.DEFIANT",
+      "name": "You Made Your Point",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "28",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.EXCURSION_FUNNELS",
+      "name": "Obstacle Building",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "34",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.FOUR_PORTALS",
+      "name": "Four Ring Circus",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "45",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.HI_FIVE_YOUR_PARTNER",
+      "name": "High Five",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "30",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.HUG_NAME",
+      "name": "Bridge Building",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "33",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.LASER",
+      "name": "Undiscouraged",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "3",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.LAUNCH_TURRET",
+      "name": "Pturretdactyl",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "19",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.LIMITED_PORTALS",
+      "name": "Portal Conservation Society",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "44",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.MASS_AND_VELOCITY",
+      "name": "Confidence Building",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "32",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.NEW_BLOOD",
+      "name": "You Saved Science",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "35",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.NICE_CATCH",
+      "name": "Iron Grip",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "36",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.NO_BOAT",
+      "name": "Ship Overboard",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "25",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.NOT_THE_DROID",
+      "name": "Scanned Alone",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "22",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.ORANGE_GEL",
+      "name": "Stranger Than Friction",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "9",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.PARTNER_DROP",
+      "name": "Empty Gesture",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "39",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.PARTY_OF_THREE",
+      "name": "Party of Three",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "40",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.PORTAL_TAUNT",
+      "name": "Narbacular Drop",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "41",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.PORTRAIT",
+      "name": "Portrait of a Lady",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "27",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.REENTER_TEST_CHAMBERS",
+      "name": "Good Listener",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "21",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.ROCK_CRUSHES_ROBOT",
+      "name": "Rock Portal Scissors",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "49",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.SAVE_CUBE",
+      "name": "Preservation of Mass",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "18",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.SAVE_REDEMPTION_TURRET",
+      "name": "No Hard Feelings",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "23",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.SHOOT_THE_MOON",
+      "name": "Lunacy",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "14",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.SPEED_RUN_COOP",
+      "name": "Triple Crown",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "46",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.SPEED_RUN_LEVEL",
+      "name": "Overclocker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "16",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.SPREAD_THE_LOVE",
+      "name": "Friends List With Benefits",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "50",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.STALEMATE_ASSOCIATE",
+      "name": "Stalemate Associate",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "6",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.STAYING_ALIVE",
+      "name": "Still Alive",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "47",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.SUMMER_SALE",
+      "name": "Talent Show",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ACH.SURVIVE_CONTAINER_RIDE",
+      "name": "Wake Up Call",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "1",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.TAUNT_CAMERA",
+      "name": "Asking for Trouble",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "48",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.TAUNTS",
+      "name": "Gesticul-8",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "37",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.TEACHER",
+      "name": "Professor Portal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "42",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.TEAM_BUILDING",
+      "name": "Team Building",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "31",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.TRACTOR_BEAM",
+      "name": "Tunnel of Funnel",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "11",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.TRIVIAL_TEST",
+      "name": "Dual Pit Experiment",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "12",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.WAKE_UP",
+      "name": "You Monster",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "2",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.WHEATLEY_TRIES_TO",
+      "name": "The Part Where He Kills You",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "13",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.WHITE_GEL",
+      "name": "White Out",
+      "classification": "day_one_base_game",
+      "steam_group_id": 2,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "10",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.WITH_STYLE",
+      "name": "Air Show",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "43",
+      "reference_group_id": "default"
+    },
+    {
+      "steam_api_name": "ACH.YOU_MONSTER",
+      "name": "Can't Touch This",
+      "classification": "day_one_base_game",
+      "steam_group_id": 1,
+      "reference_game_id": "NPWR01719_00",
+      "reference_achievement_id": "38",
+      "reference_group_id": "default"
+    }
+  ]
+}

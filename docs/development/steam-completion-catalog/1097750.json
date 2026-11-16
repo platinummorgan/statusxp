@@ -1,0 +1,138 @@
+{
+  "app_id": "1097750",
+  "name": "Ezaron Defense",
+  "required_ids": [
+    "ALLSTARS",
+    "ALLUPGRADES",
+    "FINISHCHAPTER1",
+    "FINISHCHAPTER2",
+    "FINISHCHAPTER3",
+    "FINISHCHAPTER4",
+    "FIRSTBUILDING",
+    "FIRSTLOST",
+    "FULLUPGRADES",
+    "KILLSTIER1",
+    "KILLSTIER2",
+    "KILLSTIER3",
+    "TOWER1FULL",
+    "TOWER2FULL",
+    "TOWER3FULL",
+    "TOWER4FULL"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1097750/?l=english",
+      "https://store.steampowered.com/app/1097750/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1097750&count=100&maxlength=0&enddate=1627099200",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4020014099105817815",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4022264629326578948",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4090922416495524211"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Apr 15, 2021",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "16 original 1.0 requirements concern the original four chapters, towers, upgrades, kills, losses and 60 campaign stars. Developer roadmap schedules Steam achievements for full launch. Postlaunch bonus/endless levels introduce no matching achievement requirements.",
+    "steam_schema_hash": 4010685501,
+    "steam_schema_version": 12
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ALLSTARS",
+      "name": "All Star Player",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ALLUPGRADES",
+      "name": "OCD Player",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FINISHCHAPTER1",
+      "name": "Chapter I",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FINISHCHAPTER2",
+      "name": "Chapter II",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FINISHCHAPTER3",
+      "name": "Chapter III",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FINISHCHAPTER4",
+      "name": "Chapter IV",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FIRSTBUILDING",
+      "name": "Baby Builder",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FIRSTLOST",
+      "name": "Disappointment",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FULLUPGRADES",
+      "name": "Hallelujah",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KILLSTIER1",
+      "name": "Murderer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KILLSTIER2",
+      "name": "Slaughterer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KILLSTIER3",
+      "name": "Butcher",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TOWER1FULL",
+      "name": "Robin Hood",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TOWER2FULL",
+      "name": "Boom Boom",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TOWER3FULL",
+      "name": "Abracadabra",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TOWER4FULL",
+      "name": "Let there be light",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

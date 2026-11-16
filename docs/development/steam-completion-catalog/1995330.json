@@ -1,0 +1,199 @@
+{
+  "app_id": "1995330",
+  "name": "Monos: The Endless Tower",
+  "required_ids": [
+    "ach_evolution_1",
+    "ach_evolution_2",
+    "ach_evolution_3",
+    "ach_evolution_4",
+    "ach_evolution_5",
+    "ach_evolution_6",
+    "ach_evolution_7",
+    "ach_power_1",
+    "ach_power_2",
+    "ach_power_3",
+    "ach_power_4",
+    "ach_power_5",
+    "ach_power_6",
+    "ach_tier_earth",
+    "ach_tier_heaven",
+    "ach_tier_underground",
+    "ach_upgrade_1",
+    "ach_upgrade_2",
+    "ach_upgrade_3",
+    "ach_weapon_1",
+    "ach_weapon_2",
+    "ach_weapon_3",
+    "ach_weapon_4",
+    "ach_weapon_5",
+    "ach_weapon_6"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "membership_policy": "first_official_set_when_no_launch_achievements",
+    "policy_confirmation_date": "2026-11-15",
+    "achievement_set_introduced_at": "2023-12-22",
+    "reviewed_date": "2026-11-15",
+    "sources": [
+      "https://steamcommunity.com/achievements/1995330/?l=english",
+      "https://store.steampowered.com/app/1995330/",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/5410576585133074813"
+    ],
+    "review_method": "User-confirmed exception: no Steam achievements at full release, so the first official 25-achievement set is the base completion set. Achievements & Winter Sale! introduces this set on 2023-12-22. All 25 current stable IDs belong to that initial set; subsequent new IDs remain excluded by the existing reviewed-snapshot behavior.",
+    "steam_schema_hash": 1096992281,
+    "steam_schema_version": 17
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ach_tier_underground",
+      "name": "Abyssal Champion",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_tier_earth",
+      "name": "Earthly Champion",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_tier_heaven",
+      "name": "Heaven's Champion",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_evolution_1",
+      "name": "Cannon Connoisseur",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_evolution_2",
+      "name": "Corruptive Dominator",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_evolution_3",
+      "name": "Crystalcraft Master",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_evolution_4",
+      "name": "Dragonfire Ascendant",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_evolution_5",
+      "name": "Kaboom Cataclysm",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_evolution_6",
+      "name": "Six-Star Sharpshooter",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_evolution_7",
+      "name": "The Legendary Totem",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_power_1",
+      "name": "Encore Frostbite",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_upgrade_1",
+      "name": "Explosive Incineration",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_upgrade_2",
+      "name": "Glass Tower Insight",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_upgrade_3",
+      "name": "Shocking Paralysis",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_weapon_1",
+      "name": "Master of All Arms",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_weapon_2",
+      "name": "Burning Spiders",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_weapon_3",
+      "name": "Crystal Wave Specialist",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_weapon_4",
+      "name": "Eggsplosion",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_weapon_5",
+      "name": "Sky Hunter",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_power_2",
+      "name": "All Powers Unleashed",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_power_3",
+      "name": "Chest Crusher",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_power_4",
+      "name": "Electrifying Takedown",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_power_5",
+      "name": "Explosion Crusader",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_power_6",
+      "name": "Triple Frostbite Rush",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ach_weapon_6",
+      "name": "Regenerator's Decay",
+      "classification": "initial_official_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

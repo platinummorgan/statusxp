@@ -1,0 +1,1010 @@
+{
+  "app_id": "3405340",
+  "name": "Megabonk",
+  "required_ids": [
+    "a_aegis",
+    "a_amog",
+    "a_anvil",
+    "a_armorTome",
+    "a_athena",
+    "a_attractionTome",
+    "a_aura",
+    "a_axe",
+    "a_bananarang",
+    "a_bandit",
+    "a_banish",
+    "a_battery",
+    "a_birdo",
+    "a_blackHole",
+    "a_bloodMagic",
+    "a_bloodTome",
+    "a_bloodyCleaver",
+    "a_bob",
+    "a_boombox",
+    "a_bossBuster",
+    "a_brassKnuckles",
+    "a_bush",
+    "a_cactus",
+    "a_calcium",
+    "a_cannon",
+    "a_chadwell",
+    "a_chaosTome",
+    "a_chonkplate",
+    "a_clank",
+    "a_corruptedSword",
+    "a_cursedDoll",
+    "a_cursedGloves",
+    "a_cursedTome",
+    "a_demonicBlade",
+    "a_demonicBlood",
+    "a_demonicSoul",
+    "a_desert",
+    "a_dexecutioner",
+    "a_dice",
+    "a_dicehead",
+    "a_dragonfire",
+    "a_dragonsBreath",
+    "a_durationTome",
+    "a_eagleClaw",
+    "a_echoShard",
+    "a_energyCore",
+    "a_forbiddenJuice",
+    "a_frostwalker",
+    "a_gamerGoggles",
+    "a_gasMask",
+    "a_ghost",
+    "a_goldenSneakers",
+    "a_grandmasTonic",
+    "a_heroSword",
+    "a_holyBook",
+    "a_iceCrystal",
+    "a_idleJuice",
+    "a_joesDagger",
+    "a_katana",
+    "a_kevin",
+    "a_key",
+    "a_leechingCrystal",
+    "a_lightningOrb",
+    "a_luckTome",
+    "a_megachad",
+    "a_mines",
+    "a_monke",
+    "a_ninja",
+    "a_noelle",
+    "a_ogre",
+    "a_poisonFlask",
+    "a_poisonGloves",
+    "a_quantityTome",
+    "a_refresh",
+    "a_revolver",
+    "a_robinette",
+    "a_shatteredKnowledge",
+    "a_shotgun",
+    "a_skip",
+    "a_skuleg",
+    "a_sluttyRocket",
+    "a_sniperRifle",
+    "a_soulHarvester",
+    "a_spaceNoodle",
+    "a_spaceman",
+    "a_speedBoi",
+    "a_suckyMagnet",
+    "a_tacticalGlasses",
+    "a_thornsTome",
+    "a_toggler",
+    "a_tomeSlots",
+    "a_tomeSlots2",
+    "a_tony",
+    "a_tornado",
+    "a_toxicBarrel",
+    "a_turboSkates",
+    "a_turboSocks",
+    "a_vlad",
+    "a_weaponSlots",
+    "a_weaponSlots2",
+    "a_wirelessDaggers",
+    "a_xpTome"
+  ],
+  "excluded_ids": [
+    "a_bobsLantern",
+    "a_challenges1",
+    "a_challenges2",
+    "a_challenges3",
+    "a_challenges4",
+    "a_graveyard",
+    "a_hatCheese",
+    "a_hatClown",
+    "a_hatCrown",
+    "a_hatFrog1",
+    "a_hatFrog2",
+    "a_hatFrog3",
+    "a_hatHeadset",
+    "a_hatKevin",
+    "a_hatMagic",
+    "a_hatMedieval",
+    "a_hatMicrowave",
+    "a_hatPilot",
+    "a_hatPot",
+    "a_hatShadyBlack",
+    "a_hatShadyBlue",
+    "a_hatShadyGold",
+    "a_hatShadyPink",
+    "a_hatSheriff",
+    "a_hatSunglasses",
+    "a_hatTophat",
+    "a_hatTophatLong",
+    "a_oldMask",
+    "a_potSteel",
+    "a_pumpkin",
+    "a_quinsMask",
+    "a_roberto",
+    "a_santaHat",
+    "a_scythe",
+    "a_snek",
+    "a_wallHugger",
+    "a_wizardsHat"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/3405340/?l=english",
+      "https://store.steampowered.com/app/3405340/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=3405340&count=100&maxlength=0&enddate=1766808000",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1811772772356053",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1818752592131516",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1819386365107866",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1822556746165683",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1822556746165683",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1819386365107866",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1818752592133089",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1818752592131516",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1813674389045096",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1813041031176676",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1811772772356053",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1811138915399450",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1806698490695551"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Sep 18, 2025",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "102 original launch achievements. Exclude Quin’s Mask, introduced as a new item in postlaunch Patch #2; the later Wallhugger/challenge-tier/Graveyard block; Wizard’s Hat and Santa Hat from Christmas; and 21 hats from January 2026. Stable schema order is cross-checked against named developer content additions rather than treating current group zero as original.",
+    "steam_schema_hash": 1248182244,
+    "steam_schema_version": 24
+  },
+  "mapping": [
+    {
+      "steam_api_name": "a_aegis",
+      "name": "Aegis",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_amog",
+      "name": "Amog",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_anvil",
+      "name": "Anvil",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_armorTome",
+      "name": "Armor Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_athena",
+      "name": "Athena",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_attractionTome",
+      "name": "Attraction Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_aura",
+      "name": "Aura",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_axe",
+      "name": "Axe",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bananarang",
+      "name": "Bananarang",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bandit",
+      "name": "Bandit",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_banish",
+      "name": "Banish",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_battery",
+      "name": "Battery",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_birdo",
+      "name": "Birdo",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_blackHole",
+      "name": "Black Hole",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bloodMagic",
+      "name": "Blood Magic",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bloodTome",
+      "name": "Blood Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bloodyCleaver",
+      "name": "Bloody Cleaver",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bob",
+      "name": "Bob (Dead)",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bobsLantern",
+      "name": "Bob's Light",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_boombox",
+      "name": "Boombox",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bossBuster",
+      "name": "Boss Buster",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_brassKnuckles",
+      "name": "Brass Knuckles",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_bush",
+      "name": "Bush",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_cactus",
+      "name": "Cactus",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_calcium",
+      "name": "Calcium",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_cannon",
+      "name": "Cannon",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_chadwell",
+      "name": "Sir Chadwell",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_challenges1",
+      "name": "Challenges1",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_challenges2",
+      "name": "Challenges2",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_challenges3",
+      "name": "Challenges3",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_challenges4",
+      "name": "Challenges4",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_chaosTome",
+      "name": "Chaos Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_chonkplate",
+      "name": "Chonkplate",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_clank",
+      "name": "CL4NK",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_corruptedSword",
+      "name": "Corrupted Sword",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_cursedDoll",
+      "name": "Cursed Doll",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_cursedGloves",
+      "name": "Cursed Gloves",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_cursedTome",
+      "name": "Cursed Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_demonicBlade",
+      "name": "Demonic Blade",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_demonicBlood",
+      "name": "Demonic Blood",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_demonicSoul",
+      "name": "Demonic Soul",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_desert",
+      "name": "Desert",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_dexecutioner",
+      "name": "Dexecutioner",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_dice",
+      "name": "Dice",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_dicehead",
+      "name": "Dicehead",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_dragonfire",
+      "name": "Dragonfire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_dragonsBreath",
+      "name": "Dragon's Breath",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_durationTome",
+      "name": "Duration Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_eagleClaw",
+      "name": "Eagle Claw",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_echoShard",
+      "name": "Echo Shard",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_energyCore",
+      "name": "Energy Core",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_forbiddenJuice",
+      "name": "Forbidden Juice",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_frostwalker",
+      "name": "Frostwalker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_gamerGoggles",
+      "name": "Gamer Goggles",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_gasMask",
+      "name": "Gas Mask",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_ghost",
+      "name": "Ghost",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_goldenSneakers",
+      "name": "Golden Sneakers",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_grandmasTonic",
+      "name": "Grandma's Secret Tonic",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_graveyard",
+      "name": "Graveyard",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatCheese",
+      "name": "Cheesy Hat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatClown",
+      "name": "Clown",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatCrown",
+      "name": "Crown",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatFrog1",
+      "name": "Green Frog",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatFrog2",
+      "name": "Blue Frog",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatFrog3",
+      "name": "Red Frog",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatHeadset",
+      "name": "Headset",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatKevin",
+      "name": "Kevin Hat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatMagic",
+      "name": "Magic hat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatMedieval",
+      "name": "Iron Helm",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatMicrowave",
+      "name": "Microwave",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatPilot",
+      "name": "Pilot Helm",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatPot",
+      "name": "Head Pot",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatShadyBlack",
+      "name": "Shady Hat (black)",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatShadyBlue",
+      "name": "Shady Hat (blue)",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatShadyGold",
+      "name": "Shady Hat (gold)",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatShadyPink",
+      "name": "Shady Hat (pink)",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatSheriff",
+      "name": "Sheriff's Hat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatSunglasses",
+      "name": "Sunglasses",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatTophat",
+      "name": "Top Hat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_hatTophatLong",
+      "name": "Looooong Top Hat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_heroSword",
+      "name": "Hero Sword",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_holyBook",
+      "name": "Holy Book",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_iceCrystal",
+      "name": "Ice Crystal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_idleJuice",
+      "name": "Idle Juice",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_joesDagger",
+      "name": "Joe's Dagger",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_katana",
+      "name": "Katana",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_kevin",
+      "name": "Kevin",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_key",
+      "name": "Key",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_leechingCrystal",
+      "name": "Leeching Crystal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_lightningOrb",
+      "name": "Lightning Orb",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_luckTome",
+      "name": "Luck Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_megachad",
+      "name": "Megachad",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_mines",
+      "name": "Mines",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_monke",
+      "name": "Monke",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_ninja",
+      "name": "Ninja",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_noelle",
+      "name": "Noelle",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_ogre",
+      "name": "Ogre",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_oldMask",
+      "name": "Old Mask",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_poisonFlask",
+      "name": "Poison Flask",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_poisonGloves",
+      "name": "Poison Gloves",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_potSteel",
+      "name": "Pot (stainless steel)",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_pumpkin",
+      "name": "Pumpkin",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_quantityTome",
+      "name": "Quantity Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_quinsMask",
+      "name": "Quin's Mask",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_refresh",
+      "name": "Refresh",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_revolver",
+      "name": "Revolver",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_roberto",
+      "name": "Roberto",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_robinette",
+      "name": "Robinette",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_santaHat",
+      "name": "Santa Hat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_scythe",
+      "name": "Scythe",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_shatteredKnowledge",
+      "name": "Shattered Knowledge",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_shotgun",
+      "name": "Shotgun",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_skip",
+      "name": "Skip",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_skuleg",
+      "name": "Skuleg",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_sluttyRocket",
+      "name": "Rockets",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_snek",
+      "name": "Snek",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_sniperRifle",
+      "name": "Sniper",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_soulHarvester",
+      "name": "Soul Harvester",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_spaceman",
+      "name": "Spaceman",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_spaceNoodle",
+      "name": "Space Noodle",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_speedBoi",
+      "name": "Speedboi",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_suckyMagnet",
+      "name": "Sucky Magnet",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_tacticalGlasses",
+      "name": "Tactical Glasses",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_thornsTome",
+      "name": "Thorns Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_toggler",
+      "name": "Toggler",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_tomeSlots",
+      "name": "Tome Slots",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_tomeSlots2",
+      "name": "Tome Slots 2",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_tony",
+      "name": "Tony McZoom",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_tornado",
+      "name": "Tornado",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_toxicBarrel",
+      "name": "Toxic Barrel",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_turboSkates",
+      "name": "Turbo Skates",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_turboSocks",
+      "name": "Turbo Socks",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_vlad",
+      "name": "Vlad",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_wallHugger",
+      "name": "Wallhugger",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_weaponSlots",
+      "name": "Weapon Slots",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_weaponSlots2",
+      "name": "Weapon Slots 2",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_wirelessDaggers",
+      "name": "Wireless Dagger",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_wizardsHat",
+      "name": "Wizard's Hat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "a_xpTome",
+      "name": "XP Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "app_id": "456750",
+  "name": "The Room Three",
+  "required_ids": [
+    "ALL_ENDINGS",
+    "CLOCKTOWER_COMPLETE",
+    "ESCAPE_ENDING",
+    "IMPRISONED_ENDING",
+    "LIGHTHOUSE_COMPLETE",
+    "LOST_ENDING",
+    "OBSERVATORY_COMPLETE",
+    "RELEASE_ENDING",
+    "TUTORIAL_COMPLETE",
+    "WORKSHOP_COMPLETE"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/456750/?l=english",
+      "https://store.steampowered.com/app/456750/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=456750&count=100&maxlength=0&enddate=1550725200",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1799088287995391",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4703417046214588729"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Nov 13, 2018",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "Ten original achievements cover five chapters, all four original endings and the original all-endings achievement. Review uses the Steam edition, not the earlier mobile release.",
+    "steam_schema_hash": 1466709475,
+    "steam_schema_version": 3
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ALL_ENDINGS",
+      "name": "Fate Changer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CLOCKTOWER_COMPLETE",
+      "name": "Midnight Strikes",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ESCAPE_ENDING",
+      "name": "Freedom",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "IMPRISONED_ENDING",
+      "name": "Box Within A Box",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LIGHTHOUSE_COMPLETE",
+      "name": "Light the Pyre",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LOST_ENDING",
+      "name": "Exile",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "OBSERVATORY_COMPLETE",
+      "name": "The Stars Align",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "RELEASE_ENDING",
+      "name": "Release",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TUTORIAL_COMPLETE",
+      "name": "Proposition Accepted",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "WORKSHOP_COMPLETE",
+      "name": "Infernal Machinery",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

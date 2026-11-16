@@ -1,0 +1,1735 @@
+{
+  "app_id": "1794680",
+  "name": "Vampire Survivors",
+  "required_ids": [
+    "BuyGlassMask",
+    "CompleteCollection",
+    "Defeat100KEnemies",
+    "Defeat100kWithSigma",
+    "Defeat3000Buers",
+    "Defeat3000Hydra",
+    "Defeat3000Milk",
+    "Defeat3000Skeletons",
+    "Defeat5000Enemies",
+    "Defeat6000StageKillers",
+    "DefeatBossChapel",
+    "DefeatBossChapel2",
+    "DefeatBossLibrary",
+    "DefeatBossMadForest",
+    "DefeatBossPlant",
+    "DefeatBossTower",
+    "Destroy20Candles",
+    "Earn5000CoinsInASingleRun",
+    "Eat5PotRoast",
+    "EvolveAll",
+    "EvolveAxe",
+    "EvolveBracelet",
+    "EvolveCross",
+    "EvolveFireWand",
+    "EvolveGarlic",
+    "EvolveGatti",
+    "EvolveGuns",
+    "EvolveKingBible",
+    "EvolveKnife",
+    "EvolveLightning",
+    "EvolveMagicWand",
+    "EvolvePentagram",
+    "EvolveRunetracer",
+    "EvolveSantaWater",
+    "EvolveShadow",
+    "EvolveSongOfMana",
+    "EvolveWhip",
+    "EvolveWind",
+    "FindAClover",
+    "FindARosary",
+    "FindAStoneMask",
+    "FindAVacuum",
+    "FindAnOrologion",
+    "FindCoffinStage1",
+    "FindCoffinStage2",
+    "FindCoffinStage3",
+    "FindCoffinStage4",
+    "FindCoffinStage5",
+    "FindForbiddenScroll",
+    "FindGGospel",
+    "FindGouda",
+    "FindGrimoire",
+    "FindMagicBanger",
+    "FindMilkyWayMap",
+    "FindRandomazzo",
+    "FindRandomazzoT06",
+    "FindSorceressTears",
+    "FindYellowSign",
+    "FindYellowSignS5",
+    "GalloDivano",
+    "GetFireWandToLevel4",
+    "GetGarlicToLevel7",
+    "GetHolyBookToLevel4",
+    "GetHolyWaterToLevel4",
+    "GetLightningRingToLevel4",
+    "GetMagicMissileToLevel7",
+    "GetPeachoneToLevel7",
+    "GetPentagramToLevel7",
+    "GetRunetracerToLevel7",
+    "GetTorroneToLevel9",
+    "GreatestJubilee",
+    "Have6DifferentWeapons",
+    "Have6Evolutions",
+    "ObtainAllRelics",
+    "ObtainGraciasMirror",
+    "ObtainSeventhTrumpet",
+    "ObtainTheCrimsonShroud",
+    "ObtainTheInfiniteCorridor",
+    "ReachLV10",
+    "ReachLV100WithAmbrojoe",
+    "ReachLV100WithCavallo",
+    "ReachLV100WithMortaccio",
+    "ReachLV100WithOsole",
+    "ReachLV100WithRamba",
+    "ReachLV20InMadForest",
+    "ReachLV40InLibrary",
+    "ReachLV5",
+    "ReachLV60InDairyPlant",
+    "ReachLV99WithAntonio",
+    "ReachLV99WithArca",
+    "ReachLV99WithChristine",
+    "ReachLV99WithClerici",
+    "ReachLV99WithConcetta",
+    "ReachLV99WithDommario",
+    "ReachLV99WithGennaro",
+    "ReachLV99WithGiovanna",
+    "ReachLV99WithImelda",
+    "ReachLV99WithKroci",
+    "ReachLV99WithLama",
+    "ReachLV99WithPasqualina",
+    "ReachLV99WithPoe",
+    "ReachLV99WithPoppea",
+    "ReachLV99WithPorta",
+    "ReachLV99WithPugnala",
+    "Recover1000HP",
+    "See100Items",
+    "See50Items",
+    "See60Items",
+    "See70Items",
+    "See80Items",
+    "See90Items",
+    "Survive10Minutes",
+    "Survive10MinutesWithGuns",
+    "Survive15MinutesInBossRash",
+    "Survive15MinutesInMolise",
+    "Survive15MinutesInMoongolow",
+    "Survive15MinutesWithGatti",
+    "Survive15MinutesWithGuns",
+    "Survive15MinutesWithShadow",
+    "Survive15MinutesWithSong",
+    "Survive15MinutesWithWind",
+    "Survive1Minute",
+    "Survive20Minutes",
+    "Survive20MinutesWithCross",
+    "Survive20MinutesWithCurse",
+    "Survive30MinutesInBoneZone",
+    "Survive30MinutesInGreenAcres",
+    "Survive30MinutesWithAxe",
+    "Survive31MinutesInDairyPlant",
+    "Survive31MinutesInForest",
+    "Survive31MinutesInLibrary",
+    "Survive31MinutesInTower",
+    "Survive5MinutesWithDiamond",
+    "Survive5MinutesWithKnife",
+    "UniteBirds",
+    "Unlock2Hypers",
+    "Unlock3Hypers",
+    "Unlock3Hypers_Correct",
+    "Unlock4Hypers",
+    "Unlock5Hypers"
+  ],
+  "excluded_ids": [
+    "Banish10Items",
+    "Banish20Items",
+    "Banish40Items",
+    "Banish80Items",
+    "CastForbiddenBox",
+    "CompleteAdv_AGarlicParadise",
+    "CompleteAdv_ToEndAnIceAge",
+    "CompleteAdv_WorldOfLightAndDark",
+    "Dark_01SpaceDude",
+    "Dark_03Gazebo",
+    "Dark_05Appunta",
+    "Dark_06Darkasso",
+    "Dark_10Santa",
+    "Dark_12Shemoon",
+    "Dark_13Chula",
+    "Dark_18Challenge",
+    "Dark_21Robert",
+    "Defeat0EnemiesInCoop",
+    "DefeatManyBats",
+    "DefeatShootingEnemies",
+    "EvolveAmmoAppalate",
+    "EvolveBattilia",
+    "EvolveGlassFandango",
+    "EvolveJavelin",
+    "EvolveMagiStone",
+    "EvolveOfGaea",
+    "EvolveOfGaea_Fix",
+    "EvolvePhas3r",
+    "FOSC01_FindCoffin",
+    "FOSC02_Survive15Eleanor",
+    "FOSC03_GetStreamToLevel6",
+    "FOSC04_GetStrikeToLevel6",
+    "FOSC05_UniteSpells",
+    "FOSC06_Survive15Viktor",
+    "FOSC07_EvolveEskizzibur",
+    "FOSC08_Survive15Keira",
+    "FOSC09_EvolveFlashArrow",
+    "FOSC10_BreakSeal1",
+    "FOSC11_BreakSeal2",
+    "FOSC12_BreakSeal3",
+    "FOSC13_Survive15Luminaire",
+    "FOSC14_EvolvePrismatic",
+    "FOSC15_Survive15Genevieve",
+    "FOSC16_EvolveShadow",
+    "FOSC17_Defeat100kGenevieve",
+    "FOSC18_Defeat6kFairy",
+    "FOSC19_Defeat6kHorror",
+    "FOSC20_DefeatBossLake",
+    "FOSC21_DefeatBossAbyss",
+    "FOSC22_FindMap_Foscari",
+    "FindAParmAegis",
+    "FindAnArmaDio",
+    "FindAntidote",
+    "FindApoplexy",
+    "FindAtlas",
+    "FindBraveStory",
+    "FindChaosAltemanna",
+    "FindChaosLazulia",
+    "FindChaosMalachite",
+    "FindChaosRosalia",
+    "FindChickenClock",
+    "FindKaromasMana",
+    "FindManyChickens",
+    "FindManyClovers",
+    "FindManyGoldenFinger",
+    "FindManyOrologions",
+    "FindManyRosaries",
+    "FindMap_AstralStair",
+    "FindMasquerade",
+    "FindRecycle",
+    "FindTrisection",
+    "GetGlassFandangoToLevel7",
+    "GetJavelinToLevel7",
+    "GetMagiStoneToLevel7",
+    "GetPhas3rToLevel7",
+    "HitManyEnemiesWithTrain",
+    "MOON01_FindCoffin",
+    "MOON02_Survive15Miang",
+    "MOON03_EvolveSilverWind",
+    "MOON04_Survive15Menya",
+    "MOON05_EvolveFourSeasons",
+    "MOON06_Survive15Syuuto",
+    "MOON07_EvolveSummonNight",
+    "MOON08_Survive15BabiOnna",
+    "MOON09_EvolveMirageRobe",
+    "MOON10_Survive15McCoy",
+    "MOON11_Defeat100kVanya",
+    "MOON12_Defeat100kVadjouel",
+    "MOON13_Defeat6kWater",
+    "MOON14_FindNightSword",
+    "MOON15_EvolveNightSword",
+    "MOON16_DefeatBossRuins",
+    "MOON17_EvolveBubbles",
+    "MOON18_FindMap_Moonspell",
+    "ObtainDarkasso",
+    "ReachLV80InverseForest",
+    "ReachLV80InverseLibrary",
+    "ReachLV80InverseTower",
+    "ReachLV80InverseWarehouse",
+    "Survive20MinutesInLaborratory",
+    "Survive20MinutesInSpace54",
+    "Survive20minutesInWestwoods",
+    "SurviveUntilTheEndOfWhiteout"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1794680/?l=english",
+      "https://store.steampowered.com/app/1794680/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1794680&count=100&maxlength=0&enddate=1674878400",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1846651706681529",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1842212951303118",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1834602721194653",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1834602721194650",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1825093633195515",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1821922921810585",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1815034432907004",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1814309641613560",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1814309641415866",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1809235871614995"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Oct 20, 2022",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "140 achievements present at 1.0, including the seven October 20, 2022 additions. Exclude Extra Content (63), Moonspell (18), and Foscari (22). Developer Patch 1.1 explicitly calls its additions EXTRA and subsequent updates preserve that distinction.",
+    "steam_schema_hash": 1981470554,
+    "steam_schema_version": 75
+  },
+  "mapping": [
+    {
+      "steam_api_name": "Banish10Items",
+      "name": "EXTRA: Seal I",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Banish20Items",
+      "name": "EXTRA: Seal II",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Banish40Items",
+      "name": "EXTRA: Seal III",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Banish80Items",
+      "name": "EXTRA: Seal All",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "BuyGlassMask",
+      "name": "Glass Vizard",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CastForbiddenBox",
+      "name": "EXTRA: Room 1665",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "CompleteAdv_AGarlicParadise",
+      "name": "EXTRA: A Garlic Paradise",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "CompleteAdv_ToEndAnIceAge",
+      "name": "EXTRA: To End An Ice Age",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "CompleteAdv_WorldOfLightAndDark",
+      "name": "EXTRA: World of Light and Dark",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "CompleteCollection",
+      "name": "Queen Sigma",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Dark_01SpaceDude",
+      "name": "EXTRA: I - Sapphire Mist",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Dark_03Gazebo",
+      "name": "EXTRA: III - Hidden Anathema",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Dark_05Appunta",
+      "name": "EXTRA: V - Pale Diamond Incursion",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Dark_06Darkasso",
+      "name": "EXTRA: VI - Moonlight Bolero",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Dark_10Santa",
+      "name": "EXTRA: X - Hail from the Future",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Dark_12Shemoon",
+      "name": "EXTRA: XII - Crystal Cries",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Dark_13Chula",
+      "name": "EXTRA: XIII - Call of a Mad Moon",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Dark_18Challenge",
+      "name": "EXTRA: XVIII - Victorian Horror",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Dark_21Robert",
+      "name": "EXTRA: XXI - Wandering the Jet Black",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Defeat0EnemiesInCoop",
+      "name": "EXTRA: Gaze of Gaea",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Defeat100KEnemies",
+      "name": "Krochi",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Defeat100kWithSigma",
+      "name": "Victory Sword",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Defeat3000Buers",
+      "name": "Yatta Cavallo",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Defeat3000Hydra",
+      "name": "O'Sole Meeo",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Defeat3000Milk",
+      "name": "Bianca Ramba",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Defeat3000Skeletons",
+      "name": "Mortaccio",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Defeat5000Enemies",
+      "name": "Lightning Ring",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Defeat6000StageKillers",
+      "name": "Sir Ambrojoe",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DefeatBossChapel",
+      "name": "Hyper Cappella Magna",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DefeatBossChapel2",
+      "name": "Game Killer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DefeatBossLibrary",
+      "name": "Hyper Inlaid Library",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DefeatBossMadForest",
+      "name": "Hyper Mad Forest",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DefeatBossPlant",
+      "name": "Hyper Dairy Plant",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DefeatBossTower",
+      "name": "Hyper Gallo Tower",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DefeatManyBats",
+      "name": "EXTRA: Pako Battiliar",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "DefeatShootingEnemies",
+      "name": "EXTRA: Ammo Appalate",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Destroy20Candles",
+      "name": "Fire Wand",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Earn5000CoinsInASingleRun",
+      "name": "Dommario",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Eat5PotRoast",
+      "name": "Garlic",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveAll",
+      "name": "Candybox",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveAmmoAppalate",
+      "name": "EXTRA: Zi'Appunta Belpaese",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "EvolveAxe",
+      "name": "Death Spiral",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveBattilia",
+      "name": "EXTRA: Bat Robbert",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "EvolveBracelet",
+      "name": "Tri-Bracelet",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveCross",
+      "name": "Heaven Sword",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveFireWand",
+      "name": "Hellfire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveGarlic",
+      "name": "Soul Eater",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveGatti",
+      "name": "Vicious Hunger",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveGlassFandango",
+      "name": "EXTRA: Celestial Voulge",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "EvolveGuns",
+      "name": "Phieraggi",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveJavelin",
+      "name": "EXTRA: Seraphic Cry",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "EvolveKingBible",
+      "name": "Unholy Vespers",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveKnife",
+      "name": "Thousand Edge",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveLightning",
+      "name": "Thunder Loop",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveMagicWand",
+      "name": "Holy Wand",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveMagiStone",
+      "name": "EXTRA: Kyra-Stones",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "EvolveOfGaea",
+      "name": "EXTRA: Gazebo",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "EvolveOfGaea_Fix",
+      "name": "EXTRA: Embrace of Gaea",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "EvolvePentagram",
+      "name": "Gorgeous Moon",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolvePhas3r",
+      "name": "EXTRA: Evolve the Phas3r.",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "EvolveRunetracer",
+      "name": "NO FUTURE",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveSantaWater",
+      "name": "La Borra",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveShadow",
+      "name": "Valkyrie Turner",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveSongOfMana",
+      "name": "Mannajja",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveWhip",
+      "name": "Bloody Tear",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EvolveWind",
+      "name": "Fuwalafuwaloo",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindAClover",
+      "name": "Clover",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindAnArmaDio",
+      "name": "EXTRA: Arma Dio",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindAnOrologion",
+      "name": "Clock Lancet",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindAntidote",
+      "name": "EXTRA: Antidote",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindAParmAegis",
+      "name": "EXTRA: Parm Aegis",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindApoplexy",
+      "name": "EXTRA: Apoplexy",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindARosary",
+      "name": "Cross",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindAStoneMask",
+      "name": "Stone Mask",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindAtlas",
+      "name": "EXTRA: Adventures",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindAVacuum",
+      "name": "Magnet",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindBraveStory",
+      "name": "EXTRA: Brave Story",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindChaosAltemanna",
+      "name": "EXTRA: Chaos Altemanna",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindChaosLazulia",
+      "name": "EXTRA: Chaos Lazulia",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindChaosMalachite",
+      "name": "EXTRA: Chaos Malachite",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindChaosRosalia",
+      "name": "EXTRA: Chaos Rosalia",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindChickenClock",
+      "name": "EXTRA: Game Speed Modifier",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindCoffinStage1",
+      "name": "Coffin: Mad Forest",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindCoffinStage2",
+      "name": "Coffin: Inlaid Library",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindCoffinStage3",
+      "name": "Coffin: Dairy Plant",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindCoffinStage4",
+      "name": "Coffin: Gallo Tower",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindCoffinStage5",
+      "name": "Coffin: Cappella Magna",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindForbiddenScroll",
+      "name": "Forbidden Scrolls",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindGGospel",
+      "name": "Great Gospel",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindGouda",
+      "name": "Ars Gouda",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindGrimoire",
+      "name": "Grim Grimoire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindKaromasMana",
+      "name": "EXTRA: Karoma's Mana",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindMagicBanger",
+      "name": "Magic Banger",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindManyChickens",
+      "name": "EXTRA: Hyper The Coop",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindManyClovers",
+      "name": "EXTRA: Westwoods",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindManyGoldenFinger",
+      "name": "EXTRA: Space 54",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindManyOrologions",
+      "name": "EXTRA: Whiteout",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindManyRosaries",
+      "name": "EXTRA: Laborratory",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindMap_AstralStair",
+      "name": "EXTRA: Astral Stair Map",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindMasquerade",
+      "name": "EXTRA: Masquerade",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindMilkyWayMap",
+      "name": "Milky Way Map",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindRandomazzo",
+      "name": "Randomazzo",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindRandomazzoT06",
+      "name": "VI - Sarabande of Healing",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindRecycle",
+      "name": "EXTRA: Preserve",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindSorceressTears",
+      "name": "Sorceress' Tears",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindTrisection",
+      "name": "EXTRA: Trisection",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "FindYellowSign",
+      "name": "Yellow Sign",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindYellowSignS5",
+      "name": "Cappella Magna",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FOSC01_FindCoffin",
+      "name": "Eleanor Uziron",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC02_Survive15Eleanor",
+      "name": "SpellString",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC03_GetStreamToLevel6",
+      "name": "SpellStream",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC04_GetStrikeToLevel6",
+      "name": "SpellStrike",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC05_UniteSpells",
+      "name": "Maruto Cuts",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC06_Survive15Viktor",
+      "name": "Eskizzibur",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC07_EvolveEskizzibur",
+      "name": "Keitha Muort",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC08_Survive15Keira",
+      "name": "Flash Arrow",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC09_EvolveFlashArrow",
+      "name": "Millionaire",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC10_BreakSeal1",
+      "name": "Abyss Foscari",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC11_BreakSeal2",
+      "name": "Luminaire Foscari",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC12_BreakSeal3",
+      "name": "Genevieve Gruyère",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC13_Survive15Luminaire",
+      "name": "Prismatic Missile",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC14_EvolvePrismatic",
+      "name": "Luminaire",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC15_Survive15Genevieve",
+      "name": "Shadow Servant",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC16_EvolveShadow",
+      "name": "Ophion",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC17_Defeat100kGenevieve",
+      "name": "Je-Ne-Viv",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC18_Defeat6kFairy",
+      "name": "Happy Birthday",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC19_Defeat6kHorror",
+      "name": "Rottin'Ghoul",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC20_DefeatBossLake",
+      "name": "Hyper Lake Foscari",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC21_DefeatBossAbyss",
+      "name": "Hyper Abyss Foscari",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "FOSC22_FindMap_Foscari",
+      "name": "Lake Foscari Map",
+      "classification": "later_or_expansion",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "GalloDivano",
+      "name": "Bracelet",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetFireWandToLevel4",
+      "name": "Arca",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetGarlicToLevel7",
+      "name": "Poe Ratcho",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetGlassFandangoToLevel7",
+      "name": "EXTRA: Glass Fandango",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "GetHolyBookToLevel4",
+      "name": "Bracer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetHolyWaterToLevel4",
+      "name": "Candelabrador",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetJavelinToLevel7",
+      "name": "EXTRA: Santa Javelin",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "GetLightningRingToLevel4",
+      "name": "Porta",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetMagicMissileToLevel7",
+      "name": "Duplicator",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetMagiStoneToLevel7",
+      "name": "EXTRA: Magi-Stone",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "GetPeachoneToLevel7",
+      "name": "Ebony Wings",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetPentagramToLevel7",
+      "name": "Christine",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetPhas3rToLevel7",
+      "name": "EXTRA: Phas3r",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "GetRunetracerToLevel7",
+      "name": "Spellbinder",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GetTorroneToLevel9",
+      "name": "Omni",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GreatestJubilee",
+      "name": "Greatest Jubilee",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Have6DifferentWeapons",
+      "name": "Empty Tome",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Have6Evolutions",
+      "name": "Torrona's Box",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HitManyEnemiesWithTrain",
+      "name": "EXTRA: Carlo Cart",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "MOON01_FindCoffin",
+      "name": "Miang",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON02_Survive15Miang",
+      "name": "Silver Wind",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON03_EvolveSilverWind",
+      "name": "Menya",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON04_Survive15Menya",
+      "name": "Four Seasons",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON05_EvolveFourSeasons",
+      "name": "Syuuto",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON06_Survive15Syuuto",
+      "name": "Summon Night",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON07_EvolveSummonNight",
+      "name": "Babi-Onna",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON08_Survive15BabiOnna",
+      "name": "Mirage Robe",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON09_EvolveMirageRobe",
+      "name": "McCoy-Oni",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON10_Survive15McCoy",
+      "name": "108 Bocce",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON11_Defeat100kVanya",
+      "name": "Megalo Menya",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON12_Defeat100kVadjouel",
+      "name": "Megalo Syuuto",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON13_Defeat6kWater",
+      "name": "Gav'Et-Oni",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON14_FindNightSword",
+      "name": "Night Sword",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON15_EvolveNightSword",
+      "name": "Muramasa",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON16_DefeatBossRuins",
+      "name": "Hyper Mt.Moonspell",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON17_EvolveBubbles",
+      "name": "Boo Roo Boolle",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "MOON18_FindMap_Moonspell",
+      "name": "Mt.Moonspell Map",
+      "classification": "later_or_expansion",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "ObtainAllRelics",
+      "name": "The Eudaimonia Machine",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ObtainDarkasso",
+      "name": "EXTRA: Darkasso",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ObtainGraciasMirror",
+      "name": "Gracia's Mirror",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ObtainSeventhTrumpet",
+      "name": "Seventh Trumpet",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ObtainTheCrimsonShroud",
+      "name": "Seeker of the Crimson Shroud",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ObtainTheInfiniteCorridor",
+      "name": "Seeker of the Infinite Corridor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV10",
+      "name": "Crown",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV100WithAmbrojoe",
+      "name": "Reroll 5",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV100WithCavallo",
+      "name": "Reroll 2",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV100WithMortaccio",
+      "name": "Reroll 1",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV100WithOsole",
+      "name": "Reroll 4",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV100WithRamba",
+      "name": "Reroll 3",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV20InMadForest",
+      "name": "Inlaid Library",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV40InLibrary",
+      "name": "Dairy Plant",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV5",
+      "name": "Wings",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV60InDairyPlant",
+      "name": "Gallo Tower",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV80InverseForest",
+      "name": "EXTRA: Bat Country",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ReachLV80InverseLibrary",
+      "name": "EXTRA: Astral Stair",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ReachLV80InverseTower",
+      "name": "EXTRA: Tiny Bridge",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ReachLV80InverseWarehouse",
+      "name": "EXTRA: Mazerella",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "ReachLV99WithAntonio",
+      "name": "X - Beginning",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithArca",
+      "name": "XIX - Heart of Fire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithChristine",
+      "name": "XIII - Wicked Season",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithClerici",
+      "name": "IX - Divine Bloodline",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithConcetta",
+      "name": "XVIII - Boogaloo of Illusions",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithDommario",
+      "name": "II - Twilight Requiem",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithGennaro",
+      "name": "VII - Iron Blue Will",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithGiovanna",
+      "name": "V - Chaos in the Dark Night",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithImelda",
+      "name": "XI - Waltz of Pearls",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithKroci",
+      "name": "IV - Awake",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithLama",
+      "name": "XVI - Slash",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithPasqualina",
+      "name": "XIV - Jail of Crystal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithPoe",
+      "name": "XXI - Blood Astronomia",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithPoppea",
+      "name": "XVII - Lost and Found Painting",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithPorta",
+      "name": "III - Tragic Princess",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ReachLV99WithPugnala",
+      "name": "I - Gemini",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Recover1000HP",
+      "name": "Suor Clerici",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "See100Items",
+      "name": "Banish 5",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "See50Items",
+      "name": "Mindbender",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "See60Items",
+      "name": "Banish 1",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "See70Items",
+      "name": "Banish 2",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "See80Items",
+      "name": "Banish 3",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "See90Items",
+      "name": "Banish 4",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive10Minutes",
+      "name": "Peachone",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive10MinutesWithGuns",
+      "name": "Phiera Der Tuphello",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive15MinutesInBossRash",
+      "name": "Skip 5",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive15MinutesInMolise",
+      "name": "Skip 1",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive15MinutesInMoongolow",
+      "name": "Skip 4",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive15MinutesWithGatti",
+      "name": "Gatti Amari",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive15MinutesWithGuns",
+      "name": "Eight The Sparrow",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive15MinutesWithShadow",
+      "name": "Shadow Pinion",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive15MinutesWithSong",
+      "name": "Song of Mana",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive15MinutesWithWind",
+      "name": "Vento Sacro",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive1Minute",
+      "name": "Hollow Heart",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive20Minutes",
+      "name": "Pentagram",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive20MinutesInLaborratory",
+      "name": "EXTRA: Santa Ladonna",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Survive20MinutesInSpace54",
+      "name": "EXTRA: Space Dude",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Survive20minutesInWestwoods",
+      "name": "EXTRA: Chula-Reh",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "Survive20MinutesWithCross",
+      "name": "Tiragisú",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive20MinutesWithCurse",
+      "name": "Lama",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive30MinutesInBoneZone",
+      "name": "Skip 3",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive30MinutesInGreenAcres",
+      "name": "Skip 2",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive30MinutesWithAxe",
+      "name": "Skull O'Maniac",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive31MinutesInDairyPlant",
+      "name": "XX - Silent Old Sanctuary",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive31MinutesInForest",
+      "name": "VIII - Mad Groove",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive31MinutesInLibrary",
+      "name": "XV - Disco of Gold",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive31MinutesInTower",
+      "name": "XII - Out of Bounds",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive5MinutesWithDiamond",
+      "name": "Runetracer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Survive5MinutesWithKnife",
+      "name": "Pummarola",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SurviveUntilTheEndOfWhiteout",
+      "name": "EXTRA: She-Moon Eeta",
+      "classification": "later_or_expansion",
+      "steam_group_id": 3
+    },
+    {
+      "steam_api_name": "UniteBirds",
+      "name": "Vandalier",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Unlock2Hypers",
+      "name": "Green Acres",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Unlock3Hypers",
+      "name": "Il Molise",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Unlock3Hypers_Correct",
+      "name": "The Bone Zone",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Unlock4Hypers",
+      "name": "Moongolow",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Unlock5Hypers",
+      "name": "Boss Rash",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

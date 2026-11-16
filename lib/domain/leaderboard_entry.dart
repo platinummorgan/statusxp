@@ -9,6 +9,8 @@ class LeaderboardEntry {
   final int rankChange;
   final bool isNew;
 
+  final int? mythicCount;
+
   // PSN Trophy Breakdown
   final int? platinumCount;
   final int? goldCount;
@@ -34,6 +36,7 @@ class LeaderboardEntry {
     this.previousRank,
     this.rankChange = 0,
     this.isNew = false,
+    this.mythicCount,
     this.platinumCount,
     this.goldCount,
     this.silverCount,
@@ -56,6 +59,7 @@ class LeaderboardEntry {
       previousRank: json['previous_rank'] as int?,
       rankChange: (json['rank_change'] as int?) ?? 0,
       isNew: (json['is_new'] as bool?) ?? false,
+      mythicCount: (json['mythic_count'] as num?)?.toInt(),
       platinumCount: (json['platinum_count'] as num?)?.toInt(),
       goldCount: (json['gold_count'] as num?)?.toInt(),
       silverCount: (json['silver_count'] as num?)?.toInt(),
@@ -79,6 +83,7 @@ class LeaderboardEntry {
       'previous_rank': previousRank,
       'rank_change': rankChange,
       'is_new': isNew,
+      'mythic_count': mythicCount,
       'platinum_count': platinumCount,
       'gold_count': goldCount,
       'silver_count': silverCount,

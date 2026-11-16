@@ -1,0 +1,285 @@
+{
+  "app_id": "1574900",
+  "name": "Salt 2",
+  "required_ids": [
+    "Best_The_Boar",
+    "By_The_Stars",
+    "Candygram_For_Mongo",
+    "Compass_Collector",
+    "Deep_Blue_Sea",
+    "Dungeon_Master",
+    "Edge_Of_The_Earth",
+    "Fish_Are_Friends_Not_Food",
+    "Galleon_Glory",
+    "Ghost_Hunter",
+    "Guild_Master",
+    "Hook_Horror",
+    "Into_The_Abyss",
+    "Legendary_Looter",
+    "Librarian",
+    "Light_Of_The_Moon",
+    "Master_Crafter",
+    "Master_Of_Coin",
+    "Max_Level",
+    "Musical_Remedies",
+    "Pirate_Legend",
+    "Pistol_Of_Legend",
+    "Queen_Slayer",
+    "Save_Us_Melman",
+    "Scepter_Of_Kings",
+    "Scuba_Sailor",
+    "Skeleton_Slayer",
+    "Stag_Party",
+    "Sunken_Treasure",
+    "Times_Up",
+    "Treasure_Hunter",
+    "Truffle_Hunter",
+    "Twisted_Tales",
+    "Well_Well_Well",
+    "Were_Going_On_An_Adventure",
+    "Why_Is_The_Rum_Always_Gone"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1574900/?l=english",
+      "https://store.steampowered.com/app/1574900/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1574900&count=100&maxlength=0&enddate=1771563600",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1844751498221538",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1843481262702100",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1835871199313703",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1834602721202675",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1826362059933949",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1825727806705715",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1815034433034347",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1813041031240891",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1811772772642627",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1811772772213702"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "12 Nov, 2025",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "36 achievements present by November 12, 2025 1.0 release. Developer January 2024 notes introduce the achievement set during Early Access. Later notes change existing Librarian/Guild Master requirements, without adding achievement IDs; no manual rewriting of native requirements.",
+    "steam_schema_hash": 877310804,
+    "steam_schema_version": 15
+  },
+  "mapping": [
+    {
+      "steam_api_name": "Best_The_Boar",
+      "name": "Best the Boar",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "By_The_Stars",
+      "name": "By The Stars",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Candygram_For_Mongo",
+      "name": "Candygram For Mongo",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Compass_Collector",
+      "name": "Compass Collector",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Deep_Blue_Sea",
+      "name": "Deep Blue Sea",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Dungeon_Master",
+      "name": "Dungeon Master",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Edge_Of_The_Earth",
+      "name": "Edge of the Earth",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Fish_Are_Friends_Not_Food",
+      "name": "Fish Are Friends Not Food",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Galleon_Glory",
+      "name": "Galleon Glory",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Ghost_Hunter",
+      "name": "Ghost Hunter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Guild_Master",
+      "name": "Guild Master",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Hook_Horror",
+      "name": "Hook Horror",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Into_The_Abyss",
+      "name": "Into the Abyss",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Legendary_Looter",
+      "name": "Legendary Looter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Librarian",
+      "name": "Librarian",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Light_Of_The_Moon",
+      "name": "Light of the Moon",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Master_Crafter",
+      "name": "Master Crafter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Master_Of_Coin",
+      "name": "Master of Coin",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Max_Level",
+      "name": "Max Level",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Musical_Remedies",
+      "name": "Musical Remedies",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Pirate_Legend",
+      "name": "Pirate Legend",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Pistol_Of_Legend",
+      "name": "Pistol of Legend",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Queen_Slayer",
+      "name": "Queen Slayer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Save_Us_Melman",
+      "name": "Save Us Melman",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Scepter_Of_Kings",
+      "name": "Scepter of Kings",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Scuba_Sailor",
+      "name": "Scuba Sailor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Skeleton_Slayer",
+      "name": "Skeleton Slayer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Stag_Party",
+      "name": "Stag Party",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Sunken_Treasure",
+      "name": "Sunken Treasure",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Times_Up",
+      "name": "Time's Up",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Treasure_Hunter",
+      "name": "Treasure Hunter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Truffle_Hunter",
+      "name": "Truffle Hunter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Twisted_Tales",
+      "name": "Twisted Tales",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Well_Well_Well",
+      "name": "Well Well Well",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Were_Going_On_An_Adventure",
+      "name": "We're Going On An Adventure",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Why_Is_The_Rum_Always_Gone",
+      "name": "Why is the Rum Always Gone",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

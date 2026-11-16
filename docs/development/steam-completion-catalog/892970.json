@@ -1,0 +1,404 @@
+{
+  "app_id": "892970",
+  "name": "Valheim",
+  "required_ids": [
+    "AllBosses",
+    "AllBossesHard",
+    "AllBossesNormal",
+    "AllBuildPieces",
+    "AllFoodCooked",
+    "AllFoodEaten",
+    "AllItemCraft",
+    "AllMiniBosses",
+    "AllWeaponCraft",
+    "Arrived",
+    "BigFish",
+    "Boss1Eikthyr",
+    "Boss2Elder",
+    "Boss3Bonemass",
+    "Boss4Moder",
+    "Boss5Yagluth",
+    "Boss6Queen",
+    "Boss7Fader",
+    "Boss8FrozenKing",
+    "BuildDyrnwyn",
+    "BuildHigh",
+    "BuildHighWorld",
+    "BuildHouse",
+    "BuildVillage",
+    "ChildOfOdin",
+    "DeathByAllTypes",
+    "DeathByObliterator",
+    "DeathByTree",
+    "DeathByTreeAll",
+    "ExploreNSEW",
+    "ExploreNSEWNoMap",
+    "FindAllTrophies",
+    "FirstDeath",
+    "GrindBuild",
+    "GrindComfort",
+    "GrindCook",
+    "GrindDays",
+    "GrindEat",
+    "GrindFish",
+    "GrindForager",
+    "GrindHarvest",
+    "GrindHoney",
+    "GrindLeviathan",
+    "GrindSail",
+    "GrindSailHelm",
+    "GrindTreasure",
+    "GrindTrees",
+    "KillAllCreatures",
+    "KillAllCreaturesHard",
+    "KingsQueens",
+    "MultiplayerBoss",
+    "SailEdge",
+    "SoloBoss"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/892970/?l=english",
+      "https://store.steampowered.com/app/892970/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=892970&count=100&maxlength=0&enddate=1797566400",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847920302230913",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1846651706676865",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1845383656396226",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1845383656377310",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1844751498224366",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1844115010494664",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1844115010491701",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1843481262695240",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1843481262688942",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1841579228664600"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Sep 9, 2026",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "53 original 1.0 achievements. Developer September 9, 2026 release notes introduce achievements; subsequent patches fix triggers/requirements, with no added IDs. Early Access cutoff is the full 1.0 launch.",
+    "steam_schema_hash": 3825814976,
+    "steam_schema_version": 5
+  },
+  "mapping": [
+    {
+      "steam_api_name": "AllBosses",
+      "name": "The Viking",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AllBossesHard",
+      "name": "The Toughest Viking",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AllBossesNormal",
+      "name": "The Tough Viking",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AllBuildPieces",
+      "name": "The Carpenter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AllFoodCooked",
+      "name": "The Master Chef",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AllFoodEaten",
+      "name": "The Gourmet",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AllItemCraft",
+      "name": "The Artisan",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AllMiniBosses",
+      "name": "Odin is Pleased",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "AllWeaponCraft",
+      "name": "The Blacksmith",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Arrived",
+      "name": "I Have Arrived!",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BigFish",
+      "name": "A Catch Worthy of Njord",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Boss1Eikthyr",
+      "name": "Eikthyr",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Boss2Elder",
+      "name": "The Elder",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Boss3Bonemass",
+      "name": "Bonemass",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Boss4Moder",
+      "name": "Moder",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Boss5Yagluth",
+      "name": "Yagluth",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Boss6Queen",
+      "name": "The Seeker Queen",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Boss7Fader",
+      "name": "Fader",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "Boss8FrozenKing",
+      "name": "Kall Fimbulbringer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BuildDyrnwyn",
+      "name": "The Chosen One",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BuildHigh",
+      "name": "Mighty Halls",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BuildHighWorld",
+      "name": "Top of the World",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BuildHouse",
+      "name": "The Homesteader",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BuildVillage",
+      "name": "The Architect",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ChildOfOdin",
+      "name": "Child of Odin",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DeathByAllTypes",
+      "name": "Are You Alright?",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DeathByObliterator",
+      "name": "Obliterated",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DeathByTree",
+      "name": "Accidents Happen",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DeathByTreeAll",
+      "name": "That Can't Be an Accident",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ExploreNSEW",
+      "name": "The Explorer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ExploreNSEWNoMap",
+      "name": "The Pathfinder",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FindAllTrophies",
+      "name": "The Trophy Collector",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FirstDeath",
+      "name": "The First of Many",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindBuild",
+      "name": "The Builder",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindComfort",
+      "name": "Comfort is King",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindCook",
+      "name": "The Cook",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindDays",
+      "name": "The Survivor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindEat",
+      "name": "No Adventuring On an Empty Stomach",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindFish",
+      "name": "The Fisherman",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindForager",
+      "name": "The Forager",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindHarvest",
+      "name": "The Farmer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindHoney",
+      "name": "The Beekeeper",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindLeviathan",
+      "name": "No Time For Snoozing",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindSail",
+      "name": "The Sailor",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindSailHelm",
+      "name": "The Captain",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindTreasure",
+      "name": "The Treasure Hunter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GrindTrees",
+      "name": "The Lumberjack",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KillAllCreatures",
+      "name": "The Hunter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KillAllCreaturesHard",
+      "name": "The Master Hunter",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KingsQueens",
+      "name": "Kings and Queens of Valheim",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MultiplayerBoss",
+      "name": "Stronger Together",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SailEdge",
+      "name": "The Legends Are True",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SoloBoss",
+      "name": "Lone Wolf",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

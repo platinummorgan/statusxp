@@ -1,0 +1,698 @@
+{
+  "date": "2026-11-15",
+  "method": {
+    "scope": "Stored global rarity percentages, explicit default trophy group, Platinum excluded from rarest trophy, all base rarities valid, no unknown membership in the list",
+    "deduplication": "NPWR trophy-list identity, excluding copies with conflicting rarity inputs or required trophy IDs",
+    "zeroRarity": "Included in primary comparison and reported separately through positive-rarity cohort"
+  },
+  "coverage": {
+    "catalogRows": 336283,
+    "platformGameEntries": 10900,
+    "platinumEntries": 9698,
+    "excluded": {
+      "noPlatinum": 1202,
+      "multiplePlatinums": 0,
+      "platinumGroupUnknown": 783,
+      "platinumOutsideDefault": 0,
+      "unknownMembership": 0,
+      "missingOrInvalidPlatinumRarity": 0,
+      "noOtherBaseTrophies": 0,
+      "missingOrInvalidBaseRarity": 0,
+      "conflictingDlcFlags": 0
+    },
+    "eligibleEntries": 8915,
+    "uniqueEligibleIdentities": 8884,
+    "duplicateCopiesCollapsed": 23,
+    "conflictingDuplicateIdentitiesExcluded": 8
+  },
+  "cohorts": {
+    "allEligibleEntries": {
+      "count": 8915,
+      "exactMatch": 3895,
+      "within01pp": 5210,
+      "within05pp": 7068,
+      "within1pp": 7907,
+      "within2pp": 8476,
+      "proxyMoreCommon": 4977,
+      "proxyRarerThanPlatinum": 43,
+      "medianSignedGap": 0.1,
+      "meanSignedGap": 0.44494671901289035,
+      "medianAbsoluteGap": 0.1,
+      "p90AbsoluteGap": 1.2,
+      "p95AbsoluteGap": 2,
+      "maxAbsoluteGap": 27.8
+    },
+    "uniqueValidatedLists": {
+      "count": 8876,
+      "exactMatch": 3864,
+      "within01pp": 5179,
+      "within05pp": 7037,
+      "within1pp": 7872,
+      "within2pp": 8439,
+      "proxyMoreCommon": 4969,
+      "proxyRarerThanPlatinum": 43,
+      "medianSignedGap": 0.1,
+      "meanSignedGap": 0.4455835962145017,
+      "medianAbsoluteGap": 0.1,
+      "p90AbsoluteGap": 1.2,
+      "p95AbsoluteGap": 2,
+      "maxAbsoluteGap": 27.8
+    },
+    "positivePlatinumRarity": {
+      "count": 8875,
+      "exactMatch": 3863,
+      "within01pp": 5178,
+      "within05pp": 7036,
+      "within1pp": 7871,
+      "within2pp": 8438,
+      "proxyMoreCommon": 4969,
+      "proxyRarerThanPlatinum": 43,
+      "medianSignedGap": 0.1,
+      "meanSignedGap": 0.4456338028168921,
+      "medianAbsoluteGap": 0.1,
+      "p90AbsoluteGap": 1.2,
+      "p95AbsoluteGap": 2,
+      "maxAbsoluteGap": 27.8
+    },
+    "nonInvertedPositiveRarity": {
+      "count": 8832,
+      "exactMatch": 3863,
+      "within01pp": 5152,
+      "within05pp": 7003,
+      "within1pp": 7835,
+      "within2pp": 8398,
+      "proxyMoreCommon": 4969,
+      "proxyRarerThanPlatinum": 0,
+      "medianSignedGap": 0.1,
+      "meanSignedGap": 0.4502038043478165,
+      "medianAbsoluteGap": 0.1,
+      "p90AbsoluteGap": 1.2,
+      "p95AbsoluteGap": 2,
+      "maxAbsoluteGap": 27.8
+    },
+    "byPlatform": {
+      "1": {
+        "count": 3421,
+        "exactMatch": 1816,
+        "within01pp": 2202,
+        "within05pp": 2747,
+        "within1pp": 3022,
+        "within2pp": 3237,
+        "proxyMoreCommon": 1595,
+        "proxyRarerThanPlatinum": 10,
+        "medianSignedGap": 0,
+        "meanSignedGap": 0.45264542531423585,
+        "medianAbsoluteGap": 0,
+        "p90AbsoluteGap": 1.2,
+        "p95AbsoluteGap": 2.1,
+        "maxAbsoluteGap": 17
+      },
+      "2": {
+        "count": 4638,
+        "exactMatch": 1967,
+        "within01pp": 2707,
+        "within05pp": 3693,
+        "within1pp": 4119,
+        "within2pp": 4407,
+        "proxyMoreCommon": 2657,
+        "proxyRarerThanPlatinum": 14,
+        "medianSignedGap": 0.1,
+        "meanSignedGap": 0.4413540319103016,
+        "medianAbsoluteGap": 0.1,
+        "p90AbsoluteGap": 1.2,
+        "p95AbsoluteGap": 2,
+        "maxAbsoluteGap": 27.8
+      },
+      "5": {
+        "count": 660,
+        "exactMatch": 105,
+        "within01pp": 257,
+        "within05pp": 508,
+        "within1pp": 590,
+        "within2pp": 641,
+        "proxyMoreCommon": 536,
+        "proxyRarerThanPlatinum": 19,
+        "medianSignedGap": 0.2,
+        "meanSignedGap": 0.3815151515151511,
+        "medianAbsoluteGap": 0.2,
+        "p90AbsoluteGap": 1.1,
+        "p95AbsoluteGap": 1.4,
+        "maxAbsoluteGap": 6.5
+      },
+      "9": {
+        "count": 196,
+        "exactMatch": 7,
+        "within01pp": 44,
+        "within05pp": 120,
+        "within1pp": 176,
+        "within2pp": 191,
+        "proxyMoreCommon": 189,
+        "proxyRarerThanPlatinum": 0,
+        "medianSignedGap": 0.4,
+        "meanSignedGap": 0.609183673469388,
+        "medianAbsoluteGap": 0.4,
+        "p90AbsoluteGap": 1.05,
+        "p95AbsoluteGap": 1.7,
+        "maxAbsoluteGap": 9.5
+      }
+    }
+  },
+  "byPlatinumRarity": {
+    "under1": {
+      "count": 1245,
+      "exact": 465,
+      "within1": 1196,
+      "medianAbsoluteGap": 0.1,
+      "p90AbsoluteGap": 0.5
+    },
+    "from1To5": {
+      "count": 1282,
+      "exact": 110,
+      "within1": 1109,
+      "medianAbsoluteGap": 0.3,
+      "p90AbsoluteGap": 1.2
+    },
+    "from5To20": {
+      "count": 773,
+      "exact": 54,
+      "within1": 500,
+      "medianAbsoluteGap": 0.6,
+      "p90AbsoluteGap": 3.4
+    },
+    "from20": {
+      "count": 5576,
+      "exact": 3235,
+      "within1": 5067,
+      "medianAbsoluteGap": 0,
+      "p90AbsoluteGap": 1
+    }
+  },
+  "crossCheckedExamples": [
+    {
+      "platformId": 1,
+      "gameId": "NPWR19950_00",
+      "platinumId": "0",
+      "platinumName": "Big Adventurer",
+      "platinumRarity": 0.4,
+      "rarestTrophyId": "45",
+      "rarestTrophyName": "String it Together",
+      "rarestTrophyRarity": 0.5,
+      "gapPercentagePoints": 0.1,
+      "baseTrophyCount": 45,
+      "platformIds": [
+        1
+      ],
+      "gameName": "Sackboy: A Big Adventure",
+      "crossCheckMatches": true
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR19955_00",
+      "platinumId": "0",
+      "platinumName": "The Chronicler",
+      "platinumRarity": 3.8,
+      "rarestTrophyId": "49",
+      "rarestTrophyName": "Fantasy, Finally",
+      "rarestTrophyRarity": 5.1,
+      "gapPercentagePoints": 1.3,
+      "baseTrophyCount": 49,
+      "platformIds": [
+        1
+      ],
+      "gameName": "FINAL FANTASY XVI",
+      "crossCheckMatches": true
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR20004_00",
+      "platinumId": "0",
+      "platinumName": "Helios",
+      "platinumRarity": 1.5,
+      "rarestTrophyId": "3",
+      "rarestTrophyName": "Ascending the Mountain",
+      "rarestTrophyRarity": 1.6,
+      "gapPercentagePoints": 0.1,
+      "baseTrophyCount": 30,
+      "platformIds": [
+        1
+      ],
+      "gameName": "Returnal",
+      "crossCheckMatches": true
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR20006_00",
+      "platinumId": "0",
+      "platinumName": "Into Eternity",
+      "platinumRarity": 1.5,
+      "rarestTrophyId": "35",
+      "rarestTrophyName": "The Spice Of Life",
+      "rarestTrophyRarity": 1.7,
+      "gapPercentagePoints": 0.2,
+      "baseTrophyCount": 54,
+      "platformIds": [
+        1
+      ],
+      "gameName": "Deathloop",
+      "crossCheckMatches": true
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR20188_00",
+      "platinumId": "0",
+      "platinumName": "You've Only Done Everything",
+      "platinumRarity": 4.1,
+      "rarestTrophyId": "32",
+      "rarestTrophyName": "Twisting Metal",
+      "rarestTrophyRarity": 4.8,
+      "gapPercentagePoints": 0.7,
+      "baseTrophyCount": 42,
+      "platformIds": [
+        1
+      ],
+      "gameName": "ASTRO’s PLAYROOM",
+      "crossCheckMatches": true
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR20241_00",
+      "platinumId": "0",
+      "platinumName": "The Great Achiever",
+      "platinumRarity": 0.1,
+      "rarestTrophyId": "5",
+      "rarestTrophyName": "VOLTA's Finest",
+      "rarestTrophyRarity": 0.1,
+      "gapPercentagePoints": 0,
+      "baseTrophyCount": 36,
+      "platformIds": [
+        1
+      ],
+      "gameName": "FIFA 21 Trophies",
+      "crossCheckMatches": true
+    }
+  ],
+  "largestGaps": [
+    {
+      "platformId": 2,
+      "gameId": "NPWR48661_00",
+      "platinumId": "0",
+      "platinumName": "CONNECTION",
+      "platinumRarity": 21,
+      "rarestTrophyId": "4",
+      "rarestTrophyName": "CHAPTER 4 END",
+      "rarestTrophyRarity": 48.8,
+      "gapPercentagePoints": 27.8,
+      "baseTrophyCount": 29,
+      "platformIds": [
+        2
+      ],
+      "gameName": "DELTARUNE"
+    },
+    {
+      "platformId": 2,
+      "gameId": "NPWR23359_00",
+      "platinumId": "0",
+      "platinumName": "We Were Here Forever",
+      "platinumRarity": 11.1,
+      "rarestTrophyId": "36",
+      "rarestTrophyName": "Forlorn",
+      "rarestTrophyRarity": 29.3,
+      "gapPercentagePoints": 18.2,
+      "baseTrophyCount": 38,
+      "platformIds": [
+        2
+      ],
+      "gameName": "We Were Here Forever"
+    },
+    {
+      "platformId": 2,
+      "gameId": "NPWR42044_00",
+      "platinumId": "0",
+      "platinumName": "Keeper of the Unknown",
+      "platinumRarity": 53.7,
+      "rarestTrophyId": "7",
+      "rarestTrophyName": "Poles Apart",
+      "rarestTrophyRarity": 71.8,
+      "gapPercentagePoints": 18.1,
+      "baseTrophyCount": 21,
+      "platformIds": [
+        2
+      ],
+      "gameName": "The Street 10"
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR27445_00",
+      "platinumId": "0",
+      "platinumName": "We Were Here Forever",
+      "platinumRarity": 9.6,
+      "rarestTrophyId": "36",
+      "rarestTrophyName": "Forlorn",
+      "rarestTrophyRarity": 26.6,
+      "gapPercentagePoints": 17,
+      "baseTrophyCount": 38,
+      "platformIds": [
+        1
+      ],
+      "gameName": "We Were Here Forever"
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR42047_00",
+      "platinumId": "0",
+      "platinumName": "Keeper of the Unknown",
+      "platinumRarity": 51.3,
+      "rarestTrophyId": "10",
+      "rarestTrophyName": "Floral Fright",
+      "rarestTrophyRarity": 68.3,
+      "gapPercentagePoints": 17,
+      "baseTrophyCount": 21,
+      "platformIds": [
+        1
+      ],
+      "gameName": "The Street 10"
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR42046_00",
+      "platinumId": "0",
+      "platinumName": "Keeper of the Unknown",
+      "platinumRarity": 47.7,
+      "rarestTrophyId": "10",
+      "rarestTrophyName": "Floral Fright",
+      "rarestTrophyRarity": 64.4,
+      "gapPercentagePoints": 16.7,
+      "baseTrophyCount": 21,
+      "platformIds": [
+        1
+      ],
+      "gameName": "The Street 10"
+    },
+    {
+      "platformId": 2,
+      "gameId": "NPWR42043_00",
+      "platinumId": "0",
+      "platinumName": "Keeper of the Unknown",
+      "platinumRarity": 60.3,
+      "rarestTrophyId": "10",
+      "rarestTrophyName": "Floral Fright",
+      "rarestTrophyRarity": 76.5,
+      "gapPercentagePoints": 16.2,
+      "baseTrophyCount": 21,
+      "platformIds": [
+        2
+      ],
+      "gameName": "The Street 10"
+    },
+    {
+      "platformId": 2,
+      "gameId": "NPWR42042_00",
+      "platinumId": "0",
+      "platinumName": "Keeper of the Unknown",
+      "platinumRarity": 57.1,
+      "rarestTrophyId": "10",
+      "rarestTrophyName": "Floral Fright",
+      "rarestTrophyRarity": 71.5,
+      "gapPercentagePoints": 14.4,
+      "baseTrophyCount": 21,
+      "platformIds": [
+        2
+      ],
+      "gameName": "The Street 10"
+    },
+    {
+      "platformId": 2,
+      "gameId": "NPWR21180_00",
+      "platinumId": "0",
+      "platinumName": "100%",
+      "platinumRarity": 20.7,
+      "rarestTrophyId": "9",
+      "rarestTrophyName": "Twister",
+      "rarestTrophyRarity": 34.2,
+      "gapPercentagePoints": 13.5,
+      "baseTrophyCount": 11,
+      "platformIds": [
+        2
+      ],
+      "gameName": "Theme Park Simulator"
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR47530_00",
+      "platinumId": "0",
+      "platinumName": "Master of the Deadlands",
+      "platinumRarity": 10.4,
+      "rarestTrophyId": "15",
+      "rarestTrophyName": "Zombie Slayer",
+      "rarestTrophyRarity": 23.7,
+      "gapPercentagePoints": 13.3,
+      "baseTrophyCount": 21,
+      "platformIds": [
+        1
+      ],
+      "gameName": "Deadland Polygon VR"
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR45261_00",
+      "platinumId": "0",
+      "platinumName": "Keeper of the Unknown",
+      "platinumRarity": 14,
+      "rarestTrophyId": "10",
+      "rarestTrophyName": "Floral Fright",
+      "rarestTrophyRarity": 27,
+      "gapPercentagePoints": 13,
+      "baseTrophyCount": 21,
+      "platformIds": [
+        1
+      ],
+      "gameName": "The Street 10 VR"
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR61707_00",
+      "platinumId": "0",
+      "platinumName": "Master",
+      "platinumRarity": 39.7,
+      "rarestTrophyId": "7",
+      "rarestTrophyName": "Goodbye Kowloon",
+      "rarestTrophyRarity": 52.7,
+      "gapPercentagePoints": 13,
+      "baseTrophyCount": 12,
+      "platformIds": [
+        1
+      ],
+      "gameName": "Welcome to Kowloon"
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR53528_00",
+      "platinumId": "0",
+      "platinumName": "% Platinum",
+      "platinumRarity": 69.9,
+      "rarestTrophyId": "16",
+      "rarestTrophyName": "Bring Omicron to -100%",
+      "rarestTrophyRarity": 82.8,
+      "gapPercentagePoints": 12.9,
+      "baseTrophyCount": 24,
+      "platformIds": [
+        1
+      ],
+      "gameName": "%"
+    },
+    {
+      "platformId": 1,
+      "gameId": "NPWR34230_00",
+      "platinumId": "0",
+      "platinumName": "Platinum",
+      "platinumRarity": 66,
+      "rarestTrophyId": "20",
+      "rarestTrophyName": "Little Chemist",
+      "rarestTrophyRarity": 78.4,
+      "gapPercentagePoints": 12.4,
+      "baseTrophyCount": 20,
+      "platformIds": [
+        1
+      ],
+      "gameName": "Crime Secrets: Crimson Lily"
+    },
+    {
+      "platformId": 2,
+      "gameId": "NPWR46623_00",
+      "platinumId": "0",
+      "platinumName": "Potato Master",
+      "platinumRarity": 12.7,
+      "rarestTrophyId": "5",
+      "rarestTrophyName": "Ship Destroyer",
+      "rarestTrophyRarity": 24.4,
+      "gapPercentagePoints": 11.7,
+      "baseTrophyCount": 15,
+      "platformIds": [
+        2
+      ],
+      "gameName": "Potato Arena"
+    }
+  ],
+  "inversionExamples": [
+    {
+      "platformId": 5,
+      "gameId": "NPWR00722_00",
+      "platinumId": "0",
+      "platinumName": "Platinum Trophy",
+      "platinumRarity": 1.2,
+      "rarestTrophyId": "52",
+      "rarestTrophyName": "Territorial",
+      "rarestTrophyRarity": 0.5,
+      "gapPercentagePoints": -0.7,
+      "baseTrophyCount": 68,
+      "platformIds": [
+        5
+      ],
+      "gameName": "BioShock 2"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00845_00",
+      "platinumId": "0",
+      "platinumName": "The Ultimate Reward",
+      "platinumRarity": 1.7,
+      "rarestTrophyId": "65",
+      "rarestTrophyName": "Enthralling",
+      "rarestTrophyRarity": 1,
+      "gapPercentagePoints": -0.7,
+      "baseTrophyCount": 76,
+      "platformIds": [
+        5
+      ],
+      "gameName": "Dragon Age: Origins"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00603_00",
+      "platinumId": "0",
+      "platinumName": "Platinum Trophy",
+      "platinumRarity": 2.6,
+      "rarestTrophyId": "72",
+      "rarestTrophyName": "Alien Archivist",
+      "rarestTrophyRarity": 1.6,
+      "gapPercentagePoints": -1,
+      "baseTrophyCount": 72,
+      "platformIds": [
+        5
+      ],
+      "gameName": "FALLOUT 3"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00234_00",
+      "platinumId": "0",
+      "platinumName": "Burnout Paradise Elite",
+      "platinumRarity": 2.4,
+      "rarestTrophyId": "87",
+      "rarestTrophyName": "Win a game driving the Watson R-turbo Roadster",
+      "rarestTrophyRarity": 1.3,
+      "gapPercentagePoints": -1.1,
+      "baseTrophyCount": 97,
+      "platformIds": [
+        5
+      ],
+      "gameName": "Burnout™ Paradise"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00352_00",
+      "platinumId": "0",
+      "platinumName": "PLATINUM TROPHY",
+      "platinumRarity": 2,
+      "rarestTrophyId": "63",
+      "rarestTrophyName": "“Worlds of Hurt” – Expert",
+      "rarestTrophyRarity": 0.7,
+      "gapPercentagePoints": -1.3,
+      "baseTrophyCount": 65,
+      "platformIds": [
+        5
+      ],
+      "gameName": "BioShock"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00374_00",
+      "platinumId": "0",
+      "platinumName": "Master",
+      "platinumRarity": 2.3,
+      "rarestTrophyId": "57",
+      "rarestTrophyName": "I Only Need a Hand or Twenty",
+      "rarestTrophyRarity": 1,
+      "gapPercentagePoints": -1.3,
+      "baseTrophyCount": 60,
+      "platformIds": [
+        5
+      ],
+      "gameName": "Prince of Persia"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00698_00",
+      "platinumId": "0",
+      "platinumName": "Dark Void 100% Complete",
+      "platinumRarity": 3.3,
+      "rarestTrophyId": "50",
+      "rarestTrophyName": "Hero",
+      "rarestTrophyRarity": 1.8,
+      "gapPercentagePoints": -1.5,
+      "baseTrophyCount": 57,
+      "platformIds": [
+        5
+      ],
+      "gameName": "Dark Void"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00404_00",
+      "platinumId": "0",
+      "platinumName": "RESIDENT EVIL 5 Platinum Trophy",
+      "platinumRarity": 2.8,
+      "rarestTrophyId": "51",
+      "rarestTrophyName": "Army of One",
+      "rarestTrophyRarity": 0.6,
+      "gapPercentagePoints": -2.2,
+      "baseTrophyCount": 70,
+      "platformIds": [
+        5
+      ],
+      "gameName": "RESIDENT EVIL 5"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00612_00",
+      "platinumId": "0",
+      "platinumName": "Borderland Defender",
+      "platinumRarity": 3.8,
+      "rarestTrophyId": "77",
+      "rarestTrophyName": "The Lubricator",
+      "rarestTrophyRarity": 0.8,
+      "gapPercentagePoints": -3,
+      "baseTrophyCount": 80,
+      "platformIds": [
+        5
+      ],
+      "gameName": "Borderlands™"
+    },
+    {
+      "platformId": 5,
+      "gameId": "NPWR00745_00",
+      "platinumId": "0",
+      "platinumName": "Master of The Inferno",
+      "platinumRarity": 3.7,
+      "rarestTrophyId": "52",
+      "rarestTrophyName": "It's in the Trial",
+      "rarestTrophyRarity": 0.4,
+      "gapPercentagePoints": -3.3,
+      "baseTrophyCount": 54,
+      "platformIds": [
+        5
+      ],
+      "gameName": "Dante's Inferno™"
+    }
+  ]
+}

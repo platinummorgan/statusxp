@@ -1,3 +1,5 @@
+import { recordSteamCompletion, markSteamCompletionsSynced } from './steam-completions.js';
+import { steamSchemaSignature } from './steam-achievement-sets.js';
 import { assertPlatformSyncOwner } from './platform-sync-owner.js';
 import { steamOwnedGames } from './provider-library-response.js';
 import { finishSync } from './sync-lifecycle.js';
@@ -283,6 +285,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
     console.log(`Found ${ownedGames.length} owned games`);
     
     if (ownedGames.length === 0) {
+      await markSteamCompletionsSynced(supabase, { userId, steamId, logId: syncLogId });
       await refreshLeaderboardsAfterSync(supabase, userId, 'steam');
       await finishSync(supabase, { userId, platform: 'steam', logId: syncLogId, outcome: 'completed', games: 0, achievements: 0 });
       return;
@@ -406,7 +409,19 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               Number(storedPlaytime) === Number(game.playtime_forever) &&
               Number(storedLastPlayed) === Number(game.rtime_last_played);
 
-            if (playtimeUnchanged && lastSyncAttempt && lastSyncAttempt > fastSkipCutoff) {
+            let completionCatalogUnchanged = false;
+            const completionCheckedAt = existingUserGameQuick?.metadata?.steam_completion_checked_at;
+            if (playtimeUnchanged && completionCheckedAt && new Date(completionCheckedAt) > fastSkipCutoff
+                && existingUserGameQuick?.metadata?.steam_completion_schema_version === 2) {
+              const { data: completionCatalog, error } = await supabase.from('steam_completion_catalog')
+                .select('review_state,membership_revision,policy_version,policy_next_check_at').eq('platform_game_id', String(game.appid)).maybeSingle();
+              completionCatalogUnchanged = !error && completionCatalog
+                && completionCatalog.policy_version === 1
+                && Date.parse(completionCatalog.policy_next_check_at) > Date.now()
+                && completionCatalog.review_state === existingUserGameQuick.metadata.steam_completion_review_state
+                && completionCatalog.membership_revision === existingUserGameQuick.metadata.steam_completion_revision;
+            }
+            if (playtimeUnchanged && lastSyncAttempt && lastSyncAttempt > fastSkipCutoff && completionCatalogUnchanged) {
               console.log(`⏭️  Fast skip ${game.name} - playtime unchanged (last sync ${fastSkipHours}h)`);
               titlesSkipped++;
               await supabase
@@ -670,8 +685,11 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             }
             
             const forceFullSync = process.env.FORCE_FULL_SYNC === 'true';
-            const needsProcessing = forceFullSync || isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed || !hasAchievementDefs || missingUserProgress;
+            const completionSchemaSignature = steamSchemaSignature(achievements.map(a => a.name));
+            const schemaIdsChanged = existingUserGame?.metadata?.steam_completion_schema_signature !== completionSchemaSignature;
+            const needsProcessing = schemaIdsChanged || existingUserGame?.metadata?.steam_completion_schema_version !== 2 || forceFullSync || isNewGame || countsChanged || needRarityRefresh || missingAchievements || syncFailed || !hasAchievementDefs || missingUserProgress;
             const reasonFlags = {
+              schemaIdsChanged,
               forceFullSync,
               isNewGame,
               countsChanged,
@@ -685,6 +703,17 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               console.log(`🔄 RETRY FAILED SYNC: ${game.name} (previous sync failed)`);
             }
             if (!needsProcessing) {
+              const completion = await recordSteamCompletion(supabase, {
+                userId, steamId, logId: syncLogId, appId: game.appid, schema: achievements, playerAchievements,
+              });
+              const { error: completionMetadataError } = await supabase.from('user_progress').update({metadata:{
+                ...existingUserGame.metadata, steam_completion_schema_version:2,
+                steam_completion_schema_signature:completionSchemaSignature,
+                steam_completion_checked_at:new Date().toISOString(),
+                steam_completion_review_state:completion.review_state,
+                steam_completion_revision:completion.membership_revision,
+              }}).eq('user_id',userId).eq('platform_id',4).eq('platform_game_id',String(game.appid));
+              if (completionMetadataError) throw new Error('Steam completion metadata could not be saved.');
               console.log(`⏭️  Skip ${game.name} - no changes`);
               titlesSkipped++;
               processedGames++;
@@ -804,7 +833,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
             for (let j = 0; j < achievements.length; j++) {
               const achievement = achievements[j];
               const playerAchievement = playerAchievementsMap.get(achievement.name);
-              const rarityPercent = globalStats[achievement.name] || null;
+              const rarityPercent = globalStats[achievement.name] ?? null;
 
               // Calculate base_status_xp using EXPONENTIAL CURVE (floor=0.5, cap=12, p=3)
               let baseStatusXP = 0.5; // Default for NULL rarity (treat as common)
@@ -946,6 +975,15 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
               }
             }
 
+            const completion = await recordSteamCompletion(supabase, {
+              userId, steamId, logId: syncLogId, appId: game.appid, schema: achievements, playerAchievements,
+            });
+            Object.assign(userGameProgress.metadata, {
+              steam_completion_schema_version:2, steam_completion_checked_at:new Date().toISOString(),
+              steam_completion_schema_signature:completionSchemaSignature,
+              steam_completion_review_state:completion.review_state,
+              steam_completion_revision:completion.membership_revision,
+            });
             await finalizeGameImport(supabase, userGameProgress, { fetchedDefinitions: achievements.length });
 
             titlesFullyProcessed++;
@@ -1012,6 +1050,7 @@ export async function syncSteamAchievements(userId, steamId, apiKey, syncLogId, 
       `progress_counter=${processedGames}/${ownedGames.length}`
     );
 
+    if (titlesFailed === 0) await markSteamCompletionsSynced(supabase, { userId, steamId, logId: syncLogId });
     await refreshLeaderboardsAfterSync(supabase, userId, 'steam');
     if (titlesFailed > 0 || titlesUnaccounted > 0) throw new Error(`${titlesFailed + titlesUnaccounted} Steam game imports are incomplete; saved progress is retained. Retry sync.`);
 

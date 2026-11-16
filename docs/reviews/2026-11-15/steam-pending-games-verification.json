@@ -1,0 +1,16 @@
+{
+  "reviewed_sets": 28,
+  "pending_sets": 6,
+  "required_ids": 1377,
+  "excluded_ids": 326,
+  "live_membership_matches_all_files": true,
+  "overlapping_ids": 0,
+  "duplicate_ids": 0,
+  "normal_sync_completed": true,
+  "confirmed_steam_completions": 2,
+  "pending_display_after_first_sync": 9,
+  "confirmed_statusxp": 78648,
+  "followup_sync": "rate_limited",
+  "future_sync_expected_completions": 3,
+  "future_sync_expected_pending": 6
+}

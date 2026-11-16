@@ -1,0 +1,146 @@
+{
+  "checked_at": "2026-11-16T16:12:19.863Z",
+  "migration": "20261116190000_native_steam_completion_sets.sql",
+  "railway_deployment": "ff01e8c6-1488-4f4b-ac76-899de7baa25a",
+  "railway_status": "SUCCESS",
+  "web_deployment": "https://statusxp-62g9y45fm-michaels-projects-4c786e88.vercel.app",
+  "production_domain": "https://statusxp.com",
+  "scoring": {
+    "earned_cache_mismatches": 0,
+    "expected_players": 101,
+    "fixture_accounts": 0,
+    "native_policy_games": 1400,
+    "official_base_games": 2,
+    "potential_cache_mismatches": 0,
+    "steam_catalog_games": 1400,
+    "wrong_psn_weights": 0,
+    "wrong_steam_weights": 0,
+    "wrong_xbox_weights": 0
+  },
+  "warmup": {
+    "games": 67,
+    "errors": 0,
+    "official_base": 2,
+    "full_set": 65
+  },
+  "web": [
+    {
+      "path": "/",
+      "status": 200,
+      "bytes": 7569
+    },
+    {
+      "path": "/login-callback",
+      "status": 200,
+      "bytes": 7569
+    },
+    {
+      "path": "/.well-known/assetlinks.json",
+      "status": 200,
+      "bytes": 449
+    },
+    {
+      "path": "/main.dart.js",
+      "status": 200,
+      "bytes": 4987292,
+      "matches_local": true
+    }
+  ],
+  "tests": {
+    "node": 137,
+    "flutter": 22,
+    "sql_rehearsal": "passed_and_rolled_back",
+    "targeted_analysis": "no_issues",
+    "web_build": "passed"
+  },
+  "qualification": {
+    "one_award_per_app": true,
+    "required_set_shared_with_rarity": true,
+    "steam_rarity_weight": 1,
+    "psn_xbox_rarity_weight": 5,
+    "no_player_sync_started": true,
+    "current_requirements_rechecked_on_normal_sync": true
+  },
+  "health": {
+    "http_status": 200,
+    "node_version": "v20.20.2",
+    "staged_runtime_matches_source": true
+  },
+  "background_observed": {
+    "refreshed_games": 79,
+    "awaiting_refresh": 1321,
+    "worker_progress_confirmed": true
+  },
+  "phone_followup": {
+    "tested_on": "2026-11-16",
+    "device": "Samsung SM-S926U, Android 17",
+    "package": "com.statusxp.statusxp.dev",
+    "sign_in_preserved": true,
+    "statusxp": 78720,
+    "total_completions": 203,
+    "steam_completions": 2,
+    "steam_awaiting_sync": 13,
+    "playrooms_award": {
+      "required": 30,
+      "earned": 30,
+      "points": 9.31,
+      "estimated_rarity": 8.5,
+      "rarity_weight": 1,
+      "policy": "all_achievements"
+    },
+    "rust_progress": {
+      "earned": 55,
+      "total": 116,
+      "completion_award": false
+    },
+    "new_canonical_game_page_tests": 3,
+    "targeted_followup_widget_tests": 9,
+    "process_errors": {
+      "fatal": 0,
+      "flutter_exception": 0,
+      "overflow": 0,
+      "missing_plugin": 0,
+      "backend_error": 0
+    },
+    "web_deployment": "https://statusxp-qmls0ezez-michaels-projects-4c786e88.vercel.app",
+    "published_web_matches_build": true
+  },
+  "post_user_sync": {
+    "checked_at": "2026-11-16T17:46:35.016Z",
+    "sync_status": "success",
+    "progress": 100,
+    "canonical_total": 78720,
+    "cached_total": 78720,
+    "cache_matches": true,
+    "games_checked": 400,
+    "steam_stats": [
+      {
+        "completion_count": 2,
+        "pending_review_count": 0,
+        "completions_synced": true
+      }
+    ],
+    "total_completions": 203,
+    "awards": [
+      {
+        "platform_game_id": "5037510",
+        "base_status_xp": 9.25,
+        "estimated_rarity": 8.7
+      },
+      {
+        "platform_game_id": "288160",
+        "base_status_xp": 1,
+        "estimated_rarity": 64.9
+      }
+    ],
+    "rust_progress": {
+      "required_count": 116,
+      "earned_count": 55,
+      "is_complete": false,
+      "checked_at": "2026-11-16T17:44:55.018044+00:00"
+    },
+    "phone_dashboard_verified": true,
+    "awaiting_sync_label_removed": true,
+    "verified_so_far_label_removed": true
+  }
+}

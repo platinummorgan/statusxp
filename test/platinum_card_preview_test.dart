@@ -33,10 +33,11 @@ Future<void> main() async {
           ? MemoryImage(cover.readAsBytesSync())
           : null;
       await tester.pumpWidget(MaterialApp(home: SizedBox(key: key)));
-      if (provider != null)
+      if (provider != null) {
         await tester.runAsync(
           () => precacheImage(provider, key.currentContext!),
         );
+      }
       await tester.runAsync(() async {
         await precacheImage(
           const AssetImage('assets/images/app_icon.png'),

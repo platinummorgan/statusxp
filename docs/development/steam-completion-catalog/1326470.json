@@ -1,0 +1,251 @@
+{
+  "app_id": "1326470",
+  "name": "Sons Of The Forest",
+  "required_ids": [
+    "ACH_COLLECT_MONEY",
+    "ACH_COLLECT_WATCHES",
+    "ACH_CRAFT_ALL_WEAPONS",
+    "ACH_DIG_HOLES_100",
+    "ACH_DIG_HOLES_1000",
+    "ACH_DISCOVERED_BLUEPRINTS",
+    "ACH_EAT_ALL_EDIBLES",
+    "ACH_EAT_RAW_FISH",
+    "ACH_FINISH_STORY_WITH_ALL_NPCS",
+    "ACH_FOUND_FOOTAGE",
+    "ACH_KICKED_BY_HEAVY",
+    "ACH_KILLED_BY_SHARK",
+    "ACH_KILL_SLUGGIE",
+    "ACH_LEAVE_THE_ISLAND",
+    "ACH_NOTE_PAGES",
+    "ACH_OWN_ALL_CLOTHING",
+    "ACH_PLATED_WEAPONS",
+    "ACH_PRINT_ALL_ITEMS",
+    "ACH_STAY_BEHIND",
+    "ACH_STRUCTURE_1000_LOGS",
+    "ACH_STRUCTURE_100_LOGS",
+    "ACH_STRUCTURE_500_LOGS",
+    "ACH_STRUCTURE_50_LOGS",
+    "ACH_SURVIVE_DAY_1",
+    "ACH_SURVIVE_DAY_10",
+    "ACH_SURVIVE_DAY_25",
+    "ACH_SURVIVE_DAY_50",
+    "ACH_THIS_CANT_BE_HEALTHY",
+    "ACH_TRUSTED",
+    "ACH_VIRGINIA_GPS",
+    "ACH_VIRGINIA_MAX_SENTIMENT",
+    "ACH_WEAR_TECH_ARMOR"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1326470/?l=english",
+      "https://store.steampowered.com/app/1326470/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1326470&count=100&maxlength=0&enddate=1717218000",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/5688680204367348768",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/5728086065182647154",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/5395937983658210798",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/5133583099796540857"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "22 Feb, 2024",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "32 original 1.0 achievements, including four added with the February 22, 2024 full release. Later February 28 fixes address new achievement triggers, not new achievements. Early Access requirements are retained.",
+    "steam_schema_hash": 4060593722,
+    "steam_schema_version": 23
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACH_COLLECT_MONEY",
+      "name": "1%",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_COLLECT_WATCHES",
+      "name": "COLLECTOR",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_CRAFT_ALL_WEAPONS",
+      "name": "MC CRAFTY",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_DIG_HOLES_100",
+      "name": "BADGER",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_DIG_HOLES_1000",
+      "name": "I LIKE BLISTERS",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_DISCOVERED_BLUEPRINTS",
+      "name": "INTERIOR DESIGNER",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_EAT_ALL_EDIBLES",
+      "name": "FOODIE",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_EAT_RAW_FISH",
+      "name": "I DREAM OF SUSHI",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_FINISH_STORY_WITH_ALL_NPCS",
+      "name": "KEEP YOUR FRIENDS CLOSE",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_FOUND_FOOTAGE",
+      "name": "BLOCKBUSTER",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_KICKED_BY_HEAVY",
+      "name": "SUCKER FOR PUNISHMENT",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_KILL_SLUGGIE",
+      "name": "PINATA",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_KILLED_BY_SHARK",
+      "name": "NEED A BIGGER BOAT",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_LEAVE_THE_ISLAND",
+      "name": "FOUGHT DEMONS",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_NOTE_PAGES",
+      "name": "GUMSHOE",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_OWN_ALL_CLOTHING",
+      "name": "FASHIONISTA",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_PLATED_WEAPONS",
+      "name": "OOOH SHINY",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_PRINT_ALL_ITEMS",
+      "name": "MAKER",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_STAY_BEHIND",
+      "name": "FIGHT DEMONS",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_STRUCTURE_100_LOGS",
+      "name": "CONTRACTOR",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_STRUCTURE_1000_LOGS",
+      "name": "CITY PLANNER",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_STRUCTURE_50_LOGS",
+      "name": "TRADESMAN",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_STRUCTURE_500_LOGS",
+      "name": "ARCHITECT",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SURVIVE_DAY_1",
+      "name": "SURVIVOR",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SURVIVE_DAY_10",
+      "name": "WHAT COULD GO WRONG",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SURVIVE_DAY_25",
+      "name": "THIS PLACE ISN’T SO BAD",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_SURVIVE_DAY_50",
+      "name": "NEVER GOING HOME",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_THIS_CANT_BE_HEALTHY",
+      "name": "THIS CAN’T BE HEALTHY",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_TRUSTED",
+      "name": "TRUSTED",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_VIRGINIA_GPS",
+      "name": "EVERY MOVE YOU MAKE",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_VIRGINIA_MAX_SENTIMENT",
+      "name": "CHIVALRY IS NOT DEAD",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH_WEAR_TECH_ARMOR",
+      "name": "DYNAMO",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}

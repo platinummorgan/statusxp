@@ -1,0 +1,449 @@
+{
+  "app_id": "1245620",
+  "name": "ELDEN RING",
+  "required_ids": [
+    "ACH00",
+    "ACH01",
+    "ACH02",
+    "ACH03",
+    "ACH04",
+    "ACH05",
+    "ACH06",
+    "ACH07",
+    "ACH08",
+    "ACH09",
+    "ACH10",
+    "ACH11",
+    "ACH12",
+    "ACH13",
+    "ACH14",
+    "ACH15",
+    "ACH16",
+    "ACH17",
+    "ACH18",
+    "ACH19",
+    "ACH20",
+    "ACH21",
+    "ACH22",
+    "ACH23",
+    "ACH24",
+    "ACH25",
+    "ACH26",
+    "ACH27",
+    "ACH28",
+    "ACH29",
+    "ACH30",
+    "ACH31",
+    "ACH32",
+    "ACH33",
+    "ACH34",
+    "ACH35",
+    "ACH36",
+    "ACH37",
+    "ACH38",
+    "ACH39",
+    "ACH40",
+    "ACH41"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/1245620/?l=english",
+      "https://store.steampowered.com/app/1245620/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=1245620&count=100&maxlength=0&enddate=1654318800",
+      "psn:2:NPWR25264_00",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1842212951300120",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1832700592786543",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4348798430270329475",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/5493837466496906760",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4347669995474181532"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "24 Feb, 2022",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "All 42 Steam achievements map uniquely to the original PS4 base list, including the native Steam all-achievements award. Shadow of the Erdtree contributes no Steam achievement IDs.",
+    "steam_schema_hash": 961205965,
+    "steam_schema_version": 47
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACH00",
+      "name": "Elden Ring",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "0",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH01",
+      "name": "Elden Lord",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "1",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH02",
+      "name": "Age of the Stars",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "2",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH03",
+      "name": "Lord of Frenzied Flame",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "3",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH04",
+      "name": "Shardbearer Godrick",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "4",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH05",
+      "name": "Shardbearer Radahn",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "5",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH06",
+      "name": "Shardbearer Morgott",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "6",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH07",
+      "name": "Shardbearer Rykard",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "7",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH08",
+      "name": "Shardbearer Malenia",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "8",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH09",
+      "name": "Shardbearer Mohg",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "9",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH10",
+      "name": "Maliketh the Black Blade",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "10",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH11",
+      "name": "Hoarah Loux, Warrior",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "11",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH12",
+      "name": "Dragonlord Placidusax",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "12",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH13",
+      "name": "God-Slaying Armament",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "13",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH14",
+      "name": "Legendary Armaments",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "14",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH15",
+      "name": "Legendary Ashen Remains",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "15",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH16",
+      "name": "Legendary Sorceries and Incantations",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "16",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH17",
+      "name": "Legendary Talismans",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "17",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH18",
+      "name": "Rennala, Queen of the Full Moon",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "18",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH19",
+      "name": "Lichdragon Fortissax",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "19",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH20",
+      "name": "Godskin Duo",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "20",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH21",
+      "name": "Fire Giant",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "21",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH22",
+      "name": "Dragonkin Soldier of Nokstella",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "22",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH23",
+      "name": "Regal Ancestor Spirit",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "23",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH24",
+      "name": "Valiant Gargoyles",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "24",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH25",
+      "name": "Margit, the Fell Omen",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "25",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH26",
+      "name": "Red Wolf of Radagon",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "26",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH27",
+      "name": "Godskin Noble",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "27",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH28",
+      "name": "Magma Wyrm Makar",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "28",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH29",
+      "name": "Godfrey, First Elden Lord",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "29",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH30",
+      "name": "Mohg, the Omen",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "30",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH31",
+      "name": "Mimic Tear",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "31",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH32",
+      "name": "Loretta, Knight of the Haligtree",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "32",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH33",
+      "name": "Astel, Naturalborn of the Void",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "33",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH34",
+      "name": "Leonine Misbegotten",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "34",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH35",
+      "name": "Royal Knight Loretta",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "35",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH36",
+      "name": "Elemer of the Briar",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "36",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH37",
+      "name": "Ancestor Spirit",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "37",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH38",
+      "name": "Commander Niall",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "38",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH39",
+      "name": "Roundtable Hold",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "39",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH40",
+      "name": "Great Rune",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "40",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACH41",
+      "name": "Erdtree Aflame",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR25264_00",
+      "reference_achievement_id": "41",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    }
+  ]
+}

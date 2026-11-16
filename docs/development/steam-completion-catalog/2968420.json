@@ -1,0 +1,635 @@
+{
+  "app_id": "2968420",
+  "name": "PowerWash Simulator 2",
+  "required_ids": [
+    "TROPHY_1",
+    "TROPHY_10",
+    "TROPHY_11",
+    "TROPHY_12",
+    "TROPHY_13",
+    "TROPHY_14",
+    "TROPHY_15",
+    "TROPHY_16",
+    "TROPHY_17",
+    "TROPHY_18",
+    "TROPHY_19",
+    "TROPHY_2",
+    "TROPHY_20",
+    "TROPHY_21",
+    "TROPHY_22",
+    "TROPHY_23",
+    "TROPHY_24",
+    "TROPHY_25",
+    "TROPHY_26",
+    "TROPHY_27",
+    "TROPHY_28",
+    "TROPHY_29",
+    "TROPHY_3",
+    "TROPHY_30",
+    "TROPHY_31",
+    "TROPHY_32",
+    "TROPHY_33",
+    "TROPHY_34",
+    "TROPHY_35",
+    "TROPHY_36",
+    "TROPHY_37",
+    "TROPHY_38",
+    "TROPHY_39",
+    "TROPHY_4",
+    "TROPHY_40",
+    "TROPHY_5",
+    "TROPHY_6",
+    "TROPHY_7",
+    "TROPHY_8",
+    "TROPHY_9"
+  ],
+  "excluded_ids": [
+    "TROPHY_41",
+    "TROPHY_42",
+    "TROPHY_43",
+    "TROPHY_44",
+    "TROPHY_45",
+    "TROPHY_46",
+    "TROPHY_47",
+    "TROPHY_48",
+    "TROPHY_49",
+    "TROPHY_50",
+    "TROPHY_51",
+    "TROPHY_52",
+    "TROPHY_53",
+    "TROPHY_54",
+    "TROPHY_55",
+    "TROPHY_56",
+    "TROPHY_57",
+    "TROPHY_58",
+    "TROPHY_59",
+    "TROPHY_60"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/2968420/?l=english",
+      "https://store.steampowered.com/app/2968420/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=2968420&count=100&maxlength=0&enddate=1769832000",
+      "psn:1:NPWR44566_00",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1849192144183068",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1848664643345898",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1847920302248459",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1846651706677663",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1845383656382923",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1844751498221622",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1844115010492035",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1839676055885365",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1839041357029735",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1838407329256738"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Oct 23, 2025",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "40 original base achievements match PS5 base group and official Steam group zero. Exclude 10 Adventure Time and 10 STAR WARS achievements, confirmed in developer expansion launch notes.",
+    "steam_schema_hash": 775326616,
+    "steam_schema_version": 11
+  },
+  "mapping": [
+    {
+      "steam_api_name": "TROPHY_1",
+      "name": "All Moved In",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "1",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_10",
+      "name": "Geo-Cashing",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "10",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_11",
+      "name": "Gnome from Home",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "11",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_12",
+      "name": "Purr Bonding",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "12",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_13",
+      "name": "Dressed for Success",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "13",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_14",
+      "name": "Radical Rebrand",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "14",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_15",
+      "name": "Washing with Style",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "15",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_16",
+      "name": "Spin Doctor",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "16",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_17",
+      "name": "Message Received",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "17",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_18",
+      "name": "Flush Surface",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "18",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_19",
+      "name": "Double Top",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "19",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_2",
+      "name": "It All Comes Out in the Wash",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "2",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_20",
+      "name": "Hatching a Plan",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "20",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_21",
+      "name": "Flying Start",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "21",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_22",
+      "name": "Doggy Bath",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "22",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_23",
+      "name": "Make it all Shine",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "23",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_24",
+      "name": "Staying Adaptable",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "24",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_25",
+      "name": "Cosmic Ordering",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "25",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_26",
+      "name": "Wise Decision",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "26",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_27",
+      "name": "Squeaky Clean",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "27",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_28",
+      "name": "Three-Pronged Approach",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "28",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_29",
+      "name": "Floor is Lava",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "29",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_3",
+      "name": "Leading Light",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "3",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_30",
+      "name": "High Pressure",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "30",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_31",
+      "name": "Deep Lore",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "31",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_32",
+      "name": "Drop the Ball",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "32",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_33",
+      "name": "Tea Time",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "33",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_34",
+      "name": "Where's Woolly?",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "34",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_35",
+      "name": "Ticket to Ride",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "35",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_36",
+      "name": "Glissando!",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "36",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_37",
+      "name": "Door to Door",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "37",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_38",
+      "name": "Front Row Seats",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "38",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_39",
+      "name": "Hit the Lights",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "39",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_4",
+      "name": "Happy Medium",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "4",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_40",
+      "name": "Rise and Shine",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "40",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_41",
+      "name": "Homies Help Homies",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "41",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_42",
+      "name": "Give Me a Hug, Hero",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "42",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_43",
+      "name": "King of Cool",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "43",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_44",
+      "name": "Mmm… Acceptable!!!",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "44",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_45",
+      "name": "Party God!",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "45",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_46",
+      "name": "Who Wants to Play Videogames?",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "46",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_47",
+      "name": "Door Lord",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "47",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_48",
+      "name": "Oh My Glob!",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "48",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_49",
+      "name": "ONLY ONE!!!",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "49",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_5",
+      "name": "Heavy Water",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "5",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_50",
+      "name": "The Limit",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "50",
+      "reference_group_id": "001",
+      "steam_group_id": 1
+    },
+    {
+      "steam_api_name": "TROPHY_51",
+      "name": "What a Desolate Place This Is",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "51",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_52",
+      "name": "Sorry About the Mess",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "52",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_53",
+      "name": "Woah, That Got Him!",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "53",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_54",
+      "name": "We Don’t Need That Scum",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "54",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_55",
+      "name": "Red Leader Standing By",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "55",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_56",
+      "name": "The Force Will Be With You, Always",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "56",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_57",
+      "name": "Great Shot Kid, That Was One in a Million!",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "57",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_58",
+      "name": "I Find Your Lack of Soap Disturbing",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "58",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_59",
+      "name": "There is a Great Disturbance in the Force",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "59",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_6",
+      "name": "Consummate Professional",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "6",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_60",
+      "name": "She's Got it Where it Counts, Kid",
+      "classification": "later_or_expansion",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "60",
+      "reference_group_id": "002",
+      "steam_group_id": 2
+    },
+    {
+      "steam_api_name": "TROPHY_7",
+      "name": "Maxed Out",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "7",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_8",
+      "name": "Home Decor",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "8",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TROPHY_9",
+      "name": "Taking Note",
+      "classification": "day_one_base_game",
+      "reference_game_id": "NPWR44566_00",
+      "reference_achievement_id": "9",
+      "reference_group_id": "default",
+      "steam_group_id": 0
+    }
+  ]
+}

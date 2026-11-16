@@ -1,0 +1,848 @@
+{
+  "app_id": "252490",
+  "name": "Rust",
+  "required_ids": [
+    "COLLECT_100_WOOD",
+    "COLLECT_200_STONE",
+    "COLLECT_300_METAL_ORE",
+    "COLLECT_30_CLOTH",
+    "COLLECT_50_CLOTH",
+    "COLLECT_50_LGF",
+    "COLLECT_65_SCRAP",
+    "COLLECT_700_WOOD",
+    "CONSTRUCT_BASE",
+    "CRAFT_ARROWS",
+    "CRAFT_BUILDING_PLAN",
+    "CRAFT_BURLAP_HEADWRAP",
+    "CRAFT_BURLAP_PANTS",
+    "CRAFT_BURLAP_SHIRT",
+    "CRAFT_CAMPFIRE",
+    "CRAFT_FURNACE",
+    "CRAFT_HAMMER",
+    "CRAFT_HUNTING_BOW",
+    "CRAFT_LOCK",
+    "CRAFT_MACHETE",
+    "CRAFT_NAILGUN",
+    "CRAFT_NAILGUN_NAILS",
+    "CRAFT_RESEARCH_TABLE",
+    "CRAFT_SLEEPINGBAG",
+    "CRAFT_SPEAR",
+    "CRAFT_STONE_HATCHET",
+    "CRAFT_STONE_PICKAXE",
+    "CRAFT_TOOL_CUPBOARD",
+    "CRAFT_WOODEN_BOX",
+    "CRAFT_WOODEN_DOOR",
+    "CRAFT_WORKBENCH",
+    "DESTROY_10_BARRELS",
+    "EQUIP_CLOTHING",
+    "KILL_ANIMAL",
+    "LOCK_LOCK",
+    "PLACE_CAMPFIRE",
+    "PLACE_FURNACE",
+    "PLACE_LOCK",
+    "PLACE_RESEARCH_TABLE",
+    "PLACE_SLEEPINGBAG",
+    "PLACE_TOOL_CUPBOARD",
+    "PLACE_WOODEN_BOX",
+    "PLACE_WOODEN_DOOR",
+    "PLACE_WORKBENCH",
+    "RESEARCH_ITEM",
+    "SKIN_ANIMAL",
+    "UPGRADE_BASE",
+    "VISIT_ROAD"
+  ],
+  "excluded_ids": [
+    "APEX_PREDATOR",
+    "BATTLE_BUS",
+    "BBS_FINISH_BOAT",
+    "BIG_BROTHER",
+    "BOAT_CANNON_HIT",
+    "BUCKLE_UP",
+    "CLAN_JOIN",
+    "CLAN_SCORE",
+    "CLAN_SIZE",
+    "COMPLETE_TUTORIAL",
+    "CRATE_HACK_GHOSTSHIP",
+    "DEATH_FROM_ABOVE",
+    "DEEPSEA_SWIMMING",
+    "DRIVE_SNOWMOBILE",
+    "EAT_COCONUT",
+    "ENTER_DEEP_SEA",
+    "FRIENDLY_NEIGHBOUR",
+    "GIDDY_UP",
+    "GLUTTON",
+    "HEAVY_INDUSTRY",
+    "HID_SWIM_WITH_FISH",
+    "HIGH_ROLLER",
+    "HONEST_WORK",
+    "IM_THE_CAPTAIN_NOW",
+    "KILLED_BY_CROCODILE",
+    "KILL_SCIENTIST",
+    "KILL_SNAKE",
+    "LOOT_ISLANDS",
+    "MISSION_ACCOMPLISHED",
+    "MORTAR_PLAYER_KILL",
+    "ON_THE_DECK",
+    "ON_TRACK",
+    "PET_CHICKEN",
+    "PIE_HIT_PLAYER",
+    "PLAY_ALL_INSTRUMENTS",
+    "PLAY_INSTRUMENT",
+    "POWERPLANT_HEAVY_FUSE",
+    "PRO_ANGLER",
+    "REACH_FLOATING_CITY",
+    "RENT_APARTMENT",
+    "RUST_AIR",
+    "SATELLITE_DEORBIT",
+    "SAVE_THE_PLANET",
+    "SEALBREAKER",
+    "SEND_MAIL",
+    "SMOOTH_SAILING",
+    "STOLEN_PTBOAT_KILL",
+    "SUBMARINE_MOONPOOL",
+    "SUMMER_INFLATABLE",
+    "SUMMER_LIQUIDATOR",
+    "SUMMER_NO_PRESSURE",
+    "SUMMER_PAPARAZZI",
+    "SUMMER_RADICAL",
+    "SUMMER_SOAKED",
+    "SUMMER_SUNGLASSES",
+    "TEAM_INSTRUMENTS",
+    "THREAD_NEEDLE",
+    "TRAVELLING_VENDOR_PURCHASE",
+    "TUTORIAL_GUN",
+    "VINE_SWINGING",
+    "VOICEPROPS_BADNEIGHBOUR",
+    "VOICEPROPS_BUYSOUNDTRACK",
+    "VOICEPROPS_FULLCOLLECTION",
+    "VOICEPROPS_NOBODYSWATCHING",
+    "VOICEPROPS_NOLONGERSEE",
+    "VOICEPROPS_ONRECORD",
+    "VOICEPROPS_PARTYBOAT",
+    "WASTE_NOT_WANT_NOT"
+  ],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/252490/?l=english",
+      "https://store.steampowered.com/app/252490/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=252490&count=100&maxlength=0&enddate=1526706000",
+      "https://rust.facepunch.com/news/devblog-196",
+      "https://rust.facepunch.com/news/devblog-197",
+      "https://rust.facepunch.com/changes/19",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1845383656383226",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1842846814444168",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1832065502812966",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1828894815558283",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1819386365117542",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1819386365102640",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1819386365091956",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1815580768269579",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1793384379381014"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Feb 8, 2018",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "48 surviving original tutorial achievements, ending with placing a Research Table. Facepunch Devblog 196 (February 1, 2018) introduces the tutorial achievement sequence through Research before the February 8 full release in Devblog 197. Exclude 68 later secret/vehicle/monument/DLC/tutorial-island/naval/clan additions; the first later stable ID is GLUTTON. The developer described about 60 in-game tutorial achievements, so that approximate count is not used as a Steam count.",
+    "steam_schema_hash": 4077511531,
+    "steam_schema_version": 101
+  },
+  "mapping": [
+    {
+      "steam_api_name": "APEX_PREDATOR",
+      "name": "Apex Predator",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BATTLE_BUS",
+      "name": "Battle Bus",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BBS_FINISH_BOAT",
+      "name": "Shipshape",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BIG_BROTHER",
+      "name": "Big Brother",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BOAT_CANNON_HIT",
+      "name": "Oceans are now battlefields",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "BUCKLE_UP",
+      "name": "Buckle Up",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CLAN_JOIN",
+      "name": "Strength in Numbers",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CLAN_SCORE",
+      "name": "Working together",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CLAN_SIZE",
+      "name": "New friends",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COLLECT_100_WOOD",
+      "name": "Collect Wood",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COLLECT_200_STONE",
+      "name": "Collect 200 Stone",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COLLECT_30_CLOTH",
+      "name": "Collect 30 Cloth",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COLLECT_300_METAL_ORE",
+      "name": "Collect 300 Metal Ore",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COLLECT_50_CLOTH",
+      "name": "Collect 50 Cloth",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COLLECT_50_LGF",
+      "name": "Acquire 50 Low Grade Fuel",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COLLECT_65_SCRAP",
+      "name": "Collect 65 Scrap",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COLLECT_700_WOOD",
+      "name": "Collect 700 Wood",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "COMPLETE_TUTORIAL",
+      "name": "Fresh Graduate",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CONSTRUCT_BASE",
+      "name": "Construct Base",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_ARROWS",
+      "name": "Craft Arrows",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_BUILDING_PLAN",
+      "name": "Craft Building Plan",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_BURLAP_HEADWRAP",
+      "name": "Craft Burlap Headwrap",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_BURLAP_PANTS",
+      "name": "Craft Burlap Pants",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_BURLAP_SHIRT",
+      "name": "Craft Burlap Shirt",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_CAMPFIRE",
+      "name": "Craft Camp Fire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_FURNACE",
+      "name": "Craft a Furnace",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_HAMMER",
+      "name": "Craft Hammer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_HUNTING_BOW",
+      "name": "Craft Hunting Bow",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_LOCK",
+      "name": "Craft Lock",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_MACHETE",
+      "name": "Craft a Machete",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_NAILGUN",
+      "name": "Craft a Nailgun",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_NAILGUN_NAILS",
+      "name": "Craft Nailgun Nails",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_RESEARCH_TABLE",
+      "name": "Craft a Research Table",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_SLEEPINGBAG",
+      "name": "Craft Sleeping Bag",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_SPEAR",
+      "name": "Craft Spear",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_STONE_HATCHET",
+      "name": "Craft Stone Hatchet",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_STONE_PICKAXE",
+      "name": "Craft Stone Pickaxe",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_TOOL_CUPBOARD",
+      "name": "Craft Tool Cupboard",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_WOODEN_BOX",
+      "name": "Craft Wooden Box",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_WOODEN_DOOR",
+      "name": "Craft Wooden Door",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRAFT_WORKBENCH",
+      "name": "Craft a Workbench",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "CRATE_HACK_GHOSTSHIP",
+      "name": "Hostile Waters",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DEATH_FROM_ABOVE",
+      "name": "Death from Above",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DEEPSEA_SWIMMING",
+      "name": "Dude, where's my boat?",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DESTROY_10_BARRELS",
+      "name": "Destroy 10 Barrels",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "DRIVE_SNOWMOBILE",
+      "name": "Arctic Speed",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EAT_COCONUT",
+      "name": "Need more fibre",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ENTER_DEEP_SEA",
+      "name": "New Horizons",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "EQUIP_CLOTHING",
+      "name": "Equip Clothing",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "FRIENDLY_NEIGHBOUR",
+      "name": "Friendly Neighbour",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GIDDY_UP",
+      "name": "Giddy Up!",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "GLUTTON",
+      "name": "Glutton",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HEAVY_INDUSTRY",
+      "name": "Heavy Industry",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HID_SWIM_WITH_FISH",
+      "name": "Swim with the fishes",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HIGH_ROLLER",
+      "name": "High Roller",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "HONEST_WORK",
+      "name": "It's Honest Work",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "IM_THE_CAPTAIN_NOW",
+      "name": "I'm the Captain now",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KILL_ANIMAL",
+      "name": "Kill an Animal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KILL_SCIENTIST",
+      "name": "Something of a scientist myself",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KILL_SNAKE",
+      "name": "Bite back",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "KILLED_BY_CROCODILE",
+      "name": "Not just a log",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LOCK_LOCK",
+      "name": "Lock the Lock",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "LOOT_ISLANDS",
+      "name": "Treasure ahoy!",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MISSION_ACCOMPLISHED",
+      "name": "Mission Accomplished",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "MORTAR_PLAYER_KILL",
+      "name": "On target",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ON_THE_DECK",
+      "name": "On The Deck",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ON_TRACK",
+      "name": "On Track",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PET_CHICKEN",
+      "name": "Winner Winner",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PIE_HIT_PLAYER",
+      "name": "Pie Hard",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_CAMPFIRE",
+      "name": "Place Camp Fire",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_FURNACE",
+      "name": "Place a Furnace",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_LOCK",
+      "name": "Place Lock",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_RESEARCH_TABLE",
+      "name": "Place a Research Table",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_SLEEPINGBAG",
+      "name": "Place Sleeping Bag",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_TOOL_CUPBOARD",
+      "name": "Place Tool Cupboard",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_WOODEN_BOX",
+      "name": "Place Wooden Box",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_WOODEN_DOOR",
+      "name": "Place Wooden Door",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLACE_WORKBENCH",
+      "name": "Place a Workbench",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLAY_ALL_INSTRUMENTS",
+      "name": "Musical Maestro",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PLAY_INSTRUMENT",
+      "name": "First Notes",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "POWERPLANT_HEAVY_FUSE",
+      "name": "Power Trip",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "PRO_ANGLER",
+      "name": "Pro Angler",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "REACH_FLOATING_CITY",
+      "name": "Safe Harbor",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "RENT_APARTMENT",
+      "name": "Rent is due",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "RESEARCH_ITEM",
+      "name": "Research an Item",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "RUST_AIR",
+      "name": "Rust Air",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SATELLITE_DEORBIT",
+      "name": "Space Junk",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SAVE_THE_PLANET",
+      "name": "Save The Planet",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SEALBREAKER",
+      "name": "Sealbreaker",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SEND_MAIL",
+      "name": "Pen Pal",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SKIN_ANIMAL",
+      "name": "Skin an Animal",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SMOOTH_SAILING",
+      "name": "Smooth Sailing",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "STOLEN_PTBOAT_KILL",
+      "name": "Stolen Goods",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUBMARINE_MOONPOOL",
+      "name": "Terror in the Deep",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUMMER_INFLATABLE",
+      "name": "Cool Kids Club",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUMMER_LIQUIDATOR",
+      "name": "Liquidator",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUMMER_NO_PRESSURE",
+      "name": "No Pressure",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUMMER_PAPARAZZI",
+      "name": "Paparazzi",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUMMER_RADICAL",
+      "name": "Radical",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUMMER_SOAKED",
+      "name": "Soaked",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "SUMMER_SUNGLASSES",
+      "name": "Sunglasses at Night",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TEAM_INSTRUMENTS",
+      "name": "Getting the band together",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "THREAD_NEEDLE",
+      "name": "Thread the Needle",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TRAVELLING_VENDOR_PURCHASE",
+      "name": "No refunds",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "TUTORIAL_GUN",
+      "name": "Pew Pew",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "UPGRADE_BASE",
+      "name": "Upgrade Base",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VINE_SWINGING",
+      "name": "King of the Jungle",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VISIT_ROAD",
+      "name": "Visit a Road",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VOICEPROPS_BADNEIGHBOUR",
+      "name": "Bad Neighbour",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VOICEPROPS_BUYSOUNDTRACK",
+      "name": "I should buy this Soundtrack",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VOICEPROPS_FULLCOLLECTION",
+      "name": "Full Collection",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VOICEPROPS_NOBODYSWATCHING",
+      "name": "Like Nobody's Watching",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VOICEPROPS_NOLONGERSEE",
+      "name": "I can no longer see",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VOICEPROPS_ONRECORD",
+      "name": "On the Record",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "VOICEPROPS_PARTYBOAT",
+      "name": "Party Boat",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "WASTE_NOT_WANT_NOT",
+      "name": "Waste Not, Want Not",
+      "classification": "later_or_expansion",
+      "steam_group_id": 0
+    }
+  ]
+}

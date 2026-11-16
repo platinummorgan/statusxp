@@ -1,0 +1,42 @@
+{
+  "sync_tests_passed": 113,
+  "automation_tests_passed": 15,
+  "sql_rehearsal_passed": true,
+  "deployment": "d3204318-acea-4f5c-bd29-713b3882e60a",
+  "health": "ok",
+  "runtime_modules": 28,
+  "credential_files_uploaded": 0,
+  "analyzed_jobs": 4,
+  "failed_jobs": 0,
+  "automatic_approvals_in_initial_queue": 0,
+  "jobs": [
+    {
+      "app_id": "1170970",
+      "status": "needs_review",
+      "analyzed": true,
+      "reference_count": 0,
+      "schema_count": 58
+    },
+    {
+      "app_id": "252330",
+      "status": "needs_review",
+      "analyzed": true,
+      "reference_count": 3,
+      "schema_count": 21
+    },
+    {
+      "app_id": "330840",
+      "status": "needs_review",
+      "analyzed": true,
+      "reference_count": 0,
+      "schema_count": 48
+    },
+    {
+      "app_id": "700580",
+      "status": "needs_review",
+      "analyzed": true,
+      "reference_count": 0,
+      "schema_count": 6
+    }
+  ]
+}

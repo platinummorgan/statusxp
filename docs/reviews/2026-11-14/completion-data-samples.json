@@ -1,0 +1,1259 @@
+{
+  "verificationDate": "2026-11-14",
+  "scope": "Live source inspection. Account identifiers, credentials, and individual unlock timestamps omitted.",
+  "xbox": {
+    "titleHistory": {
+      "count": 105,
+      "summary": {
+        "mythicsUnlocked": 1,
+        "totalAchievementsUnlocked": 946
+      },
+      "listedMythics": 1
+    },
+    "completedAndLegacy": [
+      {
+        "titleId": "1161889758",
+        "name": "Fight Night Round 3",
+        "devices": [
+          "Xbox360"
+        ],
+        "titleAchievement": {
+          "currentAchievements": 8,
+          "totalAchievements": 8,
+          "currentGamerscore": 1000,
+          "totalGamerscore": 1000,
+          "progressPercentage": 100,
+          "sourceVersion": 1,
+          "baseGameCount": 1,
+          "baseGameCompleted": 1,
+          "isMythic": true
+        },
+        "status": 200,
+        "topKeys": [
+          "completion",
+          "achievements",
+          "pagingInfo"
+        ],
+        "count": 0,
+        "achievementKeys": [],
+        "completion": [],
+        "exampleAchievements": [],
+        "hasContinuation": false,
+        "totalRecords": 0
+      },
+      {
+        "titleId": "1096157436",
+        "name": "Call of Duty®: Ghosts",
+        "devices": [
+          "Xbox360",
+          "XboxOne",
+          "XboxSeries"
+        ],
+        "titleAchievement": {
+          "currentAchievements": 2,
+          "totalAchievements": 91,
+          "currentGamerscore": 15,
+          "totalGamerscore": 2000,
+          "progressPercentage": 0,
+          "sourceVersion": 1,
+          "baseGameCount": 1,
+          "baseGameCompleted": 0,
+          "isMythic": false
+        },
+        "status": 200,
+        "topKeys": [
+          "completion",
+          "achievements",
+          "pagingInfo"
+        ],
+        "count": 0,
+        "achievementKeys": [],
+        "completion": [],
+        "exampleAchievements": [],
+        "hasContinuation": false,
+        "totalRecords": 0
+      },
+      {
+        "titleId": "1613480279",
+        "name": "NBA 2K20",
+        "devices": [
+          "XboxOne",
+          "XboxSeries"
+        ],
+        "titleAchievement": {
+          "currentAchievements": 20,
+          "totalAchievements": 0,
+          "currentGamerscore": 345,
+          "totalGamerscore": 1000,
+          "progressPercentage": 34,
+          "sourceVersion": 2,
+          "baseGameCount": 1,
+          "baseGameCompleted": 0,
+          "isMythic": false
+        },
+        "status": 200,
+        "topKeys": [
+          "completion",
+          "achievements",
+          "pagingInfo"
+        ],
+        "count": 50,
+        "achievementKeys": [
+          "groupIds",
+          "id",
+          "serviceConfigId",
+          "name",
+          "titleAssociations",
+          "progressState",
+          "progression",
+          "mediaAssets",
+          "platforms",
+          "isSecret",
+          "description",
+          "lockedDescription",
+          "productId",
+          "achievementType",
+          "participationType",
+          "timeWindow",
+          "rewards",
+          "estimatedTime",
+          "deeplink",
+          "isRevoked",
+          "rarity"
+        ],
+        "completion": [
+          {
+            "titleId": "1613480279",
+            "groups": [
+              {
+                "id": "0",
+                "fieldNames": [
+                  "groupType",
+                  "groupName",
+                  "achievementIds",
+                  "unlockedAchievementIds",
+                  "gamerscoreInGroup",
+                  "unlockedGamerscore",
+                  "isComplete"
+                ],
+                "groupType": "BaseGame",
+                "requiredCount": 50,
+                "unlockedCount": 20,
+                "isComplete": false,
+                "hasCompletedTime": false,
+                "gamerscoreInGroup": 1000,
+                "unlockedGamerscore": 345
+              }
+            ]
+          }
+        ],
+        "exampleAchievements": [
+          {
+            "id": "1",
+            "groupIds": [
+              "0"
+            ],
+            "rarity": {
+              "currentCategory": "Common",
+              "currentPercentage": 31.68
+            },
+            "progressState": "NotStarted",
+            "hasKnownUnlockTime": false
+          },
+          {
+            "id": "2",
+            "groupIds": [
+              "0"
+            ],
+            "rarity": {
+              "currentCategory": "Common",
+              "currentPercentage": 26.24
+            },
+            "progressState": "NotStarted",
+            "hasKnownUnlockTime": false
+          }
+        ],
+        "hasContinuation": false,
+        "totalRecords": 50
+      }
+    ],
+    "contractComparisons": [
+      {
+        "label": "legacy-catalog-v6",
+        "titleId": "1161889758",
+        "status": 200,
+        "topKeys": [
+          "achievements",
+          "version",
+          "pagingInfo"
+        ],
+        "count": 8,
+        "totalRecords": 8,
+        "hasContinuation": false,
+        "achievementKeys": [
+          "id",
+          "titleId",
+          "name",
+          "sequence",
+          "flags",
+          "unlockedOnline",
+          "unlocked",
+          "isSecret",
+          "platform",
+          "gamerscore",
+          "imageId",
+          "description",
+          "lockedDescription",
+          "type",
+          "isRevoked",
+          "timeUnlocked"
+        ],
+        "achievedRows": 0,
+        "completion": [],
+        "exampleAchievements": [
+          {
+            "id": 1,
+            "unlocked": false,
+            "hasKnownUnlockTime": false
+          },
+          {
+            "id": 2,
+            "unlocked": false,
+            "hasKnownUnlockTime": false
+          }
+        ]
+      },
+      {
+        "label": "legacy-progress-v1",
+        "titleId": "1161889758",
+        "status": 200,
+        "topKeys": [
+          "achievements",
+          "version",
+          "pagingInfo"
+        ],
+        "count": 8,
+        "totalRecords": 8,
+        "hasContinuation": false,
+        "achievementKeys": [
+          "id",
+          "titleId",
+          "name",
+          "sequence",
+          "flags",
+          "unlockedOnline",
+          "unlocked",
+          "isSecret",
+          "platform",
+          "gamerscore",
+          "imageId",
+          "description",
+          "lockedDescription",
+          "type",
+          "isRevoked",
+          "timeUnlocked"
+        ],
+        "achievedRows": 8,
+        "completion": [],
+        "exampleAchievements": [
+          {
+            "id": 3,
+            "unlocked": true,
+            "hasKnownUnlockTime": true
+          },
+          {
+            "id": 7,
+            "unlocked": true,
+            "hasKnownUnlockTime": true
+          }
+        ]
+      },
+      {
+        "label": "modern-completed-v6",
+        "titleId": "1480659987",
+        "status": 200,
+        "topKeys": [
+          "completion",
+          "achievements",
+          "pagingInfo"
+        ],
+        "count": 0,
+        "totalRecords": 0,
+        "hasContinuation": false,
+        "achievementKeys": [],
+        "achievedRows": 0,
+        "completion": [],
+        "exampleAchievements": []
+      },
+      {
+        "label": "modern-dlc-v6",
+        "titleId": "2105342780",
+        "status": 200,
+        "topKeys": [
+          "completion",
+          "achievements",
+          "pagingInfo"
+        ],
+        "count": 45,
+        "totalRecords": 45,
+        "hasContinuation": false,
+        "achievementKeys": [
+          "groupIds",
+          "id",
+          "serviceConfigId",
+          "name",
+          "titleAssociations",
+          "progressState",
+          "progression",
+          "mediaAssets",
+          "platforms",
+          "isSecret",
+          "description",
+          "lockedDescription",
+          "productId",
+          "achievementType",
+          "participationType",
+          "timeWindow",
+          "rewards",
+          "estimatedTime",
+          "deeplink",
+          "isRevoked",
+          "rarity"
+        ],
+        "achievedRows": 0,
+        "completion": [
+          {
+            "titleId": "2105342780",
+            "groups": [
+              {
+                "id": "0",
+                "fieldNames": [
+                  "groupType",
+                  "groupName",
+                  "achievementIds",
+                  "unlockedAchievementIds",
+                  "gamerscoreInGroup",
+                  "unlockedGamerscore",
+                  "isComplete"
+                ],
+                "groupType": "BaseGame",
+                "requiredCount": 20,
+                "unlockedCount": 14,
+                "isComplete": false,
+                "hasCompletedTime": false,
+                "gamerscoreInGroup": 1000,
+                "unlockedGamerscore": 700
+              }
+            ]
+          }
+        ],
+        "exampleAchievements": [
+          {
+            "id": "1",
+            "groupIds": [
+              "0"
+            ],
+            "rarity": {
+              "currentCategory": "Common",
+              "currentPercentage": 23.4
+            },
+            "progressState": "NotStarted",
+            "hasKnownUnlockTime": false
+          },
+          {
+            "id": "2",
+            "groupIds": [
+              "0"
+            ],
+            "rarity": {
+              "currentCategory": "Common",
+              "currentPercentage": 10.72
+            },
+            "progressState": "NotStarted",
+            "hasKnownUnlockTime": false
+          }
+        ]
+      },
+      {
+        "label": "possibleOnly-true",
+        "titleId": "1613480279",
+        "status": 200,
+        "topKeys": [
+          "completion",
+          "achievements",
+          "pagingInfo"
+        ],
+        "count": 2,
+        "totalRecords": 50,
+        "hasContinuation": true,
+        "achievementKeys": [
+          "groupIds",
+          "id",
+          "serviceConfigId",
+          "name",
+          "titleAssociations",
+          "progressState",
+          "progression",
+          "mediaAssets",
+          "platforms",
+          "isSecret",
+          "description",
+          "lockedDescription",
+          "productId",
+          "achievementType",
+          "participationType",
+          "timeWindow",
+          "rewards",
+          "estimatedTime",
+          "deeplink",
+          "isRevoked",
+          "rarity"
+        ],
+        "achievedRows": 0,
+        "completion": [
+          {
+            "titleId": "1613480279",
+            "groups": [
+              {
+                "id": "0",
+                "fieldNames": [
+                  "groupType",
+                  "groupName",
+                  "achievementIds",
+                  "unlockedAchievementIds",
+                  "gamerscoreInGroup",
+                  "unlockedGamerscore",
+                  "isComplete"
+                ],
+                "groupType": "BaseGame",
+                "requiredCount": 50,
+                "unlockedCount": 20,
+                "isComplete": false,
+                "hasCompletedTime": false,
+                "gamerscoreInGroup": 1000,
+                "unlockedGamerscore": 345
+              }
+            ]
+          }
+        ],
+        "exampleAchievements": [
+          {
+            "id": "1",
+            "groupIds": [
+              "0"
+            ],
+            "rarity": {
+              "currentCategory": "Common",
+              "currentPercentage": 31.68
+            },
+            "progressState": "NotStarted",
+            "hasKnownUnlockTime": false
+          },
+          {
+            "id": "2",
+            "groupIds": [
+              "0"
+            ],
+            "rarity": {
+              "currentCategory": "Common",
+              "currentPercentage": 26.24
+            },
+            "progressState": "NotStarted",
+            "hasKnownUnlockTime": false
+          }
+        ]
+      },
+      {
+        "label": "possibleOnly-omitted",
+        "titleId": "1613480279",
+        "status": 200,
+        "topKeys": [
+          "completion",
+          "achievements",
+          "pagingInfo"
+        ],
+        "count": 2,
+        "totalRecords": 50,
+        "hasContinuation": true,
+        "achievementKeys": [
+          "groupIds",
+          "id",
+          "serviceConfigId",
+          "name",
+          "titleAssociations",
+          "progressState",
+          "progression",
+          "mediaAssets",
+          "platforms",
+          "isSecret",
+          "description",
+          "lockedDescription",
+          "productId",
+          "achievementType",
+          "participationType",
+          "timeWindow",
+          "rewards",
+          "estimatedTime",
+          "deeplink",
+          "isRevoked",
+          "rarity"
+        ],
+        "achievedRows": 1,
+        "completion": [
+          {
+            "titleId": "1613480279",
+            "groups": [
+              {
+                "id": "0",
+                "fieldNames": [
+                  "groupType",
+                  "groupName",
+                  "achievementIds",
+                  "unlockedAchievementIds",
+                  "gamerscoreInGroup",
+                  "unlockedGamerscore",
+                  "isComplete"
+                ],
+                "groupType": "BaseGame",
+                "requiredCount": 50,
+                "unlockedCount": 20,
+                "isComplete": false,
+                "hasCompletedTime": false,
+                "gamerscoreInGroup": 1000,
+                "unlockedGamerscore": 345
+              }
+            ]
+          }
+        ],
+        "exampleAchievements": [
+          {
+            "id": "1",
+            "groupIds": [
+              "0"
+            ],
+            "rarity": {
+              "currentCategory": "Common",
+              "currentPercentage": 31.68
+            },
+            "progressState": "Achieved",
+            "hasKnownUnlockTime": true
+          },
+          {
+            "id": "2",
+            "groupIds": [
+              "0"
+            ],
+            "rarity": {
+              "currentCategory": "Common",
+              "currentPercentage": 26.24
+            },
+            "progressState": "NotStarted",
+            "hasKnownUnlockTime": false
+          }
+        ]
+      },
+      {
+        "label": "modern-pagination-page2",
+        "status": 200,
+        "count": 2,
+        "hasContinuation": true,
+        "completion": [
+          {
+            "titleId": "1613480279",
+            "groups": [
+              {
+                "id": "0",
+                "fieldNames": [
+                  "groupType",
+                  "groupName",
+                  "achievementIds",
+                  "unlockedAchievementIds",
+                  "gamerscoreInGroup",
+                  "unlockedGamerscore",
+                  "isComplete"
+                ],
+                "groupType": "BaseGame",
+                "requiredCount": 50,
+                "unlockedCount": 20,
+                "isComplete": false,
+                "hasCompletedTime": false,
+                "gamerscoreInGroup": 1000,
+                "unlockedGamerscore": 345
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "completedModern": [
+      {
+        "titleId": "2019012309",
+        "name": "Star Wars Outlaws",
+        "subject": "separate-connected-profile",
+        "catalogOnly": true,
+        "status": 200,
+        "count": 59,
+        "rarityFields": [],
+        "groupRarityFields": [],
+        "missingGroupRows": 10,
+        "completion": [
+          {
+            "titleId": "2019012309",
+            "groups": [
+              {
+                "id": "0",
+                "fieldNames": [
+                  "groupType",
+                  "groupName",
+                  "achievementIds",
+                  "unlockedAchievementIds",
+                  "gamerscoreInGroup",
+                  "unlockedGamerscore",
+                  "isComplete",
+                  "completedTime"
+                ],
+                "groupType": "BaseGame",
+                "requiredCount": 49,
+                "unlockedCount": 49,
+                "isComplete": true,
+                "hasCompletedTime": true,
+                "gamerscoreInGroup": 1000,
+                "unlockedGamerscore": 1000
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "titleId": "1813085990",
+        "name": "Road 96",
+        "subject": "separate-connected-profile",
+        "catalogOnly": true,
+        "status": 200,
+        "count": 12,
+        "rarityFields": [],
+        "groupRarityFields": [],
+        "missingGroupRows": 0,
+        "completion": [
+          {
+            "titleId": "1813085990",
+            "groups": [
+              {
+                "id": "0",
+                "fieldNames": [
+                  "groupType",
+                  "groupName",
+                  "achievementIds",
+                  "unlockedAchievementIds",
+                  "gamerscoreInGroup",
+                  "unlockedGamerscore",
+                  "isComplete",
+                  "completedTime"
+                ],
+                "groupType": "BaseGame",
+                "requiredCount": 12,
+                "unlockedCount": 12,
+                "isComplete": true,
+                "hasCompletedTime": true,
+                "gamerscoreInGroup": 1000,
+                "unlockedGamerscore": 1000
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "steam": {
+    "communitySamples": [
+      {
+        "appid": 1794680,
+        "status": 200,
+        "schemaHash": 1981470554,
+        "schemaVersion": 75,
+        "globalKeys": [
+          "percentages"
+        ],
+        "groups": [
+          {
+            "id": 0,
+            "name": "",
+            "dlcappid": 0,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 140,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 140,
+            "examples": [
+              {
+                "api_name": "ReachLV5",
+                "groupid": 0,
+                "internal_key": 256,
+                "archived": false,
+                "rarity": 97.19999694824219
+              },
+              {
+                "api_name": "ReachLV10",
+                "groupid": 0,
+                "internal_key": 257,
+                "archived": false,
+                "rarity": 95.4000015258789
+              }
+            ]
+          },
+          {
+            "id": 3,
+            "name": "Extra Content",
+            "dlcappid": 0,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 63,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 63,
+            "examples": [
+              {
+                "api_name": "Banish10Items",
+                "groupid": 3,
+                "internal_key": 1297,
+                "archived": false,
+                "rarity": 18.5
+              },
+              {
+                "api_name": "ReachLV80InverseTower",
+                "groupid": 3,
+                "internal_key": 1298,
+                "archived": false,
+                "rarity": 13.399999618530273
+              }
+            ]
+          },
+          {
+            "id": 1,
+            "name": "Legacy of the Moonspell",
+            "dlcappid": 2230760,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 18,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 18,
+            "examples": [
+              {
+                "api_name": "MOON01_FindCoffin",
+                "groupid": 1,
+                "internal_key": 1299,
+                "archived": false,
+                "rarity": 49.20000076293945
+              },
+              {
+                "api_name": "MOON02_Survive15Miang",
+                "groupid": 1,
+                "internal_key": 1300,
+                "archived": false,
+                "rarity": 48.70000076293945
+              }
+            ]
+          },
+          {
+            "id": 2,
+            "name": "Tides of the Foscari",
+            "dlcappid": 2313550,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 22,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 22,
+            "examples": [
+              {
+                "api_name": "FOSC01_FindCoffin",
+                "groupid": 2,
+                "internal_key": 1544,
+                "archived": false,
+                "rarity": 48.900001525878906
+              },
+              {
+                "api_name": "FOSC02_Survive15Eleanor",
+                "groupid": 2,
+                "internal_key": 1545,
+                "archived": false,
+                "rarity": 42.29999923706055
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "appid": 620,
+        "status": 200,
+        "schemaHash": 3207947195,
+        "schemaVersion": 1108170007,
+        "globalKeys": [
+          "percentages"
+        ],
+        "groups": [
+          {
+            "id": 2,
+            "name": "Single Player",
+            "dlcappid": 0,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 29,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 29,
+            "examples": [
+              {
+                "api_name": "ACH.SURVIVE_CONTAINER_RIDE",
+                "groupid": 2,
+                "internal_key": 1,
+                "archived": false,
+                "rarity": 74
+              },
+              {
+                "api_name": "ACH.WAKE_UP",
+                "groupid": 2,
+                "internal_key": 2,
+                "archived": false,
+                "rarity": 64.69999694824219
+              }
+            ]
+          },
+          {
+            "id": 1,
+            "name": "Cooperative",
+            "dlcappid": 0,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 22,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 22,
+            "examples": [
+              {
+                "api_name": "ACH.HI_FIVE_YOUR_PARTNER",
+                "groupid": 1,
+                "internal_key": 30,
+                "archived": false,
+                "rarity": 58.5
+              },
+              {
+                "api_name": "ACH.TEAM_BUILDING",
+                "groupid": 1,
+                "internal_key": 31,
+                "archived": false,
+                "rarity": 49.400001525878906
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "appid": 292030,
+        "status": 200,
+        "schemaHash": 1618953332,
+        "schemaVersion": 21,
+        "globalKeys": [
+          "percentages"
+        ],
+        "groups": [
+          {
+            "id": 0,
+            "name": "",
+            "dlcappid": 0,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 78,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 78,
+            "examples": [
+              {
+                "api_name": "LILAC",
+                "groupid": 0,
+                "internal_key": 256,
+                "archived": false,
+                "rarity": 60.29999923706055
+              },
+              {
+                "api_name": "FRIEND_IN_NEED",
+                "groupid": 0,
+                "internal_key": 257,
+                "archived": false,
+                "rarity": 30.600000381469727
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "appid": 1091500,
+        "status": 200,
+        "schemaHash": 877310804,
+        "schemaVersion": 15,
+        "globalKeys": [
+          "percentages"
+        ],
+        "groups": [
+          {
+            "id": 0,
+            "name": "",
+            "dlcappid": 0,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 57,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 57,
+            "examples": [
+              {
+                "api_name": "TheFool",
+                "groupid": 0,
+                "internal_key": 256,
+                "archived": false,
+                "rarity": 88.5
+              },
+              {
+                "api_name": "TheLovers",
+                "groupid": 0,
+                "internal_key": 257,
+                "archived": false,
+                "rarity": 67.30000305175781
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "appid": 548430,
+        "status": 200,
+        "schemaHash": 2535859433,
+        "schemaVersion": 50,
+        "globalKeys": [
+          "percentages"
+        ],
+        "groups": [
+          {
+            "id": 0,
+            "name": "",
+            "dlcappid": 0,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 69,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 69,
+            "examples": [
+              {
+                "api_name": "APPROVED_GREENBEARD",
+                "groupid": 0,
+                "internal_key": 10496,
+                "archived": false,
+                "rarity": 44.900001525878906
+              },
+              {
+                "api_name": "GETPAIDFORTHIS",
+                "groupid": 0,
+                "internal_key": 10497,
+                "archived": false,
+                "rarity": 1.7999999523162842
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "appid": 1145360,
+        "status": 200,
+        "schemaHash": 1550535710,
+        "schemaVersion": 10,
+        "globalKeys": [
+          "percentages"
+        ],
+        "groups": [
+          {
+            "id": 0,
+            "name": "",
+            "dlcappid": 0,
+            "archived": false,
+            "ispublic": true,
+            "developeronly": false,
+            "count": 49,
+            "achievementKeys": [
+              "internal_key",
+              "api_name",
+              "name",
+              "description",
+              "hidden",
+              "archived",
+              "icon_achieved",
+              "icon_unachieved",
+              "groupid"
+            ],
+            "rarityMatches": 49,
+            "examples": [
+              {
+                "api_name": "AchClearTartarus",
+                "groupid": 0,
+                "internal_key": 256,
+                "archived": false,
+                "rarity": 81.80000305175781
+              },
+              {
+                "api_name": "AchClearAsphodel",
+                "groupid": 0,
+                "internal_key": 257,
+                "archived": false,
+                "rarity": 72.19999694824219
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "webApiJoins": [
+      {
+        "appid": 1794680,
+        "statuses": {
+          "schema": 200,
+          "globalPercentages": 200,
+          "community": 200
+        },
+        "schemaAchievementCount": 243,
+        "globalPercentageCount": 243,
+        "schemaAchievementKeys": [
+          "name",
+          "defaultvalue",
+          "displayName",
+          "hidden",
+          "description",
+          "icon",
+          "icongray"
+        ],
+        "groups": [
+          {
+            "id": 0,
+            "name": "",
+            "dlcappid": 0,
+            "count": 140,
+            "matchedApiNames": 140,
+            "matchedRarity": 140,
+            "lowestRarity": {
+              "apiName": "CompleteCollection",
+              "percent": 12.2
+            }
+          },
+          {
+            "id": 3,
+            "name": "Extra Content",
+            "dlcappid": 0,
+            "count": 63,
+            "matchedApiNames": 63,
+            "matchedRarity": 63,
+            "lowestRarity": {
+              "apiName": "Dark_05Appunta",
+              "percent": 1.7
+            }
+          },
+          {
+            "id": 1,
+            "name": "Legacy of the Moonspell",
+            "dlcappid": 2230760,
+            "count": 18,
+            "matchedApiNames": 18,
+            "matchedRarity": 18,
+            "lowestRarity": {
+              "apiName": "MOON13_Defeat6kWater",
+              "percent": 22.6
+            }
+          },
+          {
+            "id": 2,
+            "name": "Tides of the Foscari",
+            "dlcappid": 2313550,
+            "count": 22,
+            "matchedApiNames": 22,
+            "matchedRarity": 22,
+            "lowestRarity": {
+              "apiName": "FOSC18_Defeat6kFairy",
+              "percent": 22.1
+            }
+          }
+        ],
+        "rawPercentType": "string"
+      },
+      {
+        "appid": 620,
+        "statuses": {
+          "schema": 200,
+          "globalPercentages": 200,
+          "community": 200
+        },
+        "schemaAchievementCount": 51,
+        "globalPercentageCount": 51,
+        "schemaAchievementKeys": [
+          "name",
+          "defaultvalue",
+          "displayName",
+          "hidden",
+          "description",
+          "icon",
+          "icongray"
+        ],
+        "groups": [
+          {
+            "id": 2,
+            "name": "Single Player",
+            "dlcappid": 0,
+            "count": 29,
+            "matchedApiNames": 29,
+            "matchedRarity": 29,
+            "lowestRarity": {
+              "apiName": "ACH.BREAK_MONITORS",
+              "percent": 3.7
+            }
+          },
+          {
+            "id": 1,
+            "name": "Cooperative",
+            "dlcappid": 0,
+            "count": 22,
+            "matchedApiNames": 22,
+            "matchedRarity": 22,
+            "lowestRarity": {
+              "apiName": "ACH.STAYING_ALIVE",
+              "percent": 2.4
+            }
+          }
+        ],
+        "rawPercentType": "string"
+      },
+      {
+        "appid": 292030,
+        "statuses": {
+          "schema": 200,
+          "globalPercentages": 200,
+          "community": 200
+        },
+        "schemaAchievementCount": 78,
+        "globalPercentageCount": 78,
+        "schemaAchievementKeys": [
+          "name",
+          "defaultvalue",
+          "displayName",
+          "hidden",
+          "icon",
+          "icongray",
+          "description"
+        ],
+        "groups": [
+          {
+            "id": 0,
+            "name": "",
+            "dlcappid": 0,
+            "count": 78,
+            "matchedApiNames": 78,
+            "matchedRarity": 78,
+            "lowestRarity": {
+              "apiName": "MASTER_MARKSMAN",
+              "percent": 1.8
+            }
+          }
+        ],
+        "rawPercentType": "string"
+      }
+    ]
+  }
+}

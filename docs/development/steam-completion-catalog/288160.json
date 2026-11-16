@@ -1,0 +1,61 @@
+{
+  "app_id": "288160",
+  "name": "The Room",
+  "required_ids": [
+    "ACHIEVE_CHAP_1_COMPLETE",
+    "ACHIEVE_CHAP_2_COMPLETE",
+    "ACHIEVE_CHAP_3_COMPLETE",
+    "ACHIEVE_CHAP_4_COMPLETE",
+    "ACHIEVE_CHAP_5_COMPLETE"
+  ],
+  "excluded_ids": [],
+  "evidence": {
+    "scope": "day_one_base_game",
+    "sources": [
+      "https://steamcommunity.com/achievements/288160/?l=english",
+      "https://store.steampowered.com/app/288160/",
+      "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=288160&count=100&maxlength=0&enddate=1415160000",
+      "https://www.fireproofgames.com/help-the-room",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/1799088287995394",
+      "https://steamstore-a.akamaihd.net/news/externalpost/steam_community_announcements/4703417046214588724"
+    ],
+    "reviewed_date": "2026-11-15",
+    "release_date": "Jul 28, 2014",
+    "early_access_cutoff": "full_1_0_release",
+    "review_method": "All five original Steam chapter/completion achievements. The Steam edition launched with the Epilogue already included; its earlier mobile DLC release does not make it a later Steam addition.",
+    "steam_schema_hash": 3457398352,
+    "steam_schema_version": 8
+  },
+  "mapping": [
+    {
+      "steam_api_name": "ACHIEVE_CHAP_1_COMPLETE",
+      "name": "Safe Cracker",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIEVE_CHAP_2_COMPLETE",
+      "name": "Time Keeper",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIEVE_CHAP_3_COMPLETE",
+      "name": "Stargazer",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIEVE_CHAP_4_COMPLETE",
+      "name": "High Priest",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    },
+    {
+      "steam_api_name": "ACHIEVE_CHAP_5_COMPLETE",
+      "name": "Protégé",
+      "classification": "day_one_base_game",
+      "steam_group_id": 0
+    }
+  ]
+}
