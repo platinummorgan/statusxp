@@ -55,6 +55,8 @@ Railway deployment: `b7ae97ba-8852-4998-acff-e63bd6fded2d`, status `SUCCESS`, he
 
 ## Follow-up
 
+November 16 update: [the first positive live account](../2026-11-16/XBOX_POSITIVE_MYTHIC_SYNC_CHECK.md) confirmed seven Mythics, correct leaderboard/dashboard counts, three verified rarity bonuses and a matching canonical/cached account score. Four legacy titles correctly remain rarity-pending at the existing 0.50 XP floor. The remaining follow-up is native legacy membership/rarity coverage and a live partial-DLC example.
+
 Observe the first user-initiated Xbox syncs for real-world completion coverage and unavailable legacy rarity. The earlier live payload verification establishes source shapes; this release did not automatically sync accounts. The displayed count comes from confirmed per-title records after a complete sync, rather than assuming an account-summary total can be scored without title identities. Account-summary discrepancies and inaccessible titles remain coverage-review work.
 
 OpenXBL completion-group forwarding remains unverified. Direct contract 6 supplies the authoritative modern membership; provider/legacy fallbacks retain ordinary unlock support and native title-history Mythics without inventing base-game membership.
