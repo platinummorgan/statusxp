@@ -22,13 +22,14 @@ Your completions deserve recognition! Rare PlayStation Platinums now earn bonus 
 - Signed production Android App Bundle built successfully with package `com.statusxp.statusxp`, version **1.1.23**, version code **106**. Its JAR signature verifies, and the upload signing certificate matches build 105.
 - Upload artifact: `output/release-1.1.23/statusxp-1.1.23-106.aab` (79,053,596 bytes). The bundle and local verification manifest remain outside Git.
 - Bundle SHA-256: `ed9a1db66c9c153b32f4e1009a2f3238974be86f2436ba7b1f2e6866be87bb5c`.
-- [Google Play copy](docs/google-play/RELEASE_NOTES_1.1.23+106.md) is 424 characters. This release preparation builds the upload artifact; Google Play submission/review is a separate action.
+- [Google Play copy](docs/google-play/RELEASE_NOTES_1.1.23+106.md) is 424 characters. On November 16, 2026, Google accepted build 106, returned the matching bundle SHA-256, and validated the production release. The production edit was committed with review requested; a fresh API read confirmed production references build 106 and the completion release notes. Google review approval and public availability are not established by the track API's `completed` rollout status.
+- [Submission verification](docs/google-play/SUBMISSION_1.1.23+106.json) records the upload, validation, committed edit and fresh production-track read, without credentials.
 
 The native Steam policy, scoring and web/service deployment evidence is in [the implementation record](docs/reviews/2026-11-16/NATIVE_STEAM_COMPLETION_SETS_RELEASE.md), including the [real Android sync acceptance pass](docs/reviews/2026-11-16/ANDROID_NATIVE_STEAM_PHONE_CHECK.md).
 
 ## Mac / iOS handoff
 
-The release source is identified by tag `v1.1.23`, with `main` and `release/app-improvements-2026-09-14` kept at the same release commit. From the existing Mac checkout:
+The build source is identified by tag `v1.1.23` (commit `46db2cb`); `main` and `release/app-improvements-2026-09-14` carry the release and subsequent submission documentation. From the existing Mac checkout:
 
 ```sh
 git fetch origin --tags

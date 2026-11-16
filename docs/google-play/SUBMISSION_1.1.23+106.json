@@ -1,0 +1,40 @@
+{
+  "package": "com.statusxp.statusxp",
+  "version": "1.1.23",
+  "build": 106,
+  "source_commit": "46db2cb938c04fc52833edf48946e27c130e06b6",
+  "source_tag": "v1.1.23",
+  "uploaded_bundle": {
+    "versionCode": 106,
+    "sha1": "15222ef5ffe241b853e04e59185e9424fb89a7aa",
+    "sha256": "ed9a1db66c9c153b32f4e1009a2f3238974be86f2436ba7b1f2e6866be87bb5c"
+  },
+  "production_validation_passed": true,
+  "committed_at": "2026-11-16T18:24:59Z",
+  "commit_response": {
+    "id": "02685469222189551762",
+    "expiryTimeSeconds": "1794860616"
+  },
+  "review_requested": true,
+  "changes_in_review_behavior": "ERROR_IF_IN_REVIEW",
+  "fresh_production_track": {
+    "track": "production",
+    "releases": [
+      {
+        "name": "1.1.23 (106) - Completion bonuses",
+        "versionCodes": [
+          "106"
+        ],
+        "releaseNotes": [
+          {
+            "language": "en-US",
+            "text": "Your completions deserve recognition! Rare PlayStation Platinums now earn bonus StatusXP. Xbox Mythics now count toward your score and have dedicated completion rankings. Steam completions use verified base-game sets, or all available achievements when no reliable separation exists. See unified completion counts, clearer rarity estimates, and earned completion badges. Sync your connected accounts to update your progress."
+          }
+        ],
+        "status": "completed"
+      }
+    ]
+  },
+  "review_approval_confirmed": false,
+  "public_availability_confirmed": false
+}
